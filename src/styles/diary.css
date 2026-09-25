@@ -1,0 +1,510 @@
+/* ─── Diario: pie de página, índice y pasar página ─────────── */
+
+.bottom-right {
+  bottom: 16px;
+  right: 16px;
+}
+
+.side-right {
+  top: 64px;
+  right: 16px;
+  bottom: 72px;
+  align-items: flex-start;
+}
+
+.page-nav-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.page-nav-wrap > * {
+  pointer-events: auto;
+}
+
+.page-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  max-width: 300px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 120ms var(--ease);
+}
+
+.page-label:hover,
+.page-label[aria-expanded='true'] {
+  background: var(--hover);
+}
+
+.page-label:focus-visible,
+.today-btn:focus-visible,
+.new-page-btn:focus-visible,
+.calendar-day:focus-visible,
+.page-item-main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.page-title {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-details {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.today-btn {
+  height: 46px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-text);
+  cursor: pointer;
+  animation: pop-in 140ms var(--ease);
+}
+
+.today-btn:hover {
+  background: var(--accent-soft);
+}
+
+/* Índice */
+
+.diary-panel {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  width: 292px;
+  max-height: 100%;
+  padding: 6px 10px 10px;
+  overflow: hidden;
+  animation: slide-in-right 160ms var(--ease);
+}
+
+.diary-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 0 6px;
+}
+
+.diary-header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.diary-count {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.diary-header .icon-btn[data-active] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.book-style {
+  padding: 0 2px 8px;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.book-style h3 {
+  margin: 8px 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+/* Opciones con texto dentro de un grupo: del ancho de su texto. */
+.segmented-group .text-option {
+  width: auto;
+  padding: 0 9px;
+  white-space: nowrap;
+}
+
+/* Cabecera de "Hoja" con el selector de todo el diario / esta página. */
+.book-style-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.book-style-head h3 {
+  margin: 0;
+}
+
+.book-style .cover-colors {
+  margin-top: 6px;
+}
+
+.book-style-note {
+  margin: 8px 2px 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.book-style-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Miniaturas para elegir hoja o mesa. */
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+  gap: 4px;
+}
+
+.style-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 5px 2px 4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 120ms var(--ease);
+}
+
+.style-tile:hover {
+  background: var(--hover);
+}
+
+.style-tile[data-active] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.style-tile span:last-child {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paper-preview {
+  display: block;
+  width: 46px;
+  height: 63px;
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 2px 5px rgba(40, 25, 10, 0.12);
+}
+
+.desk-preview {
+  display: block;
+  width: 46px;
+  height: 34px;
+  border-radius: 5px;
+  background: var(--canvas-bg) 0 0 / 128px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.style-tile[data-active] .paper-preview,
+.style-tile[data-active] .desk-preview {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.text-option {
+  width: auto;
+  min-width: 0;
+  height: 30px;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.calendar {
+  padding: 4px 0 8px;
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calendar-head .icon-btn {
+  width: 30px;
+  height: 30px;
+}
+
+.calendar-month {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.calendar-weekday {
+  padding: 4px 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.calendar-day {
+  position: relative;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color 120ms var(--ease);
+}
+
+.calendar-day:hover {
+  background: var(--hover);
+}
+
+/* Días con páginas: un punto debajo del número. */
+.calendar-day[data-pages]::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.calendar-day[data-today] {
+  font-weight: 700;
+  color: var(--accent-text);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.calendar-day[aria-current='date'] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 650;
+}
+
+.calendar-day[aria-current='date']::after {
+  background: #fff;
+}
+
+.new-page-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  margin-bottom: 6px;
+  padding: 0 10px;
+  border: 1px dashed var(--kbd-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 120ms var(--ease);
+}
+
+.new-page-btn:hover {
+  background: var(--hover);
+}
+
+.new-page-btn kbd {
+  margin-left: auto;
+}
+
+.page-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 -10px;
+  padding: 0 10px;
+  overflow-y: auto;
+}
+
+.page-list h3 {
+  margin: 10px 0 4px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.page-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-list-empty {
+  margin: 8px 4px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.page-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: background-color 120ms var(--ease);
+}
+
+.page-item:hover {
+  background: var(--hover);
+}
+
+.page-item[data-active] {
+  background: var(--accent-soft);
+}
+
+.page-item-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 5px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Las miniaturas son hojas de papel claro en los dos temas. */
+.page-thumb {
+  flex: none;
+  width: 64px;
+  height: 40px;
+  overflow: hidden;
+  border: 1px solid var(--surface-border);
+  border-radius: 5px;
+  background: #faf9f6;
+}
+
+.page-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.page-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.page-item-day {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.page-item[data-active] .page-item-day {
+  color: var(--accent-text);
+}
+
+.page-item-title {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-item-title[data-empty] {
+  font-weight: 450;
+  color: var(--text-muted);
+}
+
+/* Pestaña de las páginas marcadas: asoma por el borde derecho de la fila. */
+.page-item-tab {
+  flex: none;
+  width: 10px;
+  height: 26px;
+  margin-right: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px 6px 6px 3px;
+  cursor: pointer;
+}
+
+.page-item-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.page-item-actions {
+  display: flex;
+  padding-right: 4px;
+  opacity: 0;
+  transition: opacity 120ms var(--ease);
+}
+
+.page-item:hover .page-item-actions,
+.page-item:focus-within .page-item-actions {
+  opacity: 1;
+}
+
+.page-item-actions .icon-btn {
+  width: 28px;
+  height: 28px;
+}
+
+.page-rename {
+  position: absolute;
+  left: 84px;
+  right: 6px;
+  bottom: 5px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  user-select: text;
+}

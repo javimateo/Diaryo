@@ -1,0 +1,54 @@
+/* ─── Menú contextual ────────────────────────────────────────── */
+
+.context-menu {
+  position: fixed;
+  z-index: 60;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-width: 250px;
+  padding: 6px;
+  animation: pop-in 120ms var(--ease);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.menu-item:disabled {
+  color: var(--text-muted);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.menu-item kbd {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.menu-item[data-danger] {
+  color: #e03131;
+}
+
+.menu-divider {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--surface-border);
+}

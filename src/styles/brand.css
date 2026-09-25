@@ -1,0 +1,128 @@
+/* ─── Marca, pistas y avisos ─────────────────────────────────── */
+
+.brand {
+  padding: 8px 4px;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  pointer-events: none;
+}
+
+/* Sobre madera, corcho o lino, el nombre y el estado van en una píldora para leerse bien. */
+:root[data-textured-desk] .brand,
+:root[data-widget] .brand,
+:root[data-textured-desk] .hint,
+:root[data-widget] .hint {
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+.brand::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: 2px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.hint kbd {
+  font-size: 10.5px;
+  line-height: 14px;
+}
+
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 450;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.save-status[data-status='loading'] svg,
+.save-status[data-status='saving'] svg {
+  animation: spin 900ms linear infinite;
+}
+
+.save-status[data-status='error'] {
+  color: #e03131;
+  opacity: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.file-menu {
+  position: relative;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: -4px;
+  z-index: 40;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-width: 290px;
+  padding: 6px;
+  animation: pop-in 120ms var(--ease);
+}
+
+.dropdown-note {
+  margin: 4px 10px 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.menu-label {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast {
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 180ms var(--ease),
+    transform 180ms var(--ease);
+}
+
+.toast:empty {
+  display: none;
+}
+
+.toast[data-visible] {
+  opacity: 1;
+  transform: translateY(0);
+}

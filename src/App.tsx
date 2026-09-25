@@ -9,7 +9,7 @@ import { useDeskBackground } from './ui/useDeskBackground';
 import { LinkDialog } from './ui/LinkDialog';
 import { MapView } from './ui/MapView';
 import { PageNav } from './ui/PageNav';
-import { PropertiesPanel } from './ui/PropertiesPanel';
+import { PropertiesPanel } from './ui/properties/PropertiesPanel';
 import { TextEditor } from './ui/TextEditor';
 import { Toast } from './ui/Toast';
 import { Toolbar } from './ui/Toolbar';

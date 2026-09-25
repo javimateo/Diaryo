@@ -1,0 +1,60 @@
+/* ─── Tokens ─────────────────────────────────────────────────── */
+
+:root {
+  --font: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* La mesa sobre la que está el diario. */
+  --canvas-bg: #e7e2d8;
+  --canvas-dots: #c4bdb1;
+
+  --surface: #ffffff;
+  --surface-border: rgba(28, 25, 20, 0.08);
+  --shadow: 0 1px 2px rgba(28, 25, 20, 0.04), 0 4px 16px rgba(28, 25, 20, 0.07);
+  --shadow-lg: 0 2px 6px rgba(28, 25, 20, 0.06), 0 24px 64px rgba(28, 25, 20, 0.18);
+  --backdrop: rgba(28, 25, 20, 0.22);
+
+  --text: #23211d;
+  --text-muted: #8c877e;
+  --hover: rgba(28, 25, 20, 0.055);
+
+  --accent: #5b5bd6;
+  --accent-soft: #ebebfc;
+  --accent-text: #4545c0;
+
+  --tooltip-bg: #23211d;
+  --tooltip-text: #faf9f6;
+  --kbd-bg: rgba(28, 25, 20, 0.04);
+  --kbd-border: rgba(28, 25, 20, 0.12);
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --canvas-bg: #131210;
+  --canvas-dots: #34322e;
+
+  --surface: #262522;
+  --surface-border: rgba(255, 255, 255, 0.07);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.3), 0 24px 64px rgba(0, 0, 0, 0.55);
+  --backdrop: rgba(0, 0, 0, 0.45);
+
+  --text: #ecebe8;
+  --text-muted: #8e8a83;
+  --hover: rgba(255, 255, 255, 0.065);
+
+  --accent: #8b8cf5;
+  --accent-soft: rgba(139, 140, 245, 0.17);
+  --accent-text: #b8b9ff;
+
+  --tooltip-bg: #ecebe8;
+  --tooltip-text: #1b1a18;
+  --kbd-bg: rgba(255, 255, 255, 0.05);
+  --kbd-border: rgba(255, 255, 255, 0.14);
+
+  color-scheme: dark;
+}

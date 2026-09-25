@@ -1,0 +1,25 @@
+/* ─── Editor de texto ────────────────────────────────────────── */
+
+.text-editor {
+  position: absolute;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  transform-origin: 0 0;
+  caret-color: var(--accent);
+  user-select: text;
+  font-weight: 400;
+  font-kerning: normal;
+}
+
+.text-editor::selection {
+  background: var(--accent-soft);
+}

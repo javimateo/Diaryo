@@ -1,0 +1,90 @@
+/* ─── Botones ────────────────────────────────────────────────── */
+
+.icon-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 120ms var(--ease),
+    color 120ms var(--ease);
+}
+
+.icon-btn:hover {
+  background: var(--hover);
+}
+
+.icon-btn:disabled {
+  color: var(--text-muted);
+  opacity: 0.45;
+  cursor: default;
+}
+
+.icon-btn:disabled:hover {
+  background: transparent;
+}
+
+.icon-btn:focus-visible,
+.zoom-value:focus-visible,
+.swatch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tool-btn[data-active] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.tool-btn[data-soon] {
+  color: var(--text-muted);
+}
+
+.tool-btn[data-soon] svg {
+  opacity: 0.6;
+}
+
+.tool-key {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.tool-btn[data-active] .tool-key {
+  color: var(--accent-text);
+  opacity: 0.75;
+}
+
+.toolbar-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--surface-border);
+}
+
+.zoom-value {
+  min-width: 56px;
+  height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  position: relative;
+}
+
+.zoom-value:hover {
+  background: var(--hover);
+}

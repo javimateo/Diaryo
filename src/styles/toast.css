@@ -1,0 +1,47 @@
+/* Aviso con botón (p. ej. deshacer un borrado) */
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toast[data-visible]:has(.toast-action) {
+  pointer-events: auto;
+}
+
+.toast-action {
+  margin: -4px -6px -4px 0;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-soft);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+:root[data-theme='dark'] .toast-action {
+  color: var(--accent);
+}
+
+.toast-action:hover {
+  background: rgba(127, 127, 127, 0.2);
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}

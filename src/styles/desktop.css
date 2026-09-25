@@ -1,0 +1,175 @@
+/* ─── App de escritorio ─────────────────────────────────────── */
+
+/* Diario flotante: la ventana es transparente y el escritorio hace de mesa. */
+:root[data-widget],
+:root[data-desk-layer] {
+  /* Con "dark", el navegador pinta un fondo opaco y se pierde la transparencia. */
+  color-scheme: normal;
+}
+
+:root[data-widget],
+:root[data-widget] body,
+:root[data-desk-layer],
+:root[data-desk-layer] body {
+  background: transparent;
+}
+
+/* El diario flotante aparece y se aparta con un fundido. */
+:root[data-widget] .app {
+  transition: opacity 260ms ease-out;
+}
+
+:root[data-widget][data-away] .app {
+  opacity: 0;
+  transition: opacity 180ms ease-in;
+}
+
+/* Con la ventana escondida, sin esperar al fundido. */
+:root[data-instant] .app {
+  transition: none;
+}
+
+:root[data-widget] .map-view {
+  background: rgba(16, 13, 10, 0.62);
+}
+
+.widget-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--surface-border);
+  font-size: 12px;
+  font-weight: 450;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+/* El atajo del diario flotante: se pulsa y se graba el nuevo. */
+.shortcut-field {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-width: 132px;
+  height: 34px;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color 120ms var(--ease),
+    box-shadow 120ms var(--ease);
+}
+
+.shortcut-field:hover {
+  border-color: var(--kbd-border);
+}
+
+.shortcut-field kbd {
+  color: var(--text);
+}
+
+.shortcut-field[data-recording] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.shortcut-field[data-error] {
+  border-color: #e03131;
+}
+
+.settings-buttons {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.settings-path {
+  display: block;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── Mini diario (en el escritorio de Windows) ─────────────────── */
+
+.mini-diary {
+  position: absolute;
+  width: 320px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.mini-diary:active {
+  cursor: grabbing;
+}
+
+/* Las tapas asoman alrededor de las páginas, como el diario abierto. */
+.mini-diary-book {
+  padding: 7px;
+  border-radius: 9px;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.18),
+    0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.mini-diary-book img {
+  display: block;
+  width: 100%;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.mini-diary-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.mini-diary-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ─── Vista fijada (diario flotante) ────────────────────────────── */
+
+.view-controls .icon-btn[data-active] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* ─── La ventana de la app (sin el marco de Windows) ────────────── */
+
+/* Por dónde se arrastra: la franja de arriba, detrás de los paneles. */
+.window-drag-region {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+}
+
+.top-actions-separator {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--surface-border);
+}
+
+.window-close:hover {
+  background: #e5484d;
+  color: #fff;
+}

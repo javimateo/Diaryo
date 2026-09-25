@@ -1,0 +1,159 @@
+/* ─── Panel de propiedades ───────────────────────────────────── */
+
+.props-panel {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  width: 232px;
+  max-height: 100%;
+  padding: 6px 10px 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  animation: slide-in 160ms var(--ease);
+}
+
+.props-section h3 {
+  margin: 10px 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.swatch-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* (Doble clase para ganar a la regla general de .swatch, que va más abajo.) */
+.swatch.swatch-custom::before {
+  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+}
+
+.swatch.swatch-custom[data-active]::before {
+  background: var(--swatch);
+}
+
+/* "Automático": mitad tinta clara, mitad oscura. */
+.swatch[data-auto]::before {
+  background: linear-gradient(135deg, var(--swatch) 50%, #f4f1ea 50%);
+}
+
+.variant-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+}
+
+.variant-grid .icon-btn {
+  width: 100%;
+  height: 32px;
+}
+
+.variant-grid .icon-btn[data-active] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* "Sin fondo": cuadros de transparencia. */
+.swatch[data-none]::before {
+  background: conic-gradient(#d9d6cf 25%, #ffffff 0 50%, #d9d6cf 0 75%, #ffffff 0) 0 0 / 8px 8px;
+}
+
+.segmented-group.wide {
+  justify-content: space-between;
+}
+
+.segmented-group.wide .icon-btn {
+  flex: 1;
+}
+
+.segmented-group .icon-btn[data-active] svg {
+  color: var(--accent-text);
+}
+
+.size-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.size-presets {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.size-presets .size-input {
+  margin-left: auto;
+}
+
+.size-controls .size-slider,
+.opacity-row .size-slider {
+  width: 100%;
+  margin: 0;
+}
+
+.opacity-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.opacity-value {
+  min-width: 26px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text-muted);
+}
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.segmented-group {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--hover);
+}
+
+.segmented-group .icon-btn {
+  width: 29px;
+  height: 29px;
+  border-radius: 6px;
+}
+
+.segmented-group .icon-btn[data-active] {
+  background: var(--surface);
+  color: var(--accent-text);
+  box-shadow: var(--shadow);
+}
+
+.font-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.font-button:hover {
+  background: var(--hover);
+}
+
+.font-button svg {
+  flex: none;
+  color: var(--text-muted);
+}

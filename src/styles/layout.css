@@ -1,0 +1,80 @@
+/* ─── Layout ─────────────────────────────────────────────────── */
+
+.app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  user-select: none;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.layer {
+  position: absolute;
+  display: flex;
+  pointer-events: none;
+}
+
+.layer > * {
+  pointer-events: auto;
+}
+
+.top-left {
+  top: 16px;
+  left: 16px;
+}
+
+/* Ocupan todo el ancho (sin captar el ratón) para centrar sin que el contenido se corte. */
+.top-center {
+  top: 16px;
+  left: 0;
+  right: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-right {
+  top: 16px;
+  right: 16px;
+}
+
+.side-left {
+  top: 64px;
+  left: 16px;
+  bottom: 72px;
+  align-items: flex-start;
+}
+
+.bottom-left {
+  bottom: 16px;
+  left: 16px;
+  gap: 8px;
+}
+
+.bottom-center {
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 12px;
+}
+
+.floating {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
