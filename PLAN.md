@@ -247,8 +247,13 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
   - [x] **D. La ventana de la app**: sin el marco de Windows; minimizar, maximizar y
         cerrar (a la bandeja) van en el panel de arriba a la derecha, y la ventana se
         arrastra desde la franja de arriba, entre los paneles (doble clic: maximizar).
-  - [ ] **E. Revisión del código**: arquitectura, limpieza y buenas prácticas; informe y
-        arreglos por partes.
+  - [x] **E. Revisión del código**: capas en una sola dirección (`lib` → `engine` →
+        `storage` → `diary` → `store` → `desktop` → `ui`); `localStorage` en un solo
+        módulo seguro; el puente de escritorio y la mesa del escritorio como clases; del
+        motor salen los tipos, el estilo de la selección, el movimiento de la cámara y el
+        fondo; el Rust en módulos (estado, atajos, bandeja, comandos); el panel de
+        propiedades y los estilos, por partes; tests del guardado entre mesa y página y
+        de la sincronización entre ventanas.
   - [ ] **F. Inglés y español**: comentarios del código en inglés; la app en español (por
         defecto) o inglés, a elegir en Ajustes.
   - [ ] **G. Nombre**: diaryo o dair.io (pendiente de decidir). Sin cambiar el
@@ -274,6 +279,15 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           subir a `main`.
     - [ ] **H8. Visitas sin cookies**: Umami como servicio de Coolify; visitas y
           descargas (como evento), sin rastrear a nadie.
+    - **Pendiente de decidir** antes de publicar:
+      - [ ] **Nombre**: diaryo o dair.io (ver G).
+      - [ ] **Dominio**: cuál, y si la web va en el principal o en un subdominio.
+      - [ ] **Repositorio público** en GitHub (lo necesitan las descargas de las Releases).
+      - [ ] **Actualizaciones automáticas**: que la app avise y se actualice sola (plugin
+            de Tauri con actualizaciones firmadas, desde las Releases). Sin ellas, cada
+            versión nueva se baja a mano desde la web.
+      - [ ] **Firma del instalador**: firmarlo (Azure Trusted Signing, unos 10 €/mes) o
+            explicar en la web cómo pasar el aviso de SmartScreen.
   - [ ] **I. Enseñar a usarla**: recorrido la primera vez que se abre (pasos cortos con
         animaciones) y vídeos de cada función para la web, hechos con el mismo código.
 
