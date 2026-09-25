@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="cover" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c9674d"/>
+      <stop offset="1" stop-color="#a44a35"/>
+    </linearGradient>
+  </defs>
+  <!-- Canto de las hojas, asomando por la derecha y por abajo -->
+  <rect x="214" y="104" width="642" height="836" rx="70" fill="#e3d6bb"/>
+  <rect x="202" y="96" width="642" height="836" rx="70" fill="#f4ecdc"/>
+  <!-- Grosor de la tapa -->
+  <rect x="150" y="84" width="660" height="866" rx="78" fill="#7e3526"/>
+  <!-- Tapa de cuero -->
+  <rect x="150" y="74" width="660" height="860" rx="78" fill="url(#cover)"/>
+  <!-- Pespunte -->
+  <rect x="196" y="120" width="568" height="768" rx="44" fill="none" stroke="#f6d9ca"
+    stroke-width="12" stroke-dasharray="30 22" stroke-linecap="round" opacity="0.75"/>
+  <!-- Goma elástica -->
+  <rect x="682" y="56" width="50" height="902" rx="25" fill="#2b2926"/>
+  <rect x="694" y="66" width="10" height="882" rx="5" fill="#ffffff" opacity="0.14"/>
+  <!-- El trazo de diaryo, grabado en la tapa -->
+  <path d="M9 21c3-7 6-11 8-10s-3 8 0 8 4-6 6-6" transform="translate(52 128) scale(24)"
+    fill="none" stroke="#f8e4d8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
