@@ -3,6 +3,7 @@ import type { Diary, TodayPreview } from '../diary/diary';
 import type { DeskView, Engine } from '../engine/engine';
 import { serializeDiary } from '../storage/files';
 import { useUI } from '../store/ui';
+import { asRecord, readJSON, writeJSON } from '../lib/saved';
 
 /**
  * La app de escritorio (Tauri): el diario en su ventana o flotando sobre el escritorio,
@@ -65,14 +66,16 @@ let backupNow: (force?: boolean) => Promise<void> = async () => {};
 export const DESK_VIEW_KEY = 'diaryo:desk-view';
 
 export function readDeskView(): DeskView | null {
-  try {
-    const view = JSON.parse(localStorage.getItem(DESK_VIEW_KEY) ?? 'null') as DeskView | null;
-    const ok =
-      view && Number.isFinite(view.center?.x) && Number.isFinite(view.center?.y) && view.zoom > 0;
-    return ok ? view : null;
-  } catch {
-    return null;
-  }
+  const { center, zoom } = asRecord(readJSON(DESK_VIEW_KEY));
+  const { x, y } = asRecord(center);
+  const ok =
+    typeof x === 'number' &&
+    typeof y === 'number' &&
+    Number.isFinite(x) &&
+    Number.isFinite(y) &&
+    typeof zoom === 'number' &&
+    zoom > 0;
+  return ok ? { center: { x, y }, zoom } : null;
 }
 
 /** La página de hoy para el mini diario del escritorio (la pone al día el diario). */
@@ -84,12 +87,13 @@ export interface TodayCard extends TodayPreview {
 }
 
 export function readToday(): TodayCard | null {
-  try {
-    const card = JSON.parse(localStorage.getItem(TODAY_KEY) ?? 'null') as TodayCard | null;
-    return card && typeof card.image === 'string' ? card : null;
-  } catch {
-    return null;
-  }
+  const card = asRecord(readJSON(TODAY_KEY));
+  const ok =
+    typeof card.image === 'string' &&
+    typeof card.day === 'string' &&
+    typeof card.pending === 'number' &&
+    typeof card.cover === 'string';
+  return ok ? (card as unknown as TodayCard) : null;
 }
 
 /** Ancho de la imagen del mini diario (el doble de lo que ocupa, para que se vea nítida). */
@@ -97,13 +101,13 @@ const TODAY_WIDTH = 640;
 
 /** Fija la vista de ahora: el diario flotante se abrirá así y la mesa del escritorio la usará. */
 export function pinDeskView(view: DeskView) {
-  try {
-    localStorage.setItem(DESK_VIEW_KEY, JSON.stringify(view));
-  } catch {
-    useUI.getState().showToast('No se ha podido fijar la vista');
-    return;
-  }
-  useUI.getState().showToast('Vista fijada: el diario se abrirá así');
+  useUI
+    .getState()
+    .showToast(
+      writeJSON(DESK_VIEW_KEY, view)
+        ? 'Vista fijada: el diario se abrirá así'
+        : 'No se ha podido fijar la vista',
+    );
 }
 
 /** ¿Se está viendo lo mismo? (medio píxel de diferencia no cuenta) */
@@ -165,7 +169,7 @@ export async function startDesktop(engine: Engine, diary: Diary): Promise<() => 
         const preview = await diary.todayPreview(TODAY_WIDTH);
         todayShown = preview.day;
         const card: TodayCard = { ...preview, cover: useUI.getState().bookStyle.cover };
-        localStorage.setItem(TODAY_KEY, JSON.stringify(card));
+        writeJSON(TODAY_KEY, card);
       } catch (error) {
         console.error('No se ha podido preparar el mini diario', error);
       }

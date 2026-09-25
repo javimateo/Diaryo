@@ -10,6 +10,7 @@ import type { DesktopInfo } from '../desktop/desktop';
 import type { Diary, DiaryState, TurnSpeed } from '../diary/diary';
 import type { SaveStatus } from '../storage/autosave';
 import { mergeToolStyle, parseRecentColors, parseStyles, RECENT_COLORS_LIMIT } from './styles';
+import { asRecord, readJSON, readText, writeJSON, writeText } from '../lib/saved';
 
 export type Theme = 'light' | 'dark';
 /** El tema elegido: claro, oscuro o el del sistema (y cambia con él). */
@@ -34,27 +35,10 @@ const TOAST_DURATION = 1800;
 const ACTION_TOAST_DURATION = 6000;
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
-function readStorage(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    // Sin almacenamiento (modo privado, etc.): se usan los valores por defecto.
-    return null;
-  }
-}
-
-function writeStorage(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // No es crítico.
-  }
-}
-
 const systemDark = matchMedia('(prefers-color-scheme: dark)');
 
 export function loadThemePreference(): ThemePreference {
-  const saved = readStorage(THEME_KEY);
+  const saved = readText(THEME_KEY);
   return saved === 'light' || saved === 'dark' ? saved : 'system';
 }
 
@@ -62,34 +46,34 @@ const resolveTheme = (preference: ThemePreference): Theme =>
   preference === 'system' ? (systemDark.matches ? 'dark' : 'light') : preference;
 
 function loadSettings(): Settings {
-  try {
-    const saved = JSON.parse(readStorage(SETTINGS_KEY) ?? '{}');
-    const settings = { ...DEFAULT_SETTINGS };
-    if (saved.weekStart === 0 || saved.weekStart === 1) settings.weekStart = saved.weekStart;
-    if (['normal', 'fast', 'off'].includes(saved.turnSpeed)) settings.turnSpeed = saved.turnSpeed;
-    return settings;
-  } catch {
-    return { ...DEFAULT_SETTINGS };
+  const saved = asRecord(readJSON(SETTINGS_KEY));
+  const settings = { ...DEFAULT_SETTINGS };
+  if (saved.weekStart === 0 || saved.weekStart === 1) settings.weekStart = saved.weekStart;
+  if (saved.turnSpeed === 'normal' || saved.turnSpeed === 'fast' || saved.turnSpeed === 'off') {
+    settings.turnSpeed = saved.turnSpeed;
   }
+  return settings;
 }
+
+/** ¿Es una de las claves de ese catálogo? */
+const isKeyOf = <T extends string>(catalog: Record<T, unknown>, value: unknown): value is T =>
+  typeof value === 'string' && Object.hasOwn(catalog, value);
 
 /** Aspecto del diario guardado (con valores por defecto para lo que falte). */
 function loadBookStyle(): BookStyle {
-  try {
-    const saved = JSON.parse(readStorage(BOOK_KEY) ?? '{}');
-    const style = { ...DEFAULT_BOOK_STYLE };
-    if (isPaperStyle(saved.paper)) style.paper = saved.paper;
-    if (Object.hasOwn(MATERIALS, saved.material)) style.material = saved.material;
-    if (typeof saved.elastic === 'boolean') style.elastic = saved.elastic;
-    // Antes de haber materiales la mesa era lisa por defecto: ahora es de madera.
-    if (Object.hasOwn(DESKS, saved.desk) && 'material' in saved) style.desk = saved.desk;
-    if (['rings', 'sewn'].includes(saved.binding)) style.binding = saved.binding;
-    if (Object.hasOwn(PAPER_COLORS, saved.paperColor)) style.paperColor = saved.paperColor;
-    if (/^#[0-9a-f]{6}$/i.test(saved.cover)) style.cover = saved.cover;
-    return style;
-  } catch {
-    return { ...DEFAULT_BOOK_STYLE };
+  const saved = asRecord(readJSON(BOOK_KEY));
+  const style = { ...DEFAULT_BOOK_STYLE };
+  if (isPaperStyle(saved.paper)) style.paper = saved.paper;
+  if (isKeyOf(MATERIALS, saved.material)) style.material = saved.material;
+  if (typeof saved.elastic === 'boolean') style.elastic = saved.elastic;
+  // Antes de haber materiales la mesa era lisa por defecto: ahora es de madera.
+  if (isKeyOf(DESKS, saved.desk) && 'material' in saved) style.desk = saved.desk;
+  if (saved.binding === 'rings' || saved.binding === 'sewn') style.binding = saved.binding;
+  if (isKeyOf(PAPER_COLORS, saved.paperColor)) style.paperColor = saved.paperColor;
+  if (typeof saved.cover === 'string' && /^#[0-9a-f]{6}$/i.test(saved.cover)) {
+    style.cover = saved.cover;
   }
+  return style;
 }
 
 const initialPreference = loadThemePreference();
@@ -172,8 +156,8 @@ interface UIState {
 export const useUI = create<UIState>()((set, get) => ({
   engine: null,
   tool: 'select',
-  styles: parseStyles(readStorage(STYLES_KEY)),
-  recentColors: parseRecentColors(readStorage(RECENT_COLORS_KEY)),
+  styles: parseStyles(readText(STYLES_KEY)),
+  recentColors: parseRecentColors(readText(RECENT_COLORS_KEY)),
   zoom: 1,
   doc: {
     canUndo: false,
@@ -210,7 +194,7 @@ export const useUI = create<UIState>()((set, get) => ({
   setTool: (tool) => set({ tool }),
   setToolStyle: (tool, patch) => {
     const styles = mergeToolStyle(get().styles, tool, patch);
-    writeStorage(STYLES_KEY, JSON.stringify(styles));
+    writeJSON(STYLES_KEY, styles);
     set({ styles });
   },
   addRecentColor: (color) => {
@@ -219,7 +203,7 @@ export const useUI = create<UIState>()((set, get) => ({
       0,
       RECENT_COLORS_LIMIT,
     );
-    writeStorage(RECENT_COLORS_KEY, JSON.stringify(recentColors));
+    writeJSON(RECENT_COLORS_KEY, recentColors);
     set({ recentColors });
   },
   setZoom: (zoom) => {
@@ -231,12 +215,12 @@ export const useUI = create<UIState>()((set, get) => ({
   setThemePreference: (themePreference) => {
     const theme = resolveTheme(themePreference);
     document.documentElement.dataset.theme = theme;
-    writeStorage(THEME_KEY, themePreference);
+    writeText(THEME_KEY, themePreference);
     set({ theme, themePreference });
   },
   setSettings: (patch) => {
     const settings = { ...get().settings, ...patch };
-    writeStorage(SETTINGS_KEY, JSON.stringify(settings));
+    writeJSON(SETTINGS_KEY, settings);
     set({ settings });
   },
   setSettingsOpen: (settingsOpen) => set({ settingsOpen, contextMenu: null }),
@@ -263,7 +247,7 @@ export const useUI = create<UIState>()((set, get) => ({
   },
   setBookStyle: (patch) => {
     const bookStyle = { ...get().bookStyle, ...patch };
-    writeStorage(BOOK_KEY, JSON.stringify(bookStyle));
+    writeJSON(BOOK_KEY, bookStyle);
     set({ bookStyle });
     get().diary?.refreshBook();
   },

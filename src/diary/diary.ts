@@ -27,6 +27,7 @@ import {
 } from '../storage/db';
 import { formatDay, formatDayMonth, todayKey, type DayKey } from '../lib/dates';
 import { comparePages, neighbor, newPage, pagesOfDay, sortPages, type PageMeta } from './pages';
+import { asRecord, readJSON, writeJSON } from '../lib/saved';
 
 export interface DiaryState {
   /** Páginas con algo escrito (o con título), en orden; incluye la abierta si ya lo tiene. */
@@ -82,20 +83,12 @@ const toInfo = ({ id, date, order, title }: PageMeta): PageInfo => ({ id, date, 
 
 /** Última página abierta y el día en que se abrió. */
 function readLastPage(): { id: string; day: DayKey } | null {
-  try {
-    const value = JSON.parse(localStorage.getItem(LAST_PAGE_KEY) ?? 'null');
-    return typeof value?.id === 'string' && typeof value?.day === 'string' ? value : null;
-  } catch {
-    return null;
-  }
+  const { id, day } = asRecord(readJSON(LAST_PAGE_KEY));
+  return typeof id === 'string' && typeof day === 'string' ? { id, day } : null;
 }
 
 function writeLastPage(id: string) {
-  try {
-    localStorage.setItem(LAST_PAGE_KEY, JSON.stringify({ id, day: todayKey() }));
-  } catch {
-    // No es crítico.
-  }
+  writeJSON(LAST_PAGE_KEY, { id, day: todayKey() });
 }
 
 /**

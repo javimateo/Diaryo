@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState, type PointerEvent } from 'react';
 import { call, readToday, TODAY_KEY, type TodayCard } from '../../desktop/desktop';
+import { asRecord, readJSON, writeJSON } from '../../lib/saved';
 
 const POSITION_KEY = 'diaryo:mini-diary';
 /** Margen con los bordes de la pantalla. */
@@ -13,22 +14,12 @@ interface Place {
   top: number;
 }
 
+/** Donde se dejó (o, si no, arriba a la derecha). */
 function readPlace(): Place {
-  try {
-    const place = JSON.parse(localStorage.getItem(POSITION_KEY) ?? 'null') as Place | null;
-    if (place && Number.isFinite(place.right) && Number.isFinite(place.top)) return place;
-  } catch {
-    // Sin almacenamiento, en su sitio de siempre.
-  }
-  return { right: EDGE, top: EDGE };
-}
-
-function savePlace(place: Place) {
-  try {
-    localStorage.setItem(POSITION_KEY, JSON.stringify(place));
-  } catch {
-    // Se queda donde está hasta que se cierre.
-  }
+  const { right, top } = asRecord(readJSON(POSITION_KEY));
+  return typeof right === 'number' && typeof top === 'number'
+    ? { right, top }
+    : { right: EDGE, top: EDGE };
 }
 
 /** Abre el diario flotante en la página de hoy. */
@@ -83,7 +74,7 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
       const d = drag.current;
       drag.current = null;
       if (!d) return;
-      if (d.moved) savePlace(place);
+      if (d.moved) writeJSON(POSITION_KEY, place);
       else if (desktop) void openToday();
     };
 
