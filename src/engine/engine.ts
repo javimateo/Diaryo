@@ -3,7 +3,6 @@ import {
   cameraCenter,
   clampZoom,
   fitCamera,
-  interpolateCamera,
   panBy,
   screenToWorld,
   worldToScreen,
@@ -28,23 +27,17 @@ import { AssetStore, isImageFile, loadImageFile } from './assets';
 import { parseElements, serializeElements } from './clipboard';
 import { brushCursor, eraserCursor } from './cursors';
 import { isEditableTarget } from './dom';
-import { defaultLabel, isClosedStroke, isContainer, textOf, withText } from './containers';
+import { defaultLabel, isContainer, textOf, withText } from './containers';
 import { createText, fitEditable, isEditable } from './editing';
 import {
   createId,
   DEFAULT_STYLES,
   type ArrowBinding,
-  type ArrowHead,
   elementBounds,
   type EditableElement,
-  type FillStyle,
   type ImageElement,
-  type Roughness,
   type SceneElement,
-  type SizedKind,
-  type TextAlign,
   type ToolStyles,
-  type VerticalAlign,
 } from './elements';
 import { unionBounds, type Bounds } from './geometry';
 import { drawDotGrid } from './grid';
@@ -56,10 +49,9 @@ import { ShapeHandler } from './handlers/shape';
 import { ArrowHandler } from './handlers/arrow';
 import type { PointerInput, ToolContext, ToolHandler } from './handlers/types';
 import { History } from './history';
-import { clamp, easeOutCubic, smoothingFactor, type Size, type Vec } from './math';
+import type { Size, Vec } from './math';
 import { BUILTIN_FONTS, fonts } from './fonts';
-import type { NoteVariant } from './notes';
-import { resolveColor, type Color, type NoteFill, type ThemeMode } from './palette';
+import { resolveColor } from './palette';
 import { drawElement, type RenderContext } from './render';
 import { Scene, type Changes } from './scene';
 import { elementHitsSegment } from './hit';
@@ -67,132 +59,33 @@ import { containerAt, hitTestElement } from './selection';
 import { applyStyle, patchMergeKey, type StylePatch } from './restyle';
 import { clearTextCache } from './text';
 import { taskAt, withTaskToggled } from './tasks';
-import { DESK_SCALE, deskColor, deskTexture } from './desk';
+import { drawBackdrop, drawHighlight, type Backdrop } from './drawing';
 import { TOOL_CURSORS, type ToolId } from './tools';
 import { translateElement } from './transform';
+import { CameraMotion } from './cameraMotion';
+import { selectionStyle } from './selectionStyle';
+import type {
+  ContextMenuRequest,
+  DeskView,
+  EditingState,
+  EngineCanvases,
+  EngineOptions,
+  EngineState,
+  EngineTheme,
+  ScreenRect,
+} from './types';
 
-export interface EngineTheme {
-  mode: ThemeMode;
-  background: string;
-  dots: string;
-  /** Color de la selección. */
-  accent: string;
-  /** Relleno de las asas de la selección. */
-  handleFill: string;
-}
-
-export interface EngineCanvases {
-  /** Capa de contenido: fondo, rejilla y elementos. */
-  scene: HTMLCanvasElement;
-  /** Capa superior, transparente: lo que se está dibujando ahora. Recibe el ratón. */
-  overlay: HTMLCanvasElement;
-}
-
-export interface EngineOptions {
-  /**
-   * La mesa puede volverse transparente (en la app de escritorio, el diario flotante
-   * deja ver el escritorio). Si no, el fondo es siempre opaco, que es algo más rápido.
-   */
-  transparent?: boolean;
-  /**
-   * Capa del escritorio (app de escritorio): solo lo que hay en la mesa, sin fondo, sobre
-   * el escritorio de Windows y con la cámara fija (ver `lockCamera`).
-   */
-  deskLayer?: boolean;
-}
-
-/** Una vista: el punto del mundo en el centro de la pantalla y el zoom. */
-export interface DeskView {
-  center: Vec;
-  zoom: number;
-}
-
-/** Un rectángulo en píxeles de la ventana. */
-export interface ScreenRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/** Estilo común de lo seleccionado, para poder cambiarlo desde el panel. */
-export interface SelectionStyle {
-  /** Hay trazos o textos (se les aplica la paleta de tinta). */
-  hasInk: boolean;
-  /** Color de tinta si todos lo comparten. */
-  color: Color | null;
-  hasNotes: boolean;
-  noteColor: NoteFill | null;
-  noteVariant: NoteVariant | null;
-  /** Color del texto de las notas ('auto' = tinta automática; null = distintos). */
-  noteTextColor: Color | 'auto' | null;
-  /** Hay textos o notas: se puede cambiar la fuente y la alineación. */
-  hasText: boolean;
-  font: string | null;
-  align: TextAlign | null;
-  /** Alineación vertical (notas y texto dentro de figuras). */
-  valign: VerticalAlign | null;
-  /** Hay figuras o trazos cerrados: admiten fondo. */
-  hasFill: boolean;
-  /** Fondo común ('none' = sin fondo; null = distintos). */
-  fill: NoteFill | 'none' | null;
-  fillStyle: FillStyle | null;
-  /** Hay rectángulos o elipses: se puede elegir lo "a mano" del trazo. */
-  hasShapes: boolean;
-  /** Hay flechas: se pueden cambiar sus puntas. */
-  hasArrows: boolean;
-  startHead: ArrowHead | null;
-  endHead: ArrowHead | null;
-  /** Las figuras tienen borde (null = unas sí y otras no). */
-  border: boolean | null;
-  /** Lo que tiene color de tinta son solo rectángulos y elipses (su color es el borde). */
-  inkIsShapes: boolean;
-  roughness: Roughness | null;
-  /** Hay texto dentro de figuras: su tamaño de letra (mundo) del primero. */
-  hasLabels: boolean;
-  labelSize: number | null;
-  /** Qué rango de tamaño usar, o null si la selección mezcla cosas de tamaño distinto. */
-  sizeKind: SizedKind | null;
-  /** Grosor o tamaño de letra (unidades del mundo) del primer elemento. */
-  size: number | null;
-  /** Opacidad del primer elemento. */
-  opacity: number;
-}
-
-/** Lo que la interfaz necesita saber del documento. */
-export interface EngineState {
-  canUndo: boolean;
-  canRedo: boolean;
-  isEmpty: boolean;
-  selectionCount: number;
-  selectionStyle: SelectionStyle | null;
-  /** Hay algún grupo dentro de lo seleccionado. */
-  selectionGrouped: boolean;
-  /** Todo lo seleccionado está bloqueado. */
-  selectionLocked: boolean;
-  /** Hay algo bloqueado en la página. */
-  hasLocked: boolean;
-  /** Hay un estilo copiado listo para pegar. */
-  hasCopiedStyle: boolean;
-  /** Algo de lo seleccionado lleva a otra página. */
-  selectionHasLink: boolean;
-  /** Página a la que lleva lo seleccionado (si todo lleva a la misma). */
-  selectionLink: string | null;
-}
-
-export interface ContextMenuRequest {
-  /** Posición del clic en la ventana. */
-  x: number;
-  y: number;
-  /** Se hizo sobre un elemento (ya seleccionado) o sobre un hueco. */
-  onElement: boolean;
-}
-
-/** Texto o nota abiertos en el editor. */
-export interface EditingState {
-  element: EditableElement;
-  isNew: boolean;
-}
+export type {
+  ContextMenuRequest,
+  DeskView,
+  EditingState,
+  EngineCanvases,
+  EngineOptions,
+  EngineState,
+  EngineTheme,
+  ScreenRect,
+  SelectionStyle,
+} from './types';
 
 type CameraListener = (camera: Camera) => void;
 type StateListener = (state: EngineState) => void;
@@ -212,30 +105,11 @@ type Gesture =
   | { type: 'tool'; pointerId: number; handler: ToolHandler }
   | { type: 'turn'; pointerId: number };
 
-interface ZoomAnimation {
-  target: number;
-  anchor: Vec;
-}
-
-interface CameraTween {
-  from: Camera;
-  to: Camera;
-  start: number;
-  duration: number;
-}
-
 /** Una rueda de ratón da saltos grandes (±100); un trackpad, muchos pequeños. */
 const WHEEL_SMOOTH_THRESHOLD = 40;
 const WHEEL_ZOOM_SPEED = 0.0025;
 const PINCH_ZOOM_SPEED = 0.01;
 const ZOOM_STEP = 1.25;
-/** Constantes de tiempo (ms) de los suavizados. */
-const ZOOM_TAU = 55;
-const PAN_TAU = 45;
-const INERTIA_TAU = 160;
-/** px/ms */
-const INERTIA_MIN_SPEED = 0.02;
-const INERTIA_START_SPEED = 0.1;
 const FIT_PADDING = 64;
 /** Desplazamiento (px de pantalla) de lo duplicado respecto al original. */
 const DUPLICATE_OFFSET = 16;
@@ -287,10 +161,8 @@ export class Engine {
   private copiedStyle: { patch: StylePatch; type: SceneElement['type'] } | null = null;
 
   private gesture: Gesture | null = null;
-  private zoomAnim: ZoomAnimation | null = null;
-  private pendingPan: Vec = { x: 0, y: 0 };
-  private inertia: Vec | null = null;
-  private tween: CameraTween | null = null;
+  /** Lo que la cámara hace sola: zoom y desplazamiento suaves, inercia y vuelos. */
+  private readonly motion = new CameraMotion();
   /** Doble página del diario sobre la que se escribe (null: lienzo sin libro). */
   private book: BookSpread | null = null;
   private pageTurnListener: (dir: TurnDirection) => void = () => {};
@@ -302,7 +174,6 @@ export class Engine {
   private bookFramed = false;
   /** Lo que se señala un momento (p. ej. lo encontrado al buscar). */
   private highlight: { id: string; start: number } | null = null;
-  private readonly deskPatterns = new WeakMap<HTMLCanvasElement, CanvasPattern>();
   /** Diario flotante: en vez de la mesa se ve el escritorio, con un velo suave. */
   private transparentDesk = false;
   private readonly deskLayer: boolean;
@@ -666,8 +537,7 @@ export class Engine {
   }
 
   animateTo(to: Camera, duration = 320) {
-    this.stopMotion();
-    this.tween = { from: this.camera, to, start: performance.now(), duration };
+    this.motion.flyTo(this.camera, to, performance.now(), duration);
     this.requestFrame();
   }
 
@@ -1338,7 +1208,7 @@ export class Engine {
       canRedo: this.history.canRedo,
       isEmpty: this.pageElements().length === 0,
       selectionCount: this.selection.size,
-      selectionStyle: this.selectionStyle(),
+      selectionStyle: selectionStyle(this.selectedElements()),
       selectionGrouped: this.selectedElements().some((el) => el.groupId),
       selectionLocked: this.selection.size > 0 && this.selectedElements().every((el) => el.locked),
       hasLocked: this.scene.all().some((el) => el.locked),
@@ -1348,68 +1218,6 @@ export class Engine {
         const links = this.selectedElements().map((el) => el.link ?? null);
         return links.length > 0 && links.every((l) => l === links[0]) ? links[0] : null;
       })(),
-    };
-  }
-
-  private selectionStyle(): SelectionStyle | null {
-    const all = this.selectedElements();
-    if (all.length === 0) return null;
-    const common = <T>(values: T[]) =>
-      values.length > 0 && values.every((v) => v === values[0]) ? values[0] : null;
-    const of = <K extends SceneElement['type']>(...types: K[]) =>
-      all.filter((el): el is Extract<SceneElement, { type: K }> => types.includes(el.type as K));
-
-    const strokes = of('stroke');
-    const shapes = of('shape');
-    const texts = of('text');
-    const notes = of('note');
-    const arrows = of('arrow');
-    const ink = [...strokes, ...texts, ...shapes, ...arrows];
-    const fillable = [...shapes, ...strokes.filter(isClosedStroke)];
-    const labelled = [...shapes, ...strokes].flatMap((el) => (el.label ? [el.label] : []));
-    const typed = [...texts, ...notes, ...labelled];
-
-    // El tamaño solo se puede cambiar si todo es del mismo "tipo de tamaño".
-    const lined = [...strokes, ...shapes, ...arrows];
-    const lettered = [...texts, ...notes];
-    const rest = all.length - lined.length - lettered.length - of('image').length;
-    let sizeKind: SizedKind | null = null;
-    let size: number | null = null;
-    if (rest === 0 && lined.length > 0 && lettered.length === 0) {
-      sizeKind = strokes.some((el) => el.kind === 'marker') ? 'marker' : 'pen';
-      const first = lined[0];
-      size = first.type === 'shape' ? first.strokeWidth : first.size;
-    } else if (rest === 0 && lettered.length > 0 && lined.length === 0) {
-      sizeKind = 'text';
-      size = lettered[0].fontSize;
-    }
-
-    return {
-      hasInk: ink.length > 0,
-      color: common(ink.map((el) => el.color)),
-      hasNotes: notes.length > 0,
-      noteColor: common(notes.map((el) => el.color)),
-      noteVariant: common(notes.map((el) => el.variant)),
-      noteTextColor: notes.length > 0 ? common(notes.map((el) => el.textColor ?? 'auto')) : null,
-      hasText: typed.length > 0,
-      font: common(typed.map((t) => t.font)),
-      align: common(typed.map((t) => t.align)),
-      valign: common([...notes, ...labelled].map((t) => t.valign)),
-      hasFill: fillable.length > 0,
-      fill: fillable.length > 0 ? common(fillable.map((el) => el.fill ?? 'none')) : null,
-      fillStyle: common(fillable.filter((el) => el.fill).map((el) => el.fillStyle)),
-      hasShapes: shapes.length > 0,
-      hasArrows: arrows.length > 0,
-      startHead: common(arrows.map((el) => el.startHead)),
-      endHead: common(arrows.map((el) => el.endHead)),
-      border: common(shapes.map((el) => el.border)),
-      inkIsShapes: shapes.length > 0 && shapes.length === ink.length,
-      roughness: common([...shapes, ...arrows].map((el) => el.roughness)),
-      hasLabels: labelled.length > 0,
-      labelSize: labelled[0]?.fontSize ?? null,
-      sizeKind,
-      size,
-      opacity: all[0].opacity,
     };
   }
 
@@ -1573,10 +1381,7 @@ export class Engine {
     const dt = last.t - first.t;
     if (e.type === 'pointerup' && dt > 0 && e.timeStamp - last.t < 50) {
       const v = { x: (last.x - first.x) / dt, y: (last.y - first.y) / dt };
-      if (Math.hypot(v.x, v.y) > INERTIA_START_SPEED) {
-        this.inertia = v;
-        this.requestFrame();
-      }
+      if (this.motion.fling(v)) this.requestFrame();
     }
     this.updateCursor();
   };
@@ -1591,19 +1396,17 @@ export class Engine {
     let dx = e.deltaX * unit;
     let dy = e.deltaY * unit;
     const p = this.localPoint(e);
-    this.inertia = null;
-    this.tween = null;
+    this.motion.interrupt();
 
     if (zooming) {
       const smooth = Math.abs(dy) >= WHEEL_SMOOTH_THRESHOLD;
       const factor = Math.exp(-dy * (smooth ? WHEEL_ZOOM_SPEED : PINCH_ZOOM_SPEED));
-      const base = this.zoomAnim?.target ?? this.camera.zoom;
-      const zoom = clampZoom(base * factor);
+      const zoom = clampZoom(this.motion.zoomTarget(this.camera.zoom) * factor);
       if (smooth) {
-        this.zoomAnim = { target: zoom, anchor: p };
+        this.motion.zoomTo(zoom, p);
         this.requestFrame();
       } else {
-        this.zoomAnim = null;
+        this.motion.cancelZoom();
         this.setCamera(zoomAt(this.camera, p, zoom));
       }
       return;
@@ -1611,7 +1414,7 @@ export class Engine {
 
     if (e.shiftKey && dx === 0) [dx, dy] = [dy, 0];
     if (Math.abs(dx) >= WHEEL_SMOOTH_THRESHOLD || Math.abs(dy) >= WHEEL_SMOOTH_THRESHOLD) {
-      this.pendingPan = { x: this.pendingPan.x - dx, y: this.pendingPan.y - dy };
+      this.motion.panBy(-dx, -dy);
       this.requestFrame();
     } else {
       this.setCamera(panBy(this.camera, -dx, -dy));
@@ -1641,12 +1444,8 @@ export class Engine {
   };
 
   private zoomBy(factor: number) {
-    const base = this.zoomAnim?.target ?? this.camera.zoom;
-    this.tween = null;
-    this.zoomAnim = {
-      target: clampZoom(base * factor),
-      anchor: { x: this.viewport.width / 2, y: this.viewport.height / 2 },
-    };
+    const center = { x: this.viewport.width / 2, y: this.viewport.height / 2 };
+    this.motion.zoomTo(clampZoom(this.motion.zoomTarget(this.camera.zoom) * factor), center);
     this.requestFrame();
   }
 
@@ -1662,10 +1461,7 @@ export class Engine {
   }
 
   private stopMotion() {
-    this.inertia = null;
-    this.tween = null;
-    this.zoomAnim = null;
-    this.pendingPan = { x: 0, y: 0 };
+    this.motion.stop();
   }
 
   private pointerInput(e: PointerEvent): PointerInput {
@@ -1713,13 +1509,9 @@ export class Engine {
     this.lastTick = now;
 
     // Todas las animaciones avanzan en cada frame (no cortocircuitar).
-    const steps = [
-      this.stepTween(now),
-      this.stepZoom(dt),
-      this.stepPan(dt),
-      this.stepInertia(dt),
-      this.pageTurner.step(now),
-    ];
+    const motion = this.motion.step(this.camera, this.viewport, now, dt);
+    if (motion.camera !== this.camera) this.setCamera(motion.camera);
+    const steps = [motion.moving, this.pageTurner.step(now)];
     if (this.pageTurner.active) this.overlayDirty = true;
     const toolAnimating = this.activeHandler?.isAnimating?.(now) ?? false;
     if (toolAnimating) this.overlayDirty = true;
@@ -1743,56 +1535,6 @@ export class Engine {
     if (toolAnimating || highlighting || steps.some(Boolean)) this.requestFrame();
     else this.lastTick = 0;
   };
-
-  private stepTween(now: number): boolean {
-    if (!this.tween) return false;
-    const { from, to, start, duration } = this.tween;
-    const t = clamp((now - start) / duration, 0, 1);
-    this.setCamera(interpolateCamera(from, to, easeOutCubic(t), this.viewport));
-    if (t < 1) return true;
-    this.tween = null;
-    return false;
-  }
-
-  private stepZoom(dt: number): boolean {
-    if (!this.zoomAnim) return false;
-    const { target, anchor } = this.zoomAnim;
-    const current = Math.log(this.camera.zoom);
-    const goal = Math.log(target);
-    const done = Math.abs(goal - current) < 0.001;
-    const zoom = done
-      ? target
-      : Math.exp(current + (goal - current) * smoothingFactor(dt, ZOOM_TAU));
-    this.setCamera(zoomAt(this.camera, anchor, zoom));
-    if (!done) return true;
-    this.zoomAnim = null;
-    return false;
-  }
-
-  private stepPan(dt: number): boolean {
-    const { x, y } = this.pendingPan;
-    if (x === 0 && y === 0) return false;
-    if (Math.abs(x) < 0.5 && Math.abs(y) < 0.5) {
-      this.pendingPan = { x: 0, y: 0 };
-      this.setCamera(panBy(this.camera, x, y));
-      return false;
-    }
-    const k = smoothingFactor(dt, PAN_TAU);
-    this.pendingPan = { x: x - x * k, y: y - y * k };
-    this.setCamera(panBy(this.camera, x * k, y * k));
-    return true;
-  }
-
-  private stepInertia(dt: number): boolean {
-    const v = this.inertia;
-    if (!v) return false;
-    this.setCamera(panBy(this.camera, v.x * dt, v.y * dt));
-    const decay = Math.exp(-dt / INERTIA_TAU);
-    this.inertia = { x: v.x * decay, y: v.y * decay };
-    if (Math.hypot(this.inertia.x, this.inertia.y) > INERTIA_MIN_SPEED) return true;
-    this.inertia = null;
-    return false;
-  }
 
   // ─── Dibujo ───────────────────────────────────────────────────
 
@@ -1838,7 +1580,7 @@ export class Engine {
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.drawDesk(ctx, canvas);
+    drawBackdrop(ctx, canvas, this.backdrop(), this.theme, this.camera, this.dpr);
 
     const book = this.book;
     const pixelScale = this.dpr * this.camera.zoom;
@@ -1880,44 +1622,11 @@ export class Engine {
     }
   }
 
-  /**
-   * La mesa: su textura pegada al mundo (se mueve con el libro). De muy lejos se funde
-   * con su color, para que no parpadee.
-   */
-  private drawDesk(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
-    const { mode } = this.theme;
-    if (this.deskLayer) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      return;
-    }
-    if (this.transparentDesk) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = mode === 'dark' ? 'rgba(0, 0, 0, 0.38)' : 'rgba(24, 18, 12, 0.22)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      return;
-    }
-    const style = this.book?.style.desk ?? 'plain';
-    ctx.fillStyle = deskColor(style, mode) ?? this.theme.background;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const texture = deskTexture(style, mode);
-    if (!texture) return;
-    const k = this.dpr * this.camera.zoom * DESK_SCALE[style];
-    const alpha = clamp((k - 0.2) / 0.25, 0, 1);
-    if (alpha === 0) return;
-    let pattern = this.deskPatterns.get(texture);
-    if (!pattern) {
-      pattern = ctx.createPattern(texture, 'repeat') ?? undefined;
-      if (!pattern) return;
-      this.deskPatterns.set(texture, pattern);
-    }
-    const scale = this.dpr * this.camera.zoom;
-    pattern.setTransform(
-      new DOMMatrix([k, 0, 0, k, -this.camera.x * scale, -this.camera.y * scale]),
-    );
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = pattern;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.globalAlpha = 1;
+  /** Lo que va debajo de todo: la mesa, el velo del diario flotante o nada. */
+  private backdrop(): Backdrop {
+    if (this.deskLayer) return { kind: 'clear' };
+    if (this.transparentDesk) return { kind: 'veil' };
+    return { kind: 'desk', style: this.book?.style.desk ?? 'plain' };
   }
 
   private renderOverlay(now: number) {
@@ -1929,9 +1638,11 @@ export class Engine {
       this.applyWorldTransform(ctx);
       handler.renderOverlay(ctx, now);
     }
-    if (this.highlight) {
+    const highlighted = this.highlight && this.scene.get(this.highlight.id);
+    if (this.highlight && highlighted) {
       this.applyWorldTransform(ctx);
-      this.drawHighlight(ctx, now);
+      const t = (now - this.highlight.start) / HIGHLIGHT_DURATION;
+      drawHighlight(ctx, elementBounds(highlighted), t, this.camera.zoom, this.theme.accent);
     }
     // La hoja que se está pasando (las anillas quedan entre la página de debajo y la hoja).
     if (this.pageTurner.active && this.book) {
@@ -1940,43 +1651,6 @@ export class Engine {
       const book = this.book;
       this.pageTurner.draw(ctx, pixelScale, () => drawBinding(ctx, book, pixelScale));
     }
-  }
-
-  /** Brillo alrededor de lo señalado: una onda que se abre y un marco que se apaga. */
-  private drawHighlight(ctx: CanvasRenderingContext2D, now: number) {
-    const highlight = this.highlight;
-    const el = highlight && this.scene.get(highlight.id);
-    if (!highlight || !el) return;
-    const t = (now - highlight.start) / HIGHLIGHT_DURATION;
-    if (t < 0) return;
-    const b = elementBounds(el);
-    const zoom = this.camera.zoom;
-    const rect = (pad: number) => {
-      ctx.beginPath();
-      ctx.roundRect(
-        b.minX - pad / zoom,
-        b.minY - pad / zoom,
-        b.maxX - b.minX + (pad * 2) / zoom,
-        b.maxY - b.minY + (pad * 2) / zoom,
-        (pad + 4) / zoom,
-      );
-    };
-    ctx.save();
-    ctx.strokeStyle = this.theme.accent;
-    ctx.fillStyle = this.theme.accent;
-    const wave = easeOutCubic(clamp(t / 0.55, 0, 1));
-    ctx.globalAlpha = 0.55 * (1 - wave);
-    ctx.lineWidth = 2 / zoom;
-    rect(8 + 28 * wave);
-    ctx.stroke();
-    const alpha = clamp(t / 0.1, 0, 1) * clamp((1 - t) / 0.4, 0, 1);
-    rect(8);
-    ctx.globalAlpha = alpha * 0.12;
-    ctx.fill();
-    ctx.globalAlpha = alpha;
-    ctx.lineWidth = 2.5 / zoom;
-    ctx.stroke();
-    ctx.restore();
   }
 
   private resize() {

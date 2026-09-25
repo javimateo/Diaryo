@@ -253,8 +253,27 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         defecto) o inglés, a elegir en Ajustes.
   - [ ] **G. Nombre**: diaryo o dair.io (pendiente de decidir). Sin cambiar el
         identificador interno, para no perder los datos guardados.
-  - [ ] **H. Página web**: presentación y descarga del instalador, en el VPS propio con su
-        dominio.
+  - [ ] **H. Página web**: presentación y descarga del instalador, en el VPS propio
+        (Coolify, desde el repositorio de GitHub) con su dominio.
+    - [ ] **H1. Esqueleto**: carpeta `web/` con Astro (páginas estáticas, islas de React
+          para reutilizar el motor), en español (`/`, por defecto) e inglés (`/en/`). El
+          nombre y el dominio en un solo sitio, para cambiarlos fácil.
+    - [ ] **H2. Maqueta de la portada** (antes de hacerla): arriba, la demo; luego las
+          funciones, la descarga, código abierto y privacidad, y preguntas frecuentes.
+    - [ ] **H3. Demo en la portada**: el lienzo de verdad con un diario de ejemplo, para
+          escribir, poner pósits y pasar la página sin instalar nada (no guarda). Usa el
+          motor tal como quede tras la revisión del código (E).
+    - [ ] **H4. Funciones**: cada una con una animación corta (las mismas del punto I).
+    - [ ] **H5. Descarga**: los instaladores en las Releases de GitHub; la web enlaza a la
+          última (versión, tamaño y novedades) y explica el aviso de SmartScreen mientras
+          el instalador no esté firmado.
+    - [ ] **H6. App web completa** en un subdominio (`app.`): la versión de navegador de
+          siempre, guardando en el propio navegador.
+    - [ ] **H7. Coolify**: dos recursos desde el repositorio (la web, con carpeta base
+          `web/`, y la app web), cada uno con su dominio y HTTPS; se publican solos al
+          subir a `main`.
+    - [ ] **H8. Visitas sin cookies**: Umami como servicio de Coolify; visitas y
+          descargas (como evento), sin rastrear a nadie.
   - [ ] **I. Enseñar a usarla**: recorrido la primera vez que se abre (pasos cortos con
         animaciones) y vídeos de cada función para la web, hechos con el mismo código.
 
