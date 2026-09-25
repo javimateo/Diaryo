@@ -1,4 +1,4 @@
-import { todayKey } from '../diary/dates';
+import { todayKey } from '../lib/dates';
 import type { Diary, TodayPreview } from '../diary/diary';
 import type { DeskView, Engine } from '../engine/engine';
 import { serializeDiary } from '../storage/files';

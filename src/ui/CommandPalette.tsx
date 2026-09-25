@@ -10,7 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { formatDay, formatDayMonth, relativeDay, todayKey, type DayKey } from '../diary/dates';
+import { formatDay, formatDayMonth, relativeDay, todayKey, type DayKey } from '../lib/dates';
 import { comparePages, pagesOfDay, type PageMeta } from '../diary/pages';
 import {
   findInText,

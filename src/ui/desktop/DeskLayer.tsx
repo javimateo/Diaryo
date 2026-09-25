@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { bookBoundsWith } from '../engine/book';
-import { isEditableTarget } from '../engine/dom';
-import { Engine } from '../engine/engine';
-import { getDB } from '../storage/actions';
-import { Autosave, type SaveStatus } from '../storage/autosave';
-import { DESK_ID, DESK_INFO, listPages, loadPage } from '../storage/db';
-import { loadThemePreference, THEME_KEY, useUI } from '../store/ui';
-import { readCanvasTheme } from '../ui/CanvasView';
-import { TextEditor } from '../ui/TextEditor';
+import { bookBoundsWith } from '../../engine/book';
+import { isEditableTarget } from '../../engine/dom';
+import { Engine } from '../../engine/engine';
+import { Autosave, type SaveStatus } from '../../storage/autosave';
+import { DESK_ID, DESK_INFO, getDB, listPages, loadPage } from '../../storage/db';
+import { loadThemePreference, THEME_KEY, useUI } from '../../store/ui';
+import { readCanvasTheme } from '../canvasTheme';
+import { TextEditor } from '../TextEditor';
 import {
   call,
   DESK_CHANGED,
@@ -16,7 +15,7 @@ import {
   notifyDeskSaved,
   readDeskView,
   WINDOW_ID,
-} from './desktop';
+} from '../../desktop/desktop';
 import { MiniDiary } from './MiniDiary';
 
 /**

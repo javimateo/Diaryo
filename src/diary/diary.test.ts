@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, dayKey, formatDay, monthGrid, relativeDay, weekdayInitials } from './dates';
+import { addDays, dayKey, formatDay, monthGrid, relativeDay, weekdayInitials } from '../lib/dates';
 import { neighbor, newPage, positionInDay, type PageMeta } from './pages';
 
 const page = (id: string, date: string, order = 1): PageMeta => ({

@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { formatMonth, formatShortDay, parseDay, todayKey } from '../diary/dates';
+import { formatMonth, formatShortDay, parseDay, todayKey } from '../lib/dates';
 import { sortPages, type PageMeta } from '../diary/pages';
 import { PAPER_COLORS, coverColor } from '../engine/book';
 import type { PageLink } from '../storage/db';

@@ -51,7 +51,7 @@ import {
 } from '../engine/book';
 import { MATERIALS, type CoverMaterial } from '../engine/cover';
 import { DESKS, type DeskStyle } from '../engine/desk';
-import { exportPng, openCopy, saveCopy } from '../storage/actions';
+import { exportPng, openCopy, saveCopy } from './fileActions';
 import { FILE_EXTENSION } from '../storage/files';
 import { useUI } from '../store/ui';
 import {

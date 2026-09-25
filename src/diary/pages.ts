@@ -1,5 +1,5 @@
 import type { PaperStyle } from '../engine/book';
-import type { DayKey } from './dates';
+import type { DayKey } from '../lib/dates';
 
 /** Una página del diario tal como la ve la interfaz. */
 export interface PageMeta {

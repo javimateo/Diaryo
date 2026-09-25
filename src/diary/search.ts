@@ -1,4 +1,4 @@
-import { addDays, dayKey, parseDay, type DayKey } from './dates';
+import { addDays, dayKey, parseDay, type DayKey } from '../lib/dates';
 
 /** Sin mayúsculas ni tildes, para comparar ("Mañana" → "manana"). */
 export function normalize(text: string): string {

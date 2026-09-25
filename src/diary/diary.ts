@@ -25,7 +25,7 @@ import {
   type PageRow,
   type StoredPage,
 } from '../storage/db';
-import { formatDay, formatDayMonth, todayKey, type DayKey } from './dates';
+import { formatDay, formatDayMonth, todayKey, type DayKey } from '../lib/dates';
 import { comparePages, neighbor, newPage, pagesOfDay, sortPages, type PageMeta } from './pages';
 
 export interface DiaryState {

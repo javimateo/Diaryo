@@ -1,5 +1,5 @@
 import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatDay, relativeDay, todayKey } from '../diary/dates';
+import { formatDay, relativeDay, todayKey } from '../lib/dates';
 import { positionInDay } from '../diary/pages';
 import { useUI } from '../store/ui';
 import { goToToday, toggleBookmark, turnPage } from './diaryActions';

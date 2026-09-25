@@ -1,28 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { formatDayMonth } from '../diary/dates';
+import { formatDayMonth } from '../lib/dates';
 import { Diary } from '../diary/diary';
 import type { PageMeta } from '../diary/pages';
 import { followLink } from './diaryActions';
 import { isDesktop, notifyDeskSaved, startDesktop } from '../desktop/desktop';
 import { Engine } from '../engine/engine';
-import { getDB } from '../storage/actions';
-import { useUI, type Theme } from '../store/ui';
+import { getDB } from '../storage/db';
+import { useUI } from '../store/ui';
+import { readCanvasTheme } from './canvasTheme';
 
 /** Nombre corto de cada página para la etiqueta de los enlaces: título o "21 sept". */
 function linkLabels(pages: PageMeta[]): Map<string, string> {
   const short = (text: string) => (text.length > 24 ? `${text.slice(0, 23)}…` : text);
   return new Map(pages.map((p) => [p.id, short(p.title || formatDayMonth(p.date))]));
-}
-
-export function readCanvasTheme(mode: Theme) {
-  const css = getComputedStyle(document.documentElement);
-  return {
-    mode,
-    background: css.getPropertyValue('--canvas-bg').trim(),
-    dots: css.getPropertyValue('--canvas-dots').trim(),
-    accent: css.getPropertyValue('--accent').trim(),
-    handleFill: css.getPropertyValue('--surface').trim(),
-  };
 }
 
 export function CanvasView() {

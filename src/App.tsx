@@ -16,7 +16,7 @@ import { Toolbar } from './ui/Toolbar';
 import { Brand, TopActions } from './ui/TopBar';
 import { useShortcuts } from './ui/useShortcuts';
 import { ViewControls } from './ui/ViewControls';
-import { WindowDragRegion } from './desktop/WindowControls';
+import { WindowDragRegion } from './ui/desktop/WindowControls';
 import { UndoControls, ZoomControls } from './ui/ZoomControls';
 
 export function App() {

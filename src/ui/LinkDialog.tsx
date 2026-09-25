@@ -1,6 +1,6 @@
 import { Search, X } from 'lucide-react';
 import { useState } from 'react';
-import { formatDay } from '../diary/dates';
+import { formatDay } from '../lib/dates';
 import { sortPages, type PageMeta } from '../diary/pages';
 import { matchesAll, queryWords } from '../diary/search';
 import { useUI } from '../store/ui';

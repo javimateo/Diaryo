@@ -12,9 +12,9 @@ import {
   Sun,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { exportPng, openCopy, saveCopy } from '../storage/actions';
+import { exportPng, openCopy, saveCopy } from './fileActions';
 import { FILE_EXTENSION } from '../storage/files';
-import { WindowControls } from '../desktop/WindowControls';
+import { WindowControls } from './desktop/WindowControls';
 import { useUI } from '../store/ui';
 
 const STATUS_TEXT = {

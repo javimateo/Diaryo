@@ -18,7 +18,7 @@ import {
   todayKey,
   weekdayInitials,
   type DayKey,
-} from '../diary/dates';
+} from '../lib/dates';
 import type { PageMeta } from '../diary/pages';
 import { useUI } from '../store/ui';
 import { BOOKMARK_COLORS } from '../diary/diary';

@@ -1,7 +1,7 @@
 import { Copy, Minus, Square, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useUI } from '../store/ui';
-import { hideDesktop } from './desktop';
+import { useUI } from '../../store/ui';
+import { hideDesktop } from '../../desktop/desktop';
 
 /** La ventana de la app (sin el marco de Windows). */
 async function currentWindow() {

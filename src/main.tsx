@@ -11,7 +11,7 @@ import '@fontsource-variable/jetbrains-mono';
 import '@fontsource/lilita-one';
 import './styles/global.css';
 import { App } from './App';
-import { DeskLayer } from './desktop/DeskLayer';
+import { DeskLayer } from './ui/desktop/DeskLayer';
 
 // En la app de escritorio, la mesa sobre el escritorio de Windows es otra ventana.
 const deskLayer = new URLSearchParams(location.search).get('capa') === 'mesa';

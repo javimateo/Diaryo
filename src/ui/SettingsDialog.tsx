@@ -1,7 +1,7 @@
 import { Check, Download, Keyboard, ShieldCheck, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { TurnSpeed } from '../diary/diary';
-import { saveCopy } from '../storage/actions';
+import { saveCopy } from './fileActions';
 import { useUI, type ThemePreference } from '../store/ui';
 import { isDesktop } from '../desktop/desktop';
 import { BookStyleSection } from './BookStyleSection';

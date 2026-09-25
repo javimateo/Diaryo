@@ -2,12 +2,13 @@ import type { Diary } from '../diary/diary';
 import type { Engine } from '../engine/engine';
 import { fonts } from '../engine/fonts';
 import { useUI } from '../store/ui';
-import { DiaryoDB } from './db';
-import { datedName, downloadBlob, FILE_EXTENSION, parseBackup, serializeDiary } from './files';
-
-/** Una sola base de datos para toda la app. */
-let instance: DiaryoDB | null = null;
-export const getDB = () => (instance ??= new DiaryoDB());
+import {
+  datedName,
+  downloadBlob,
+  FILE_EXTENSION,
+  parseBackup,
+  serializeDiary,
+} from '../storage/files';
 
 /** Descarga una copia de todo el diario, con imágenes y fuentes. */
 export async function saveCopy(diary: Diary) {

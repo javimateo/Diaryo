@@ -51,11 +51,19 @@ con todas las páginas del diario.
 
 ```
 src/
+  lib/      Utilidades puras que usa cualquier capa (fechas)
   engine/   Motor del lienzo en TypeScript puro (cámara, dibujo, entrada)
+  storage/  Base de datos (Dexie), autoguardado y copias en archivo
+  diary/    El diario: páginas por día, pasar página, la mesa, búsqueda
   store/    Estado de la interfaz (Zustand)
-  ui/       Componentes React (barra, zoom, diálogos, atajos)
+  desktop/  Puente con la app de escritorio (Tauri): modos, atajos, copias
+  ui/       Componentes React (barra, paneles, diálogos; en ui/desktop, los de escritorio)
   styles/   Tokens de diseño (claro/oscuro) y estilos
+src-tauri/  La app de escritorio en Rust
 ```
+
+Cada capa solo usa las de arriba (en este orden). El motor no sabe nada de React, del
+almacenamiento ni del diario.
 
 ### Modelo de datos
 

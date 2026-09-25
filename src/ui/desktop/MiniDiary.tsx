@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useRef, useState, type PointerEvent } from 'react';
-import { call, readToday, TODAY_KEY, type TodayCard } from './desktop';
+import { call, readToday, TODAY_KEY, type TodayCard } from '../../desktop/desktop';
 
 const POSITION_KEY = 'diaryo:mini-diary';
 /** Margen con los bordes de la pantalla. */

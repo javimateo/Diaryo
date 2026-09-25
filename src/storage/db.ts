@@ -3,7 +3,7 @@ import type { Camera } from '../engine/camera';
 import { parseElement } from '../engine/clipboard';
 import type { PaperStyle } from '../engine/book';
 import type { SceneElement } from '../engine/elements';
-import { dayKey } from '../diary/dates';
+import { dayKey } from '../lib/dates';
 
 export interface PageRow {
   id: string;
@@ -333,3 +333,7 @@ export async function listTexts(db: DiaryoDB): Promise<TextEntry[]> {
   });
   return entries;
 }
+
+/** Una sola base de datos para toda la app. */
+let instance: DiaryoDB | null = null;
+export const getDB = () => (instance ??= new DiaryoDB());
