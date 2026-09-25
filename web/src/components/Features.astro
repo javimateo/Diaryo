@@ -1,0 +1,419 @@
+---
+import { texts, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+/**
+ * The features: two large ones on the Windows desktop and four small ones. Each picture
+ * is a still scene (`data-scene`); H4 brings them to life.
+ */
+const { lang } = Astro.props;
+const f = texts(lang).features;
+const [call, water, meeting] = f.desk.notes;
+const covers = ['#b8573f', '#c9677e', '#46699c', '#4f7d5c', '#c99a2e', '#2f2d2a'];
+---
+
+<section id="features" class="features wrap">
+  <span class="eyebrow">{f.eyebrow}</span>
+  <h2 class="section-title">{f.title}</h2>
+
+  <div class="big">
+    <article class="card">
+      <div class="scene windows" data-scene="floating" aria-hidden="true">
+        <div class="icons"><i></i><i></i><i></i></div>
+        <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>D</kbd></div>
+        <div class="mini-book floating"><i></i><i></i></div>
+        <div class="taskbar"></div>
+      </div>
+      <div class="body">
+        <h3>{f.floating.title}</h3>
+        <p>{f.floating.text}</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="scene windows" data-scene="desk" aria-hidden="true">
+        <div class="icons"><i></i><i></i><i></i></div>
+        <div class="today-card"><i></i><i></i></div>
+        <div class="note yellow-note" style="--tilt: -4deg">
+          <span class="box"></span>{call}<br /><s><span class="box checked"></span>{water}</s>
+        </div>
+        <div class="note pink meeting-note" style="--tilt: 3deg">{meeting}</div>
+        <div class="taskbar"></div>
+      </div>
+      <div class="body">
+        <h3>{f.desk.title}</h3>
+        <p>{f.desk.text}</p>
+      </div>
+    </article>
+  </div>
+
+  <div class="small">
+    {
+      f.small.map((item) => (
+        <article class="card">
+          <div class="scene soft" data-scene={item.id} aria-hidden="true">
+            {item.id === 'turn' && (
+              <div class="mini-book turning">
+                <i />
+                <i />
+              </div>
+            )}
+            {item.id === 'draw' && (
+              <div class="connect">
+                <span class="square" />
+                <svg viewBox="0 0 60 20">
+                  <path d="M2 10 H54 M46 3 L55 10 L46 17" />
+                </svg>
+                <span class="circle" />
+              </div>
+            )}
+            {item.id === 'map' && (
+              <div class="map">
+                {Array.from({ length: 8 }, (_, i) => (
+                  <i class={i === 2 ? 'here' : undefined} />
+                ))}
+                <span class="search">Ctrl K</span>
+              </div>
+            )}
+            {item.id === 'style' && (
+              <div class="swatches">
+                <div class="covers">
+                  {covers.map((color) => (
+                    <i style={`background: ${color}`} />
+                  ))}
+                </div>
+                <div class="desks">
+                  <i class="wood" />
+                  <i class="cork" />
+                  <i class="linen" />
+                </div>
+              </div>
+            )}
+          </div>
+          <div class="body">
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .features {
+    padding-top: 40px;
+  }
+
+  .section-title {
+    max-width: 720px;
+    margin-bottom: 36px;
+  }
+
+  .big,
+  .small {
+    display: grid;
+    gap: 24px;
+  }
+
+  .big {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  }
+
+  .small {
+    margin-top: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 22px;
+    background: var(--card);
+  }
+
+  .body {
+    padding: 24px 28px 28px;
+  }
+
+  .body h3 {
+    margin: 0 0 8px;
+    font-size: 26px;
+  }
+
+  .body p {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text-soft);
+  }
+
+  .small .body {
+    padding: 20px 22px 24px;
+  }
+
+  .small .body h3 {
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .small .body p {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .scene {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ─── Windows desktop ─── */
+
+  .windows {
+    height: 320px;
+    background: var(--windows);
+  }
+
+  .taskbar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 28px;
+    background: rgba(20, 24, 32, 0.55);
+  }
+
+  .icons {
+    position: absolute;
+    left: 22px;
+    top: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .icons i {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  .keys {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    display: flex;
+    gap: 6px;
+  }
+
+  kbd {
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .mini-book {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    padding: 6px;
+    border-radius: 8px;
+    background: var(--cover);
+    box-shadow: var(--shadow);
+  }
+
+  .mini-book i,
+  .today-card i {
+    border-radius: 2px;
+    background: repeating-linear-gradient(180deg, transparent 0 9px, var(--paper-line) 9px 10px)
+      var(--paper);
+  }
+
+  .floating {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(62%, 380px);
+    aspect-ratio: 400 / 240;
+    transform: translate(-50%, -54%);
+  }
+
+  .today-card {
+    position: absolute;
+    right: 22px;
+    top: 22px;
+    width: 170px;
+    aspect-ratio: 400 / 260;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    padding: 5px;
+    border-radius: 7px;
+    background: var(--cover);
+    box-shadow: var(--shadow);
+  }
+
+  .scene .note {
+    font-size: 22px;
+  }
+
+  .yellow-note {
+    left: 26%;
+    top: 40%;
+    width: 150px;
+    height: 128px;
+  }
+
+  .meeting-note {
+    left: 58%;
+    top: 48%;
+    width: 128px;
+    height: 116px;
+  }
+
+  .box {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    border: 2px solid currentColor;
+    border-radius: 3px;
+  }
+
+  .box.checked {
+    background: currentColor;
+  }
+
+  /* ─── Small scenes ─── */
+
+  .soft {
+    height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-soft);
+  }
+
+  .turning {
+    width: 150px;
+    height: 100px;
+    padding: 5px;
+    gap: 2px;
+    box-shadow: none;
+    transform: perspective(400px) rotateY(-12deg);
+  }
+
+  .connect {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .square {
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+    background: var(--note-yellow);
+  }
+
+  .connect svg {
+    width: 60px;
+    fill: none;
+    stroke: var(--pen-blue);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .circle {
+    width: 44px;
+    height: 44px;
+    border: 2.5px solid var(--text);
+    border-radius: 50%;
+  }
+
+  .map {
+    display: grid;
+    grid-template-columns: repeat(4, 34px);
+    gap: 8px;
+    position: relative;
+  }
+
+  .map i {
+    height: 24px;
+    border-radius: 4px;
+    background: var(--line);
+  }
+
+  .map .here {
+    background: var(--cover);
+  }
+
+  .search {
+    position: absolute;
+    left: 50%;
+    top: -34px;
+    transform: translateX(-50%);
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .swatches {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .covers {
+    display: flex;
+    gap: 8px;
+  }
+
+  .covers i {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+  }
+
+  .desks {
+    display: flex;
+    gap: 8px;
+  }
+
+  .desks i {
+    width: 52px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  /* The app's three desks, in the light palette (textures in miniature). */
+  .wood {
+    background: repeating-linear-gradient(0deg, rgb(202, 168, 126) 0 9px, rgb(156, 116, 78) 9px 10px);
+  }
+
+  .cork {
+    background: radial-gradient(rgb(150, 104, 64) 1px, rgb(212, 170, 122) 1.5px) 0 0 / 5px 5px;
+  }
+
+  .linen {
+    background:
+      repeating-linear-gradient(90deg, rgba(206, 199, 185, 0.8) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(0deg, rgba(206, 199, 185, 0.8) 0 1px, transparent 1px 3px),
+      rgb(232, 227, 217);
+  }
+</style>

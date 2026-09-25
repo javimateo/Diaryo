@@ -1,23 +1,303 @@
 ---
-import { texts, type Lang } from '../i18n';
+import { fill, formatSize, texts, type Lang } from '../i18n';
 import { SITE } from '../site';
+import Book from './Book.astro';
+import Download from './Download.astro';
+import Features from './Features.astro';
 
 interface Props {
   lang: Lang;
 }
 
-/**
- * The home page. For now only the hero: the full page (demo, features, download, FAQ)
- * comes after its mockup is approved (PLAN.md, H2).
- */
+/** The home page: hero, features, download, privacy and questions. */
 const { lang } = Astro.props;
 const t = texts(lang);
+const size = formatSize(SITE.download.sizeMB, lang);
+const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
 ---
 
 <section class="hero">
-  <h1>{t.hero.title}</h1>
-  <p class="subtitle">{t.hero.subtitle}</p>
-  <div class="actions" id="download">
-    <a class="button primary" href={SITE.releases}>{t.hero.download}</a>
+  <div class="hero-text">
+    <span class="tagline">{t.hero.tagline}</span>
+    <h1>{t.hero.title}</h1>
+    <p class="subtitle">{t.hero.subtitle}</p>
+    <div class="actions">
+      <a class="button primary" href="#download">
+        <span>{t.hero.download}</span>
+        <small>{fill(t.hero.downloadInfo, { version: SITE.download.version, size })}</small>
+      </a>
+      {
+        SITE.app && (
+          <a class="button chip" href={SITE.app}>
+            {t.hero.tryWeb}
+          </a>
+        )
+      }
+    </div>
+    <ul class="points">
+      {t.hero.points.map((point) => <li>{point}</li>)}
+    </ul>
+  </div>
+  <Book lang={lang} />
+</section>
+
+<section class="strip wrap">
+  {
+    t.strip.map((item) => (
+      <div>
+        <h2>{item.title}</h2>
+        <p>{item.text}</p>
+      </div>
+    ))
+  }
+</section>
+
+<Features lang={lang} />
+
+<Download lang={lang} />
+
+<section id="privacy" class="privacy wrap">
+  <div>
+    <span class="eyebrow">{t.privacy.eyebrow}</span>
+    <h2 class="section-title">{t.privacy.title}</h2>
+    <p>{t.privacy.text}</p>
+    <a class="source" href={SITE.repo}>{t.privacy.source}</a>
+  </div>
+  <div class="faq">
+    <h2 class="sr-only">{t.faq.title}</h2>
+    {
+      faq.map((item) => (
+        <details>
+          <summary>{item.q}</summary>
+          <p>{item.a}</p>
+        </details>
+      ))
+    }
   </div>
 </section>
+
+{
+  SITE.app && (
+    <section class="web-app wrap">
+      <div class="band">
+        <div>
+          <h2>{t.webApp.title}</h2>
+          <p>{t.webApp.text}</p>
+        </div>
+        <a class="button dark" href={SITE.app}>
+          {t.webApp.button}
+        </a>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .hero {
+    margin: 0 clamp(8px, 1.7vw, 24px);
+    padding: clamp(40px, 5vw, 72px) clamp(20px, 4.5vw, 64px) clamp(40px, 5vw, 64px);
+    display: grid;
+    grid-template-columns: minmax(0, 470px) minmax(0, 1fr);
+    align-items: center;
+    gap: 40px;
+    border-radius: 28px;
+    overflow: hidden;
+    color: var(--hero-text);
+    /* Planks of the app's wood desk: joints every 132 px and an uneven horizontal grain. */
+    background-color: var(--wood);
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        color-mix(in srgb, var(--wood-grain) 45%, transparent) 0 2px,
+        transparent 2px 132px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        color-mix(in srgb, var(--wood-grain) 14%, transparent) 0 1px,
+        transparent 1px 7px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        color-mix(in srgb, var(--wood-grain) 10%, transparent) 0 2px,
+        transparent 2px 23px
+      );
+  }
+
+  .hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .tagline {
+    align-self: flex-start;
+    font-family: var(--font-hand);
+    font-size: 30px;
+    line-height: 1;
+    transform: rotate(-3deg);
+  }
+
+  .hero h1 {
+    margin: 0;
+    font-size: clamp(40px, 5vw, 64px);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+  }
+
+  .subtitle {
+    margin: 0;
+    max-width: 430px;
+    font-size: 19px;
+    color: var(--hero-soft);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .button.chip {
+    background: var(--hero-chip);
+    color: var(--hero-chip-text);
+  }
+
+  .points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--hero-soft);
+  }
+
+  /* The dot goes after each point, so a wrapped line never starts with one. */
+  .points li:not(:last-child)::after {
+    content: '·';
+    margin-left: 18px;
+  }
+
+  @media (max-width: 960px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px 32px;
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+
+  .strip h2 {
+    margin: 0 0 4px;
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .strip p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .privacy {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    gap: 48px 64px;
+    align-items: start;
+    margin-top: 104px;
+  }
+
+  .privacy p {
+    font-size: 17px;
+    color: var(--text-soft);
+  }
+
+  .source {
+    font-weight: 700;
+  }
+
+  .faq {
+    border-radius: 18px;
+    background: var(--card);
+  }
+
+  details + details {
+    border-top: 1px solid var(--line-soft);
+  }
+
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    min-height: 44px;
+    padding: 18px 26px;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::after {
+    content: '+';
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--muted);
+    transition: transform 0.2s ease;
+  }
+
+  details[open] summary::after {
+    transform: rotate(45deg);
+  }
+
+  .faq p {
+    margin: -6px 0 0;
+    padding: 0 26px 20px;
+    font-size: 15px;
+    color: var(--muted);
+  }
+
+  .web-app {
+    margin-top: 104px;
+  }
+
+  .band {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 24px 32px;
+    padding: 40px 48px;
+    border: 2px dashed var(--line);
+    border-radius: 22px;
+  }
+
+  .band div {
+    flex-grow: 1;
+  }
+
+  .band h2 {
+    margin: 0 0 6px;
+    font-size: 32px;
+  }
+
+  .band p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .button.dark {
+    background: var(--text);
+    color: var(--ground);
+  }
+</style>

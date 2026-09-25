@@ -3,28 +3,145 @@ export const es = {
   meta: {
     title: 'diaryo — un diario infinito para tu PC',
     description:
-      'Cada página es un lienzo sin límites para dibujar, escribir y conectar ideas. Libre, gratuito y de código abierto.',
+      'Cada día, una doble página sin límites para escribir, dibujar, pegar pósits y unir ideas. Libre, gratuito y de código abierto.',
   },
   nav: {
     features: 'Funciones',
     download: 'Descargar',
-    source: 'Código',
-    language: 'English',
+    privacy: 'Privacidad',
+    source: 'GitHub',
+    downloadShort: 'Descargar',
+    downloadWindows: 'Descargar para Windows',
   },
   hero: {
-    title: 'Un diario infinito',
+    tagline: 'tu diario, sin márgenes',
+    title: 'Cada día, una doble página infinita.',
     subtitle:
-      'Cada página es un lienzo sin límites para dibujar, escribir, rodear y conectar ideas. Libre, gratuito y pensado para tomar notas rápido desde el PC.',
+      'Escribe, dibuja, pega pósits y une ideas con flechas en un diario de verdad. Y cuando lo necesites, aparece sobre tu escritorio con un atajo.',
     download: 'Descargar para Windows',
-    tryWeb: 'Probar en el navegador',
+    /** `{version}` and `{size}` are filled in. */
+    downloadInfo: 'v{version} · {size} · gratis',
+    tryWeb: 'Usar en el navegador',
+    points: ['Código abierto', 'Sin cuentas', 'Tus notas no salen de tu PC'],
+  },
+  /** What is written in the diary of the hero. */
+  book: {
+    today: 'hoy',
+    heading: 'Plan del finde',
+    tasks: ['preguntar a Ana', 'comprar pan', 'grabar los vídeos'],
+    doneTask: 1,
+    boxed: '¿playa o monte?',
+    pageNote: '¡pasa la página!',
+    deskNote: 'Por hacer: terminar la web',
+    shortcutNote: 'Ctrl+Alt+D y aparece',
+    alt: 'Un diario abierto sobre una mesa de madera, con tareas, flechas y pósits.',
+  },
+  strip: [
+    { title: 'Hecho a mano', text: 'Motor de dibujo propio, fluido con miles de trazos.' },
+    { title: 'Código abierto', text: 'Licencia MIT. Míralo, cámbialo, compártelo.' },
+    { title: 'Sin cuentas ni nube', text: 'Todo se guarda en tu ordenador, con copias diarias.' },
+    { title: 'Español e inglés', text: 'Eliges el idioma en Ajustes.' },
+  ],
+  features: {
+    eyebrow: 'Funciones',
+    title: 'Un diario que no se queda en un cajón',
+    floating: {
+      title: 'El diario flotante',
+      text: 'Desde cualquier programa, Ctrl+Alt+D abre el diario sobre tu escritorio. Apuntas algo y el mismo atajo lo esconde. Sin buscar ventanas.',
+    },
+    desk: {
+      title: 'Pósits en tu escritorio',
+      text: 'Lo que dejas en la mesa del diario se queda en el fondo de Windows, detrás de las ventanas: tus tareas a la vista y la página de hoy en pequeño.',
+      notes: ['llamar a Ana', 'regar', 'reunión a las 5'],
+    },
+    small: [
+      {
+        id: 'turn',
+        title: 'Pasar la página',
+        text: 'Un día por página. Tiras de la esquina y la hoja se dobla como el papel.',
+      },
+      {
+        id: 'draw',
+        title: 'Dibujar y conectar',
+        text: 'Lápiz, rotulador, figuras, flechas que siguen a lo que unen y tareas con casilla.',
+      },
+      {
+        id: 'map',
+        title: 'Mapa y búsqueda',
+        text: 'Todo el diario de un vistazo. Ctrl+K encuentra cualquier palabra, día o tarea.',
+      },
+      {
+        id: 'style',
+        title: 'A tu gusto',
+        text: 'Tapas de cuero o tela, papel de rayas, cuadros, Cornell o agenda, y mesa de madera, corcho o lino.',
+      },
+    ],
+  },
+  download: {
+    eyebrow: 'Descargar',
+    title: 'diaryo para Windows',
+    text: 'Windows 10 y 11, 64 bits. Se instala sin permisos de administrador y arranca con Windows, escondido y listo para el atajo.',
+    button: 'Descargar v{version}',
+    releases: 'Novedades y versiones anteriores',
+    otherSystems: '¿Mac o Linux? Por ahora, úsalo en el navegador.',
+    otherSystemsNoWeb: '¿Mac o Linux? Por ahora solo hay versión para Windows.',
+    copyLink: 'Copiar el enlace para el PC',
+    copied: 'Enlace copiado',
+    onPhone: 'Estás en el móvil: copia el enlace y ábrelo en tu ordenador.',
+    smartscreen: {
+      title: '¿Sale un aviso azul de Windows?',
+      text: 'Es SmartScreen: sale con programas nuevos que aún no ha visto mucha gente. diaryo es de código abierto y puedes revisar lo que hace.',
+      press: 'Pulsa',
+      steps: ['Más información', 'Ejecutar de todas formas'],
+    },
+  },
+  privacy: {
+    eyebrow: 'Privacidad',
+    title: 'Tus notas son tuyas',
+    text: 'Sin cuentas, sin servidores y sin anuncios. El diario se guarda en tu ordenador y cada día deja una copia en Documentos. Puedes llevártelo entero en un archivo cuando quieras.',
+    source: 'Ver el código en GitHub',
+  },
+  faq: {
+    title: 'Preguntas frecuentes',
+    items: [
+      {
+        q: '¿Es gratis?',
+        a: 'Sí, del todo: sin anuncios ni versiones de pago. Y de código abierto (MIT).',
+      },
+      {
+        q: '¿Dónde se guardan mis notas?',
+        a: 'En tu ordenador. La app de escritorio deja además una copia cada día en Documentos\\diaryo (puedes elegir otra carpeta).',
+      },
+      { q: '¿Funciona sin internet?', a: 'Sí. diaryo no necesita conexión para nada.' },
+      {
+        q: '¿Paso mi diario de un ordenador a otro?',
+        a: 'Guarda una copia (un archivo .diaryo) desde el menú y ábrela en el otro.',
+      },
+      {
+        q: '¿Y la versión web?',
+        a: 'Es la misma app. Guarda el diario en tu navegador: nada sale de él.',
+        web: true,
+      },
+    ],
+  },
+  webApp: {
+    title: '¿Sin instalar nada?',
+    text: 'La app completa también funciona en el navegador.',
+    button: 'Abrir la app web',
   },
   footer: {
-    openSource: 'Código abierto con licencia MIT.',
-    privacy: 'Tus notas se quedan en tu equipo: diaryo no tiene cuentas ni servidores.',
+    made: 'Hecho con cariño y código abierto · MIT',
+    language: 'English',
   },
 };
 
 /** The shape of the website texts: the same for every language. */
 export type WebMessages = Widen<typeof es>;
 
-type Widen<T> = T extends string ? string : { [K in keyof T]: Widen<T[K]> };
+type Widen<T> = T extends string
+  ? string
+  : T extends number
+    ? number
+    : T extends boolean
+      ? boolean
+      : { [K in keyof T]: Widen<T[K]> };

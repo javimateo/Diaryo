@@ -273,8 +273,12 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           React para reutilizar el motor), en español (`/`, por defecto) e inglés
           (`/en/`). El nombre y el repositorio en `web/src/site.ts`; el dominio, en la
           variable `SITE_URL` al publicar. `npm --prefix web run dev` para verla.
-    - [ ] **H2. Maqueta de la portada** (antes de hacerla): arriba, la demo; luego las
-          funciones, la descarga, código abierto y privacidad, y preguntas frecuentes.
+    - [x] **H2. Portada**: mezcla de las dos maquetas. Mesa de madera, diario con letra a
+          mano (Caveat), títulos en Lora y pósits con los colores de la app; tema claro y
+          oscuro. Secciones: portada con el diario, cuatro ventajas, funciones (dos
+          grandes en el escritorio de Windows y cuatro pequeñas), descarga con el aviso de
+          SmartScreen (en el móvil, copiar el enlace), privacidad con preguntas
+          frecuentes y la app web (solo si `APP_URL` está puesta).
     - [ ] **H3. Demo en la portada**: el lienzo de verdad con un diario de ejemplo, para
           escribir, poner pósits y pasar la página sin instalar nada (no guarda). Usa el
           motor tal como quede tras la revisión del código (E).

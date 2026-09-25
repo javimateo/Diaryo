@@ -1,7 +1,9 @@
 ---
-import '@fontsource-variable/inter';
+import '@fontsource-variable/caveat';
+import '@fontsource-variable/lora';
+import '@fontsource-variable/nunito-sans';
 import '../styles/global.css';
-import { otherLang, texts, type Lang } from '../i18n';
+import { homeHref, otherLang, texts, type Lang } from '../i18n';
 import { SITE } from '../site';
 
 interface Props {
@@ -11,7 +13,9 @@ interface Props {
 const { lang } = Astro.props;
 const t = texts(lang);
 const other = otherLang(lang);
+const home = homeHref(lang);
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const langs: Lang[] = ['es', 'en'];
 ---
 
 <!doctype html>
@@ -30,23 +34,166 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:type" content="website" />
   </head>
   <body>
-    <header class="site-header">
-      <a class="brand" href={lang === 'es' ? '/' : '/en/'}>{SITE.name}</a>
-      <nav>
+    <header class="site-header wrap">
+      <a class="brand" href={home}><span class="dot" aria-hidden="true"></span>{SITE.name}</a>
+      <nav class="links">
         <a href="#features">{t.nav.features}</a>
         <a href="#download">{t.nav.download}</a>
+        <a href="#privacy">{t.nav.privacy}</a>
         <a href={SITE.repo}>{t.nav.source}</a>
-        <a href={other.href} hreflang={other.lang} lang={other.lang}>{t.nav.language}</a>
       </nav>
+      <div class="langs">
+        {
+          langs.map((code) =>
+            code === lang ? (
+              <span class="current" aria-current="page">
+                {code.toUpperCase()}
+              </span>
+            ) : (
+              <a href={homeHref(code)} hreflang={code} lang={code}>
+                {code.toUpperCase()}
+              </a>
+            ),
+          )
+        }
+      </div>
+      <a class="button primary header-download" href="#download">
+        <span class="wide">{t.nav.downloadWindows}</span>
+        <span class="narrow">{t.nav.downloadShort}</span>
+      </a>
     </header>
     <main>
       <slot />
     </main>
-    <footer class="site-footer">
-      <p>{t.footer.privacy}</p>
-      <p>
-        <a href={SITE.repo}>{t.footer.openSource}</a>
-      </p>
+    <footer class="site-footer wrap">
+      <span class="name">{SITE.name}</span>
+      <span class="made">{t.footer.made}</span>
+      <a href={SITE.repo}>GitHub</a>
+      <a href="#download">{t.nav.download}</a>
+      <a href={other.href} hreflang={other.lang} lang={other.lang}>{t.footer.language}</a>
     </footer>
   </body>
 </html>
+
+<style>
+  .site-header {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    min-height: 76px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .links {
+    display: flex;
+    gap: 28px;
+    flex-grow: 1;
+    font-size: 15px;
+  }
+
+  .links a {
+    color: var(--text-soft);
+    text-decoration: none;
+  }
+
+  .links a:hover {
+    color: var(--text);
+  }
+
+  .langs {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--chip);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .langs > * {
+    padding: 5px 10px;
+    border-radius: 999px;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .langs .current {
+    background: var(--card);
+    color: var(--text);
+  }
+
+  .header-download {
+    min-height: 44px;
+    padding: 10px 18px;
+    font-size: 15px;
+  }
+
+  .narrow {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .links {
+      display: none;
+    }
+
+    .site-header {
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .brand {
+      margin-right: auto;
+    }
+
+    .wide {
+      display: none;
+    }
+
+    .narrow {
+      display: inline;
+    }
+  }
+
+  .site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 28px;
+    margin-top: 104px;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .site-footer .name {
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .site-footer .made {
+    flex-grow: 1;
+  }
+
+  .site-footer a {
+    color: var(--text-soft);
+  }
+</style>

@@ -1,0 +1,187 @@
+---
+import { fill, formatSize, texts, type Lang } from '../i18n';
+import { SITE } from '../site';
+
+interface Props {
+  lang: Lang;
+}
+
+/**
+ * The download block. On a phone the installer is useless, so instead of the button it
+ * offers to copy the link to open it on the PC.
+ */
+const { lang } = Astro.props;
+const d = texts(lang).download;
+const { version, sizeMB } = SITE.download;
+---
+
+<section id="download" class="download">
+  <div class="main">
+    <span class="eyebrow">{d.eyebrow}</span>
+    <h2 class="section-title">{d.title}</h2>
+    <p class="text">{d.text}</p>
+    <p class="on-phone">{d.onPhone}</p>
+    <div class="actions">
+      <a class="button primary get" href={SITE.releases}>
+        <span>{fill(d.button, { version })}</span>
+        <small>{`diaryo_${version}_x64-setup.exe · ${formatSize(sizeMB, lang)}`}</small>
+      </a>
+      <button class="button primary copy" type="button" data-copied={d.copied}>
+        {d.copyLink}
+      </button>
+      <a class="releases" href={SITE.releases}>{d.releases}</a>
+    </div>
+    <p class="other">
+      {
+        SITE.app ? (
+          <a href={SITE.app}>{d.otherSystems}</a>
+        ) : (
+          d.otherSystemsNoWeb
+        )
+      }
+    </p>
+  </div>
+  <div class="smartscreen">
+    <h3>{d.smartscreen.title}</h3>
+    <p>{d.smartscreen.text}</p>
+    <ol>
+      {
+        d.smartscreen.steps.map((step) => (
+          <li>
+            <span>
+              {d.smartscreen.press} <b>{step}</b>.
+            </span>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<script>
+  // Copies this page's address (at the download) so it can be opened on the PC.
+  for (const button of document.querySelectorAll<HTMLButtonElement>('.download .copy')) {
+    button.addEventListener('click', async () => {
+      const url = `${location.origin}${location.pathname}#download`;
+      try {
+        await navigator.clipboard.writeText(url);
+        button.textContent = button.dataset.copied ?? '';
+      } catch {
+        // Without clipboard access, the phone's share sheet is the next best thing.
+        await navigator.share?.({ url }).catch(() => {});
+      }
+    });
+  }
+</script>
+
+<style>
+  .download {
+    margin: 96px clamp(8px, 1.7vw, 24px) 0;
+    padding: clamp(40px, 5vw, 72px) clamp(20px, 4.5vw, 64px);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    gap: 48px 56px;
+    border-radius: 28px;
+    background: var(--block);
+    color: var(--block-text);
+  }
+
+  .eyebrow {
+    color: var(--block-accent);
+  }
+
+  .text {
+    max-width: 520px;
+    font-size: 17px;
+    color: var(--block-muted);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-top: 6px;
+  }
+
+  .releases {
+    font-weight: 600;
+    color: #e4e0f8;
+  }
+
+  .other {
+    margin: 20px 0 0;
+    font-size: 14px;
+    color: var(--block-faint);
+  }
+
+  .other a {
+    color: #c9c9f7;
+  }
+
+  /* On the phone: the copy button instead of the installer. */
+  .copy,
+  .on-phone {
+    display: none;
+  }
+
+  @media (pointer: coarse) and (max-width: 900px) {
+    .get {
+      display: none;
+    }
+
+    .copy {
+      display: inline-flex;
+    }
+
+    .on-phone {
+      display: block;
+      color: var(--block-muted);
+    }
+  }
+
+  .smartscreen {
+    align-self: start;
+    padding: 26px 28px;
+    border-radius: 18px;
+    background: var(--block-card);
+  }
+
+  .smartscreen h3 {
+    margin: 0 0 10px;
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .smartscreen p {
+    margin: 0 0 14px;
+    font-size: 15px;
+    color: var(--block-muted);
+  }
+
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  li {
+    counter-increment: step;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  li::before {
+    content: counter(step);
+    width: 16px;
+    font-family: var(--font-hand);
+    font-size: 26px;
+    color: var(--block-accent);
+  }
+</style>

@@ -1,24 +1,93 @@
-/* The same tokens as the app (see src/styles/tokens.css in the app), light and dark. */
+/*
+ * The website's tokens. The paper, desk, cover and note colors are the app's (see
+ * src/engine/book.ts, desk.ts and palette.ts), so the site looks like the diary itself.
+ */
 :root {
-  --font: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --bg: #faf9f6;
-  --surface: #ffffff;
+  --font-body: 'Nunito Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-title: 'Lora Variable', Georgia, serif;
+  --font-hand: 'Caveat Variable', 'Segoe Print', cursive;
+
+  --ground: #efebe4;
+  --card: #ffffff;
+  --card-soft: #f5f1e9;
   --text: #23211d;
-  --text-muted: #6f6a61;
-  --border: rgba(28, 25, 20, 0.1);
+  --text-soft: #4a463f;
+  --muted: #5b574f;
+  --line: #ddd7cc;
+  --line-soft: #ece7de;
+  --chip: #e3ded5;
   --accent: #5b5bd6;
-  --accent-text: #ffffff;
-  --radius: 12px;
+  --accent-link: #4545c0;
+  --on-accent: #ffffff;
+
+  --wood: rgb(202, 168, 126);
+  --wood-grain: rgb(156, 116, 78);
+  --hero-text: #1d130a;
+  --hero-soft: #2e2015;
+  --hero-chip: rgba(255, 250, 242, 0.88);
+  --hero-chip-text: #23211d;
+
+  --paper: #fdfbf5;
+  --paper-line: #dcd6ca;
+  --paper-ink: #2b2520;
+  --paper-faint: #8a8278;
+  --cover: #b8573f;
+  --pen-blue: #4545c0;
+
+  --note-yellow: #ffe98a;
+  --note-pink: #ffc4d6;
+  --note-green: #c6efc4;
+  --note-orange: #ffcf9e;
+  --note-ink: #3a3020;
+
+  --block: #23211d;
+  --block-card: #302d28;
+  --block-text: #f4efe6;
+  --block-muted: #cfc8bc;
+  --block-faint: #9c958a;
+  --block-accent: #a9a9f2;
+
+  --windows: #3f6fa6;
+  --shadow: 0 12px 20px rgba(40, 20, 5, 0.28);
+
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #131210;
-    --surface: #1d1c19;
+    --ground: #161512;
+    --card: #211f1c;
+    --card-soft: #1b1a17;
     --text: #ecebe8;
-    --text-muted: #a19c93;
-    --border: rgba(255, 255, 255, 0.1);
+    --text-soft: #cfcac1;
+    --muted: #b0aa9f;
+    --line: #34312c;
+    --line-soft: #2c2a26;
+    --chip: #2a2824;
+    --accent-link: #a9a9f2;
+
+    --wood: rgb(46, 37, 29);
+    --wood-grain: rgb(31, 24, 18);
+    --hero-text: #f1e9dd;
+    --hero-soft: #d7cbbb;
+    --hero-chip: rgba(40, 34, 28, 0.9);
+    --hero-chip-text: #f1e9dd;
+
+    --paper: #25241f;
+    --paper-line: #3a3831;
+    --paper-ink: #ecebe8;
+    --paper-faint: #8f897f;
+    --pen-blue: #9a9af0;
+
+    --note-yellow: #e6cf6e;
+    --note-pink: #e0a3b7;
+    --note-green: #a5d1a2;
+    --note-orange: #e3ad7b;
+
+    --block: #221f1b;
+    --block-card: #2e2a25;
+    --windows: #2d5282;
+    --shadow: 0 12px 20px rgba(0, 0, 0, 0.45);
   }
 }
 
@@ -26,102 +95,135 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  font-family: var(--font);
-  background: var(--bg);
+  font-family: var(--font-body);
+  background: var(--ground);
   color: var(--text);
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: inherit;
+  color: var(--accent-link);
 }
 
-.site-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  max-width: 1080px;
+h1,
+h2,
+h3 {
+  font-family: var(--font-title);
+  font-weight: 600;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* The page's width: generous but not endless. */
+.wrap {
+  width: 100%;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 20px 24px;
+  padding: 0 clamp(16px, 5vw, 64px);
 }
 
-.brand {
+.eyebrow {
+  display: block;
+  font-size: 13px;
   font-weight: 700;
-  font-size: 20px;
-  text-decoration: none;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-link);
 }
 
-.site-header nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  font-size: 15px;
-}
-
-.site-header nav a {
-  color: var(--text-muted);
-  text-decoration: none;
-}
-
-.site-header nav a:hover {
-  color: var(--text);
-}
-
-main {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-.hero {
-  padding: 96px 0 72px;
-  text-align: center;
-}
-
-.hero h1 {
-  margin: 0 0 16px;
-  font-size: clamp(40px, 7vw, 72px);
-  line-height: 1.05;
+.section-title {
+  margin: 12px 0 0;
+  font-size: clamp(32px, 4vw, 46px);
   letter-spacing: -0.02em;
 }
 
-.subtitle {
-  max-width: 640px;
-  margin: 0 auto 32px;
-  font-size: 19px;
-  color: var(--text-muted);
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-}
-
 .button {
-  display: inline-block;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 48px;
   padding: 12px 22px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  font-weight: 600;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.25;
   text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease;
+}
+
+.button:hover {
+  filter: brightness(1.08);
+}
+
+.button:active {
+  transform: scale(0.98);
 }
 
 .button.primary {
   background: var(--accent);
-  border-color: transparent;
-  color: var(--accent-text);
+  color: var(--on-accent);
 }
 
-.site-footer {
-  max-width: 1080px;
-  margin: 64px auto 0;
-  padding: 32px 24px;
-  border-top: 1px solid var(--border);
-  font-size: 14px;
-  color: var(--text-muted);
+.button small {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* A sticky note, like the app's: pastel, handwritten and a little tilted. */
+.note {
+  position: absolute;
+  padding: 0.7em;
+  font-family: var(--font-hand);
+  line-height: 1.1;
+  color: var(--note-ink);
+  background: var(--note-yellow);
+  box-shadow: var(--shadow);
+  transform: rotate(var(--tilt, 0deg));
+}
+
+.note.pink {
+  background: var(--note-pink);
+}
+
+.note.green {
+  background: var(--note-green);
+}
+
+.note.orange {
+  background: var(--note-orange);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
