@@ -373,7 +373,7 @@ mod win {
     pub fn cursor() -> Option<(f64, f64)> {
         let mut point = POINT { x: 0, y: 0 };
         // SAFETY: solo se lee la posición del cursor.
-        (unsafe { GetCursorPos(&mut point) } != 0).then(|| (point.x as f64, point.y as f64))
+        (unsafe { GetCursorPos(&mut point) } != 0).then_some((point.x as f64, point.y as f64))
     }
 
     pub fn button_down() -> bool {
