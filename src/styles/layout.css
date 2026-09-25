@@ -31,7 +31,7 @@
   left: 16px;
 }
 
-/* Ocupan todo el ancho (sin captar el ratón) para centrar sin que el contenido se corte. */
+/* They take the whole width (without catching the mouse) to center without clipping the content. */
 .top-center {
   top: 16px;
   left: 0;

@@ -3,17 +3,17 @@ import { isEditableTarget } from '../engine/dom';
 import type { Engine, ScreenRect } from '../engine/engine';
 import { Autosave, type SaveStatus } from '../storage/autosave';
 import { DESK_ID, DESK_INFO, getDB, listPages, loadPage } from '../storage/db';
-import { loadThemePreference, THEME_KEY, useUI } from '../store/ui';
+import { loadThemePreference, SETTINGS_KEY, THEME_KEY, useUI } from '../store/ui';
 import { DESK_VIEW_KEY, readDeskView } from './saved';
 import { deskKeyAction } from './shortcuts';
 import { call, isDesktop, listen, notifyDeskSaved, onDeskChangedElsewhere } from './tauri';
 /**
- * La mesa en el escritorio de Windows: lo que hay en la mesa, en el mismo sitio que
- * alrededor del diario flotante, en una ventana transparente detrás de las demás. Solo
- * recibe el ratón donde hay algo (manda esas zonas a la parte de escritorio); el resto de
- * clics llegan al escritorio. Se mueve, se escribe y se marcan tareas; para crear cosas
- * nuevas está el diario. Fuera de la app de escritorio (en el navegador, para probarla)
- * solo se pinta.
+ * The desk on the Windows desktop: what is on the desk, in the same place as around the
+ * floating diary, in a transparent window behind the others. It only takes the mouse
+ * where there is something (it sends those areas to the desktop side); the rest of the
+ * clicks reach the desktop. Things can be moved, written and tasks ticked; creating new
+ * things is done in the diary. Outside the desktop app (in the browser, to try it) it
+ * only draws.
  */
 export class DeskLayerController {
   private readonly db = getDB();
@@ -27,7 +27,7 @@ export class DeskLayerController {
 
   constructor(
     private readonly engine: Engine,
-    /** Lo que hay encima del lienzo y también recibe el ratón (el mini diario). */
+    /** What is on top of the canvas and also takes the mouse (the mini diary). */
     private readonly extraArea: () => DOMRect | null,
   ) {
     this.autosave = new Autosave(this.db, engine, () => DESK_INFO, this.onStatus, false);
@@ -51,7 +51,7 @@ export class DeskLayerController {
     if (!this.desktop || this.stopped) return;
     const unlisten = await Promise.all([
       onDeskChangedElsewhere(() => void this.reload()),
-      // Cada vez que se enseña: el libro puede tener pestañas nuevas.
+      // Every time it is shown: the book may have new tabs.
       listen('diaryo://desk-shown', () => void this.frameBook()),
     ]);
     this.cleanups.push(...unlisten);
@@ -65,7 +65,10 @@ export class DeskLayerController {
     void this.autosave.stop();
   }
 
-  /** Dónde hay algo: ahí la ventana recibe el ratón (se manda una vez por frame, si cambia). */
+  /**
+   * Where there is something: there the window takes the mouse (sent once per frame, if
+   * it changed).
+   */
   readonly sendAreas = () => {
     if (this.frame) return;
     this.frame = requestAnimationFrame(() => {
@@ -81,8 +84,9 @@ export class DeskLayerController {
   };
 
   /**
-   * La mesa en el mismo sitio que alrededor del diario flotante: con su vista fijada o,
-   * si no hay, como encuadra el libro al abrirse (con pestañas, deja sitio para ellas).
+   * The desk in the same place as around the floating diary: with its pinned view or, if
+   * there is none, framed like the book when it opens (with tabs, it leaves room for
+   * them).
    */
   private async frameBook() {
     const view = readDeskView();
@@ -94,7 +98,7 @@ export class DeskLayerController {
     if (!this.stopped) this.engine.lockCamera(bookBoundsWith(pages.some((p) => p.bookmark)));
   }
 
-  /** Lo cambiado en el diario (o al abrir una copia) se vuelve a leer. */
+  /** Whatever changed in the diary (or when opening a backup) is read again. */
   private async reload() {
     await this.autosave.flush();
     const desk = await loadPage(this.db, DESK_ID);
@@ -104,7 +108,7 @@ export class DeskLayerController {
     await this.frameBook();
   }
 
-  /** Lo guardado aquí se avisa a las otras ventanas. */
+  /** What is saved here is announced to the other windows. */
   private readonly onStatus = (status: SaveStatus) => {
     if (this.desktop && status === 'saved' && this.saveStatus === 'saving') {
       void notifyDeskSaved();
@@ -114,12 +118,13 @@ export class DeskLayerController {
 
   private listenWindow() {
     const { engine } = this;
-    // Al pasar a otra cosa (un clic en el escritorio, otra ventana), se suelta lo que había.
+    // When switching to something else (a click on the desktop, another window), whatever
+    // was held is released.
     const onBlur = () => {
       engine.finishEditing();
       engine.clearSelection();
     };
-    // La cámara está fija: ni rueda ni arrastrar con la rueda.
+    // The camera is fixed: no wheel and no dragging with the wheel.
     const stopWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -141,9 +146,11 @@ export class DeskLayerController {
       else if (action === 'edit') engine.editSelection();
       else if (action === 'deselect') engine.clearSelection();
     };
-    // Lo que cambia en la otra ventana: el tema y la vista fijada.
+    // What changes in the other window: the theme, the settings (the language) and the
+    // pinned view.
     const onStorage = (e: StorageEvent) => {
       if (e.key === THEME_KEY) useUI.getState().setThemePreference(loadThemePreference());
+      if (e.key === SETTINGS_KEY) useUI.getState().reloadSettings();
       if (e.key === DESK_VIEW_KEY) void this.frameBook();
     };
     const preventMenu = (e: Event) => e.preventDefault();

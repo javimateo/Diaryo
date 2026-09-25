@@ -10,7 +10,7 @@ use tauri::{
     AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, PhysicalSize, WebviewWindow,
 };
 
-/// Cómo se ve el diario: en su ventana o flotando sobre el escritorio (el widget).
+/// How the diary looks: in its window or floating over the desktop (the widget).
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Mode {
@@ -18,7 +18,7 @@ pub enum Mode {
     Widget,
 }
 
-/// Dónde estaba la ventana normal, para volver a ella después del widget.
+/// Where the normal window was, to go back to it after the widget.
 #[derive(Clone, Copy)]
 struct Place {
     position: PhysicalPosition<i32>,
@@ -29,12 +29,13 @@ struct Place {
 pub struct Windowing {
     mode: Mutex<Mode>,
     place: Mutex<Option<Place>>,
-    /// Dónde va el diario flotante: la pantalla entera.
+    /// Where the floating diary goes: the whole screen.
     screen: Mutex<Option<(PhysicalPosition<i32>, PhysicalSize<u32>)>>,
-    /// La ventana se enseña cuando la página ya tiene el aspecto nuevo (o, si tarda, enseguida).
+    /// The window is shown when the page already has the new look (or, if it takes long,
+    /// right away).
     pending: AtomicBool,
-    /// Cuántas veces se ha enseñado: si se vuelve a enseñar mientras se aparta, ya no se
-    /// esconde.
+    /// How many times it was shown: if it is shown again while going away, it isn't
+    /// hidden.
     shows: AtomicU32,
 }
 
@@ -58,13 +59,13 @@ pub fn main_window(app: &AppHandle) -> Option<WebviewWindow> {
     app.get_webview_window("main")
 }
 
-/// Enseña el diario en su ventana o flotando sobre el escritorio.
+/// Shows the diary in its window or floating over the desktop.
 ///
-/// Para cambiar de uno a otro, la ventana se esconde, cambia (marco, tamaño, encima de
-/// todo) y avisa a la página, que se pone la mesa transparente (o la de siempre) y
-/// contesta con `frontend_ready`; entonces se enseña. Así no se ve el cambio a medias.
-/// Nunca se llama a la ventana con un cerrojo cogido: sus llamadas pasan por el hilo
-/// principal y podría quedarse todo esperando.
+/// To switch from one to the other, the window hides, changes (frame, size, always on
+/// top) and tells the page, which switches to the transparent desk (or the usual one) and
+/// replies with `frontend_ready`; then it is shown. That way the change isn't seen
+/// halfway. The window is never called with a lock held: its calls go through the main
+/// thread and everything could end up waiting.
 pub fn show(app: &AppHandle, mode: Mode) {
     let Some(window) = main_window(app) else {
         return;
@@ -79,8 +80,8 @@ pub fn show(app: &AppHandle, mode: Mode) {
     let _ = window.hide();
     match mode {
         Mode::Widget => {
-            // La posición es la de fuera (con el marco) y el tamaño el de dentro: son los
-            // que luego se ponen con `set_position` y `set_size`.
+            // The position is the outer one (with the frame) and the size the inner one:
+            // those are the ones set later with `set_position` and `set_size`.
             let place = match (window.outer_position(), window.inner_size()) {
                 (Ok(position), Ok(size)) => Some(Place {
                     position,
@@ -109,8 +110,8 @@ pub fn show(app: &AppHandle, mode: Mode) {
         Mode::Window => {
             let _ = window.set_always_on_top(false);
             let _ = window.set_skip_taskbar(false);
-            // Sin el marco de Windows: la app lleva sus propios botones y se arrastra
-            // desde arriba.
+            // Without the Windows frame: the app has its own buttons and is dragged from
+            // the top.
             let _ = window.set_decorations(false);
             let _ = window.set_shadow(true);
             let place = *state.place.lock().unwrap();
@@ -135,7 +136,7 @@ pub fn show(app: &AppHandle, mode: Mode) {
     reveal_later(app, Duration::from_millis(400));
 }
 
-/// Enseña la ventana si estaba pendiente de hacerlo.
+/// Shows the window if it was pending.
 pub fn reveal_if_pending(app: &AppHandle) {
     if app
         .state::<Windowing>()
@@ -146,7 +147,8 @@ pub fn reveal_if_pending(app: &AppHandle) {
     }
 }
 
-/// Si la página no avisa a tiempo (aún está cargando, por ejemplo), se enseña igual.
+/// If the page doesn't reply in time (it is still loading, for example), it is shown
+/// anyway.
 pub fn reveal_later(app: &AppHandle, delay: Duration) {
     let app = app.clone();
     std::thread::spawn(move || {
@@ -155,7 +157,7 @@ pub fn reveal_later(app: &AppHandle, delay: Duration) {
     });
 }
 
-/// El diario flotante ocupa la pantalla entera.
+/// The floating diary takes the whole screen.
 fn fill_screen(
     window: &WebviewWindow,
     (position, size): (PhysicalPosition<i32>, PhysicalSize<u32>),
@@ -169,8 +171,8 @@ fn reveal(app: &AppHandle) {
     state.pending.store(false, Ordering::SeqCst);
     let screen = *state.screen.lock().unwrap();
     if let Some(window) = main_window(app) {
-        // Si la ventana estaba maximizada, al quitárselo Windows la devuelve a su tamaño de
-        // antes (a veces después de ponerla a pantalla completa): se vuelve a poner.
+        // If the window was maximized, when unmaximizing Windows restores its earlier
+        // size (sometimes after setting it to full screen): it is set again.
         if state.mode() == Mode::Widget {
             if window.is_maximized().unwrap_or(false) {
                 let _ = window.unmaximize();
@@ -183,13 +185,13 @@ fn reveal(app: &AppHandle) {
         let _ = window.unminimize();
         let _ = window.set_focus();
         state.shows.fetch_add(1, Ordering::SeqCst);
-        // La página lo hace aparecer poco a poco.
+        // The page fades it in.
         let _ = app.emit("diaryo://shown", ());
     }
 }
 
-/// Aparta el diario. El flotante se desvanece antes: la página hace la animación y
-/// contesta con `hide_window`; si no contesta a tiempo, se esconde igual.
+/// Puts the diary away. The floating one fades out first: the page runs the animation and
+/// replies with `hide_window`; if it doesn't reply in time, it is hidden anyway.
 pub fn hide(app: &AppHandle) {
     let Some(window) = main_window(app) else {
         return;
@@ -210,8 +212,8 @@ pub fn hide(app: &AppHandle) {
     });
 }
 
-/// Esconde el diario ya (sigue en la bandeja, listo para el atajo) y avisa a la página
-/// para que guarde su copia.
+/// Hides the diary right away (it stays in the tray, ready for the shortcut) and tells
+/// the page so it saves its backup.
 pub fn hide_now(app: &AppHandle) {
     let Some(window) = main_window(app) else {
         return;
@@ -224,7 +226,7 @@ pub fn hide_now(app: &AppHandle) {
     let _ = app.emit("diaryo://hidden", ());
 }
 
-/// El atajo: si el diario flotante está a la vista lo esconde; si no, lo enseña.
+/// The shortcut: if the floating diary is visible it hides it; otherwise, it shows it.
 pub fn toggle_widget(app: &AppHandle) {
     let Some(window) = main_window(app) else {
         return;
@@ -237,8 +239,8 @@ pub fn toggle_widget(app: &AppHandle) {
     }
 }
 
-/// El diario flotante se esconde al pasar a otra app (como un aviso que se aparta). Los
-/// diálogos del propio diaryo (elegir una carpeta, abrir una copia) no cuentan.
+/// The floating diary hides when switching to another app (like a notification stepping
+/// aside). diaryo's own dialogs (choosing a folder, opening a backup) don't count.
 pub fn hide_widget_on_blur(app: &AppHandle) {
     if app.state::<Windowing>().mode() != Mode::Widget {
         return;
@@ -258,7 +260,7 @@ fn foreground_is_other_app() -> bool {
     use windows_sys::Win32::UI::WindowsAndMessaging::{
         GetForegroundWindow, GetWindowThreadProcessId,
     };
-    // SAFETY: solo se consulta qué ventana está delante y de qué proceso es.
+    // SAFETY: only which window is in front and which process it belongs to is queried.
     unsafe {
         let foreground = GetForegroundWindow();
         if foreground.is_null() {

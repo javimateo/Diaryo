@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { ContextMenuRequest } from '../engine/engine';
 import { useUI } from '../store/ui';
 import { copySelection, cutSelection, pasteFromClipboard } from './clipboard';
+import { t } from '../i18n';
 
 interface Item {
   label: string;
@@ -15,8 +16,8 @@ interface Item {
 type Entry = Item | 'divider';
 
 /**
- * Menú del clic derecho: sobre un elemento ofrece copiar, agrupar, capas, voltear,
- * bloquear… y sobre un hueco, pegar, seleccionar todo o desbloquear.
+ * Right-click menu: on an element it offers copy, group, layers, flip, lock… and on an
+ * empty spot, paste, select all or unlock.
  */
 export function ContextMenu() {
   const request = useUI((s) => s.contextMenu);
@@ -26,13 +27,14 @@ export function ContextMenu() {
 }
 
 function Menu({ request, onClose }: { request: ContextMenuRequest; onClose: () => void }) {
+  useUI((s) => s.settings.language);
   const ref = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ left: request.x, top: request.y });
   const engine = useUI((s) => s.engine);
   const doc = useUI((s) => s.doc);
   const showToast = useUI((s) => s.showToast);
 
-  // Que no se salga de la ventana.
+  // Keep it inside the window.
   useLayoutEffect(() => {
     const rect = ref.current!.getBoundingClientRect();
     setPosition({
@@ -47,7 +49,8 @@ function Menu({ request, onClose }: { request: ContextMenuRequest; onClose: () =
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      // Esc solo cierra el menú (no suelta la selección ni aparta el diario flotante).
+      // Esc only closes the menu (it doesn't release the selection or put the floating
+      // diary away).
       e.stopPropagation();
       onClose();
     };
@@ -66,102 +69,103 @@ function Menu({ request, onClose }: { request: ContextMenuRequest; onClose: () =
 
   if (!engine) return null;
 
+  const { contextMenu: m, commands: c } = t();
   const entries: Entry[] = request.onElement
     ? [
-        { label: 'Cortar', shortcut: 'Ctrl+X', run: () => void cutSelection() },
-        { label: 'Copiar', shortcut: 'Ctrl+C', run: () => void copySelection() },
-        { label: 'Pegar', shortcut: 'Ctrl+V', run: () => void pasteFromClipboard() },
+        { label: m.cut, shortcut: 'Ctrl+X', run: () => void cutSelection() },
+        { label: m.copy, shortcut: 'Ctrl+C', run: () => void copySelection() },
+        { label: m.paste, shortcut: 'Ctrl+V', run: () => void pasteFromClipboard() },
         'divider',
         {
-          label: 'Copiar como imagen PNG',
+          label: m.copyPng,
           shortcut: 'Shift+Alt+C',
           run: async () => {
             const ok = await engine.copySelectionAsPng();
-            showToast(ok ? 'Imagen copiada' : 'No se ha podido copiar la imagen');
+            showToast(ok ? c.imageCopied : c.imageCopyFailed);
           },
         },
         'divider',
-        { label: 'Copiar estilos', shortcut: 'Ctrl+Alt+C', run: () => engine.copyStyle() },
+        { label: m.copyStyle, shortcut: 'Ctrl+Alt+C', run: () => engine.copyStyle() },
         {
-          label: 'Pegar estilos',
+          label: m.pasteStyle,
           shortcut: 'Ctrl+Alt+V',
           disabled: !doc.hasCopiedStyle,
           run: () => engine.pasteStyle(),
         },
         'divider',
         {
-          label: 'Agrupar',
+          label: c.group,
           shortcut: 'Ctrl+G',
           disabled: doc.selectionCount < 2,
           run: () => engine.groupSelection(),
         },
         {
-          label: 'Desagrupar',
+          label: c.ungroup,
           shortcut: 'Ctrl+Shift+G',
           disabled: !doc.selectionGrouped,
           run: () => engine.ungroupSelection(),
         },
         'divider',
         {
-          label: 'Traer al frente',
+          label: c.front,
           shortcut: 'Ctrl+Shift+↑',
           run: () => engine.arrangeSelection('front'),
         },
         {
-          label: 'Traer adelante',
+          label: m.forward,
           shortcut: 'Ctrl+↑',
           run: () => engine.arrangeSelection('forward'),
         },
         {
-          label: 'Enviar atrás',
+          label: m.backward,
           shortcut: 'Ctrl+↓',
           run: () => engine.arrangeSelection('backward'),
         },
         {
-          label: 'Enviar al fondo',
+          label: c.back,
           shortcut: 'Ctrl+Shift+↓',
           run: () => engine.arrangeSelection('back'),
         },
         'divider',
         {
-          label: 'Voltear en horizontal',
+          label: c.flipH,
           shortcut: 'Shift+H',
           run: () => engine.flipSelection('horizontal'),
         },
         {
-          label: 'Voltear en vertical',
+          label: c.flipV,
           shortcut: 'Shift+V',
           run: () => engine.flipSelection('vertical'),
         },
         'divider',
         {
-          label: doc.selectionHasLink ? 'Cambiar el enlace…' : 'Enlazar con una página…',
+          label: doc.selectionHasLink ? c.changeLink : c.addLink,
           run: () => useUI.getState().setLinkDialogOpen(true),
         },
         ...(doc.selectionHasLink
-          ? [{ label: 'Quitar el enlace', run: () => engine.setSelectionLink(null) }]
+          ? [{ label: c.unlink, run: () => engine.setSelectionLink(null) }]
           : []),
         'divider',
-        { label: 'Duplicar', shortcut: 'Ctrl+D', run: () => engine.duplicateSelection() },
+        { label: c.duplicate, shortcut: 'Ctrl+D', run: () => engine.duplicateSelection() },
         {
-          label: doc.selectionLocked ? 'Desbloquear' : 'Bloquear',
+          label: doc.selectionLocked ? c.unlock : c.lock,
           shortcut: 'Ctrl+Shift+L',
           run: () => engine.toggleLockSelection(),
         },
         'divider',
         {
-          label: 'Borrar',
-          shortcut: 'Supr',
+          label: m.delete,
+          shortcut: t().keys.delete,
           danger: true,
           disabled: doc.selectionLocked,
           run: () => engine.deleteSelection(),
         },
       ]
     : [
-        { label: 'Pegar', shortcut: 'Ctrl+V', run: () => void pasteFromClipboard() },
+        { label: m.paste, shortcut: 'Ctrl+V', run: () => void pasteFromClipboard() },
         'divider',
         {
-          label: 'Seleccionar todo',
+          label: c.selectAll,
           shortcut: 'Ctrl+A',
           disabled: doc.isEmpty,
           run: () => {
@@ -169,9 +173,9 @@ function Menu({ request, onClose }: { request: ContextMenuRequest; onClose: () =
             useUI.getState().setTool('select');
           },
         },
-        { label: 'Ver todo', shortcut: 'Shift+1', run: () => engine.zoomToFit() },
+        { label: c.fit, shortcut: 'Shift+1', run: () => engine.zoomToFit() },
         {
-          label: 'Desbloquear todo',
+          label: c.unlockAll,
           disabled: !doc.hasLocked,
           run: () => {
             engine.unlockAll();

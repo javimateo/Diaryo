@@ -4,14 +4,13 @@ import { containerAt, hitTestElement } from '../selection';
 import type { PointerInput, ToolContext, ToolHandler } from './types';
 
 const HIT_TOLERANCE = 4;
-/** A partir de cuánto arrastre (px de pantalla) se dibuja una caja de texto. */
+/** From how much dragging (screen px) a text box is drawn. */
 const BOX_THRESHOLD = 12;
 
 /**
- * Texto (T) y nota (N): un clic crea el elemento y abre el editor. Si se hace clic
- * sobre algo en lo que se puede escribir (un texto, una nota o dentro de una figura),
- * se escribe ahí. Con el texto, arrastrar dibuja una caja de ese ancho: el texto
- * saltará de línea al llegar al borde.
+ * Text (T) and note (N): a click creates the element and opens the editor. If you click
+ * on something that can be written on (a text, a note or inside a shape), you write
+ * there. With text, dragging draws a box of that width: the text will wrap at the edge.
  */
 export class CreateHandler implements ToolHandler {
   private drag: { start: Vec; current: Vec } | null = null;
@@ -68,7 +67,7 @@ export class CreateHandler implements ToolHandler {
     this.ctx.invalidateOverlay();
   }
 
-  /** Mientras se arrastra, el contorno de la caja que se va a crear. */
+  /** While dragging, the outline of the box about to be created. */
   renderOverlay(g: CanvasRenderingContext2D) {
     const drag = this.drag;
     if (!drag) return;

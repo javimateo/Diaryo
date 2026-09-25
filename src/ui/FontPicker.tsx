@@ -1,7 +1,6 @@
 import { Search, Upload } from 'lucide-react';
 import { useRef, useState, useSyncExternalStore } from 'react';
 import {
-  CATEGORY_LABELS,
   FONT_FILE_ACCEPT,
   fonts,
   uploadFontFile,
@@ -9,11 +8,12 @@ import {
   type FontDef,
 } from '../engine/fonts';
 import { useUI } from '../store/ui';
+import { useT } from './useT';
 
 const subscribe = (listener: () => void) => fonts.subscribe(listener);
 const getVersion = () => fonts.version;
 
-/** Se re-renderiza cuando se carga o se añade una fuente. */
+/** Re-renders when a font is loaded or added. */
 export function useFonts(): FontDef[] {
   useSyncExternalStore(subscribe, getVersion);
   return fonts.all();
@@ -21,9 +21,10 @@ export function useFonts(): FontDef[] {
 
 const ORDER: FontCategory[] = ['custom', 'sans', 'hand', 'serif', 'mono', 'display'];
 
-/** Lista de fuentes con buscador; cada una se muestra con su propia letra. */
+/** Font list with a search box; each one is shown in its own typeface. */
 export function FontPicker(props: { value: string | null; onChange: (font: string) => void }) {
   const { value, onChange } = props;
+  const t = useT();
   const all = useFonts();
   const [query, setQuery] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -37,7 +38,7 @@ export function FontPicker(props: { value: string | null; onChange: (font: strin
     try {
       onChange(await uploadFontFile(file));
     } catch {
-      showToast('No se ha podido leer esa fuente');
+      showToast(t.fonts.unreadable);
     }
   };
 
@@ -48,8 +49,8 @@ export function FontPicker(props: { value: string | null; onChange: (font: strin
         <input
           autoFocus
           value={query}
-          placeholder="Buscar fuente"
-          aria-label="Buscar fuente"
+          placeholder={t.fonts.search}
+          aria-label={t.fonts.search}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && visible[0]) onChange(visible[0].id);
@@ -62,7 +63,7 @@ export function FontPicker(props: { value: string | null; onChange: (font: strin
           if (items.length === 0) return null;
           return (
             <section key={category}>
-              <h4>{CATEGORY_LABELS[category]}</h4>
+              <h4>{t.catalog.fontCategories[category]}</h4>
               {items.map((font) => (
                 <button
                   key={font.id}
@@ -78,11 +79,11 @@ export function FontPicker(props: { value: string | null; onChange: (font: strin
             </section>
           );
         })}
-        {visible.length === 0 && <p className="font-empty">Ninguna fuente coincide</p>}
+        {visible.length === 0 && <p className="font-empty">{t.fonts.none}</p>}
       </div>
       <button type="button" className="font-upload" onClick={() => fileRef.current?.click()}>
         <Upload size={15} strokeWidth={1.75} />
-        Subir una fuente (.ttf, .otf, .woff)
+        {t.fonts.upload}
       </button>
       <input
         ref={fileRef}

@@ -7,28 +7,28 @@ import { dayKey } from '../lib/dates';
 
 export interface PageRow {
   id: string;
-  /** Día del diario al que pertenece (AAAA-MM-DD, hora local). */
+  /** Diary day it belongs to (YYYY-MM-DD, local time). */
   date: string;
-  /** Orden dentro del día (se usa el momento de creación). */
+  /** Order within the day (the creation time is used). */
   order: number;
   title: string;
   createdAt: number;
   updatedAt: number;
   camera: Camera | null;
-  /** Miniatura para el índice (data URL), o null si no hay. */
+  /** Thumbnail for the index (data URL), or null if there is none. */
   thumbnail: string | null;
-  /** Página marcada como importante: color de su pestaña (null = sin marcar). */
+  /** Page marked as important: color of its tab (null = not marked). */
   bookmark?: string | null;
-  /** La miniatura es la doble página entera (las antiguas eran solo el contenido). */
+  /** The thumbnail is the whole double page (older ones were only the content). */
   thumbnailSpread?: boolean;
-  /** Hoja propia de esta página (null = la de todo el diario). */
+  /** This page's own paper (null = the whole diary's). */
   paper?: PaperStyle | null;
 }
 
-/** Lo que define una página en el diario (sin lo que se guarda solo). */
+/** What defines a page in the diary (without what is saved on its own). */
 export type PageInfo = Pick<PageRow, 'id' | 'date' | 'order' | 'title'>;
 
-/** Cada elemento se guarda por separado: al cambiar uno solo se escribe ese. */
+/** Each element is saved separately: changing one only writes that one. */
 export interface ElementRow {
   pageId: string;
   id: string;
@@ -37,7 +37,7 @@ export interface ElementRow {
 
 export interface AssetRow {
   id: string;
-  /** Imagen como data URL. */
+  /** Image as a data URL. */
   src: string;
 }
 
@@ -47,7 +47,7 @@ export interface FontRow {
   src: string;
 }
 
-/** Base de datos local del navegador (IndexedDB). */
+/** The browser's local database (IndexedDB). */
 export class DiaryoDB extends Dexie {
   pages!: EntityTable<PageRow, 'id'>;
   elements!: Table<ElementRow, [string, string]>;
@@ -62,7 +62,7 @@ export class DiaryoDB extends Dexie {
       assets: 'id',
       fonts: 'id',
     });
-    // Fase 6: páginas del diario con día, orden y miniatura.
+    // Phase 6: diary pages with day, order and thumbnail.
     this.version(2)
       .stores({ pages: 'id, date, updatedAt' })
       .upgrade((tx) =>
@@ -80,8 +80,10 @@ export class DiaryoDB extends Dexie {
   }
 }
 
-/** La mesa: lo que queda fuera del libro, común a todo el diario. Se guarda como una
- * página más (así entra en las copias), pero no sale en el índice. */
+/**
+ * The desk: what is outside the book, shared by the whole diary. It is saved as one more
+ * page (so it goes into backups), but it doesn't show in the index.
+ */
 export const DESK_ID = 'desk';
 export const DESK_INFO: PageInfo = { id: DESK_ID, date: '0000-01-01', order: 0, title: '' };
 
@@ -93,8 +95,8 @@ export interface LoadedPage {
 }
 
 /**
- * Lee una página entera. Cada elemento se valida (con valores por defecto para lo
- * guardado por versiones anteriores); lo que no se entiende se descarta.
+ * Reads a whole page. Each element is validated (with defaults for what older versions
+ * saved); anything that can't be understood is discarded.
  */
 export async function loadPage(db: DiaryoDB, pageId: string): Promise<LoadedPage> {
   const [page, rows, fonts] = await Promise.all([
@@ -127,7 +129,7 @@ export interface PendingSave {
   camera?: Camera;
 }
 
-/** Fila nueva de una página que aún no estaba guardada. */
+/** New row for a page that wasn't saved yet. */
 function newRow(info: PageInfo, now: number): PageRow {
   return {
     ...info,
@@ -140,8 +142,8 @@ function newRow(info: PageInfo, now: number): PageRow {
 }
 
 /**
- * Escribe un lote de cambios de una vez (todo o nada). La página se crea al guardar
- * por primera vez; si ya existe, se respetan su día, orden y título.
+ * Writes a batch of changes at once (all or nothing). The page is created on its first
+ * save; if it already exists, its day, order and title are kept.
  */
 export async function saveChanges(db: DiaryoDB, info: PageInfo, save: PendingSave) {
   const now = Date.now();
@@ -160,12 +162,12 @@ export async function saveChanges(db: DiaryoDB, info: PageInfo, save: PendingSav
   });
 }
 
-/** Todas las páginas guardadas (sin sus elementos ni la mesa). */
+/** All the saved pages (without their elements or the desk). */
 export async function listPages(db: DiaryoDB): Promise<PageRow[]> {
   return (await db.pages.toArray()).filter((page) => page.id !== DESK_ID);
 }
 
-/** Cambia datos de una página (título, miniatura…). La crea si aún no existía. */
+/** Changes a page's data (title, thumbnail…). Creates it if it didn't exist yet. */
 export async function updatePage(
   db: DiaryoDB,
   info: PageInfo,
@@ -177,7 +179,7 @@ export async function updatePage(
   });
 }
 
-/** Una página completa tal cual está guardada (para borrarla y poder recuperarla). */
+/** A whole page exactly as saved (to delete it and be able to restore it). */
 export interface StoredPage {
   page: PageRow;
   elements: ElementRow[];
@@ -201,7 +203,7 @@ export async function restorePage(db: DiaryoDB, stored: StoredPage) {
   });
 }
 
-/** Borra las páginas vacías y sin título (p. ej. si se cerró la app antes de hacerlo). */
+/** Deletes empty untitled pages (e.g. if the app was closed before doing it). */
 export async function pruneEmptyPages(db: DiaryoDB, keep?: string): Promise<string[]> {
   return db.transaction('rw', [db.pages, db.elements], async () => {
     const pages = await db.pages.toArray();
@@ -220,7 +222,7 @@ export async function pruneEmptyPages(db: DiaryoDB, keep?: string): Promise<stri
   });
 }
 
-/** Todo el diario, para guardar una copia completa. */
+/** The whole diary, to save a full backup. */
 export interface DiaryDump {
   pages: StoredPage[];
   assets: AssetRow[];
@@ -253,10 +255,11 @@ export async function dumpDiary(db: DiaryoDB): Promise<DiaryDump> {
 }
 
 /**
- * Recupera una copia del diario sin perder nada reciente: cada página de la copia
- * entra si no existe aquí o si la de la copia es más nueva. La mesa, que es una para
- * todo el diario, se junta con la de aquí: entra todo lo que falte y, si algo está en
- * las dos, gana la mesa más reciente. Devuelve las páginas que cambiaron (y la mesa).
+ * Restores a backup of the diary without losing anything recent: each page of the backup
+ * goes in if it doesn't exist here or if the backup's one is newer. The desk, which is
+ * one for the whole diary, is merged with this one: everything missing goes in and, if
+ * something is in both, the most recent desk wins. Returns the pages that changed (and
+ * the desk).
  */
 export async function mergeDiary(db: DiaryoDB, dump: DiaryDump): Promise<string[]> {
   return db.transaction('rw', [db.pages, db.elements, db.assets, db.fonts], async () => {
@@ -288,13 +291,13 @@ export async function mergeDiary(db: DiaryoDB, dump: DiaryDump): Promise<string[
   });
 }
 
-/** Un enlace de una página a otra (para dibujar el mapa del diario). */
+/** A link from one page to another (to draw the diary map). */
 export interface PageLink {
   from: string;
   to: string;
 }
 
-/** Qué páginas enlazan con cuáles (sin repetir y sin contar la mesa). */
+/** Which pages link to which (without repeats and without counting the desk). */
 export async function listLinks(db: DiaryoDB): Promise<PageLink[]> {
   const rows = await db.elements.filter((row) => typeof row.data?.link === 'string').toArray();
   const seen = new Set<string>();
@@ -309,7 +312,7 @@ export async function listLinks(db: DiaryoDB): Promise<PageLink[]> {
   return links;
 }
 
-/** Algo escrito en el diario (para buscar): un texto, una nota o lo de dentro de una figura. */
+/** Something written in the diary (for searching): a text, a note or the text inside a shape. */
 export interface TextEntry {
   pageId: string;
   elementId: string;
@@ -323,7 +326,7 @@ function rowText(data: SceneElement | undefined): string {
   return '';
 }
 
-/** Todo lo escrito en el diario, también en la mesa. */
+/** Everything written in the diary, also on the desk. */
 export async function listTexts(db: DiaryoDB): Promise<TextEntry[]> {
   const entries: TextEntry[] = [];
   await db.elements.each((row) => {
@@ -334,6 +337,6 @@ export async function listTexts(db: DiaryoDB): Promise<TextEntry[]> {
   return entries;
 }
 
-/** Una sola base de datos para toda la app. */
+/** A single database for the whole app. */
 let instance: DiaryoDB | null = null;
 export const getDB = () => (instance ??= new DiaryoDB());

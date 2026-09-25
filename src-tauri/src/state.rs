@@ -7,10 +7,11 @@ use tauri_plugin_global_shortcut::Shortcut;
 use crate::backup;
 use crate::desk_layer::DeskLayer;
 use crate::settings::{self, Settings};
+use crate::texts::Lang;
 use crate::window::{Mode, Windowing};
 
-/// Ajustes del escritorio y los atajos globales que están funcionando (el del diario
-/// flotante y el de la mesa en el escritorio; None si otra app lo tiene cogido).
+/// Desktop settings and the global shortcuts that are working (the floating diary's and
+/// the desk on the desktop's; None if another app took it).
 pub struct Desktop {
     settings: Mutex<Settings>,
     pub shortcuts: Mutex<[Option<Shortcut>; 2]>,
@@ -29,7 +30,12 @@ impl Desktop {
     }
 }
 
-/// Cambia los ajustes y los guarda.
+/// The app language, for the texts of this side.
+pub fn lang(app: &AppHandle) -> Lang {
+    Lang::from_code(&app.state::<Desktop>().settings().language)
+}
+
+/// Changes the settings and saves them.
 pub fn update_settings(app: &AppHandle, change: impl FnOnce(&mut Settings)) {
     let state = app.state::<Desktop>();
     let settings = {
@@ -40,18 +46,18 @@ pub fn update_settings(app: &AppHandle, change: impl FnOnce(&mut Settings)) {
     settings::save(app, &settings);
 }
 
-/// Lo que la página necesita saber de la parte de escritorio.
+/// What the page needs to know about the desktop side.
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DesktopInfo {
     mode: Mode,
     shortcut: String,
-    /// El atajo está funcionando (si no, otra app lo tiene cogido).
+    /// The shortcut is working (otherwise another app took it).
     shortcut_ok: bool,
     autostart: bool,
     backups: bool,
     backup_dir: String,
-    /// La mesa en el escritorio de Windows.
+    /// The desk on the Windows desktop.
     desk_layer: bool,
     desk_shortcut: String,
     desk_shortcut_ok: bool,

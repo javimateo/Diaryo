@@ -16,15 +16,10 @@ import { exportPng, openCopy, saveCopy } from './fileActions';
 import { FILE_EXTENSION } from '../storage/files';
 import { WindowControls } from './desktop/WindowControls';
 import { useUI } from '../store/ui';
-
-const STATUS_TEXT = {
-  loading: 'Cargando…',
-  saving: 'Guardando…',
-  saved: 'Guardado',
-  error: 'No se ha podido guardar',
-} as const;
+import { useT } from './useT';
 
 export function Brand() {
+  const t = useT();
   const status = useUI((s) => s.saveStatus);
   const widget = useUI((s) => s.desktop?.mode === 'widget');
   const Icon = status === 'saved' ? Check : status === 'error' ? CloudAlert : LoaderCircle;
@@ -33,11 +28,11 @@ export function Brand() {
       diaryo
       <span className="save-status" data-status={status} role="status">
         <Icon size={13} strokeWidth={2} />
-        {STATUS_TEXT[status]}
+        {t.status[status]}
       </span>
       {widget && (
         <span className="widget-hint">
-          <kbd>Esc</kbd> para apartarlo
+          <kbd>Esc</kbd> {t.brand.widgetHint}
         </span>
       )}
     </div>
@@ -45,6 +40,7 @@ export function Brand() {
 }
 
 export function TopActions() {
+  const t = useT();
   const theme = useUI((s) => s.theme);
   const toggleTheme = useUI((s) => s.toggleTheme);
   const setPaletteOpen = useUI((s) => s.setPaletteOpen);
@@ -55,8 +51,8 @@ export function TopActions() {
       <button
         type="button"
         className="icon-btn"
-        aria-label="Buscar y comandos"
-        data-tip="Buscar y comandos — Ctrl K"
+        aria-label={t.topBar.search}
+        data-tip={`${t.topBar.search} — Ctrl K`}
         data-tip-align="end"
         onClick={() => setPaletteOpen(true)}
       >
@@ -66,8 +62,8 @@ export function TopActions() {
       <button
         type="button"
         className="icon-btn"
-        aria-label="Cambiar tema"
-        data-tip={`Tema ${theme === 'dark' ? 'claro' : 'oscuro'} — Alt Shift D`}
+        aria-label={t.topBar.theme(theme === 'dark')}
+        data-tip={`${t.topBar.theme(theme === 'dark')} — Alt Shift D`}
         data-tip-align="end"
         onClick={toggleTheme}
       >
@@ -80,8 +76,8 @@ export function TopActions() {
       <button
         type="button"
         className="icon-btn"
-        aria-label="Ajustes"
-        data-tip="Ajustes — Ctrl ,"
+        aria-label={t.topBar.settings}
+        data-tip={`${t.topBar.settings} — Ctrl ,`}
         data-tip-align="end"
         onClick={() => setSettingsOpen(true)}
       >
@@ -92,8 +88,9 @@ export function TopActions() {
   );
 }
 
-/** Copias de seguridad y exportar. El guardado normal es automático. */
+/** Backups and export. Normal saving is automatic. */
 function FileMenu() {
+  const t = useT();
   const engine = useUI((s) => s.engine);
   const desktop = useUI((s) => s.desktop !== null);
   const diary = useUI((s) => s.diary);
@@ -108,7 +105,7 @@ function FileMenu() {
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      // Esc solo cierra el menú (no aparta el diario flotante).
+      // Esc only closes the menu (it doesn't put the floating diary away).
       e.stopPropagation();
       setOpen(false);
     };
@@ -130,9 +127,9 @@ function FileMenu() {
       <button
         type="button"
         className="icon-btn"
-        aria-label="Menú"
+        aria-label={t.topBar.menu}
         aria-expanded={open}
-        data-tip={open ? undefined : 'Copias y exportar'}
+        data-tip={open ? undefined : t.topBar.menuTip}
         data-tip-align="end"
         onClick={() => setOpen(!open)}
       >
@@ -140,9 +137,7 @@ function FileMenu() {
       </button>
       {open && engine && diary && (
         <div className="dropdown floating" role="menu">
-          <p className="dropdown-note">
-            Todo se guarda solo {desktop ? 'en esta app' : 'en este navegador'}.
-          </p>
+          <p className="dropdown-note">{t.topBar.savedWhere(desktop)}</p>
           <button
             type="button"
             role="menuitem"
@@ -150,7 +145,7 @@ function FileMenu() {
             onClick={run(() => void saveCopy(diary))}
           >
             <span className="menu-label">
-              <Download size={15} strokeWidth={1.75} /> Guardar una copia del diario
+              <Download size={15} strokeWidth={1.75} /> {t.topBar.saveCopy}
             </span>
             <kbd>{FILE_EXTENSION}</kbd>
           </button>
@@ -164,7 +159,7 @@ function FileMenu() {
             }}
           >
             <span className="menu-label">
-              <FolderOpen size={15} strokeWidth={1.75} /> Abrir una copia
+              <FolderOpen size={15} strokeWidth={1.75} /> {t.topBar.openCopy}
             </span>
           </button>
           <div className="menu-divider" role="separator" />
@@ -175,7 +170,7 @@ function FileMenu() {
             onClick={run(() => void exportPng(engine))}
           >
             <span className="menu-label">
-              <ImageIcon size={15} strokeWidth={1.75} /> Exportar la página como imagen
+              <ImageIcon size={15} strokeWidth={1.75} /> {t.topBar.exportPng}
             </span>
             <kbd>.png</kbd>
           </button>

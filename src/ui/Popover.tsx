@@ -2,8 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { createPortal } from 'react-dom';
 
 /**
- * Ventanita flotante junto a un botón (a su derecha). Se cierra al hacer clic fuera
- * o con Escape. Va en un portal para que no la recorte el panel con scroll.
+ * Small floating window next to a button (to its right). It closes on a click outside or
+ * with Escape. It goes in a portal so the scrolling panel doesn't clip it.
  */
 export function Popover(props: {
   anchor: HTMLElement | null;
@@ -20,7 +20,7 @@ export function Popover(props: {
     const a = anchor.getBoundingClientRect();
     const own = ref.current.getBoundingClientRect();
     const margin = 8;
-    // Dentro del panel lateral, se abre a su derecha para no taparlo.
+    // Inside the side panel, it opens to its right so it doesn't cover it.
     const side = (anchor.closest('.props-panel') ?? anchor).getBoundingClientRect();
     const left = Math.min(side.right + margin, window.innerWidth - own.width - margin);
     const top = Math.max(margin, Math.min(a.top - 8, window.innerHeight - own.height - margin));

@@ -3,14 +3,16 @@ import { useEffect, useState } from 'react';
 import { useUI } from '../../store/ui';
 import { hideDesktop } from '../../desktop/bridge';
 import { currentWindow } from '../../desktop/tauri';
+import { useT } from '../useT';
 
-/** ¿Es la app de escritorio en su ventana (no el diario flotante)? */
+/** Is it the desktop app in its window (not the floating diary)? */
 function useWindowMode() {
   return useUI((s) => s.desktop?.mode === 'window');
 }
 
-/** Minimizar, maximizar y cerrar (a la bandeja), con el estilo de los botones de la app. */
+/** Minimize, maximize and close (to the tray), styled like the app's buttons. */
 export function WindowControls() {
+  const t = useT();
   const windowMode = useWindowMode();
   const [maximized, setMaximized] = useState(false);
 
@@ -40,7 +42,7 @@ export function WindowControls() {
       <button
         type="button"
         className="icon-btn"
-        aria-label="Minimizar"
+        aria-label={t.window.minimize}
         onClick={() => void currentWindow().then((win) => win.minimize())}
       >
         <Minus size={18} strokeWidth={1.75} />
@@ -48,7 +50,7 @@ export function WindowControls() {
       <button
         type="button"
         className="icon-btn"
-        aria-label={maximized ? 'Restaurar' : 'Maximizar'}
+        aria-label={maximized ? t.window.restore : t.window.maximize}
         onClick={() => void currentWindow().then((win) => win.toggleMaximize())}
       >
         {maximized ? (
@@ -60,8 +62,8 @@ export function WindowControls() {
       <button
         type="button"
         className="icon-btn window-close"
-        aria-label="Cerrar (diaryo sigue en la bandeja)"
-        data-tip="Cerrar — diaryo sigue junto al reloj"
+        aria-label={t.window.close}
+        data-tip={t.window.closeTip}
         data-tip-align="end"
         onClick={() => void hideDesktop()}
       >
@@ -72,8 +74,8 @@ export function WindowControls() {
 }
 
 /**
- * Por dónde se arrastra la ventana: la franja de arriba, detrás de los paneles. Doble
- * clic la maximiza o la restaura, como una barra de título.
+ * Where the window is dragged from: the strip at the top, behind the panels. Double-click
+ * maximizes or restores it, like a title bar.
  */
 export function WindowDragRegion() {
   const windowMode = useWindowMode();

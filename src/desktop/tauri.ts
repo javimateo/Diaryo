@@ -1,44 +1,44 @@
 /**
- * Lo que habla con la parte de escritorio (Tauri). En la web nada de esto se carga: los
- * módulos de Tauri se importan solo cuando hacen falta.
+ * What talks to the desktop side (Tauri). On the web none of this is loaded: the Tauri
+ * modules are imported only when needed.
  */
 
-/** ¿Es la app de escritorio? */
+/** Is it the desktop app? */
 export const isDesktop = () => '__TAURI_INTERNALS__' in window;
 
-/** Llama a un comando de la parte de escritorio (en Rust). */
+/** Calls a command of the desktop side (in Rust). */
 export async function call<T = void>(command: string, args?: Record<string, unknown>): Promise<T> {
   const { invoke } = await import('@tauri-apps/api/core');
   return invoke<T>(command, args);
 }
 
-/** Escucha un aviso de la parte de escritorio o de otra ventana. Devuelve cómo dejar de hacerlo. */
+/** Listens to a message from the desktop side or from another window. Returns how to stop. */
 export async function listen<T>(event: string, handler: (payload: T) => void) {
   const { listen } = await import('@tauri-apps/api/event');
   return listen<T>(event, (e) => handler(e.payload));
 }
 
-/** Avisa a todas las ventanas (también a esta). */
+/** Tells every window (this one too). */
 export async function emit(event: string, payload?: unknown) {
   const { emit } = await import('@tauri-apps/api/event');
   await emit(event, payload);
 }
 
-/** Esta ventana (para moverla, maximizarla…). */
+/** This window (to move it, maximize it…). */
 export async function currentWindow() {
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
   return getCurrentWindow();
 }
 
-/** La mesa ha cambiado (en el diario o en la capa del escritorio): las otras ventanas se ponen al día. */
+/** The desk changed (in the diary or in the desktop layer): the other windows catch up. */
 export const DESK_CHANGED = 'diaryo://desk-changed';
-/** Quién avisa (cada ventana hace caso solo de los avisos de las demás). */
+/** Who is telling (each window only listens to the other windows' messages). */
 export const WINDOW_ID = crypto.randomUUID();
 
-/** Avisa a las otras ventanas de que se ha guardado la mesa. */
+/** Tells the other windows that the desk was saved. */
 export const notifyDeskSaved = () => emit(DESK_CHANGED, WINDOW_ID);
 
-/** Escucha los cambios de la mesa hechos en otras ventanas. */
+/** Listens to desk changes made in other windows. */
 export const onDeskChangedElsewhere = (handler: () => void) =>
   listen<string>(DESK_CHANGED, (from) => {
     if (from !== WINDOW_ID) handler();

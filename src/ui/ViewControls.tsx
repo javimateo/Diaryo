@@ -4,12 +4,14 @@ import { pinDeskView } from '../desktop/bridge';
 import { readDeskView, sameView } from '../desktop/saved';
 import type { DeskView } from '../engine/engine';
 import { useUI } from '../store/ui';
+import { useT } from './useT';
 
 /**
- * En el diario flotante: fijar la vista (el diario se abrirá así y la mesa del escritorio
- * la usará) y, si se ha movido, volver a ella.
+ * In the floating diary: pin the view (the diary will open like that and the desktop desk
+ * will use it) and, if it was moved, go back to it.
  */
 export function ViewControls() {
+  const t = useT();
   const engine = useUI((s) => s.engine);
   const widget = useUI((s) => s.desktop?.mode === 'widget');
   const [pinned, setPinned] = useState<DeskView | null>(readDeskView);
@@ -37,12 +39,8 @@ export function ViewControls() {
         type="button"
         className="icon-btn"
         data-active={atPinned || undefined}
-        aria-label={atPinned ? 'Vista fijada' : 'Fijar esta vista'}
-        data-tip={
-          atPinned
-            ? 'Esta es la vista fijada'
-            : 'Fijar esta vista: el diario se abrirá así y la mesa del escritorio la usará'
-        }
+        aria-label={atPinned ? t.view.pinned : t.view.pin}
+        data-tip={atPinned ? t.view.pinnedTip : t.view.pinTip}
         data-tip-side="top"
         onClick={pin}
       >
@@ -52,8 +50,8 @@ export function ViewControls() {
         <button
           type="button"
           className="icon-btn"
-          aria-label="Volver a la vista fijada"
-          data-tip="Volver a la vista fijada"
+          aria-label={t.view.back}
+          data-tip={t.view.back}
           data-tip-side="top"
           onClick={() => engine.animateToView(readDeskView() ?? pinned)}
         >

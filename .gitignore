@@ -3,6 +3,7 @@ dist
 *.local
 .vite
 coverage
+.astro
 *.tsbuildinfo
 
 # Herramientas locales

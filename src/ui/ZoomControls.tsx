@@ -1,7 +1,9 @@
 import { LayoutGrid, Minus, Plus, Redo2, Undo2 } from 'lucide-react';
 import { useUI } from '../store/ui';
+import { useT } from './useT';
 
 export function ZoomControls() {
+  const t = useT();
   const zoom = useUI((s) => s.zoom);
   const engine = useUI((s) => s.engine);
   const percent = Math.round(zoom * 100);
@@ -11,8 +13,8 @@ export function ZoomControls() {
       <button
         type="button"
         className="icon-btn"
-        aria-label="Alejar"
-        data-tip="Alejar — Ctrl −"
+        aria-label={t.zoom.out}
+        data-tip={`${t.zoom.out} — Ctrl −`}
         data-tip-side="top"
         onClick={() => engine?.zoomOut()}
       >
@@ -21,8 +23,8 @@ export function ZoomControls() {
       <button
         type="button"
         className="zoom-value"
-        aria-label="Restablecer zoom al 100 %"
-        data-tip="Volver al 100 % — Ctrl 0"
+        aria-label={t.zoom.reset}
+        data-tip={`${t.zoom.resetTip} — Ctrl 0`}
         data-tip-side="top"
         onClick={() => engine?.resetZoom()}
       >
@@ -31,8 +33,8 @@ export function ZoomControls() {
       <button
         type="button"
         className="icon-btn"
-        aria-label="Acercar"
-        data-tip="Acercar — Ctrl +"
+        aria-label={t.zoom.in}
+        data-tip={`${t.zoom.in} — Ctrl +`}
         data-tip-side="top"
         onClick={() => engine?.zoomIn()}
       >
@@ -41,8 +43,8 @@ export function ZoomControls() {
       <button
         type="button"
         className="icon-btn"
-        aria-label="Mapa del diario"
-        data-tip="Mapa del diario — Shift M"
+        aria-label={t.zoom.map}
+        data-tip={`${t.zoom.map} — Shift M`}
         data-tip-side="top"
         onClick={() => useUI.getState().setMapOpen(true)}
       >
@@ -53,6 +55,7 @@ export function ZoomControls() {
 }
 
 export function UndoControls() {
+  const t = useT();
   const engine = useUI((s) => s.engine);
   const { canUndo, canRedo } = useUI((s) => s.doc);
 
@@ -61,8 +64,8 @@ export function UndoControls() {
       <button
         type="button"
         className="icon-btn"
-        aria-label="Deshacer"
-        data-tip="Deshacer — Ctrl Z"
+        aria-label={t.zoom.undo}
+        data-tip={`${t.zoom.undo} — Ctrl Z`}
         data-tip-side="top"
         disabled={!canUndo}
         onClick={() => engine?.undo()}
@@ -72,8 +75,8 @@ export function UndoControls() {
       <button
         type="button"
         className="icon-btn"
-        aria-label="Rehacer"
-        data-tip="Rehacer — Ctrl Shift Z"
+        aria-label={t.zoom.redo}
+        data-tip={`${t.zoom.redo} — Ctrl Shift Z`}
         data-tip-side="top"
         disabled={!canRedo}
         onClick={() => engine?.redo()}

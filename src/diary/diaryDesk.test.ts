@@ -25,7 +25,7 @@ const stroke = (id: string): StrokeElement => ({
   label: null,
 });
 
-/** Un motor mínimo que apunta lo que le llega de la mesa. */
+/** A minimal engine that records what it gets for the desk. */
 function fakeEngine() {
   const loads: { elements: string[]; removed: string[] }[] = [];
   let deskIds: ReadonlySet<string> = new Set();
@@ -47,8 +47,8 @@ afterEach(async () => {
 
 const empty = { upserts: [], deletes: [], assets: [], fonts: [] };
 
-describe('la mesa del diario al cambiar en otra ventana', () => {
-  it('recargarla trae lo nuevo y quita lo que se borró allí', async () => {
+describe('the diary desk when it changes in another window', () => {
+  it('reloading it brings what is new and removes what was deleted there', async () => {
     db = new DiaryoDB('diary-desk');
     await saveChanges(db, DESK_INFO, { ...empty, upserts: [stroke('a'), stroke('b')] });
     const { engine, loads, deskIds } = fakeEngine();
@@ -60,11 +60,11 @@ describe('la mesa del diario al cambiar en otra ventana', () => {
     await diary.reloadDesk();
     expect(loads.at(-1)).toEqual({ elements: ['a', 'b'], removed: [] });
 
-    // En la mesa del escritorio se borra "a" y se añade "c".
+    // On the desktop desk "a" is deleted and "c" is added.
     await saveChanges(db, DESK_INFO, { ...empty, upserts: [stroke('c')], deletes: ['a'] });
     await diary.reloadDesk();
     expect(loads.at(-1)).toEqual({ elements: ['b', 'c'], removed: ['a'] });
-    // El motor sabe qué es de la mesa (aunque esté donde se abre el libro).
+    // The engine knows what belongs to the desk (even where the book opens).
     expect([...deskIds()].sort()).toEqual(['b', 'c']);
   });
 });

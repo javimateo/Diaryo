@@ -25,43 +25,48 @@ import {
   type PageRow,
   type StoredPage,
 } from '../storage/db';
-import { formatDay, formatDayMonth, todayKey, type DayKey } from '../lib/dates';
+import { todayKey, type DayKey } from '../lib/dates';
+import { formatDay, formatDayMonth } from '../i18n/dates';
 import { comparePages, neighbor, newPage, pagesOfDay, sortPages, type PageMeta } from './pages';
 import { asRecord, readJSON, writeJSON } from '../lib/saved';
+import { t } from '../i18n';
 
 export interface DiaryState {
-  /** Páginas con algo escrito (o con título), en orden; incluye la abierta si ya lo tiene. */
+  /**
+   * Pages with something written (or with a title), in order; includes the open one if it
+   * already has something.
+   */
   pages: PageMeta[];
   current: PageMeta | null;
 }
 
-/** Cómo pasa la hoja al cambiar de página (no al arrastrar la esquina, que va a mano). */
+/** How the sheet turns when changing page (not when dragging the corner, which is by hand). */
 export type TurnSpeed = 'normal' | 'fast' | 'off';
 
 export interface DiaryHooks {
   onState: (state: DiaryState) => void;
   onStatus: (status: SaveStatus) => void;
-  /** Aspecto del diario (hoja, encuadernación, tapas). */
+  /** Diary look (paper, binding, covers). */
   bookStyle: () => BookStyle;
   turnSpeed?: () => TurnSpeed;
-  /** Se ha guardado algo de la mesa (o ha cambiado entera al abrir una copia). */
+  /** Something on the desk was saved (or it changed completely when opening a backup). */
   onDeskSaved?: () => void;
 }
 
-/** La página de hoy para el mini diario del escritorio. */
+/** Today's page for the desktop mini diary. */
 export interface TodayPreview {
   day: DayKey;
-  /** La doble página (papel y contenido), como imagen. */
+  /** The double page (paper and content), as an image. */
   image: string;
-  /** Tareas por hacer. */
+  /** Pending tasks. */
   pending: number;
 }
 
-/** Duración (ms) de la hoja que pasa sola, según la velocidad. */
+/** Duration (ms) of a sheet turning by itself, depending on the speed. */
 const TURN_DURATION = { normal: 720, fast: 380 };
 
 const LAST_PAGE_KEY = 'diaryo:last-page';
-/** Miniatura: la doble página a este ancho (el alto sale de su proporción). */
+/** Thumbnail: the double page at this width (the height follows its proportions). */
 export const THUMBNAIL_SIZE = { width: 360, height: 246 };
 
 const toMeta = (row: PageRow): PageMeta => ({
@@ -76,12 +81,12 @@ const toMeta = (row: PageRow): PageMeta => ({
   updatedAt: row.updatedAt,
 });
 
-/** Colores de las pestañas: cada página nueva que se marca toma el siguiente. */
+/** Tab colors: each newly marked page takes the next one. */
 export const BOOKMARK_COLORS = ['#e9785f', '#3aa6a0', '#5b8fd6', '#d9a13b', '#a77bd6', '#5fa05a'];
 
 const toInfo = ({ id, date, order, title }: PageMeta): PageInfo => ({ id, date, order, title });
 
-/** Última página abierta y el día en que se abrió. */
+/** Last opened page and the day it was opened. */
 function readLastPage(): { id: string; day: DayKey } | null {
   const { id, day } = asRecord(readJSON(LAST_PAGE_KEY));
   return typeof id === 'string' && typeof day === 'string' ? { id, day } : null;
@@ -92,9 +97,9 @@ function writeLastPage(id: string) {
 }
 
 /**
- * El diario: qué páginas hay, cuál está abierta y cómo se pasa de una a otra. Cada
- * página es un lienzo; al cambiar de página se guarda la anterior y se carga la nueva.
- * Las páginas vacías y sin título no se guardan (el diario no se llena de hojas en blanco).
+ * The diary: which pages exist, which one is open and how to go from one to another. Each
+ * page is a canvas; when changing page the previous one is saved and the new one loaded.
+ * Empty untitled pages aren't saved (the diary doesn't fill up with blank sheets).
  */
 export class Diary {
   private pages: PageMeta[] = [];
@@ -104,11 +109,11 @@ export class Diary {
   private queue: Promise<unknown> = Promise.resolve();
   private stopped = false;
   private readonly cleanups: (() => void)[] = [];
-  /** Hoy aún sin página: siempre la misma mientras no se abra (para pasar a ella). */
+  /** Today without a page yet: always the same one while it isn't opened (to turn to it). */
   private blankToday: PageMeta | null = null;
-  /** Lo que hay en la mesa (fuera del libro), común a todas las páginas. */
+  /** What is on the desk (outside the book), shared by all pages. */
   private readonly desk: Desk = { ids: new Set(), onPage: new Map() };
-  /** Elementos de otras páginas, cargados para dibujarlas al pasar página. */
+  /** Elements of other pages, loaded to draw them when turning the page. */
   private readonly loaded = new Map<string, Promise<SceneElement[]>>();
 
   constructor(
@@ -116,26 +121,26 @@ export class Diary {
     private readonly engine: Engine,
     private readonly hooks: DiaryHooks,
   ) {
-    // Se ha soltado la hoja pasada la mitad: se abre esa página (ya se ve).
+    // The sheet was released past the middle: that page opens (it is already visible).
     engine.onPageTurn((dir) => void this.completeTurn(dir));
-    // La pestaña de una página marcada lleva a ella.
+    // The tab of a marked page leads to it.
     engine.onBookTab((id) => void this.goToPage(id));
     this.desk.onSaved = () => hooks.onDeskSaved?.();
-    // Lo de la mesa no es de la página aunque esté donde se abre el libro.
+    // Desk elements don't belong to the page even when they are where the book opens.
     engine.setDeskIds(this.desk.ids);
   }
 
-  /** Abre el diario: la última página si fue hoy; si no, la página de hoy. */
+  /** Opens the diary: the last page if it was today; otherwise, today's page. */
   start() {
     return this.run(async () => {
       this.hooks.onStatus('loading');
       try {
         await pruneEmptyPages(this.db);
         this.pages = (await listPages(this.db)).map(toMeta);
-        // La mesa se pone una vez y se queda al pasar página.
+        // The desk is set once and stays when turning pages.
         await this.loadDesk();
       } catch (error) {
-        console.error('No se ha podido abrir el diario', error);
+        console.error("Couldn't open the diary", error);
         this.hooks.onStatus('error');
         return;
       }
@@ -168,14 +173,14 @@ export class Diary {
     this.autosave = null;
   }
 
-  /** Guarda ya lo pendiente de la página abierta. */
+  /** Saves what is pending on the open page right now. */
   flush(): Promise<void> {
     return this.autosave?.flush() ?? Promise.resolve();
   }
 
-  // ─── Navegación ───────────────────────────────────────────────
+  // ─── Navigation ───────────────────────────────────────────────
 
-  /** Pasa a la página siguiente (1) o anterior (-1). Devuelve false si no hay más. */
+  /** Turns to the next (1) or previous (-1) page. Returns false if there are no more. */
   turn(direction: 1 | -1): Promise<boolean> {
     return this.run(async () => {
       const current = this.current;
@@ -187,7 +192,7 @@ export class Diary {
     });
   }
 
-  /** Va a un día: su primera página, o una en blanco si aún no tiene. */
+  /** Goes to a day: its first page, or a blank one if it has none yet. */
   goToDay(date: DayKey) {
     return this.run(async () => {
       if (!this.current || this.current.date === date) return;
@@ -195,7 +200,7 @@ export class Diary {
     });
   }
 
-  /** Va a hoy (a la última página de hoy). */
+  /** Goes to today (to today's last page). */
   goToToday() {
     return this.run(async () => {
       const today = todayKey();
@@ -204,7 +209,7 @@ export class Diary {
     });
   }
 
-  /** Abre una página (pasando las hojas, o de golpe con `animate` a false). */
+  /** Opens a page (turning the sheets, or at once with `animate` set to false). */
   goToPage(id: string, animate = true) {
     return this.run(async () => {
       const target = this.pages.find((p) => p.id === id);
@@ -214,18 +219,18 @@ export class Diary {
     });
   }
 
-  /** Hoja nueva para hoy (detrás de las que ya hay). */
+  /** New sheet for today (after the existing ones). */
   addPage() {
     return this.run(async () => {
       const current = this.current;
       const today = todayKey();
-      // Ya hay una hoja en blanco abierta: no hace falta otra.
+      // A blank sheet is already open: no need for another one.
       if (current && current.date === today && this.isEmpty && !current.title) return;
       await this.openAnimated(newPage(today));
     });
   }
 
-  // ─── Editar páginas ───────────────────────────────────────────
+  // ─── Editing pages ────────────────────────────────────────────
 
   rename(id: string, title: string) {
     return this.run(async () => {
@@ -239,8 +244,8 @@ export class Diary {
   }
 
   /**
-   * Marca o desmarca una página como importante (le pone o quita su pestaña). Sin
-   * color, cada página nueva que se marca toma el siguiente color libre.
+   * Marks or unmarks a page as important (adds or removes its tab). Without a color, each
+   * newly marked page takes the next free color.
    */
   setBookmark(id: string, color: string | null) {
     return this.run(async () => {
@@ -253,7 +258,7 @@ export class Diary {
     });
   }
 
-  /** Pone a una página su propia hoja (null: vuelve a la de todo el diario). */
+  /** Gives a page its own paper (null: back to the whole diary's). */
   setPaper(id: string, paper: PaperStyle | null) {
     return this.run(async () => {
       const page = id === this.current?.id ? this.current : this.pages.find((p) => p.id === id);
@@ -265,14 +270,14 @@ export class Diary {
     });
   }
 
-  /** Siguiente color de pestaña: el menos usado (y en orden, si empatan). */
+  /** Next tab color: the least used one (in order, on a tie). */
   nextBookmarkColor(): string {
     const all = [...this.pages, ...(this.current ? [this.current] : [])];
     const uses = (color: string) => all.filter((p) => p.bookmark === color).length;
     return BOOKMARK_COLORS.reduce((best, color) => (uses(color) < uses(best) ? color : best));
   }
 
-  /** Borra una página. Devuelve lo borrado para poder recuperarlo. */
+  /** Deletes a page. Returns what was deleted so it can be restored. */
   remove(id: string): Promise<StoredPage | null> {
     return this.run(async () => {
       const current = this.current;
@@ -282,7 +287,7 @@ export class Diary {
         this.emit();
         return stored;
       }
-      // Se deja de guardar la página antes de borrarla, y se abre la de al lado.
+      // The page stops being saved before deleting it, and the one next to it opens.
       await this.autosave?.stop();
       this.autosave = null;
       const others = this.pages.filter((p) => p.id !== id);
@@ -303,7 +308,7 @@ export class Diary {
     });
   }
 
-  /** Vuelve a dibujar el libro (p. ej. al cambiar su aspecto). */
+  /** Draws the book again (e.g. when its look changes). */
   refreshBook() {
     const current = this.current;
     if (!current) return;
@@ -311,7 +316,7 @@ export class Diary {
     void this.refreshNeighbors();
   }
 
-  /** Todo lo escrito en el diario (con lo último ya guardado), para buscar. */
+  /** Everything written in the diary (with the latest already saved), for searching. */
   texts(): Promise<TextEntry[]> {
     return this.run(async () => {
       await this.flush();
@@ -319,7 +324,7 @@ export class Diary {
     });
   }
 
-  /** Qué páginas enlazan con cuáles (con lo último ya guardado). */
+  /** Which pages link to which (with the latest already saved). */
   links(): Promise<PageLink[]> {
     return this.run(async () => {
       await this.flush();
@@ -328,8 +333,8 @@ export class Diary {
   }
 
   /**
-   * Rehace en segundo plano las miniaturas antiguas (solo el contenido) como doble
-   * página, que es como se ven en el mapa y al volar al libro.
+   * Redoes old thumbnails (content only) in the background as double pages, which is how
+   * they look in the map and when flying to the book.
    */
   async refreshOldThumbnails() {
     const old = this.pages.filter((p) => !p.thumbnailSpread && p.id !== this.current?.id);
@@ -337,7 +342,7 @@ export class Diary {
       if (this.stopped) return;
       const target = await this.targetFor(page);
       if (target.elements.length === 0) continue;
-      // Con sus fotos ya cargadas.
+      // With its photos already loaded.
       await this.engine.assets.whenReady(
         target.elements.flatMap((el) => (el.type === 'image' ? [el.assetId] : [])),
       );
@@ -349,8 +354,8 @@ export class Diary {
   }
 
   /**
-   * La doble página de hoy como imagen (para el mini diario del escritorio), con cuántas
-   * tareas quedan por hacer. Si hoy aún no hay página, la de hoy en blanco.
+   * Today's double page as an image (for the desktop mini diary), with how many tasks are
+   * pending. If today has no page yet, a blank one for today.
    */
   todayPreview(width: number): Promise<TodayPreview> {
     return this.run(async () => {
@@ -372,16 +377,16 @@ export class Diary {
     });
   }
 
-  /** Actualiza la miniatura de la página abierta (para verla al día en el índice). */
+  /** Updates the open page's thumbnail (to see it up to date in the index). */
   refreshThumbnail() {
     const current = this.current;
     if (!current || this.isEmpty) return;
     this.upsert({ ...current, thumbnail: this.renderThumbnail(), thumbnailSpread: true });
   }
 
-  // ─── Copias ───────────────────────────────────────────────────
+  // ─── Backups ──────────────────────────────────────────────────
 
-  /** Todo el diario tal como está guardado (con lo último ya escrito). */
+  /** The whole diary as saved (with the latest already written). */
   dump(): Promise<DiaryDump> {
     return this.run(async () => {
       await this.flush();
@@ -390,7 +395,10 @@ export class Diary {
     });
   }
 
-  /** Recupera una copia del diario. Devuelve cuántas páginas han entrado y si cambió la mesa. */
+  /**
+   * Restores a backup of the diary. Returns how many pages came in and whether the desk
+   * changed.
+   */
   merge(dump: DiaryDump): Promise<{ pages: number; desk: boolean }> {
     return this.run(async () => {
       await this.flush();
@@ -404,7 +412,7 @@ export class Diary {
       this.pages = (await listPages(this.db)).map(toMeta);
       const current = this.current;
       if (current && merged.includes(current.id)) {
-        // La página abierta ha cambiado: se vuelve a cargar sin guardar encima.
+        // The open page changed: it is loaded again without saving over it.
         await this.autosave?.stop();
         this.autosave = null;
         await this.open(this.pages.find((p) => p.id === current.id) ?? current, 0);
@@ -414,8 +422,8 @@ export class Diary {
   }
 
   /**
-   * Vuelve a poner la mesa con lo guardado (sin contarlo como un cambio que guardar): la
-   * capa del escritorio la ha cambiado.
+   * Puts the saved desk back (without counting it as a change to save): the desktop layer
+   * changed it.
    */
   reloadDesk(): Promise<void> {
     return this.run(() => this.loadDesk());
@@ -433,9 +441,9 @@ export class Diary {
     this.engine.loadDesk(desk.elements, removed);
   }
 
-  // ─── Interno ──────────────────────────────────────────────────
+  // ─── Internal ─────────────────────────────────────────────────
 
-  /** Las tareas van en fila: nunca se cargan dos páginas a la vez. */
+  /** Tasks are queued: two pages are never loaded at the same time. */
   private run<T>(task: () => Promise<T>): Promise<T> {
     const result = this.queue.then(task);
     this.queue = result.catch((error) => console.error(error));
@@ -449,13 +457,13 @@ export class Diary {
   }
 
   private async open(target: PageMeta, direction: 0 | 1 | -1) {
-    // Lo que se estuviera escribiendo se queda en la página que se deja.
+    // Whatever was being written stays on the page being left.
     this.engine.finishEditing(false);
     const speed = this.hooks.turnSpeed?.() ?? 'normal';
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (direction !== 0 && speed !== 'off' && !reduced) {
-      // La hoja pasa sola, viendo la doble página entera, y se queda caída mientras
-      // se carga la nueva.
+      // The sheet turns by itself, showing the whole double page, and stays down while
+      // the new one loads.
       const turnTarget = await this.targetFor(target);
       this.engine.showWholeBook();
       await this.engine.animatePageTurn(direction, turnTarget, TURN_DURATION[speed]);
@@ -482,7 +490,7 @@ export class Diary {
     this.engine.endPageTurn();
   }
 
-  /** Termina de pasar la página que se soltó arrastrando la esquina. */
+  /** Finishes turning the page released by dragging the corner. */
   private completeTurn(dir: TurnDirection) {
     return this.run(async () => {
       const current = this.current;
@@ -492,7 +500,7 @@ export class Diary {
     });
   }
 
-  /** Página anterior y siguiente. Hoy siempre está en el camino, aunque no tenga página. */
+  /** Previous and next page. Today is always on the way, even if it has no page. */
   private neighborsOf(current: PageMeta) {
     const today = todayKey();
     const candidates = [...this.pages];
@@ -506,7 +514,7 @@ export class Diary {
     };
   }
 
-  /** Cómo se ve la doble página de un día: fecha, número de página y grosor. */
+  /** How a day's double page looks: date, page number and thickness. */
   private spreadFor(page: PageMeta): BookSpread {
     const others = this.pages.filter((p) => p.id !== page.id && p.id !== this.current?.id);
     const all = sortPages(
@@ -515,7 +523,7 @@ export class Diary {
         : [...others, page],
     );
     const index = all.findIndex((p) => p.id === page.id);
-    // Pestañas: las de antes de esta página asoman por la izquierda; el resto, por la derecha.
+    // Tabs: those before this page stick out on the left; the rest, on the right.
     const tabs = all
       .filter((p) => p.bookmark)
       .map((p) => ({
@@ -532,18 +540,19 @@ export class Diary {
       date: formatDay(page.date),
       title: page.title,
       today: page.date === todayKey(),
+      labels: t().book,
       pageNumber: index * 2 + 1,
     };
   }
 
-  /** Lo necesario para dibujar otra página mientras se pasa a ella. */
+  /** What is needed to draw another page while turning to it. */
   private async targetFor(page: PageMeta): Promise<TurnTarget> {
     let elements = this.loaded.get(page.id);
     if (!elements) {
       const saved = this.pages.some((p) => p.id === page.id);
       elements = saved
         ? loadPage(this.db, page.id).then((data) => {
-            // Sus imágenes, sin volver a guardarlas.
+            // Its images, without saving them again.
             for (const asset of data.assets) this.engine.assets.add(asset.src, asset.id, false);
             return data.elements;
           })
@@ -553,7 +562,7 @@ export class Diary {
     return { id: page.id, elements: await elements.catch(() => []), book: this.spreadFor(page) };
   }
 
-  /** Prepara las páginas de al lado para poder pasar a ellas arrastrando la esquina. */
+  /** Prepares the neighbouring pages to be able to turn to them by dragging the corner. */
   private async refreshNeighbors() {
     const current = this.current;
     if (!current) return;
@@ -565,14 +574,15 @@ export class Diary {
     if (this.current === current) this.engine.setTurnTargets(before, after);
   }
 
-  /** Cierra la página abierta: la guarda con su miniatura o la descarta si está vacía. */
+  /** Closes the open page: saves it with its thumbnail or discards it if it is empty. */
   private async leave() {
     const autosave = this.autosave;
     const page = this.current;
     if (!autosave || !page) return;
     this.autosave = null;
     await autosave.stop();
-    // Lo cargado de esta página ya no vale: ha podido cambiar mientras estaba abierta.
+    // What was loaded for this page is no longer valid: it may have changed while it was
+    // open.
     this.loaded.delete(page.id);
     if (this.engine.pageElements().length === 0 && !page.title && !page.bookmark && !page.paper) {
       await deletePage(this.db, page.id);
@@ -608,7 +618,7 @@ export class Diary {
   private emit() {
     const current = this.current;
     let pages = this.pages;
-    // La página abierta aparece en el índice en cuanto tiene algo (o título).
+    // The open page shows in the index as soon as it has something (or a title).
     if (current) {
       const listed = pages.some((p) => p.id === current.id);
       const keep = !this.isEmpty || !!current.title || !!current.bookmark || !!current.paper;

@@ -9,9 +9,9 @@ import { scaleElement, selectionBox } from './transform';
 export type ArrangeMode = 'front' | 'forward' | 'backward' | 'back';
 
 /**
- * Cambia el orden de apilado de lo seleccionado. `all` va de abajo a arriba.
- * "Adelante/atrás" sube o baja un puesto; "al frente/al fondo" lleva al extremo.
- * Solo se devuelven los elementos cuyo orden cambia.
+ * Changes the stacking order of the selection. `all` goes from bottom to top.
+ * "Forward/backward" moves it one step; "to front/to back" takes it to the end. Only the
+ * elements whose order changes are returned.
  */
 export function arrange(all: SceneElement[], selected: Set<string>, mode: ArrangeMode): Changes {
   const changes: Changes = new Map();
@@ -24,7 +24,7 @@ export function arrange(all: SceneElement[], selected: Set<string>, mode: Arrang
     return changes;
   }
 
-  // Se intercambian los z con el vecino no seleccionado, como deslizar un bloque.
+  // The z values are swapped with the unselected neighbour, like sliding a block.
   const z = all.map((el) => el.z);
   const order = [...all];
   const swap = (i: number, j: number) => {
@@ -46,8 +46,8 @@ export function arrange(all: SceneElement[], selected: Set<string>, mode: Arrang
 }
 
 /**
- * Voltea en espejo respecto al centro de la selección. Los trazos se reflejan de
- * verdad; el texto, las notas y las imágenes cambian de sitio pero no se leen al revés.
+ * Mirrors around the center of the selection. Strokes are really mirrored; texts, notes
+ * and images change places but don't read backwards.
  */
 export function flip(elements: SceneElement[], axis: 'horizontal' | 'vertical'): Changes {
   const box = selectionBox(elements);
@@ -59,10 +59,10 @@ export function flip(elements: SceneElement[], axis: 'horizontal' | 'vertical'):
   return changes;
 }
 
-/** Mayor lado permitido de la imagen exportada (los navegadores no admiten más). */
+/** Largest side allowed for the exported image (browsers don't support more). */
 const MAX_SIDE = 8192;
 
-/** Pinta los elementos en una imagen PNG, a doble resolución y con un pequeño margen. */
+/** Paints the elements into a PNG image, at double resolution and with a small margin. */
 export function elementsToPng(
   elements: SceneElement[],
   options: { mode: ThemeMode; assets: AssetStore; background: string; scale?: number },
@@ -92,7 +92,7 @@ export function elementsToPng(
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
 }
 
-/** Dibuja los elementos encajados (centrados) en un canvas de ese tamaño, sin fondo. */
+/** Draws the elements fitted (centered) into a canvas of that size, without a background. */
 export function renderElements(
   elements: SceneElement[],
   options: { mode: ThemeMode; assets: AssetStore; width: number; height: number },
@@ -102,7 +102,7 @@ export function renderElements(
   const padding = Math.min(width, height) * 0.08;
   const contentW = Math.max(1, bounds.maxX - bounds.minX);
   const contentH = Math.max(1, bounds.maxY - bounds.minY);
-  // No se amplía más que al 100 %: una nota suelta no ocupa toda la miniatura.
+  // It doesn't enlarge beyond 100%: a lone note doesn't fill the whole thumbnail.
   const scale = Math.min((width - padding * 2) / contentW, (height - padding * 2) / contentH, 1);
   const canvas = document.createElement('canvas');
   canvas.width = width;

@@ -18,12 +18,12 @@ import { DEFAULT_FONT } from './fonts';
 import { NOTE_VARIANTS, type NoteVariant } from './notes';
 import { isColor, isNoteFill } from './palette';
 
-/** Marca para reconocer lo copiado desde diaryo al pegar. */
+/** Marker to recognize what was copied from diaryo when pasting. */
 const CLIPBOARD_TYPE = 'diaryo/elements';
 
 export interface ClipboardContent {
   elements: SceneElement[];
-  /** Imágenes usadas por los elementos: id → data URL. */
+  /** Images used by the elements: id → data URL. */
   assets: Record<string, string>;
 }
 
@@ -54,7 +54,7 @@ function base(v: Raw) {
 const ALIGNS: TextAlign[] = ['left', 'center', 'right'];
 const VALIGNS: VerticalAlign[] = ['top', 'middle', 'bottom'];
 
-/** Propiedades de texto, con valores por defecto para lo copiado con versiones antiguas. */
+/** Text properties, with defaults for what older versions copied. */
 function textProps(v: Raw) {
   return {
     font: typeof v.font === 'string' ? v.font : DEFAULT_FONT,
@@ -211,8 +211,8 @@ function parseAssets(value: unknown): Record<string, string> {
 }
 
 /**
- * Valida un elemento leído de fuera (portapapeles, archivo, base de datos). Rellena
- * lo que falte con valores por defecto y devuelve null si no se entiende.
+ * Validates an element read from outside (clipboard, file, database). Fills in whatever
+ * is missing with defaults and returns null if it can't be understood.
  */
 export function parseElement(raw: unknown, hasAsset: (id: string) => boolean): SceneElement | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -235,7 +235,7 @@ export function parseElement(raw: unknown, hasAsset: (id: string) => boolean): S
   }
 }
 
-/** Lee lo copiado desde diaryo. Devuelve null si el texto es otra cosa. */
+/** Reads what was copied from diaryo. Returns null if the text is something else. */
 export function parseElements(text: string): ClipboardContent | null {
   let data: unknown;
   try {
@@ -247,7 +247,7 @@ export function parseElements(text: string): ClipboardContent | null {
   if (payload?.type !== CLIPBOARD_TYPE || !Array.isArray(payload.elements)) return null;
   const assets = parseAssets(payload.assets);
 
-  // Se ignoran los elementos que no se entienden (p. ej. de una versión más nueva).
+  // Elements that can't be understood are ignored (e.g. from a newer version).
   const elements: SceneElement[] = [];
   for (const raw of payload.elements as unknown[]) {
     const el = parseElement(raw, (id) => id in assets);

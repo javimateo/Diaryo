@@ -3,8 +3,8 @@ import type { SceneElement, SizedKind } from './elements';
 import type { SelectionStyle } from './types';
 
 /**
- * El estilo común de lo seleccionado, para el panel de propiedades: cada campo tiene el
- * valor que comparten todos o null si son distintos. Null si no hay nada seleccionado.
+ * The common style of the selection, for the properties panel: each field has the value
+ * they all share or null if they differ. Null if nothing is selected.
  */
 export function selectionStyle(all: SceneElement[]): SelectionStyle | null {
   if (all.length === 0) return null;
@@ -23,7 +23,7 @@ export function selectionStyle(all: SceneElement[]): SelectionStyle | null {
   const labelled = [...shapes, ...strokes].flatMap((el) => (el.label ? [el.label] : []));
   const typed = [...texts, ...notes, ...labelled];
 
-  // El tamaño solo se puede cambiar si todo es del mismo "tipo de tamaño".
+  // The size can only be changed if everything is of the same "size kind".
   const lined = [...strokes, ...shapes, ...arrows];
   const lettered = [...texts, ...notes];
   const rest = all.length - lined.length - lettered.length - of('image').length;

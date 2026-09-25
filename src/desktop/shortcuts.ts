@@ -1,15 +1,13 @@
-/** Atajos de teclado de la app de escritorio (funciones puras, sin nada de Tauri). */
+/** Keyboard shortcuts of the desktop app (pure functions, nothing from Tauri). */
 
-const KEY_NAMES: Record<string, string> = { Space: 'Espacio' };
-
-/** Cómo se enseña cada tecla de un atajo ("Ctrl+Alt+D" → Ctrl, Alt, D). */
-export const shortcutKeys = (shortcut: string) =>
-  shortcut.split('+').map((key) => KEY_NAMES[key] ?? key);
+/** How each key of a shortcut is shown ("Ctrl+Alt+D" → Ctrl, Alt, D). */
+export const shortcutKeys = (shortcut: string, spaceName = 'Space') =>
+  shortcut.split('+').map((key) => (key === 'Space' ? spaceName : key));
 
 /**
- * El atajo de una pulsación de teclado ("Ctrl+Alt+D"), o null si aún no vale: tiene
- * que llevar Ctrl o Alt (si no, taparía teclas normales) y una letra, un número, una
- * tecla de función o el espacio.
+ * The shortcut of a key press ("Ctrl+Alt+D"), or null if it isn't valid yet: it must
+ * include Ctrl or Alt (otherwise it would hide normal keys) and a letter, a number, a
+ * function key or space.
  */
 export function shortcutFromEvent(
   e: Pick<KeyboardEvent, 'code' | 'ctrlKey' | 'altKey' | 'shiftKey'>,
@@ -26,13 +24,13 @@ export function shortcutFromEvent(
   return [...modifiers.filter(Boolean), key].join('+');
 }
 
-/** Lo que hace cada tecla en la mesa del escritorio (nada de lo del diario). */
+/** What each key does on the desktop desk (nothing from the diary). */
 export type DeskKeyAction = 'undo' | 'redo' | 'delete' | 'edit' | 'deselect' | 'ignore' | null;
 
 /**
- * La tecla pulsada en la mesa del escritorio: deshacer, rehacer, borrar, editar o soltar
- * la selección. `ignore`: se come la tecla (el espacio, que movería la vista, y los
- * atajos del diario); null: la tecla sigue su camino (se está escribiendo).
+ * The key pressed on the desktop desk: undo, redo, delete, edit or release the selection.
+ * `ignore`: the key is swallowed (space, which would move the view, and the diary
+ * shortcuts); null: the key goes on (you are typing).
  */
 export function deskKeyAction(
   e: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey'>,

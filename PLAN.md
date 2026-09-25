@@ -51,8 +51,9 @@ con todas las páginas del diario.
 
 ```
 src/
-  lib/      Utilidades puras que usa cualquier capa (fechas)
+  lib/      Utilidades puras que usa cualquier capa (fechas, almacenamiento del navegador)
   engine/   Motor del lienzo en TypeScript puro (cámara, dibujo, entrada)
+  i18n/     Textos de la app en español e inglés, y fechas en el idioma elegido
   storage/  Base de datos (Dexie), autoguardado y copias en archivo
   diary/    El diario: páginas por día, pasar página, la mesa, búsqueda
   store/    Estado de la interfaz (Zustand)
@@ -254,15 +255,24 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         fondo; el Rust en módulos (estado, atajos, bandeja, comandos); el panel de
         propiedades y los estilos, por partes; tests del guardado entre mesa y página y
         de la sincronización entre ventanas.
-  - [ ] **F. Inglés y español**: comentarios del código en inglés; la app en español (por
+  - [x] **F. Inglés y español**: comentarios del código en inglés; la app en español (por
         defecto) o inglés, a elegir en Ajustes.
-  - [ ] **G. Nombre**: diaryo o dair.io (pendiente de decidir). Sin cambiar el
-        identificador interno, para no perder los datos guardados.
+    - [x] **La app en dos idiomas**: `src/i18n` (`es.ts` manda, `en.ts` con la misma
+          forma, comprobada por TypeScript); fechas con `Intl` en el idioma elegido; el
+          motor no sabe de idiomas (le llegan los textos que pinta: "hoy", rótulos de las
+          hojas, enlaces rotos); la búsqueda de fechas entiende los dos idiomas; la parte
+          de Rust (bandeja, errores) sigue el idioma de la página. Se cambia en Ajustes
+          → Apariencia y todo se vuelve a pintar al momento.
+    - [x] **Comentarios en inglés** (TypeScript, CSS y Rust), nombres de los tests y
+          mensajes para desarrolladores.
+    - [x] **README** en inglés (`README.md`) con su versión en español (`README.es.md`).
+  - [x] **G. Nombre**: se queda **diaryo** (se descartó dair.io).
   - [ ] **H. Página web**: presentación y descarga del instalador, en el VPS propio
         (Coolify, desde el repositorio de GitHub) con su dominio.
-    - [ ] **H1. Esqueleto**: carpeta `web/` con Astro (páginas estáticas, islas de React
-          para reutilizar el motor), en español (`/`, por defecto) e inglés (`/en/`). El
-          nombre y el dominio en un solo sitio, para cambiarlos fácil.
+    - [x] **H1. Esqueleto**: carpeta `web/` con Astro 7 (páginas estáticas, islas de
+          React para reutilizar el motor), en español (`/`, por defecto) e inglés
+          (`/en/`). El nombre y el repositorio en `web/src/site.ts`; el dominio, en la
+          variable `SITE_URL` al publicar. `npm --prefix web run dev` para verla.
     - [ ] **H2. Maqueta de la portada** (antes de hacerla): arriba, la demo; luego las
           funciones, la descarga, código abierto y privacidad, y preguntas frecuentes.
     - [ ] **H3. Demo en la portada**: el lienzo de verdad con un diario de ejemplo, para
@@ -280,7 +290,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
     - [ ] **H8. Visitas sin cookies**: Umami como servicio de Coolify; visitas y
           descargas (como evento), sin rastrear a nadie.
     - **Pendiente de decidir** antes de publicar:
-      - [ ] **Nombre**: diaryo o dair.io (ver G).
+      - [x] **Nombre**: diaryo (ver G).
       - [ ] **Dominio**: cuál, y si la web va en el principal o en un subdominio.
       - [ ] **Repositorio público** en GitHub (lo necesitan las descargas de las Releases).
       - [ ] **Actualizaciones automáticas**: que la app avise y se actualice sola (plugin

@@ -42,15 +42,9 @@ import {
   ZoomOut,
   type LucideIcon,
 } from 'lucide-react';
-import {
-  PAPER_COLORS,
-  PAPERS,
-  type Binding,
-  type PaperColor,
-  type PaperStyle,
-} from '../engine/book';
-import { MATERIALS, type CoverMaterial } from '../engine/cover';
-import { DESKS, type DeskStyle } from '../engine/desk';
+import { BINDINGS, PAPER_COLORS, PAPER_STYLES, type PaperColor } from '../engine/book';
+import { MATERIALS } from '../engine/cover';
+import { DESKS } from '../engine/desk';
 import { exportPng, openCopy, saveCopy } from './fileActions';
 import { FILE_EXTENSION } from '../storage/files';
 import { useUI } from '../store/ui';
@@ -62,13 +56,13 @@ import {
   toggleBookmark,
   turnPage,
 } from './diaryActions';
-import { BINDINGS } from './BookStyleSection';
 import { backupDesktop, hideDesktop, quitDesktop, showDesktopMode } from '../desktop/bridge';
 import { openBackupDir } from '../desktop/settings';
 import { shortcutKeys } from '../desktop/shortcuts';
 import { TOOLS } from './toolDefs';
+import { t } from '../i18n';
 
-/** Lo que pide un comando que necesita que se escriba algo (p. ej. un título). */
+/** What a command asks for when something needs to be typed (e.g. a title). */
 export interface CommandPrompt {
   title: string;
   placeholder: string;
@@ -81,17 +75,20 @@ export interface Command {
   label: string;
   group: string;
   icon: LucideIcon;
-  /** Atajo de teclado, tecla a tecla. */
+  /** Keyboard shortcut, key by key. */
   keys?: string[];
-  /** Otras palabras con las que encontrarlo. */
+  /** Other words that find it. */
   keywords?: string;
-  /** Está puesto ahora (p. ej. el tipo de hoja elegido). */
+  /** It is currently on (e.g. the chosen paper). */
   checked?: boolean;
-  /** Hace lo suyo, o pide que se escriba algo antes (lo que devuelvan las acciones del motor da igual). */
+  /**
+   * Does its thing, or asks for something to be typed first (whatever the engine actions
+   * return doesn't matter).
+   */
   run: () => CommandPrompt | boolean | void;
 }
 
-/** Abre el selector de archivos para abrir una copia del diario. */
+/** Opens the file picker to open a backup of the diary. */
 function pickBackup() {
   const input = document.createElement('input');
   input.type = 'file';
@@ -104,228 +101,225 @@ function pickBackup() {
   input.click();
 }
 
-/** Todo lo que se puede hacer desde la paleta, según cómo esté ahora la app. */
+/** Everything that can be done from the palette, depending on the current state of the app. */
 export function getCommands(): Command[] {
   const state = useUI.getState();
   const { engine, diary, doc, themePreference, bookStyle, diaryState } = state;
   if (!engine) return [];
   const current = diaryState.current;
   const saved = !!current && diaryState.pages.some((p) => p.id === current.id);
+  const { commands: c, commandKeywords: kw, commandGroups: g, catalog } = t();
   const commands: Command[] = [];
   const add = (group: string, list: (Omit<Command, 'group'> | false)[]) => {
     for (const command of list) if (command) commands.push({ ...command, group });
   };
 
-  add('Diario', [
+  add(g.diary, [
     {
       id: 'today',
-      label: 'Ir a hoy',
+      label: c.today,
       icon: CalendarDays,
-      keys: ['Ctrl', 'Inicio'],
+      keys: ['Ctrl', t().keys.home],
       run: goToToday,
     },
     {
       id: 'new-page',
-      label: 'Nueva página',
+      label: c.newPage,
       icon: FilePlus2,
       keys: ['Alt', 'N'],
-      keywords: 'hoja añadir crear',
+      keywords: kw.newPage,
       run: addPage,
     },
     {
       id: 'next-page',
-      label: 'Página siguiente',
+      label: c.nextPage,
       icon: ChevronRight,
       keys: ['Ctrl', '→'],
-      keywords: 'pasar hoja',
+      keywords: kw.turn,
       run: () => void turnPage(1),
     },
     {
       id: 'prev-page',
-      label: 'Página anterior',
+      label: c.prevPage,
       icon: ChevronLeft,
       keys: ['Ctrl', '←'],
-      keywords: 'pasar hoja volver',
+      keywords: kw.turnBack,
       run: () => void turnPage(-1),
     },
     !!current && {
       id: 'rename',
-      label: current.title ? 'Cambiar el título de la página' : 'Poner título a la página',
+      label: current.title ? c.renamePage : c.titlePage,
       icon: PenLine,
-      keywords: 'nombre renombrar',
+      keywords: kw.rename,
       run: () => ({
-        title: 'Título de la página',
-        placeholder: 'Por ejemplo: Viaje a Lisboa',
+        title: c.pageTitle,
+        placeholder: c.pageTitlePlaceholder,
         initial: current.title,
         submit: (title: string) => void diary?.rename(current.id, title),
       }),
     },
     !!current && {
       id: 'bookmark',
-      label: current.bookmark
-        ? 'Quitar la pestaña de la página'
-        : 'Marcar la página como importante',
+      label: current.bookmark ? c.removeBookmark : c.bookmark,
       icon: current.bookmark ? BookmarkX : Bookmark,
       keys: ['Alt', 'M'],
-      keywords: 'pestaña marcador favorita',
+      keywords: kw.bookmark,
       run: () => toggleBookmark(),
     },
     {
       id: 'map',
-      label: 'Mapa del diario',
+      label: c.map,
       icon: LayoutGrid,
       keys: ['Shift', 'M'],
-      keywords: 'todas las páginas vista general',
+      keywords: kw.map,
       run: () => useUI.getState().setMapOpen(true),
     },
     {
       id: 'index',
-      label: 'Índice y calendario',
+      label: c.index,
       icon: BookOpen,
       keys: ['Ctrl', 'B'],
-      keywords: 'lista páginas meses',
+      keywords: kw.index,
       run: () => useUI.getState().setDiaryOpen(true),
     },
     saved && {
       id: 'delete-page',
-      label: 'Borrar esta página',
+      label: c.deletePage,
       icon: Trash2,
-      keywords: 'eliminar hoja',
+      keywords: kw.deletePage,
       run: () => void deletePage(current.id),
     },
   ]);
 
   const selected = doc.selectionCount > 0;
-  add('Selección', [
+  add(g.selection, [
     selected && {
       id: 'duplicate',
-      label: 'Duplicar',
+      label: c.duplicate,
       icon: Copy,
       keys: ['Ctrl', 'D'],
       run: () => engine.duplicateSelection(),
     },
     selected && {
       id: 'link',
-      label: doc.selectionHasLink ? 'Cambiar el enlace…' : 'Enlazar con una página…',
+      label: doc.selectionHasLink ? c.changeLink : c.addLink,
       icon: Link,
-      keywords: 'enlace vincular',
+      keywords: kw.link,
       run: () => useUI.getState().setLinkDialogOpen(true),
     },
     selected &&
       doc.selectionHasLink && {
         id: 'unlink',
-        label: 'Quitar el enlace',
+        label: c.unlink,
         icon: Unlink,
         run: () => engine.setSelectionLink(null),
       },
     doc.selectionCount > 1 && {
       id: 'group',
-      label: 'Agrupar',
+      label: c.group,
       icon: Group,
       keys: ['Ctrl', 'G'],
       run: () => engine.groupSelection(),
     },
     doc.selectionGrouped && {
       id: 'ungroup',
-      label: 'Desagrupar',
+      label: c.ungroup,
       icon: Ungroup,
       keys: ['Ctrl', 'Shift', 'G'],
       run: () => engine.ungroupSelection(),
     },
     selected && {
       id: 'front',
-      label: 'Traer al frente',
+      label: c.front,
       icon: ArrowUpToLine,
       keys: ['Ctrl', 'Shift', '↑'],
-      keywords: 'capa encima',
+      keywords: kw.layerUp,
       run: () => engine.arrangeSelection('front'),
     },
     selected && {
       id: 'back',
-      label: 'Enviar al fondo',
+      label: c.back,
       icon: ArrowDownToLine,
       keys: ['Ctrl', 'Shift', '↓'],
-      keywords: 'capa debajo',
+      keywords: kw.layerDown,
       run: () => engine.arrangeSelection('back'),
     },
     selected && {
       id: 'flip-h',
-      label: 'Voltear en horizontal',
+      label: c.flipH,
       icon: FlipHorizontal2,
       keys: ['Shift', 'H'],
-      keywords: 'espejo',
+      keywords: kw.mirror,
       run: () => engine.flipSelection('horizontal'),
     },
     selected && {
       id: 'flip-v',
-      label: 'Voltear en vertical',
+      label: c.flipV,
       icon: FlipVertical2,
       keys: ['Shift', 'V'],
-      keywords: 'espejo',
+      keywords: kw.mirror,
       run: () => engine.flipSelection('vertical'),
     },
     selected && {
       id: 'lock',
-      label: doc.selectionLocked ? 'Desbloquear' : 'Bloquear',
+      label: doc.selectionLocked ? c.unlock : c.lock,
       icon: doc.selectionLocked ? LockOpen : Lock,
       keys: ['Ctrl', 'Shift', 'L'],
-      keywords: 'fijar',
+      keywords: kw.lock,
       run: () => engine.toggleLockSelection(),
     },
     selected && {
       id: 'copy-png',
-      label: 'Copiar como imagen',
+      label: c.copyPng,
       icon: ImageIcon,
       keys: ['Shift', 'Alt', 'C'],
-      keywords: 'png portapapeles',
+      keywords: kw.copyPng,
       run: () =>
         void engine
           .copySelectionAsPng()
-          .then((ok) =>
-            useUI.getState().showToast(ok ? 'Imagen copiada' : 'No se ha podido copiar la imagen'),
-          ),
+          .then((ok) => useUI.getState().showToast(ok ? c.imageCopied : c.imageCopyFailed)),
     },
     selected && {
       id: 'delete',
-      label: 'Borrar lo seleccionado',
+      label: c.deleteSelection,
       icon: Trash2,
-      keys: ['Supr'],
-      keywords: 'eliminar',
+      keys: [t().keys.delete],
+      keywords: kw.delete,
       run: () => engine.deleteSelection(),
     },
   ]);
 
   add(
-    'Herramientas',
+    g.tools,
     TOOLS.map((tool) => ({
       id: `tool-${tool.id}`,
-      label: tool.label,
+      label: t().tools.names[tool.id],
       icon: tool.icon,
       keys: [tool.key.toUpperCase()],
-      keywords: 'herramienta',
+      keywords: kw.tool,
       checked: state.tool === tool.id,
       run: () => state.setTool(tool.id),
     })),
   );
 
-  add('Editar', [
+  add(g.edit, [
     {
       id: 'undo',
-      label: 'Deshacer',
+      label: c.undo,
       icon: Undo2,
       keys: ['Ctrl', 'Z'],
       run: () => engine.undo(),
     },
     {
       id: 'redo',
-      label: 'Rehacer',
+      label: c.redo,
       icon: Redo2,
       keys: ['Ctrl', 'Shift', 'Z'],
       run: () => engine.redo(),
     },
     {
       id: 'select-all',
-      label: 'Seleccionar todo',
+      label: c.selectAll,
       icon: Frame,
       keys: ['Ctrl', 'A'],
       run: () => {
@@ -335,95 +329,95 @@ export function getCommands(): Command[] {
     },
     doc.hasLocked && {
       id: 'unlock-all',
-      label: 'Desbloquear todo',
+      label: c.unlockAll,
       icon: LockOpen,
       run: () => engine.unlockAll(),
     },
   ]);
 
-  add('Ver', [
+  add(g.view, [
     {
       id: 'fit',
-      label: 'Ver todo',
+      label: c.fit,
       icon: Frame,
       keys: ['Shift', '1'],
-      keywords: 'encajar ajustar zoom',
+      keywords: kw.fit,
       run: () => engine.zoomToFit(),
     },
     {
       id: 'zoom-in',
-      label: 'Acercar',
+      label: c.zoomIn,
       icon: ZoomIn,
       keys: ['Ctrl', '+'],
-      keywords: 'zoom',
+      keywords: kw.zoom,
       run: () => engine.zoomIn(),
     },
     {
       id: 'zoom-out',
-      label: 'Alejar',
+      label: c.zoomOut,
       icon: ZoomOut,
       keys: ['Ctrl', '−'],
-      keywords: 'zoom',
+      keywords: kw.zoom,
       run: () => engine.zoomOut(),
     },
     {
       id: 'theme-light',
-      label: 'Tema claro',
+      label: c.themeLight,
       icon: Sun,
-      keywords: 'día modo apariencia',
+      keywords: kw.light,
       checked: themePreference === 'light',
       run: () => state.setThemePreference('light'),
     },
     {
       id: 'theme-dark',
-      label: 'Tema oscuro',
+      label: c.themeDark,
       icon: Moon,
-      keywords: 'noche modo apariencia',
+      keywords: kw.dark,
       checked: themePreference === 'dark',
       run: () => state.setThemePreference('dark'),
     },
     {
       id: 'theme-system',
-      label: 'Tema como el sistema',
+      label: c.themeSystem,
       icon: SunMoon,
-      keywords: 'automático modo apariencia',
+      keywords: kw.system,
       checked: themePreference === 'system',
       run: () => state.setThemePreference('system'),
     },
     {
       id: 'settings',
-      label: 'Ajustes',
+      label: c.settings,
       icon: Settings,
       keys: ['Ctrl', ','],
-      keywords: 'configuración preferencias opciones',
+      keywords: kw.settings,
       run: () => state.setSettingsOpen(true),
     },
     {
       id: 'help',
-      label: 'Atajos de teclado',
+      label: c.shortcuts,
       icon: Keyboard,
       keys: ['?'],
-      keywords: 'ayuda teclas',
+      keywords: kw.help,
       run: () => state.setHelpOpen(true),
     },
   ]);
 
-  add('Aspecto del diario', [
-    ...(Object.keys(PAPERS) as PaperStyle[]).map((paper) => ({
+  add(g.bookLook, [
+    ...PAPER_STYLES.map((paper) => ({
       id: `paper-${paper}`,
-      label: `Hoja del diario: ${PAPERS[paper]}`,
+      label: c.diaryPaper(catalog.papers[paper]),
       icon: Palette,
-      keywords: 'papel fondo',
+      keywords: kw.paper,
       checked: bookStyle.paper === paper,
       run: () => state.setBookStyle({ paper }),
     })),
     ...(current
       ? [
-          ...(Object.keys(PAPERS) as PaperStyle[]).map((paper) => ({
+          ...PAPER_STYLES.map((paper) => ({
             id: `page-paper-${paper}`,
-            label: `Hoja de esta página: ${PAPERS[paper]}`,
+            label: c.pagePaper(catalog.papers[paper]),
             icon: Palette,
-            keywords: 'papel fondo',
+            keywords: kw.paper,
             checked: current.paper === paper,
             run: () => setPagePaper(paper),
           })),
@@ -431,9 +425,9 @@ export function getCommands(): Command[] {
             ? [
                 {
                   id: 'page-paper-default',
-                  label: 'Hoja de esta página: la del diario',
+                  label: c.pagePaperDefault,
                   icon: Palette,
-                  keywords: 'papel fondo',
+                  keywords: kw.paper,
                   run: () => setPagePaper(null),
                 },
               ]
@@ -442,115 +436,115 @@ export function getCommands(): Command[] {
       : []),
     ...(Object.keys(PAPER_COLORS) as PaperColor[]).map((paperColor) => ({
       id: `paper-color-${paperColor}`,
-      label: `Color de hoja: ${PAPER_COLORS[paperColor].name}`,
+      label: c.paperColor(catalog.paperColors[paperColor]),
       icon: Palette,
-      keywords: 'papel fondo',
+      keywords: kw.paper,
       checked: bookStyle.paperColor === paperColor,
       run: () => state.setBookStyle({ paperColor }),
     })),
-    ...(Object.keys(BINDINGS) as Binding[]).map((binding) => ({
+    ...BINDINGS.map((binding) => ({
       id: `binding-${binding}`,
-      label: `Encuadernación: ${BINDINGS[binding]}`,
+      label: c.binding(catalog.bindings[binding]),
       icon: BookOpen,
-      keywords: 'libreta cuaderno',
+      keywords: kw.binding,
       checked: bookStyle.binding === binding,
       run: () => state.setBookStyle({ binding }),
     })),
-    ...(Object.keys(MATERIALS) as CoverMaterial[]).map((material) => ({
+    ...MATERIALS.map((material) => ({
       id: `material-${material}`,
-      label: `Tapas: ${MATERIALS[material]}`,
+      label: c.cover(catalog.materials[material]),
       icon: BookOpen,
-      keywords: 'material',
+      keywords: kw.material,
       checked: bookStyle.material === material,
       run: () => state.setBookStyle({ material }),
     })),
     {
       id: 'elastic',
-      label: bookStyle.elastic ? 'Quitar la goma elástica' : 'Poner la goma elástica',
+      label: bookStyle.elastic ? c.removeElastic : c.addElastic,
       icon: BookOpen,
-      keywords: 'tapas',
+      keywords: kw.elastic,
       run: () => state.setBookStyle({ elastic: !bookStyle.elastic }),
     },
-    ...(Object.keys(DESKS) as DeskStyle[]).map((desk) => ({
+    ...DESKS.map((desk) => ({
       id: `desk-${desk}`,
-      label: `Mesa: ${DESKS[desk]}`,
+      label: c.desk(catalog.desks[desk]),
       icon: Palette,
-      keywords: 'fondo',
+      keywords: kw.desk,
       checked: bookStyle.desk === desk,
       run: () => state.setBookStyle({ desk }),
     })),
   ]);
 
-  add('Archivo', [
+  add(g.file, [
     !!diary && {
       id: 'save-copy',
-      label: 'Guardar una copia del diario',
+      label: c.saveCopy,
       icon: Download,
-      keywords: 'copia de seguridad exportar descargar backup',
+      keywords: kw.saveCopy,
       run: () => void saveCopy(diary),
     },
     {
       id: 'open-copy',
-      label: 'Abrir una copia…',
+      label: c.openCopy,
       icon: FolderOpen,
-      keywords: 'importar recuperar backup',
+      keywords: kw.openCopy,
       run: pickBackup,
     },
     {
       id: 'export-png',
-      label: 'Exportar la página como imagen',
+      label: c.exportPng,
       icon: ImageDown,
-      keywords: 'png descargar',
+      keywords: kw.exportPng,
       run: () => void exportPng(engine),
     },
   ]);
 
   const desktop = state.desktop;
   if (desktop) {
-    add('Escritorio', [
+    add(g.desktop, [
       desktop.mode === 'window'
         ? {
             id: 'widget',
-            label: 'Diario flotante',
+            label: c.floatingDiary,
             icon: PanelsTopLeft,
-            keys: shortcutKeys(desktop.shortcut),
-            keywords: 'widget escritorio encima',
+            keys: shortcutKeys(desktop.shortcut, t().keys.space),
+            keywords: kw.widget,
             run: () => void showDesktopMode('widget'),
           }
         : {
             id: 'window',
-            label: 'Abrir en una ventana',
+            label: c.openWindow,
             icon: AppWindow,
-            keywords: 'ventana normal',
+            keywords: kw.window,
             run: () => void showDesktopMode('window'),
           },
       {
         id: 'hide',
-        label: 'Esconder diaryo',
+        label: c.hide,
         icon: EyeOff,
         keys: desktop.mode === 'widget' ? ['Esc'] : undefined,
-        keywords: 'bandeja minimizar cerrar',
+        keywords: kw.hide,
         run: () => void hideDesktop(),
       },
       desktop.backups && {
         id: 'backup-now',
-        label: 'Copiar el diario ahora',
+        label: c.backupNow,
         icon: Save,
-        keywords: 'copia automática guardar carpeta backup',
+        keywords: kw.backupNow,
         run: () => void backupDesktop(),
       },
       {
         id: 'backup-folder',
-        label: 'Abrir la carpeta de las copias',
+        label: c.backupFolder,
         icon: FolderOpen,
-        keywords: 'copias automáticas backup',
+        keywords: kw.backupFolder,
         run: () => void openBackupDir(),
       },
       {
         id: 'quit',
-        label: 'Salir de diaryo',
+        label: c.quit,
         icon: Power,
-        keywords: 'cerrar terminar',
+        keywords: kw.quit,
         run: () => void quitDesktop(),
       },
     ]);

@@ -1,13 +1,13 @@
 /**
- * Fuentes disponibles: una selección libre (OFL) incluida en la app y las que suba
- * el usuario. Los elementos guardan solo el id de la fuente.
+ * Available fonts: a free (OFL) selection bundled with the app and the ones the user
+ * uploads. Elements only store the font id.
  */
 export type FontCategory = 'sans' | 'hand' | 'serif' | 'mono' | 'display' | 'custom';
 
 export interface FontDef {
   id: string;
   name: string;
-  /** Nombre de familia CSS (entre comillas). */
+  /** CSS family name (in quotes). */
   family: string;
   category: FontCategory;
 }
@@ -30,19 +30,10 @@ export const BUILTIN_FONTS: FontDef[] = [
   { id: 'lilita-one', name: 'Lilita One', family: '"Lilita One"', category: 'display' },
 ];
 
-export const CATEGORY_LABELS: Record<FontCategory, string> = {
-  sans: 'Sin serifa',
-  hand: 'Manuscrita',
-  serif: 'Con serifa',
-  mono: 'Monoespaciada',
-  display: 'Títulos',
-  custom: 'Tus fuentes',
-};
-
 const FALLBACK = 'system-ui, -apple-system, "Segoe UI", sans-serif';
 
 interface CustomFont extends FontDef {
-  /** Archivo de la fuente como data URL (para guardarla y copiarla). */
+  /** Font file as a data URL (to save and copy it). */
   src: string;
 }
 
@@ -53,7 +44,7 @@ class FontRegistry {
   private readonly loaded = new Set<string>();
   private readonly pending = new Map<string, Promise<void>>();
   private readonly listeners = new Set<Listener>();
-  /** Cambia con cada fuente cargada o añadida (para que React se entere). */
+  /** Changes with each font loaded or added (so React notices). */
   version = 0;
 
   all(): FontDef[] {
@@ -68,7 +59,7 @@ class FontRegistry {
     return BUILTIN_FONTS.some((f) => f.id === id) || this.custom.has(id);
   }
 
-  /** Valor para `ctx.font` / CSS `font-family`, con alternativas por si no carga. */
+  /** Value for `ctx.font` / CSS `font-family`, with fallbacks in case it doesn't load. */
   stack(id: string): string {
     return `${this.get(id).family}, ${FALLBACK}`;
   }
@@ -78,8 +69,8 @@ class FontRegistry {
   }
 
   /**
-   * Garantiza que la fuente esté cargada antes de medir o pintar con ella. Avisa a
-   * los oyentes cuando termina (para volver a medir y redibujar).
+   * Makes sure the font is loaded before measuring or painting with it. Tells the
+   * listeners when it finishes (to measure and redraw again).
    */
   load(id: string): Promise<void> {
     if (this.loaded.has(id)) return Promise.resolve();
@@ -99,7 +90,7 @@ class FontRegistry {
     return promise;
   }
 
-  /** Registra una fuente subida por el usuario. Devuelve su id. */
+  /** Registers a font uploaded by the user. Returns its id. */
   async addCustom(
     name: string,
     src: string,
@@ -116,7 +107,7 @@ class FontRegistry {
     return id;
   }
 
-  /** Fuentes subidas por el usuario, con su archivo. */
+  /** Fonts uploaded by the user, with their file. */
   customFonts(): { id: string; name: string; src: string }[] {
     return [...this.custom.values()].map(({ id, name, src }) => ({ id, name, src }));
   }
@@ -139,10 +130,10 @@ class FontRegistry {
 
 export const fonts = new FontRegistry();
 
-/** Extensiones de fuente que se pueden subir. */
+/** Font extensions that can be uploaded. */
 export const FONT_FILE_ACCEPT = '.ttf,.otf,.woff,.woff2';
 
-/** Lee un archivo de fuente, lo registra y devuelve su id. */
+/** Reads a font file, registers it and returns its id. */
 export async function uploadFontFile(file: File): Promise<string> {
   const src = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();

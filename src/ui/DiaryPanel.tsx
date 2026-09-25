@@ -9,24 +9,18 @@ import {
   X,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import {
-  formatDay,
-  formatMonth,
-  formatShortDay,
-  monthGrid,
-  parseDay,
-  todayKey,
-  weekdayInitials,
-  type DayKey,
-} from '../lib/dates';
+import { monthGrid, parseDay, todayKey, type DayKey } from '../lib/dates';
+import { formatDay, formatMonth, formatShortDay, weekdayInitials } from '../i18n/dates';
 import type { PageMeta } from '../diary/pages';
 import { useUI } from '../store/ui';
 import { BOOKMARK_COLORS } from '../diary/diary';
 import { BookStyleSection } from './BookStyleSection';
 import { addPage, cycleBookmarkColor, deletePage, toggleBookmark } from './diaryActions';
+import { useT } from './useT';
 
-/** Índice del diario: calendario para saltar a cualquier día y lista de páginas. */
+/** Diary index: a calendar to jump to any day and a list of pages. */
 export function DiaryPanel() {
+  const t = useT();
   const open = useUI((s) => s.diaryOpen);
   const setOpen = useUI((s) => s.setDiaryOpen);
   const { pages, current } = useUI((s) => s.diaryState);
@@ -36,23 +30,21 @@ export function DiaryPanel() {
   return (
     <aside
       className="diary-panel floating"
-      aria-label="Índice del diario"
+      aria-label={t.diary.index}
       onMouseDown={(e) => {
         if (!(e.target instanceof HTMLInputElement)) e.preventDefault();
       }}
     >
       <header className="diary-header">
-        <h2>Diario</h2>
-        <span className="diary-count">
-          {pages.length === 1 ? '1 página' : `${pages.length} páginas`}
-        </span>
+        <h2>{t.diary.title}</h2>
+        <span className="diary-count">{t.diary.pageCount(pages.length)}</span>
         <button
           type="button"
           className="icon-btn"
-          aria-label="Aspecto del diario"
+          aria-label={t.bookStyle.label}
           aria-pressed={styling}
           data-active={styling || undefined}
-          data-tip="Aspecto del diario"
+          data-tip={t.bookStyle.label}
           onClick={() => setStyling(!styling)}
         >
           <Palette size={16} strokeWidth={1.75} />
@@ -60,8 +52,8 @@ export function DiaryPanel() {
         <button
           type="button"
           className="icon-btn"
-          aria-label="Cerrar el índice"
-          data-tip="Cerrar — Ctrl B"
+          aria-label={t.diary.closeIndex}
+          data-tip={`${t.common.close} — Ctrl B`}
           data-tip-align="end"
           onClick={() => setOpen(false)}
         >
@@ -72,7 +64,7 @@ export function DiaryPanel() {
       <Calendar pages={pages} current={current} />
       <button type="button" className="new-page-btn" onClick={addPage}>
         <Plus size={16} strokeWidth={2} />
-        Nueva página
+        {t.commands.newPage}
         <kbd>Alt N</kbd>
       </button>
       <PageList pages={pages} current={current} />
@@ -81,10 +73,11 @@ export function DiaryPanel() {
 }
 
 function Calendar({ pages, current }: { pages: PageMeta[]; current: PageMeta }) {
+  const t = useT();
   const today = todayKey();
   const weekStart = useUI((s) => s.settings.weekStart);
   const [view, setView] = useState(() => monthOf(current.date));
-  // Al cambiar de página, el calendario muestra su mes.
+  // When the page changes, the calendar shows its month.
   const [shownFor, setShownFor] = useState(current.date);
   if (shownFor !== current.date) {
     setShownFor(current.date);
@@ -98,12 +91,12 @@ function Calendar({ pages, current }: { pages: PageMeta[]; current: PageMeta }) 
   };
 
   return (
-    <section className="calendar" aria-label="Calendario">
+    <section className="calendar" aria-label={t.diary.calendar}>
       <div className="calendar-head">
         <button
           type="button"
           className="icon-btn"
-          aria-label="Mes anterior"
+          aria-label={t.diary.prevMonth}
           onClick={() => move(-1)}
         >
           <ChevronLeft size={16} strokeWidth={1.75} />
@@ -112,7 +105,7 @@ function Calendar({ pages, current }: { pages: PageMeta[]; current: PageMeta }) 
         <button
           type="button"
           className="icon-btn"
-          aria-label="Mes siguiente"
+          aria-label={t.diary.nextMonth}
           onClick={() => move(1)}
         >
           <ChevronRight size={16} strokeWidth={1.75} />
@@ -154,14 +147,11 @@ const monthOf = (day: DayKey) => {
   return { year: date.getFullYear(), month: date.getMonth() };
 };
 
-/** Páginas de la más reciente a la más antigua, agrupadas por mes. */
+/** Pages from newest to oldest, grouped by month. */
 function PageList({ pages, current }: { pages: PageMeta[]; current: PageMeta }) {
+  const t = useT();
   if (pages.length === 0) {
-    return (
-      <p className="page-list-empty">
-        Aún no hay páginas. Lo que escribas o dibujes se guarda en la página de hoy.
-      </p>
-    );
+    return <p className="page-list-empty">{t.diary.noPages}</p>;
   }
   const groups: { key: string; label: string; pages: PageMeta[] }[] = [];
   for (const page of [...pages].reverse()) {
@@ -191,6 +181,7 @@ function PageList({ pages, current }: { pages: PageMeta[]; current: PageMeta }) 
 }
 
 function PageItem({ page, active }: { page: PageMeta; active: boolean }) {
+  const t = useT();
   const [renaming, setRenaming] = useState(false);
   const cancelled = useRef(false);
   const diary = useUI((s) => s.diary);
@@ -216,7 +207,7 @@ function PageItem({ page, active }: { page: PageMeta; active: boolean }) {
           <span className="page-item-day">{formatShortDay(page.date)}</span>
           {!renaming && (
             <span className="page-item-title" data-empty={!page.title || undefined}>
-              {page.title || 'Sin título'}
+              {page.title || t.diary.untitled}
             </span>
           )}
         </span>
@@ -225,8 +216,8 @@ function PageItem({ page, active }: { page: PageMeta; active: boolean }) {
         <input
           className="page-rename"
           defaultValue={page.title}
-          placeholder="Título de la página"
-          aria-label="Título de la página"
+          placeholder={t.commands.pageTitle}
+          aria-label={t.commands.pageTitle}
           maxLength={80}
           autoFocus
           onFocus={(e) => {
@@ -246,8 +237,8 @@ function PageItem({ page, active }: { page: PageMeta; active: boolean }) {
           type="button"
           className="page-item-tab"
           style={{ background: page.bookmark }}
-          aria-label="Cambiar el color de la pestaña"
-          title="Color de la pestaña"
+          aria-label={t.diary.changeTabColor}
+          title={t.diary.tabColor}
           onClick={() => cycleBookmarkColor(page.id, BOOKMARK_COLORS)}
         />
       )}
@@ -256,9 +247,9 @@ function PageItem({ page, active }: { page: PageMeta; active: boolean }) {
           <button
             type="button"
             className="icon-btn"
-            aria-label={page.bookmark ? 'Quitar la pestaña' : 'Marcar como importante'}
+            aria-label={page.bookmark ? t.diary.removeTab : t.diary.markImportant}
             aria-pressed={!!page.bookmark}
-            title={page.bookmark ? 'Quitar la pestaña' : 'Marcar como importante'}
+            title={page.bookmark ? t.diary.removeTab : t.diary.markImportant}
             onClick={() => toggleBookmark(page.id)}
           >
             <Bookmark size={14} strokeWidth={1.75} />
@@ -266,8 +257,8 @@ function PageItem({ page, active }: { page: PageMeta; active: boolean }) {
           <button
             type="button"
             className="icon-btn"
-            aria-label="Cambiar el título"
-            title="Título"
+            aria-label={t.diary.changeTitle}
+            title={t.diary.titleTip}
             onClick={() => setRenaming(true)}
           >
             <Pencil size={14} strokeWidth={1.75} />
@@ -275,8 +266,8 @@ function PageItem({ page, active }: { page: PageMeta; active: boolean }) {
           <button
             type="button"
             className="icon-btn"
-            aria-label="Borrar la página"
-            title="Borrar"
+            aria-label={t.diary.deletePage}
+            title={t.contextMenu.delete}
             onClick={() => void deletePage(page.id)}
           >
             <Trash2 size={14} strokeWidth={1.75} />

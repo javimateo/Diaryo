@@ -1,18 +1,18 @@
 import type { PaperStyle } from '../engine/book';
 import type { DayKey } from '../lib/dates';
 
-/** Una página del diario tal como la ve la interfaz. */
+/** A diary page as the UI sees it. */
 export interface PageMeta {
   id: string;
   date: DayKey;
   order: number;
   title: string;
   thumbnail: string | null;
-  /** La miniatura es la doble página entera (las antiguas eran solo el contenido). */
+  /** The thumbnail is the whole double page (older ones were only the content). */
   thumbnailSpread?: boolean;
-  /** Color de la pestaña si la página está marcada como importante. */
+  /** Tab color if the page is marked as important. */
   bookmark: string | null;
-  /** Hoja propia de esta página; null = la de todo el diario. */
+  /** This page's own paper; null = the whole diary's. */
   paper?: PaperStyle | null;
   updatedAt: number;
 }
@@ -25,7 +25,7 @@ export function sortPages(pages: PageMeta[]): PageMeta[] {
   return [...pages].sort(comparePages);
 }
 
-/** Página nueva (aún sin guardar: se guarda al escribir algo en ella). */
+/** New page (not saved yet: it is saved when something is written on it). */
 export function newPage(date: DayKey, now = Date.now()): PageMeta {
   return {
     id: crypto.randomUUID(),
@@ -38,7 +38,7 @@ export function newPage(date: DayKey, now = Date.now()): PageMeta {
   };
 }
 
-/** Páginas de un día, en orden. */
+/** Pages of a day, in order. */
 export function pagesOfDay(pages: PageMeta[], date: DayKey): PageMeta[] {
   return sortPages(pages.filter((page) => page.date === date));
 }
@@ -46,14 +46,14 @@ export function pagesOfDay(pages: PageMeta[], date: DayKey): PageMeta[] {
 const withPage = (pages: PageMeta[], page: PageMeta) =>
   pages.some((p) => p.id === page.id) ? pages : [...pages, page];
 
-/** Página anterior (-1) o siguiente (1) en el diario, o null si no hay más. */
+/** Previous (-1) or next (1) page in the diary, or null if there are no more. */
 export function neighbor(pages: PageMeta[], current: PageMeta, direction: 1 | -1) {
   const sorted = sortPages(withPage(pages, current));
   const index = sorted.findIndex((p) => p.id === current.id);
   return sorted[index + direction] ?? null;
 }
 
-/** Posición dentro del día ("2 de 3"), o null si es la única página del día. */
+/** Position within the day ("2 of 3"), or null if it is the only page of the day. */
 export function positionInDay(pages: PageMeta[], current: PageMeta) {
   const day = pagesOfDay(withPage(pages, current), current.date);
   if (day.length < 2) return null;

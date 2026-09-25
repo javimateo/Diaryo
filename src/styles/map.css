@@ -1,4 +1,4 @@
-/* Mapa del diario */
+/* Diary map */
 
 .map-view {
   position: fixed;
@@ -6,7 +6,7 @@
   z-index: 60;
   display: flex;
   flex-direction: column;
-  /* La misma mesa que bajo el libro, vista de lejos. */
+  /* The same desk as under the book, seen from afar. */
   background-color: var(--desk-color, var(--canvas-bg));
   background-image: var(--desk-image, none);
   background-size: var(--desk-size, auto);
@@ -60,7 +60,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 64px 36px;
-  /* Sitio para los arcos de las conexiones por encima de la primera fila. */
+  /* Room for the connection arcs above the first row. */
   padding-top: 58px;
 }
 
@@ -112,7 +112,7 @@
   box-shadow: 0 10px 30px rgba(40, 25, 10, 0.2);
 }
 
-/* La miniatura es la doble página entera (las antiguas, solo el contenido: centradas). */
+/* The thumbnail is the whole double page (older ones, only the content: centered). */
 .map-sheet img {
   position: absolute;
   inset: 0;
@@ -162,7 +162,7 @@
   white-space: nowrap;
 }
 
-/* Conexiones entre páginas, encima de las hojas pero sin captar el ratón. */
+/* Connections between pages, above the sheets but without catching the mouse. */
 .map-links {
   position: absolute;
   top: 0;

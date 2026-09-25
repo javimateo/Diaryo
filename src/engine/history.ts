@@ -1,19 +1,19 @@
 import type { Changes, Scene } from './scene';
 
 const LIMIT = 500;
-/** Cambios con la misma clave seguidos (menos de este tiempo entre ellos) se deshacen juntos. */
+/** Consecutive changes with the same key (less than this time apart) are undone together. */
 const MERGE_WINDOW = 1000;
 
 interface Entry {
-  /** Cambios que deshacen (o rehacen) la acción. */
+  /** Changes that undo (or redo) the action. */
   changes: Changes;
   mergeKey?: string;
   time: number;
 }
 
 /**
- * Deshacer/rehacer. Cada acción se guarda como sus cambios inversos: deshacer
- * es aplicar el inverso, que a su vez devuelve el inverso para rehacer.
+ * Undo/redo. Each action is stored as its inverse changes: undoing applies the inverse,
+ * which in turn returns the inverse to redo.
  */
 export class History {
   private undoStack: Entry[] = [];
@@ -33,8 +33,8 @@ export class History {
   }
 
   /**
-   * Aplica una acción. Con `mergeKey`, si la anterior tenía la misma clave y fue hace
-   * poco, se funden en una sola (p. ej. arrastrar el deslizador de grosor).
+   * Applies an action. With `mergeKey`, if the previous one had the same key and was
+   * recent, they merge into one (e.g. dragging the stroke width slider).
    */
   commit(changes: Changes, mergeKey?: string) {
     if (changes.size === 0) return;
@@ -43,7 +43,7 @@ export class History {
     const last = this.undoStack[this.undoStack.length - 1];
 
     if (mergeKey && last?.mergeKey === mergeKey && now - last.time < MERGE_WINDOW) {
-      // El estado "antes" de la acción fundida es el más antiguo de cada elemento.
+      // The "before" state of the merged action is the oldest one of each element.
       for (const [id, previous] of inverse) {
         if (!last.changes.has(id)) last.changes.set(id, previous);
       }
@@ -56,7 +56,7 @@ export class History {
     this.onChange();
   }
 
-  /** Olvida todo (al cargar otra página). */
+  /** Forgets everything (when loading another page). */
   clear() {
     this.undoStack = [];
     this.redoStack = [];

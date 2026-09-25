@@ -2,7 +2,7 @@ import { PAGE_HEIGHT, PAGE_WIDTH, type BookSpread } from './book';
 import type { SceneElement } from './elements';
 import type { Vec } from './math';
 
-/** Una doble página a la que se puede pasar (con lo necesario para dibujarla). */
+/** A double page that can be turned to (with what is needed to draw it). */
 export interface TurnTarget {
   id: string;
   elements: SceneElement[];
@@ -16,7 +16,7 @@ interface Animation {
   to: Vec;
   start: number;
   duration: number;
-  /** Cuánto se levanta la hoja a mitad del recorrido (pasar página automático). */
+  /** How much the sheet lifts halfway (automatic page turning). */
   lift: number;
   easing: (t: number) => number;
   done?: () => void;
@@ -24,9 +24,9 @@ interface Animation {
 
 interface Curl {
   dir: TurnDirection;
-  /** Esquina de la hoja que se levanta. */
+  /** Corner of the sheet being lifted. */
   corner: Vec;
-  /** Dónde está ahora esa esquina. */
+  /** Where that corner is now. */
   point: Vec;
   texture: HTMLCanvasElement;
   mode: 'peel' | 'drag' | 'settle' | 'auto' | 'hold';
@@ -34,10 +34,10 @@ interface Curl {
 }
 
 export interface PageTurnerHooks {
-  /** Dibuja una doble página en un canvas (las dos páginas, a esa escala). */
+  /** Draws a double page on a canvas (both pages, at that scale). */
   renderTexture: (target: TurnTarget, scale: number) => HTMLCanvasElement;
   invalidate: () => void;
-  /** La hoja se ha soltado pasada la mitad: hay que abrir la página. */
+  /** The sheet was released past the middle: the page must open. */
   onTurn: (dir: TurnDirection) => void;
 }
 
@@ -68,7 +68,7 @@ const pagePolygon = (dir: TurnDirection): Polygon =>
         { x: -W, y: BOTTOM },
       ];
 
-/** Parte del polígono a un lado de la recta que pasa por P con normal n. */
+/** Part of the polygon on one side of the line through P with normal n. */
 function clipHalf(poly: Polygon, p: Vec, n: Vec, side: 1 | -1): Polygon {
   const out: Polygon = [];
   for (let i = 0; i < poly.length; i++) {
@@ -92,10 +92,10 @@ function tracePolygon(ctx: CanvasRenderingContext2D, poly: Polygon) {
 }
 
 /**
- * Pasar página como en un cuaderno: la esquina de la hoja sigue al ratón y la hoja se
- * dobla por la línea que queda entre la esquina y el ratón. La parte levantada deja ver
- * la página de debajo y muestra por detrás la otra cara. Todo en coordenadas del mundo
- * (el lomo está en x = 0), así funciona con cualquier zoom.
+ * Turning pages like in a notebook: the sheet's corner follows the mouse and the sheet
+ * folds along the line between the corner and the mouse. The lifted part reveals the page
+ * underneath and shows the other side behind it. All in world coordinates (the spine is
+ * at x = 0), so it works at any zoom.
  */
 export class PageTurner {
   private targets: { prev: TurnTarget | null; next: TurnTarget | null } = {
@@ -108,23 +108,23 @@ export class PageTurner {
 
   constructor(private readonly hooks: PageTurnerHooks) {}
 
-  /** Páginas a las que se puede pasar arrastrando la esquina. */
+  /** Pages that can be turned to by dragging the corner. */
   setTargets(prev: TurnTarget | null, next: TurnTarget | null) {
     this.targets = { prev, next };
     this.clearTextures();
   }
 
-  /** Se vuelven a dibujar las páginas de al lado (p. ej. al cambiar el tema). */
+  /** The neighbouring pages are drawn again (e.g. when the theme changes). */
   clearTextures() {
     this.textures.clear();
   }
 
-  /** Hay una hoja levantada o moviéndose. */
+  /** There is a sheet lifted or moving. */
   get active(): boolean {
     return this.curl !== null;
   }
 
-  /** Pasando página solo (o esperando a que cargue la nueva): no se puede tocar. */
+  /** Turning the page by itself (or waiting for the new one to load): it can't be touched. */
   get busy(): boolean {
     const mode = this.curl?.mode;
     return mode === 'auto' || mode === 'hold' || mode === 'settle';
@@ -134,14 +134,14 @@ export class PageTurner {
     return this.curl?.mode === 'drag';
   }
 
-  /** Resolución de las páginas de al lado (la del zoom actual, con límites). */
+  /** Resolution of the neighbouring pages (the current zoom's, within limits). */
   setScale(pixelScale: number) {
     this.textureScale = Math.min(2, Math.max(0.5, pixelScale));
   }
 
-  /** Esquina que se puede agarrar en ese punto, o null. */
+  /** Corner that can be grabbed at that point, or null. */
   cornerAt(p: Vec, zoom: number): { dir: TurnDirection; corner: Vec } | null {
-    // Unos 56 px de pantalla, pero siempre dentro de la hoja.
+    // About 56 screen px, but always inside the sheet.
     const reach = Math.min(W * 0.25, Math.max(60, 56 / zoom));
     const sides: [TurnDirection, number, TurnTarget | null][] = [
       [1, W, this.targets.next],
@@ -158,14 +158,17 @@ export class PageTurner {
     return null;
   }
 
-  /** Al acercar el ratón a una esquina, la hoja se levanta un poco. Devuelve si hay esquina. */
+  /**
+   * When the mouse gets close to a corner, the sheet lifts a bit. Returns whether there
+   * is a corner.
+   */
   hover(p: Vec | null, zoom: number): boolean {
     if (this.busy || this.dragging) return false;
     const hit = p ? this.cornerAt(p, zoom) : null;
     const curl = this.curl;
     if (hit) {
       const same = curl?.corner.x === hit.corner.x && curl.corner.y === hit.corner.y;
-      // Nueva esquina, o la misma mientras volvía a su sitio: se levanta.
+      // A new corner, or the same one while it was going back: it lifts.
       if (!same || curl?.anim?.done) {
         const texture = this.textureFor(hit.dir);
         if (!texture) return false;
@@ -188,7 +191,7 @@ export class PageTurner {
     return false;
   }
 
-  /** Empieza a arrastrar la esquina. Devuelve false si ahí no hay esquina. */
+  /** Starts dragging the corner. Returns false if there is no corner there. */
   grab(p: Vec, zoom: number): boolean {
     if (this.busy) return false;
     const hit = this.cornerAt(p, zoom);
@@ -214,7 +217,10 @@ export class PageTurner {
     this.hooks.invalidate();
   }
 
-  /** Al soltar: si la esquina pasó de la mitad, la hoja termina de caer; si no, vuelve. */
+  /**
+   * On release: if the corner went past the middle, the sheet finishes falling;
+   * otherwise, it goes back.
+   */
   release() {
     const curl = this.curl;
     if (curl?.mode !== 'drag') return;
@@ -230,7 +236,7 @@ export class PageTurner {
     }
   }
 
-  /** Suelta la hoja sin pasar página (p. ej. si se pierde el puntero). */
+  /** Releases the sheet without turning the page (e.g. if the pointer is lost). */
   cancel() {
     if (this.curl?.mode === 'drag') {
       this.curl.mode = 'settle';
@@ -239,8 +245,8 @@ export class PageTurner {
   }
 
   /**
-   * Pasa página sola (teclado, botones, calendario) hasta mostrar `target`. La hoja se
-   * queda caída hasta que se llama a end() con la nueva página ya cargada.
+   * Turns the page by itself (keyboard, buttons, calendar) until `target` shows. The
+   * sheet stays down until end() is called with the new page already loaded.
    */
   turn(dir: TurnDirection, target: TurnTarget, duration = 720): Promise<void> {
     const texture = this.hooks.renderTexture(target, this.textureScale);
@@ -262,7 +268,7 @@ export class PageTurner {
     this.hooks.invalidate();
   }
 
-  /** Avanza la animación. Devuelve true mientras siga moviéndose. */
+  /** Advances the animation. Returns true while it keeps moving. */
   step(now: number): boolean {
     const curl = this.curl;
     const anim = curl?.anim;
@@ -281,8 +287,8 @@ export class PageTurner {
   }
 
   /**
-   * Dibuja la hoja levantada encima de la página actual (coordenadas del mundo).
-   * `underLeaf` pinta lo que va entre la página de debajo y la hoja (las anillas).
+   * Draws the lifted sheet over the current page (world coordinates). `underLeaf` paints
+   * what goes between the page underneath and the sheet (the rings).
    */
   draw(ctx: CanvasRenderingContext2D, pixelScale: number, underLeaf?: () => void) {
     const curl = this.curl;
@@ -292,25 +298,26 @@ export class PageTurner {
     const dy = c.y - m.y;
     const len = Math.hypot(dx, dy);
     if (len < 0.5) return;
-    // n: de la esquina levantada hacia su sitio; P: punto del pliegue; d: dirección del pliegue.
+    // n: from the lifted corner towards its place; P: point on the fold; d: direction of
+    // the fold.
     const n = { x: dx / len, y: dy / len };
     const p = { x: (c.x + m.x) / 2, y: (c.y + m.y) / 2 };
     const d = { x: -n.y, y: n.x };
     const lifted = clipHalf(pagePolygon(curl.dir), p, n, 1);
     if (lifted.length < 3) return;
     const drawPages = () => ctx.drawImage(texture, -W, TOP, W * 2, H);
-    // Cuánto le falta a la esquina para posarse del otro lado (medido hasta ese punto,
-    // no por lo recorrido: al pasar sola la hoja va levantada casi hasta el final).
-    // Las sombras y el brillo se desvanecen al posarse, así la hoja aterriza igual que
-    // la página nueva.
+    // How far the corner still is from landing on the other side (measured to that point,
+    // not by distance travelled: when turning by itself the sheet stays lifted almost to
+    // the end). The shadows and the highlight fade out as it lands, so the sheet lands
+    // exactly like the new page.
     const toEnd = Math.hypot(m.x + curl.dir * W, m.y - c.y);
     const shade = Math.min(1, toEnd / (W * 0.3));
-    // Las anillas van bajo la hoja levantada y solo asoman por encima en los últimos
-    // milímetros, cuando la hoja ya está plana (como al pasar por las anillas).
+    // The rings go under the lifted sheet and only show above it in the last millimetres,
+    // when the sheet is already flat (like going through the rings).
     const ringsOver = 1 - Math.min(1, toEnd / (W * 0.06));
     const huge = () => ctx.fillRect(-W * 2, TOP - H, W * 4, H * 3);
 
-    // Lo que queda al descubierto: la página de debajo, con la sombra de la hoja.
+    // What is uncovered: the page underneath, with the sheet's shadow.
     ctx.save();
     tracePolygon(ctx, lifted);
     ctx.clip();
@@ -323,7 +330,7 @@ export class PageTurner {
     ctx.restore();
     underLeaf?.();
 
-    // La hoja doblada: la parte levantada reflejada en el pliegue.
+    // The folded sheet: the lifted part mirrored on the fold.
     const reflect = (q: Vec): Vec => {
       const vx = q.x - p.x;
       const vy = q.y - p.y;
@@ -339,8 +346,9 @@ export class PageTurner {
     ctx.fill();
     ctx.restore();
 
-    // Por detrás se ve la otra cara: la página del otro lado del lomo, reflejada dos
-    // veces (en el lomo y en el pliegue), que es un giro: se lee al derecho.
+    // Behind it the other side shows: the page on the other side of the spine, mirrored
+    // twice (on the spine and on the fold), which is a rotation: it reads the right way
+    // round.
     const r00 = 2 * d.x * d.x - 1;
     const r01 = 2 * d.x * d.y;
     const r11 = 2 * d.y * d.y - 1;
@@ -381,9 +389,9 @@ export class PageTurner {
   }
 
   /**
-   * La hoja no se puede separar del lomo (la esquina no llega más lejos que su largo)
-   * ni estirarse hacia fuera: la esquina nunca sale de la hoja. Si saliera, el pliegue
-   * quedaría fuera y parecería que se levanta la página entera.
+   * The sheet can't separate from the spine (the corner can't get further than its
+   * length) or stretch outwards: the corner never leaves the sheet. If it did, the fold
+   * would end up outside and it would look like the whole page lifts.
    */
   private constrain(curl: Curl, p: Vec): Vec {
     const cy = curl.corner.y;

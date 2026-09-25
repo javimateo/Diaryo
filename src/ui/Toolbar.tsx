@@ -1,10 +1,12 @@
 import { Fragment } from 'react';
 import { useUI } from '../store/ui';
 import { TOOL_GROUPS, type ToolDef } from './toolDefs';
+import { useT } from './useT';
 
 export function Toolbar() {
+  const t = useT();
   return (
-    <div className="toolbar floating" role="toolbar" aria-label="Herramientas">
+    <div className="toolbar floating" role="toolbar" aria-label={t.tools.label}>
       {TOOL_GROUPS.map((group, i) => (
         <Fragment key={i}>
           {i > 0 && <div className="toolbar-sep" aria-hidden />}
@@ -18,28 +20,23 @@ export function Toolbar() {
 }
 
 function ToolButton({ def }: { def: ToolDef }) {
+  const t = useT();
   const active = useUI((s) => s.tool === def.id);
-  const { id, label, key, digit, ready, icon: Icon } = def;
-  const shortcut = digit ? `${key.toUpperCase()} o ${digit}` : key.toUpperCase();
-
-  const select = () => {
-    const { setTool, showToast } = useUI.getState();
-    if (ready) setTool(id);
-    else showToast(`${label}: llegará muy pronto`);
-  };
+  const { id, key, digit, icon: Icon } = def;
+  const label = t.tools.names[id];
+  const shortcut = digit ? t.tools.keyOr(key.toUpperCase(), digit) : key.toUpperCase();
 
   return (
     <button
       type="button"
       className="icon-btn tool-btn"
       data-active={active || undefined}
-      data-soon={!ready || undefined}
       aria-pressed={active}
       aria-label={`${label} (${shortcut})`}
-      data-tip={ready ? `${label} — ${shortcut}` : `${label} — próximamente`}
-      // No robar el foco: los atajos de teclado siguen funcionando.
+      data-tip={`${label} — ${shortcut}`}
+      // Don't steal the focus: keyboard shortcuts keep working.
       onMouseDown={(e) => e.preventDefault()}
-      onClick={select}
+      onClick={() => useUI.getState().setTool(id)}
     >
       <Icon size={18} strokeWidth={1.75} />
       <span className="tool-key">{key.toUpperCase()}</span>

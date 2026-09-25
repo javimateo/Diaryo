@@ -7,22 +7,21 @@ interface IndexItem extends Bounds {
   id: string;
 }
 
-/** Cambios a aplicar: id → nuevo elemento, o `null` para borrarlo. */
+/** Changes to apply: id → new element, or `null` to delete it. */
 export type Changes = Map<string, SceneElement | null>;
 
 /**
- * Los elementos de una página. Los elementos son inmutables: para modificar uno se
- * sustituye por una copia. Un índice espacial (R-tree) permite encontrar rápido
- * los que están en pantalla o bajo el borrador.
+ * The elements of a page. Elements are immutable: to modify one it is replaced by a copy.
+ * A spatial index (R-tree) quickly finds the ones on screen or under the eraser.
  */
 export class Scene {
   private readonly elements = new Map<string, SceneElement>();
   private readonly items = new Map<string, IndexItem>();
   private readonly tree = new RBush<IndexItem>();
   private maxZ = 0;
-  /** Flechas enganchadas a cada elemento (id del elemento → ids de las flechas). */
+  /** Arrows attached to each element (element id → arrow ids). */
   private readonly arrowsOf = new Map<string, Set<string>>();
-  /** Se llama con los ids de lo que cambia (lo usa el autoguardado). */
+  /** Called with the ids of what changes (the autosave uses it). */
   onChange: (ids: string[]) => void = () => {};
 
   get size() {
@@ -33,20 +32,20 @@ export class Scene {
     return this.elements.get(id);
   }
 
-  /** Todos los elementos, de abajo a arriba. */
+  /** All the elements, from bottom to top. */
   all(): SceneElement[] {
     return [...this.elements.values()].sort((a, b) => a.z - b.z);
   }
 
-  /** Z para un elemento nuevo que quede encima de todo. */
+  /** Z for a new element that ends up on top of everything. */
   nextZ(): number {
     return this.maxZ + 1;
   }
 
   /**
-   * Aplica los cambios y devuelve los cambios inversos (para deshacer). Las flechas
-   * enganchadas a lo que cambia se recolocan en el mismo paso, así que siguen a sus
-   * elementos al moverlos, deshacer o rehacer, y se sueltan si se borran.
+   * Applies the changes and returns the inverse changes (for undo). Arrows attached to
+   * what changes are repositioned in the same step, so they follow their elements when
+   * moving, undoing or redoing, and detach if these are deleted.
    */
   apply(changes: Changes): Changes {
     const inverse: Changes = new Map();
@@ -78,7 +77,7 @@ export class Scene {
     return inverse;
   }
 
-  /** Elementos que tocan `bounds`, ordenados de abajo a arriba. */
+  /** Elements touching `bounds`, sorted from bottom to top. */
   search(bounds: Bounds): SceneElement[] {
     return this.tree
       .search(bounds)
@@ -86,7 +85,7 @@ export class Scene {
       .sort((a, b) => a.z - b.z);
   }
 
-  /** Caja que envuelve todo el contenido, o `null` si la página está vacía. */
+  /** Box wrapping all the content, or `null` if the page is empty. */
   contentBounds(): Bounds | null {
     let result: Bounds | null = null;
     for (const item of this.items.values()) result = result ? unionBounds(result, item) : item;

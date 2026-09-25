@@ -6,12 +6,12 @@ use tauri::{AppHandle, Manager};
 
 use crate::settings::Settings;
 
-/// Copias que se guardan (una por día: las de las dos últimas semanas).
+/// Backups kept (one per day: those of the last two weeks).
 const KEEP: usize = 14;
 
-/// Carpeta de las copias: la elegida o, si no, Documentos\diaryo. La versión de
-/// desarrollo tiene su propio diario: sus copias van aparte (en `desarrollo`) para no
-/// pisar las del diario de verdad.
+/// Backups folder: the chosen one or, otherwise, Documents\diaryo. The development build
+/// has its own diary: its backups go separately (in `desarrollo`) so they don't overwrite
+/// the real diary's.
 pub fn dir(app: &AppHandle, settings: &Settings) -> Result<PathBuf, String> {
     let dir = match &settings.backup_dir {
         Some(dir) => PathBuf::from(dir),
@@ -28,7 +28,7 @@ pub fn dir(app: &AppHandle, settings: &Settings) -> Result<PathBuf, String> {
     })
 }
 
-/// AAAA-MM-DD
+/// YYYY-MM-DD
 fn is_day(day: &str) -> bool {
     day.len() == 10
         && day.chars().enumerate().all(|(i, c)| {
@@ -46,14 +46,16 @@ fn is_backup(name: &str) -> bool {
         .is_some_and(is_day)
 }
 
-/// Guarda la copia del día (sustituye la de antes de ese mismo día) y borra las más viejas.
+/// Saves the day's backup (replacing the earlier one of that same day) and deletes the
+/// oldest ones.
 pub fn write(dir: &Path, day: &str, contents: &str) -> Result<PathBuf, String> {
     if !is_day(day) {
-        return Err(format!("«{day}» no es un día"));
+        return Err(format!("\"{day}\" is not a day"));
     }
     fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let path = dir.join(format!("diaryo-{day}.diaryo"));
-    // Primero a un archivo aparte: si algo falla a medias, la copia anterior sigue entera.
+    // First to a separate file: if something fails halfway, the previous backup stays
+    // whole.
     let partial = dir.join(format!(".diaryo-{day}.partial"));
     fs::write(&partial, contents).map_err(|e| e.to_string())?;
     fs::rename(&partial, &path).map_err(|e| e.to_string())?;
@@ -61,7 +63,8 @@ pub fn write(dir: &Path, day: &str, contents: &str) -> Result<PathBuf, String> {
     Ok(path)
 }
 
-/// Deja solo las `KEEP` copias más recientes (el nombre lleva la fecha, así que se ordenan solas).
+/// Keeps only the `KEEP` most recent backups (the name carries the date, so they sort by
+/// themselves).
 fn prune(dir: &Path) {
     let Ok(entries) = fs::read_dir(dir) else {
         return;
@@ -88,22 +91,22 @@ mod tests {
     }
 
     #[test]
-    fn solo_cuenta_las_copias_con_fecha() {
+    fn only_counts_dated_backups() {
         assert!(is_backup("diaryo-2026-09-25.diaryo"));
         assert!(!is_backup("diaryo-2026-9-25.diaryo"));
-        assert!(!is_backup("mis-notas.diaryo"));
+        assert!(!is_backup("my-notes.diaryo"));
         assert!(!is_backup("diaryo-2026-09-25.txt"));
     }
 
     #[test]
-    fn guarda_una_por_dia_y_borra_las_viejas() {
+    fn keeps_one_per_day_and_prunes_old_ones() {
         let dir = temp_dir("prune");
         for day in 1..=20 {
             write(&dir, &format!("2026-09-{day:02}"), "{}").unwrap();
         }
-        // La del mismo día se sustituye.
-        write(&dir, "2026-09-20", "nueva").unwrap();
-        fs::write(dir.join("otra-cosa.txt"), "no se toca").unwrap();
+        // The one of the same day is replaced.
+        write(&dir, "2026-09-20", "new").unwrap();
+        fs::write(dir.join("something-else.txt"), "left alone").unwrap();
 
         let mut names: Vec<String> = fs::read_dir(&dir)
             .unwrap()
@@ -112,12 +115,12 @@ mod tests {
         names.sort();
         assert_eq!(names.len(), KEEP + 1);
         assert_eq!(names[0], "diaryo-2026-09-07.diaryo");
-        assert!(names.contains(&"otra-cosa.txt".to_string()));
+        assert!(names.contains(&"something-else.txt".to_string()));
         assert_eq!(
             fs::read_to_string(dir.join("diaryo-2026-09-20.diaryo")).unwrap(),
-            "nueva"
+            "new"
         );
-        assert!(write(&dir, "../fuera", "{}").is_err());
+        assert!(write(&dir, "../outside", "{}").is_err());
         let _ = fs::remove_dir_all(&dir);
     }
 }

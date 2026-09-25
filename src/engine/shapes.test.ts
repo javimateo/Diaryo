@@ -50,23 +50,23 @@ function stroke(points: [number, number][]): StrokeElement {
   };
 }
 
-describe('figuras', () => {
-  it('una figura vacía solo se coge por el borde; con fondo, también por dentro', () => {
+describe('shapes', () => {
+  it('an empty shape is only grabbed by its border; with a fill, also from inside', () => {
     expect(shapeHitsPoint(shape(), { x: 100, y: 50 }, 4)).toBe(false);
     expect(shapeHitsPoint(shape(), { x: 1, y: 50 }, 4)).toBe(true);
     expect(shapeHitsPoint(shape({ fill: 'blue' }), { x: 100, y: 50 }, 4)).toBe(true);
     const ellipse = shape({ shape: 'ellipse' });
     expect(shapeHitsPoint(ellipse, { x: 100, y: 1 }, 4)).toBe(true);
-    // Esquina de la caja: fuera de la elipse.
+    // Corner of the box: outside the ellipse.
     expect(shapeHitsPoint(ellipse, { x: 5, y: 5 }, 4)).toBe(false);
   });
 
-  it('el texto de una elipse va en el rectángulo inscrito', () => {
+  it("an ellipse's text goes in the inscribed rectangle", () => {
     const area = containerArea(shape({ shape: 'ellipse', width: 200, height: 200 }));
     expect(area.maxX - area.minX).toBeCloseTo(200 * Math.SQRT1_2);
   });
 
-  it('se copian y pegan con fondo y texto', () => {
+  it('they are copied and pasted with fill and text', () => {
     const label = {
       text: 'hola',
       fontSize: 20,
@@ -81,7 +81,7 @@ describe('figuras', () => {
   });
 });
 
-describe('trazos cerrados', () => {
+describe('closed strokes', () => {
   const circle = (gap: number) =>
     stroke(
       Array.from({ length: 40 }, (_, i) => {
@@ -90,11 +90,11 @@ describe('trazos cerrados', () => {
       }),
     );
 
-  it('un círculo que termina donde empezó es una figura cerrada', () => {
+  it('a circle ending where it started is a closed shape', () => {
     expect(isClosedStroke(circle(0.05))).toBe(true);
   });
 
-  it('un arco abierto no lo es', () => {
+  it("an open arc isn't", () => {
     expect(isClosedStroke(circle(Math.PI))).toBe(false);
     expect(
       isClosedStroke(
@@ -107,12 +107,12 @@ describe('trazos cerrados', () => {
   });
 });
 
-describe('enlaces a otras páginas', () => {
-  it('se guardan y se copian con el elemento', () => {
+describe('links to other pages', () => {
+  it('they are saved and copied with the element', () => {
     const text = serializeElements({ elements: [shape({ link: 'pagina-1' })], assets: {} });
     const [pasted] = parseElements(text)!.elements;
     expect(pasted.link).toBe('pagina-1');
-    // Lo guardado antes de existir los enlaces no enlaza a nada.
+    // What was saved before links existed doesn't link to anything.
     const old = serializeElements({ elements: [shape()], assets: {} });
     expect(parseElements(old)!.elements[0].link).toBeNull();
   });

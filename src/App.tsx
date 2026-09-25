@@ -18,8 +18,10 @@ import { useShortcuts } from './ui/useShortcuts';
 import { ViewControls } from './ui/ViewControls';
 import { WindowDragRegion } from './ui/desktop/WindowControls';
 import { UndoControls, ZoomControls } from './ui/ZoomControls';
+import { useT } from './ui/useT';
 
 export function App() {
+  const t = useT();
   useShortcuts();
   useDeskBackground();
   const isEmpty = useUI((s) => s.doc.isEmpty);
@@ -56,8 +58,8 @@ export function App() {
       <div className="layer bottom-center">
         {isEmpty && loaded && (
           <p className="hint">
-            <kbd>P</kbd> para dibujar · <kbd>T</kbd> o doble clic para escribir · <kbd>Espacio</kbd>{' '}
-            + arrastrar para moverte · <kbd>?</kbd> atajos
+            <kbd>P</kbd> {t.hint.draw} · <kbd>T</kbd> {t.hint.write} · <kbd>{t.keys.space}</kbd> +{' '}
+            {t.hint.move} · <kbd>?</kbd> {t.hint.shortcuts}
           </p>
         )}
         <Toast />

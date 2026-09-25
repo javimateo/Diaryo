@@ -10,8 +10,8 @@ import type { Bounds } from './geometry';
 import { layoutText, LINE_HEIGHT, type TextLayout } from './text';
 
 /**
- * Un trazo es una figura cerrada si termina cerca de donde empezó (un círculo, una
- * nube, un rectángulo a mano…). Solo entonces admite fondo y texto dentro.
+ * A stroke is a closed shape if it ends close to where it started (a circle, a cloud, a
+ * hand-drawn rectangle…). Only then does it accept a fill and text inside.
  */
 export function isClosedStroke(el: StrokeElement): boolean {
   const { points } = el;
@@ -26,7 +26,7 @@ export function isClosedStroke(el: StrokeElement): boolean {
 export const isContainer = (el: { type: string }): el is ContainerElement =>
   el.type === 'shape' || el.type === 'stroke';
 
-/** Zona interior donde va el texto de una figura (coordenadas del elemento). */
+/** Inner area where a shape's text goes (element coordinates). */
 export function containerArea(el: ContainerElement): Bounds {
   if (el.type === 'stroke') {
     const b = localBounds(el);
@@ -36,7 +36,7 @@ export function containerArea(el: ContainerElement): Bounds {
   }
   const { width: w, height: h } = el;
   if (el.shape === 'ellipse') {
-    // Rectángulo inscrito en la elipse.
+    // Rectangle inscribed in the ellipse.
     const ix = (w * (1 - Math.SQRT1_2)) / 2;
     const iy = (h * (1 - Math.SQRT1_2)) / 2;
     return { minX: ix, minY: iy, maxX: w - ix, maxY: h - iy };
@@ -51,7 +51,7 @@ export interface LabelLayout extends TextLayout {
   boxWidth: number;
 }
 
-/** Posición del texto dentro de la figura, según su alineación vertical. */
+/** Position of the text inside the shape, according to its vertical alignment. */
 export function labelLayout(el: ContainerElement, label: Label): LabelLayout {
   const area = containerArea(el);
   const boxWidth = Math.max(area.maxX - area.minX, label.fontSize);
@@ -62,25 +62,25 @@ export function labelLayout(el: ContainerElement, label: Label): LabelLayout {
   return { ...layout, x: area.minX, y: area.minY + offset, boxWidth };
 }
 
-/** Si el texto no cabe en un rectángulo o una elipse, la figura crece hacia abajo. */
+/** If the text doesn't fit in a rectangle or an ellipse, the shape grows downwards. */
 export function fitContainer<T extends ContainerElement>(el: T): T {
   if (el.type !== 'shape' || !el.label) return el;
   const area = containerArea(el);
   const needed = labelLayout(el, el.label).height;
   const available = area.maxY - area.minY;
   if (needed <= available) return el;
-  // La zona útil es proporcional a la altura en la elipse; fija en el rectángulo.
+  // The usable area is proportional to the height in the ellipse; fixed in the rectangle.
   const extra = el.shape === 'ellipse' ? (needed - available) / Math.SQRT1_2 : needed - available;
   return { ...el, height: el.height + extra };
 }
 
-/** Texto nuevo (vacío) para una figura, con el estilo de las figuras. */
+/** New (empty) text for a shape, with the shape style. */
 export function defaultLabel(styles: ToolStyles, zoom: number): Label {
   const { font, labelSize, align, valign } = styles.shape;
   return { text: '', fontSize: labelSize / zoom, font, align, valign };
 }
 
-// ─── Acceso uniforme al texto de cualquier elemento editable ────
+// ─── Uniform access to the text of any editable element ─────────
 
 export function textOf(el: EditableElement): string {
   return el.type === 'text' || el.type === 'note' ? el.text : (el.label?.text ?? '');

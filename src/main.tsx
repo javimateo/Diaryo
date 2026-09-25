@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource-variable/inter';
-// Fuentes libres incluidas para el texto (se descargan solo cuando se usan).
+// Free fonts bundled for text (they are only downloaded when used).
 import '@fontsource-variable/nunito';
 import '@fontsource-variable/caveat';
 import '@fontsource/patrick-hand';
@@ -13,7 +13,7 @@ import './styles/global.css';
 import { App } from './App';
 import { DeskLayer } from './ui/desktop/DeskLayer';
 
-// En la app de escritorio, la mesa sobre el escritorio de Windows es otra ventana.
+// In the desktop app, the desk on the Windows desktop is another window.
 const deskLayer = new URLSearchParams(location.search).get('capa') === 'mesa';
 
 createRoot(document.getElementById('root')!).render(

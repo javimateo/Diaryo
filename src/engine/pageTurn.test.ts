@@ -15,6 +15,7 @@ const target = (id: string): TurnTarget => ({
     today: false,
     pageNumber: 1,
     tabs: [],
+    labels: { today: '', cues: '', notes: '', summary: '', tasks: '' },
   },
 });
 
@@ -26,21 +27,21 @@ function setup(prev = true, next = true) {
     onTurn,
   });
   turner.setTargets(prev ? target('prev') : null, next ? target('next') : null);
-  /** Deja terminar la animación en curso. */
+  /** Lets the running animation finish. */
   const finish = () => turner.step(performance.now() + 10_000);
   return { turner, onTurn, finish };
 }
 
-describe('pasar página arrastrando la esquina', () => {
-  it('solo se agarran las esquinas de fuera, y solo si hay página a ese lado', () => {
+describe('turning the page by dragging the corner', () => {
+  it('only the outer corners can be grabbed, and only if there is a page on that side', () => {
     const { turner } = setup(false, true);
     expect(turner.cornerAt({ x: W - 20, y: BOTTOM - 20 }, 1)?.dir).toBe(1);
     expect(turner.cornerAt({ x: W / 2, y: 0 }, 1)).toBeNull();
-    // Sin página anterior, las esquinas de la izquierda no hacen nada.
+    // Without a previous page, the left corners do nothing.
     expect(turner.cornerAt({ x: -W + 20, y: BOTTOM - 20 }, 1)).toBeNull();
   });
 
-  it('soltada pasada la mitad, la hoja cae y se abre la página', () => {
+  it('released past the middle, the sheet falls and the page opens', () => {
     const { turner, onTurn, finish } = setup();
     expect(turner.grab({ x: W - 10, y: BOTTOM - 10 }, 1)).toBe(true);
     turner.drag({ x: -W / 2, y: BOTTOM - 100 });
@@ -48,13 +49,13 @@ describe('pasar página arrastrando la esquina', () => {
     expect(turner.busy).toBe(true);
     finish();
     expect(onTurn).toHaveBeenCalledWith(1);
-    // Se queda caída hasta que la nueva página está cargada.
+    // It stays down until the new page is loaded.
     expect(turner.active).toBe(true);
     turner.end();
     expect(turner.active).toBe(false);
   });
 
-  it('soltada antes de la mitad, vuelve a su sitio', () => {
+  it('released before the middle, it goes back', () => {
     const { turner, onTurn, finish } = setup();
     turner.grab({ x: -W + 10, y: BOTTOM - 10 }, 1);
     turner.drag({ x: -W * 0.8, y: BOTTOM - 50 });
@@ -64,10 +65,10 @@ describe('pasar página arrastrando la esquina', () => {
     expect(turner.active).toBe(false);
   });
 
-  it('la hoja no se separa del lomo', () => {
+  it("the sheet doesn't separate from the spine", () => {
     const { turner } = setup();
     turner.grab({ x: W - 10, y: BOTTOM - 10 }, 1);
-    // Muy lejos a la derecha: la esquina no puede alejarse del lomo más que el ancho.
+    // Far to the right: the corner can't move away from the spine more than the width.
     turner.drag({ x: W * 3, y: BOTTOM });
     const point = (turner as unknown as { curl: { point: { x: number; y: number } } }).curl.point;
     expect(Math.hypot(point.x, point.y - BOTTOM)).toBeLessThanOrEqual(W + 1e-6);

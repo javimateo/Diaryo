@@ -1,158 +1,167 @@
 import { X } from 'lucide-react';
 import { shortcutKeys } from '../desktop/shortcuts';
+import type { DesktopInfo } from '../desktop/settings';
+import type { Messages } from '../i18n';
 import { useUI } from '../store/ui';
 import { TOOLS } from './toolDefs';
+import { useT } from './useT';
 
-const NAVIGATION: [string, string[][]][] = [
-  ['Mover el lienzo', [['Espacio', 'arrastrar'], ['Botón central']]],
-  ['Desplazar', [['Rueda']]],
-  ['Desplazar en horizontal', [['Shift', 'rueda']]],
-  ['Zoom', [['Ctrl', 'rueda']]],
-  [
-    'Acercar / alejar',
-    [
-      ['Ctrl', '+'],
-      ['Ctrl', '−'],
-    ],
-  ],
-  ['Volver al 100 %', [['Ctrl', '0']]],
-  ['Ver todo', [['Shift', '1']]],
-];
+/** A shortcut: what it does and its combinations (any of them works). */
+type Shortcut = [string, string[][]];
 
-const SELECTION: [string, string[][]][] = [
-  ['Rodear con el lazo (desde V)', [['Alt', 'arrastrar']]],
-  ['Añadir / quitar de la selección', [['Shift', 'clic']]],
-  ['Seleccionar todo', [['Ctrl', 'A']]],
-  [
-    'Copiar / cortar / pegar',
+/** The shortcut lists, with the texts and key names of the active language. */
+function shortcutLists(t: Messages, desktop: DesktopInfo | null) {
+  const { help: h, keys: k } = t;
+  const navigation: Shortcut[] = [
+    [h.moveCanvas, [[k.space, k.drag], [k.middleButton]]],
+    [h.scroll, [[k.wheel]]],
+    [h.scrollSideways, [['Shift', k.wheelLower]]],
+    [h.zoom, [['Ctrl', k.wheelLower]]],
     [
-      ['Ctrl', 'C'],
-      ['Ctrl', 'X'],
-      ['Ctrl', 'V'],
+      h.zoomInOut,
+      [
+        ['Ctrl', '+'],
+        ['Ctrl', '−'],
+      ],
     ],
-  ],
-  ['Duplicar', [['Ctrl', 'D']]],
-  ['Borrar', [['Supr']]],
-  ['Mover poco a poco', [['Flechas'], ['Shift', 'flechas']]],
-  ['Escalar sin mantener proporción', [['Shift', 'esquina']]],
-  ['Escalar desde el centro', [['Alt', 'asa']]],
-  ['Girar de 15 en 15°', [['Shift', 'girar']]],
-  [
-    'Agrupar / desagrupar',
+    [h.resetZoom, [['Ctrl', '0']]],
+    [h.seeAll, [['Shift', '1']]],
+  ];
+  const selection: Shortcut[] = [
+    [h.lasso, [['Alt', k.drag]]],
+    [h.addToSelection, [['Shift', k.click]]],
+    [h.selectAll, [['Ctrl', 'A']]],
     [
-      ['Ctrl', 'G'],
-      ['Ctrl', 'Shift', 'G'],
+      h.copyCutPaste,
+      [
+        ['Ctrl', 'C'],
+        ['Ctrl', 'X'],
+        ['Ctrl', 'V'],
+      ],
     ],
-  ],
-  [
-    'Traer adelante / enviar atrás',
+    [h.duplicate, [['Ctrl', 'D']]],
+    [h.delete, [[k.delete]]],
+    [h.nudge, [[k.arrows], ['Shift', k.arrowsLower]]],
+    [h.scaleFree, [['Shift', k.corner]]],
+    [h.scaleFromCenter, [['Alt', k.handle]]],
+    [h.rotateSnap, [['Shift', k.rotate]]],
     [
-      ['Ctrl', '↑'],
-      ['Ctrl', '↓'],
+      h.group,
+      [
+        ['Ctrl', 'G'],
+        ['Ctrl', 'Shift', 'G'],
+      ],
     ],
-  ],
-  [
-    'Al frente / al fondo',
     [
-      ['Ctrl', 'Shift', '↑'],
-      ['Ctrl', 'Shift', '↓'],
+      h.bringForward,
+      [
+        ['Ctrl', '↑'],
+        ['Ctrl', '↓'],
+      ],
     ],
-  ],
-  [
-    'Voltear',
     [
-      ['Shift', 'H'],
-      ['Shift', 'V'],
+      h.bringToFront,
+      [
+        ['Ctrl', 'Shift', '↑'],
+        ['Ctrl', 'Shift', '↓'],
+      ],
     ],
-  ],
-  ['Bloquear / desbloquear', [['Ctrl', 'Shift', 'L']]],
-  [
-    'Copiar / pegar estilos',
     [
-      ['Ctrl', 'Alt', 'C'],
-      ['Ctrl', 'Alt', 'V'],
+      h.flip,
+      [
+        ['Shift', 'H'],
+        ['Shift', 'V'],
+      ],
     ],
-  ],
-  ['Copiar como imagen', [['Shift', 'Alt', 'C']]],
-  ['Más opciones', [['Clic derecho']]],
-  ['Deseleccionar', [['Esc']]],
-];
-
-const WRITING: [string, string[][]][] = [
-  ['Escribir en cualquier sitio', [['Doble clic']]],
-  ['Editar el texto o la nota seleccionados', [['Enter']]],
-  ['Terminar de escribir', [['Esc'], ['Ctrl', 'Enter']]],
-  ['Caja de texto de un ancho', [['T', 'arrastrar']]],
-  [
-    'Lista (sigue sola con Enter)',
+    [h.lock, [['Ctrl', 'Shift', 'L']]],
     [
-      ['-', 'espacio'],
-      ['1.', 'espacio'],
+      h.copyStyle,
+      [
+        ['Ctrl', 'Alt', 'C'],
+        ['Ctrl', 'Alt', 'V'],
+      ],
     ],
-  ],
-  ['Sangría / quitarla', [['Tab'], ['Shift', 'Tab']]],
-  ['Pegar imágenes o texto', [['Ctrl', 'V']]],
-  ['Añadir imágenes', [['Arrastrar archivos']]],
-  ['Escribir dentro de una figura', [['Doble clic'], ['Enter']]],
-  ['Figura cuadrada o circular', [['Shift', 'arrastrar']]],
-  ['Figura desde el centro', [['Alt', 'arrastrar']]],
-  ['Conectar dos cosas con una flecha', [['A', 'de una a otra']]],
-  ['Curvar una flecha', [['Arrastrar su centro']]],
-];
-
-const DIARY: [string, string[][]][] = [
-  [
-    'Pasar página',
+    [h.copyAsImage, [['Shift', 'Alt', 'C']]],
+    [h.moreOptions, [[k.rightClick]]],
+    [h.deselect, [['Esc']]],
+  ];
+  const writing: Shortcut[] = [
+    [h.writeAnywhere, [[k.doubleClick]]],
+    [h.editSelected, [['Enter']]],
+    [h.finishWriting, [['Esc'], ['Ctrl', 'Enter']]],
+    [h.textBox, [['T', k.drag]]],
     [
-      ['Ctrl', '←'],
-      ['Ctrl', '→'],
+      h.list,
+      [
+        ['-', k.spaceLower],
+        ['1.', k.spaceLower],
+      ],
     ],
-  ],
-  ['Página anterior / siguiente', [['RePág'], ['AvPág']]],
-  ['Ir a hoy', [['Ctrl', 'Inicio']]],
-  ['Nueva página', [['Alt', 'N']]],
-  ['Marcar como importante (pestaña)', [['Alt', 'M']]],
-  ['Enlazar con otra página', [['Clic derecho'], ['Panel']]],
-  ['Índice y calendario', [['Ctrl', 'B']]],
-  ['Mapa del diario', [['Shift', 'M']]],
-];
-
-const GENERAL: [string, string[][]][] = [
-  [
-    'Buscar en el diario y comandos',
+    [h.task, [['[]', k.spaceLower]]],
+    [h.indent, [['Tab'], ['Shift', 'Tab']]],
+    [h.pasteImages, [['Ctrl', 'V']]],
+    [h.addImages, [[k.dragFiles]]],
+    [h.writeInShape, [[k.doubleClick], ['Enter']]],
+    [h.squareShape, [['Shift', k.drag]]],
+    [h.shapeFromCenter, [['Alt', k.drag]]],
+    [h.connect, [['A', k.fromOneToOther]]],
+    [h.curveArrow, [[k.dragItsCenter]]],
+  ];
+  const diary: Shortcut[] = [
     [
-      ['Ctrl', 'K'],
-      ['Ctrl', 'F'],
+      h.turnPage,
+      [
+        ['Ctrl', '←'],
+        ['Ctrl', '→'],
+      ],
     ],
-  ],
-  ['Grosor o tamaño de letra', [['+'], ['−']]],
-  ['Deshacer', [['Ctrl', 'Z']]],
-  [
-    'Rehacer',
+    [h.prevNextPage, [[k.pageUp], [k.pageDown]]],
+    [h.goToToday, [['Ctrl', k.home]]],
+    [h.newPage, [['Alt', 'N']]],
+    [h.bookmark, [['Alt', 'M']]],
+    [h.link, [[k.rightClick], [k.panel]]],
+    [h.index, [['Ctrl', 'B']]],
+    [h.map, [['Shift', 'M']]],
+  ];
+  const general: Shortcut[] = [
     [
-      ['Ctrl', 'Shift', 'Z'],
-      ['Ctrl', 'Y'],
+      h.search,
+      [
+        ['Ctrl', 'K'],
+        ['Ctrl', 'F'],
+      ],
     ],
-  ],
-  ['Mostrar atajos', [['?']]],
-  ['Ajustes', [['Ctrl', ',']]],
-  ['Cambiar tema claro / oscuro', [['Alt', 'Shift', 'D']]],
-];
+    [h.size, [['+'], ['−']]],
+    [h.undo, [['Ctrl', 'Z']]],
+    [
+      h.redo,
+      [
+        ['Ctrl', 'Shift', 'Z'],
+        ['Ctrl', 'Y'],
+      ],
+    ],
+    [h.showShortcuts, [['?']]],
+    [h.settings, [['Ctrl', ',']]],
+    [h.theme, [['Alt', 'Shift', 'D']]],
+  ];
+  // In the desktop app, also the floating diary.
+  if (desktop) {
+    general.push(
+      [h.floatingDiary, [shortcutKeys(desktop.shortcut, k.space)]],
+      [h.hideFloatingDiary, [['Esc']]],
+      [h.toggleDeskLayer, [shortcutKeys(desktop.deskShortcut, k.space)]],
+    );
+  }
+  return { navigation, selection, writing, diary, general };
+}
 
 export function HelpDialog() {
+  const t = useT();
   const open = useUI((s) => s.helpOpen);
   const setOpen = useUI((s) => s.setHelpOpen);
   const desktop = useUI((s) => s.desktop);
   if (!open) return null;
-  // En la app de escritorio, también el diario flotante.
-  const general: [string, string[][]][] = desktop
-    ? [
-        ...GENERAL,
-        ['Diario flotante (desde cualquier sitio)', [shortcutKeys(desktop.shortcut)]],
-        ['Apartar el diario flotante', [['Esc']]],
-        ['Enseñar o esconder la mesa en el escritorio', [shortcutKeys(desktop.deskShortcut)]],
-      ]
-    : GENERAL;
+  const lists = shortcutLists(t, desktop);
 
   return (
     <div className="dialog-backdrop" onClick={() => setOpen(false)}>
@@ -164,11 +173,11 @@ export function HelpDialog() {
         onClick={(e) => e.stopPropagation()}
       >
         <header className="dialog-header">
-          <h2 id="help-title">Atajos de teclado</h2>
+          <h2 id="help-title">{t.help.title}</h2>
           <button
             type="button"
             className="icon-btn"
-            aria-label="Cerrar"
+            aria-label={t.common.close}
             onClick={() => setOpen(false)}
           >
             <X size={18} strokeWidth={1.75} />
@@ -176,32 +185,33 @@ export function HelpDialog() {
         </header>
         <div className="dialog-body" data-scrollable>
           <section>
-            <h3>Herramientas</h3>
+            <h3>{t.help.tools}</h3>
             <ul className="shortcut-list">
-              {TOOLS.map((t) => (
-                <li key={t.id} data-soon={!t.ready || undefined}>
-                  <span>
-                    {t.label}
-                    {!t.ready && <em> · pronto</em>}
-                  </span>
+              {TOOLS.map((tool) => (
+                <li key={tool.id}>
+                  <span>{t.tools.names[tool.id]}</span>
                   <Combos
-                    combos={t.digit ? [[t.key.toUpperCase()], [t.digit]] : [[t.key.toUpperCase()]]}
+                    combos={
+                      tool.digit
+                        ? [[tool.key.toUpperCase()], [tool.digit]]
+                        : [[tool.key.toUpperCase()]]
+                    }
                   />
                 </li>
               ))}
             </ul>
-            <h3>Escribir</h3>
-            <ShortcutList items={WRITING} />
-            <h3>Navegación</h3>
-            <ShortcutList items={NAVIGATION} />
-            <h3>Diario</h3>
-            <ShortcutList items={DIARY} />
+            <h3>{t.help.writing}</h3>
+            <ShortcutList items={lists.writing} />
+            <h3>{t.help.navigation}</h3>
+            <ShortcutList items={lists.navigation} />
+            <h3>{t.help.diary}</h3>
+            <ShortcutList items={lists.diary} />
           </section>
           <section>
-            <h3>Selección</h3>
-            <ShortcutList items={SELECTION} />
-            <h3>General</h3>
-            <ShortcutList items={general} />
+            <h3>{t.help.selection}</h3>
+            <ShortcutList items={lists.selection} />
+            <h3>{t.help.general}</h3>
+            <ShortcutList items={lists.general} />
           </section>
         </div>
       </div>
@@ -209,7 +219,7 @@ export function HelpDialog() {
   );
 }
 
-function ShortcutList({ items }: { items: [string, string[][]][] }) {
+function ShortcutList({ items }: { items: Shortcut[] }) {
   return (
     <ul className="shortcut-list">
       {items.map(([label, combos]) => (
@@ -223,11 +233,12 @@ function ShortcutList({ items }: { items: [string, string[][]][] }) {
 }
 
 function Combos({ combos }: { combos: string[][] }) {
+  const t = useT();
   return (
     <span className="combos">
       {combos.map((combo, i) => (
         <span key={i} className="combo">
-          {i > 0 && <span className="combo-or">o</span>}
+          {i > 0 && <span className="combo-or">{t.help.or}</span>}
           {combo.map((k) => (
             <kbd key={k}>{k}</kbd>
           ))}

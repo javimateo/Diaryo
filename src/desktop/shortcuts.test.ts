@@ -9,28 +9,28 @@ const key = (code: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'shiftKey
   ...mods,
 });
 
-describe('atajos globales', () => {
-  it('lee la combinación pulsada', () => {
+describe('global shortcuts', () => {
+  it('reads the pressed combination', () => {
     expect(shortcutFromEvent(key('KeyD', { ctrlKey: true, altKey: true }))).toBe('Ctrl+Alt+D');
     expect(shortcutFromEvent(key('Digit5', { altKey: true, shiftKey: true }))).toBe('Alt+Shift+5');
     expect(shortcutFromEvent(key('Space', { ctrlKey: true }))).toBe('Ctrl+Space');
   });
 
-  it('sin Ctrl ni Alt, o con una tecla rara, aún no vale', () => {
+  it("without Ctrl or Alt, or with an odd key, it isn't valid yet", () => {
     expect(shortcutFromEvent(key('KeyD', { shiftKey: true }))).toBeNull();
     expect(shortcutFromEvent(key('ControlLeft', { ctrlKey: true }))).toBeNull();
   });
 
-  it('enseña cada tecla por separado', () => {
-    expect(shortcutKeys('Ctrl+Space')).toEqual(['Ctrl', 'Espacio']);
+  it('shows each key separately', () => {
+    expect(shortcutKeys('Ctrl+Space', 'Espacio')).toEqual(['Ctrl', 'Espacio']);
   });
 });
 
-describe('teclas en la mesa del escritorio', () => {
+describe('keys on the desktop desk', () => {
   const press = (k: string, mods: Partial<Record<'ctrlKey' | 'shiftKey', boolean>> = {}) =>
     deskKeyAction({ key: k, ctrlKey: false, metaKey: false, shiftKey: false, ...mods });
 
-  it('deshacer, rehacer, borrar, editar y soltar', () => {
+  it('undo, redo, delete, edit and release', () => {
     expect(press('z', { ctrlKey: true })).toBe('undo');
     expect(press('Z', { ctrlKey: true, shiftKey: true })).toBe('redo');
     expect(press('y', { ctrlKey: true })).toBe('redo');
@@ -39,7 +39,7 @@ describe('teclas en la mesa del escritorio', () => {
     expect(press('Escape')).toBe('deselect');
   });
 
-  it('el espacio y los atajos del diario no hacen nada; lo demás sigue su camino', () => {
+  it('space and the diary shortcuts do nothing; the rest goes on', () => {
     expect(press(' ')).toBe('ignore');
     expect(press('k', { ctrlKey: true })).toBe('ignore');
     expect(press('a')).toBeNull();

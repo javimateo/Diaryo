@@ -1,6 +1,6 @@
 /*
- * Todos los estilos de la app, en orden (el orden importa: lo de después manda).
- * Cada archivo es una parte de la interfaz.
+ * All the app styles, in order (order matters: later rules win). Each file is one part of
+ * the UI.
  */
 @import './tokens.css';
 @import './base.css';

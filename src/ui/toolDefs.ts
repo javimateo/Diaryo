@@ -16,33 +16,30 @@ import type { ToolId } from '../engine/tools';
 
 export interface ToolDef {
   id: ToolId;
-  label: string;
-  /** Tecla de atajo (letra, en minúscula). */
+  /** Shortcut key (a letter, lowercase). */
   key: string;
-  /** Atajo numérico opcional. */
+  /** Optional number shortcut. */
   digit?: string;
   icon: LucideIcon;
-  /** Las herramientas se van activando fase a fase. */
-  ready: boolean;
 }
 
 export const TOOL_GROUPS: ToolDef[][] = [
   [
-    { id: 'hand', label: 'Mano', key: 'h', icon: Hand, ready: true },
-    { id: 'select', label: 'Seleccionar', key: 'v', digit: '1', icon: MousePointer2, ready: true },
-    { id: 'lasso', label: 'Lazo', key: 'l', digit: '2', icon: Lasso, ready: true },
+    { id: 'hand', key: 'h', icon: Hand },
+    { id: 'select', key: 'v', digit: '1', icon: MousePointer2 },
+    { id: 'lasso', key: 'l', digit: '2', icon: Lasso },
   ],
   [
-    { id: 'pen', label: 'Lápiz', key: 'p', digit: '3', icon: Pencil, ready: true },
-    { id: 'marker', label: 'Marcador', key: 'm', digit: '4', icon: Highlighter, ready: true },
-    { id: 'eraser', label: 'Borrador', key: 'e', digit: '5', icon: Eraser, ready: true },
+    { id: 'pen', key: 'p', digit: '3', icon: Pencil },
+    { id: 'marker', key: 'm', digit: '4', icon: Highlighter },
+    { id: 'eraser', key: 'e', digit: '5', icon: Eraser },
   ],
   [
-    { id: 'text', label: 'Texto', key: 't', digit: '6', icon: Type, ready: true },
-    { id: 'note', label: 'Nota', key: 'n', digit: '7', icon: StickyNote, ready: true },
-    { id: 'arrow', label: 'Flecha', key: 'a', digit: '8', icon: MoveUpRight, ready: true },
-    { id: 'rect', label: 'Rectángulo', key: 'r', digit: '9', icon: Square, ready: true },
-    { id: 'ellipse', label: 'Elipse', key: 'o', digit: '0', icon: Circle, ready: true },
+    { id: 'text', key: 't', digit: '6', icon: Type },
+    { id: 'note', key: 'n', digit: '7', icon: StickyNote },
+    { id: 'arrow', key: 'a', digit: '8', icon: MoveUpRight },
+    { id: 'rect', key: 'r', digit: '9', icon: Square },
+    { id: 'ellipse', key: 'o', digit: '0', icon: Circle },
   ],
 ];
 

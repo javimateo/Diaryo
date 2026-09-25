@@ -4,6 +4,7 @@ mod desk_layer;
 mod settings;
 mod shortcuts;
 mod state;
+mod texts;
 mod tray;
 mod window;
 
@@ -18,11 +19,11 @@ use window::{Mode, Windowing};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Al arrancar con Windows se abre escondido, listo para el atajo.
+    // When starting with Windows it opens hidden, ready for the shortcut.
     let hidden = std::env::args().any(|arg| arg == "--hidden");
 
     tauri::Builder::default()
-        // Si diaryo ya estaba abierto (en la bandeja, por ejemplo), se enseña ese.
+        // If diaryo was already open (in the tray, for example), that one is shown.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             window::show(app, Mode::Window);
         }))
@@ -41,8 +42,9 @@ pub fn run() {
         .setup(move |app| {
             let handle = app.handle().clone();
             let mut settings = settings::load(&handle);
-            // La primera vez, diaryo arranca con Windows (luego manda lo que se elija en
-            // Ajustes). Solo en la versión instalada: en desarrollo no se toca el registro.
+            // The first time, diaryo starts with Windows (then whatever is chosen in
+            // Settings rules). Only in the installed build: development doesn't touch the
+            // registry.
             if !settings.autostart_ready && !cfg!(debug_assertions) {
                 let _ = handle.autolaunch().enable();
                 settings.autostart_ready = true;
@@ -52,11 +54,11 @@ pub fn run() {
             let desk_accel = settings.desk_shortcut.clone();
             app.manage(DeskLayer::new(settings.desk_layer));
             app.manage(Desktop::new(settings));
-            // Si otra app ya usa un atajo, en Ajustes se avisa para cambiarlo.
+            // If another app already uses a shortcut, Settings says so to change it.
             let _ = shortcuts::register(&handle, Hotkey::Widget, &accel);
             let _ = shortcuts::register(&handle, Hotkey::Desk, &desk_accel);
             tray::build(&handle)?;
-            // La mesa en el escritorio, detrás de las ventanas.
+            // The desk on the desktop, behind the windows.
             desk_layer::create(&handle)?;
             desk_layer::refresh(&handle);
             if !hidden {
@@ -65,8 +67,9 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| match event {
-            // Cerrar la ventana la esconde: diaryo sigue en la bandeja, listo para el atajo.
-            // La mesa del escritorio no se cierra (se quita con su atajo o en Ajustes).
+            // Closing the window hides it: diaryo stays in the tray, ready for the
+            // shortcut. The desktop desk doesn't close (it is removed with its shortcut
+            // or in Settings).
             WindowEvent::CloseRequested { api, .. } => {
                 api.prevent_close();
                 if window.label() != desk_layer::LABEL {
@@ -92,8 +95,9 @@ pub fn run() {
             commands::frontend_ready,
             commands::show_mode,
             commands::hide_window,
+            commands::set_language,
             commands::quit_app,
         ])
         .run(tauri::generate_context!())
-        .expect("no se ha podido abrir diaryo");
+        .expect("couldn't start diaryo");
 }

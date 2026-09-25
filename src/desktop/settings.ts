@@ -1,29 +1,29 @@
 import { useUI } from '../store/ui';
 import { call } from './tauri';
 
-/** En su ventana o flotando sobre el escritorio (el widget). */
+/** In its window or floating over the desktop (the widget). */
 export type DesktopMode = 'window' | 'widget';
 
-/** Lo que cuenta la parte de escritorio. */
+/** What the desktop side tells. */
 export interface DesktopInfo {
   mode: DesktopMode;
-  /** Atajo global del diario flotante ("Ctrl+Alt+D"). */
+  /** Global shortcut of the floating diary ("Ctrl+Alt+D"). */
   shortcut: string;
-  /** El atajo funciona (si no, otra app lo tiene cogido). */
+  /** The shortcut works (otherwise, another app has taken it). */
   shortcutOk: boolean;
   autostart: boolean;
   backups: boolean;
   backupDir: string;
-  /** La mesa en el escritorio de Windows. */
+  /** The desk on the Windows desktop. */
   deskLayer: boolean;
-  /** Atajo que la enseña o la esconde ("Ctrl+Alt+N"). */
+  /** Shortcut that shows or hides it ("Ctrl+Alt+N"). */
   deskShortcut: string;
   deskShortcutOk: boolean;
-  /** Cuándo se hizo la última copia en esta sesión. */
+  /** When the last backup was made in this session. */
   lastBackup?: number;
 }
 
-/** Los ajustes de escritorio devuelven cómo quedan (o el motivo si no se pudo). */
+/** Desktop settings return how they end up (or the reason if it failed). */
 async function updateInfo(command: string, args?: Record<string, unknown>) {
   const { setDesktop, showToast } = useUI.getState();
   try {

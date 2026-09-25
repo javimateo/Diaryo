@@ -9,7 +9,7 @@ import { resolveColor, resolveNoteColor, type NoteFill, type ThemeMode } from '.
 
 const generator = rough.generator();
 
-/** Un RoughCanvas por canvas (el de la escena, el de encima y los de exportar). */
+/** One RoughCanvas per canvas (the scene's, the top one and the export ones). */
 const roughCanvases = new WeakMap<HTMLCanvasElement, RoughCanvas>();
 
 function roughFor(ctx: CanvasRenderingContext2D): RoughCanvas {
@@ -22,8 +22,8 @@ function roughFor(ctx: CanvasRenderingContext2D): RoughCanvas {
 }
 
 /**
- * Las figuras se generan una vez y se reutilizan: moverlas no cambia su forma. La
- * clave recoge todo lo que afecta al dibujo.
+ * Shapes are generated once and reused: moving them doesn't change their shape. The key
+ * collects everything that affects the drawing.
  */
 const cache = new Map<string, Drawable>();
 
@@ -45,7 +45,7 @@ function fillOptions(fill: NoteFill | null, fillStyle: FillStyle, weight: number
     fillStyle,
     fillWeight: weight,
     hachureGap: weight * 6,
-    // En tema oscuro, los rayados en pastel se ven mejor algo más gruesos.
+    // In the dark theme, pastel hatching looks better somewhat thicker.
     ...(fillStyle !== 'solid' && mode === 'dark' ? { fillWeight: weight * 1.4 } : {}),
   };
 }
@@ -58,7 +58,8 @@ export function drawShape(ctx: CanvasRenderingContext2D, el: ShapeElement, mode:
     bowing: roughness,
     stroke: el.border ? resolveColor(el.color, mode) : 'none',
     strokeWidth,
-    // Una sola línea salvo en "muy a mano", que repasa el trazo como un boceto.
+    // A single line except in "very hand-drawn", which goes over the stroke again like a
+    // sketch.
     disableMultiStroke: roughness < 2,
     preserveVertices: roughness === 0,
     ...fillOptions(el.fill, el.fillStyle, Math.max(strokeWidth / 2, 0.5), mode),
@@ -72,7 +73,7 @@ export function drawShape(ctx: CanvasRenderingContext2D, el: ShapeElement, mode:
   roughFor(ctx).draw(drawable);
 }
 
-/** Fondo de un trazo cerrado: se rellena el contorno que dibujó el usuario. */
+/** Fill of a closed stroke: the outline the user drew is filled. */
 export function drawStrokeFill(ctx: CanvasRenderingContext2D, el: StrokeElement, mode: ThemeMode) {
   if (!el.fill) return;
   const { points } = el;
@@ -82,7 +83,7 @@ export function drawStrokeFill(ctx: CanvasRenderingContext2D, el: StrokeElement,
   const options: Options = {
     seed: seedFromId(el.id),
     stroke: 'none',
-    // El relleno liso sigue exactamente el trazo; los rayados, un poco a mano.
+    // The solid fill follows the stroke exactly; hatching, slightly by hand.
     roughness: el.fillStyle === 'solid' ? 0 : 0.6,
     ...fillOptions(el.fill, el.fillStyle, weight, mode),
   };
@@ -100,14 +101,13 @@ function seedFromId(id: string): number {
 export const newSeed = () => rough.newSeed();
 
 /**
- * ¿El punto (coordenadas de la figura) está sobre ella? Si tiene fondo o texto,
- * vale cualquier punto de dentro; si no, solo cerca del borde (así se puede hacer
- * clic "a través" de una figura vacía).
+ * Is the point (shape coordinates) on it? If it has a fill or text, any point inside
+ * counts; otherwise, only near the border (so you can click "through" an empty shape).
  */
 export function shapeHitsPoint(el: ShapeElement, p: Vec, tolerance: number): boolean {
   const { width: w, height: h } = el;
   const reach = tolerance + el.strokeWidth / 2;
-  // Rellenas, con texto o sin borde (caja invisible): se agarran por dentro.
+  // Filled, with text or without a border (invisible box): they are grabbed from inside.
   const solid = el.fill !== null || !el.border || (el.label?.text ?? '') !== '';
   if (el.shape === 'ellipse') {
     const a = w / 2;
@@ -116,7 +116,7 @@ export function shapeHitsPoint(el: ShapeElement, p: Vec, tolerance: number): boo
     const dy = (p.y - b) / b;
     const r = Math.hypot(dx, dy);
     if (solid && r <= 1) return true;
-    // Distancia aproximada al borde de la elipse.
+    // Approximate distance to the ellipse's border.
     return Math.abs(r - 1) * Math.min(a, b) <= reach;
   }
   const inside = p.x >= 0 && p.x <= w && p.y >= 0 && p.y <= h;
@@ -127,8 +127,8 @@ export function shapeHitsPoint(el: ShapeElement, p: Vec, tolerance: number): boo
 }
 
 /**
- * Flecha "a mano" en coordenadas de la flecha (inicio en su x, y): el trazo (recto o
- * curvo) y sus puntas, con el mismo aspecto que las figuras.
+ * A "hand-drawn" arrow in arrow coordinates (start at its x, y): the stroke (straight or
+ * curved) and its arrowheads, with the same look as the shapes.
  */
 export function drawArrow(ctx: CanvasRenderingContext2D, el: ArrowElement, mode: ThemeMode) {
   const ex = el.points[3];

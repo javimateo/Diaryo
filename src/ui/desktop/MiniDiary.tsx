@@ -2,20 +2,21 @@ import { forwardRef, useEffect, useRef, useState, type PointerEvent } from 'reac
 import { readToday, TODAY_KEY, type TodayCard } from '../../desktop/saved';
 import { call, emit } from '../../desktop/tauri';
 import { asRecord, readJSON, writeJSON } from '../../lib/saved';
+import { useT } from '../useT';
 
 const POSITION_KEY = 'diaryo:mini-diary';
-/** Margen con los bordes de la pantalla. */
+/** Margin from the screen edges. */
 const EDGE = 24;
-/** Lo que hay que mover el ratón para que un clic pase a ser arrastrar. */
+/** How far the mouse must move for a click to become a drag. */
 const DRAG = 4;
 
-/** Dónde está: distancia al borde derecho y al de arriba (así se queda arriba a la derecha). */
+/** Where it is: distance to the right edge and to the top (so it stays at the top right). */
 interface Place {
   right: number;
   top: number;
 }
 
-/** Donde se dejó (o, si no, arriba a la derecha). */
+/** Where it was left (or, otherwise, at the top right). */
 function readPlace(): Place {
   const { right, top } = asRecord(readJSON(POSITION_KEY));
   return typeof right === 'number' && typeof top === 'number'
@@ -23,18 +24,19 @@ function readPlace(): Place {
     : { right: EDGE, top: EDGE };
 }
 
-/** Abre el diario flotante en la página de hoy. */
+/** Opens the floating diary on today's page. */
 async function openToday() {
   await emit('diaryo://go-today');
   await call('show_mode', { mode: 'widget' });
 }
 
 /**
- * El mini diario del escritorio: la doble página de hoy en pequeño, con las tapas
- * alrededor. Un clic abre el diario flotante; arrastrándolo se cambia de sitio.
+ * The desktop mini diary: today's double page in small, with the covers around it. A
+ * click opens the floating diary; dragging it moves it.
  */
 export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desktop: boolean }>(
   function MiniDiary({ onChange, desktop }, ref) {
+    const t = useT();
     const [card, setCard] = useState<TodayCard | null>(readToday);
     const [place, setPlace] = useState<Place>(readPlace);
     const drag = useRef<{ x: number; y: number; from: Place; moved: boolean } | null>(null);
@@ -47,7 +49,7 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
       return () => window.removeEventListener('storage', onStorage);
     }, []);
 
-    // Donde esté (y al cargar la imagen), ahí recibe el ratón.
+    // Wherever it is (and when the image loads), it takes the mouse there.
     useEffect(onChange, [onChange, card, place]);
 
     if (!card) return null;
@@ -78,10 +80,7 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
       else if (desktop) void openToday();
     };
 
-    const tasks =
-      card.pending === 0
-        ? 'Hoy'
-        : `Hoy · ${card.pending} ${card.pending === 1 ? 'tarea' : 'tareas'}`;
+    const tasks = card.pending === 0 ? t.miniDiary.today : t.miniDiary.tasks(card.pending);
 
     return (
       <div
@@ -89,7 +88,7 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
         className="mini-diary"
         style={{ right: place.right, top: place.top }}
         role="button"
-        aria-label="Abrir el diario en la página de hoy"
+        aria-label={t.miniDiary.openLabel}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -100,7 +99,7 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
         </div>
         <div className="mini-diary-meta">
           <span className="mini-diary-chip">{tasks}</span>
-          <span className="mini-diary-chip">Abrir</span>
+          <span className="mini-diary-chip">{t.miniDiary.open}</span>
         </div>
       </div>
     );

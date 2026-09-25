@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-/** Una fila de los ajustes: qué es (con una explicación corta) y su control. */
+/** A settings row: what it is (with a short explanation) and its control. */
 export function SettingsRow({
   label,
   hint,

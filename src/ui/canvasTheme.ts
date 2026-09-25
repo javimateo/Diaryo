@@ -1,6 +1,6 @@
 import type { Theme } from '../store/ui';
 
-/** Los colores del lienzo, sacados de las variables de CSS del tema. */
+/** The canvas colors, taken from the theme's CSS variables. */
 export function readCanvasTheme(mode: Theme) {
   const css = getComputedStyle(document.documentElement);
   return {

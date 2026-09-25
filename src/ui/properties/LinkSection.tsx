@@ -3,9 +3,11 @@ import { useUI } from '../../store/ui';
 import { followLink } from '../diaryActions';
 import { pageName } from '../LinkDialog';
 import { Section } from './controls';
+import { useT } from '../useT';
 
-/** Enlace a otra página de lo seleccionado (solo con la selección, no al escribir). */
+/** Link from the selection to another page (only with the selection, not while writing). */
 export function LinkSection() {
+  const t = useT();
   const tool = useUI((s) => s.tool);
   const editing = useUI((s) => s.editing);
   const doc = useUI((s) => s.doc);
@@ -16,26 +18,26 @@ export function LinkSection() {
   const openDialog = () => useUI.getState().setLinkDialogOpen(true);
 
   return (
-    <Section title="Enlace">
+    <Section title={t.props.link}>
       {doc.selectionHasLink ? (
         <div className="link-row">
           <button
             type="button"
             className="link-chip"
-            data-tip="Ir a esa página"
+            data-tip={t.props.goToPage}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => doc.selectionLink && void followLink(doc.selectionLink)}
           >
             <ArrowUpRight size={14} strokeWidth={2} />
             <span>
-              {target ? pageName(target) : doc.selectionLink ? 'Página borrada' : 'Varias'}
+              {target ? pageName(target) : doc.selectionLink ? t.props.deletedPage : t.props.mixed}
             </span>
           </button>
           <button
             type="button"
             className="icon-btn"
-            aria-label="Cambiar el enlace"
-            data-tip="Cambiar"
+            aria-label={t.props.changeLink}
+            data-tip={t.props.change}
             onMouseDown={(e) => e.preventDefault()}
             onClick={openDialog}
           >
@@ -44,8 +46,8 @@ export function LinkSection() {
           <button
             type="button"
             className="icon-btn"
-            aria-label="Quitar el enlace"
-            data-tip="Quitar"
+            aria-label={t.props.removeLink}
+            data-tip={t.props.remove}
             data-tip-align="end"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => engine?.setSelectionLink(null)}
@@ -61,7 +63,7 @@ export function LinkSection() {
           onClick={openDialog}
         >
           <Link2 size={15} strokeWidth={1.75} />
-          Enlazar con una página
+          {t.props.addLink}
         </button>
       )}
     </Section>

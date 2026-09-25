@@ -6,33 +6,35 @@ import { editorBox } from '../engine/render';
 import { LINE_HEIGHT } from '../engine/text';
 import { useUI } from '../store/ui';
 import { continueList, indent, taskShortcut, type TextEdit } from './textEditing';
+import { useT } from './useT';
 
 /**
- * Editor de texto: un <textarea> colocado exactamente encima del texto o la nota
- * que se edita, con la misma letra, tamaño y giro. Mientras tanto el lienzo no pinta
- * ese texto, así que se ve como si se escribiera directamente en él.
+ * Text editor: a <textarea> placed exactly over the text or note being edited, with the
+ * same font, size and rotation. Meanwhile the canvas doesn't draw that text, so it looks
+ * like you are writing directly on it.
  */
 export function TextEditor() {
+  const t = useT();
   const engine = useUI((s) => s.engine);
   const editing = useUI((s) => s.editing);
   const theme = useUI((s) => s.theme);
   const [trackedCamera, setCamera] = useState<Camera | null>(null);
   const ref = useRef<HTMLTextAreaElement>(null);
-  /** Selección que hay que poner cuando el texto cambiado llegue al <textarea>. */
+  /** Selection to set when the changed text reaches the <textarea>. */
   const pendingSelection = useRef<TextEdit | null>(null);
   const isEditing = editing !== null;
   const id = editing?.element.id;
-  // En el primer render aún no hay suscripción: se usa la cámara actual para que el
-  // editor aparezca (y reciba el teclado) en el mismo instante del clic.
+  // On the first render there is no subscription yet: the current camera is used so the
+  // editor appears (and takes the keyboard) at the very moment of the click.
   const camera = trackedCamera ?? engine?.getCamera() ?? null;
 
-  // Seguir a la cámara solo mientras se edita.
+  // Follow the camera only while editing.
   useEffect(() => {
     if (!engine || !isEditing) return;
     return engine.subscribe(setCamera);
   }, [engine, isEditing]);
 
-  // Antes de pintar: si el usuario ya está tecleando, ninguna letra se pierde.
+  // Before painting: if the user is already typing, no letter is lost.
   useLayoutEffect(() => {
     const textarea = ref.current;
     if (!textarea) return;
@@ -41,7 +43,7 @@ export function TextEditor() {
     textarea.setSelectionRange(end, end);
   }, [id]);
 
-  // Tras un cambio hecho por el editor (Tab, listas), el cursor va donde toca.
+  // After a change made by the editor (Tab, lists), the cursor goes where it should.
   useLayoutEffect(() => {
     const edit = pendingSelection.current;
     const textarea = ref.current;
@@ -54,15 +56,14 @@ export function TextEditor() {
 
   const el = editing.element;
   const { zoom } = camera;
-  // Caja del texto en coordenadas del elemento (dentro de la nota o de la figura, o la
-  // caja entera de un texto libre).
+  // Text box in element coordinates (inside the note or shape, or the whole box of a free
+  // text).
   const box = editorBox(el, theme);
   const origin = worldToScreen(camera, toWorld(el, { x: box.x, y: box.y }));
-  const label =
-    el.type === 'text' ? 'Texto' : el.type === 'note' ? 'Texto de la nota' : 'Texto de la figura';
+  const label = t.editor[el.type === 'text' ? 'text' : el.type === 'note' ? 'note' : 'shape'];
 
-  // Un texto sin caja fija no salta de línea: se le deja sitio de sobra para que el
-  // navegador (que mide un poco distinto que el lienzo) nunca parta la última palabra.
+  // A text without a fixed box doesn't wrap: it gets plenty of room so the browser (which
+  // measures slightly differently from the canvas) never breaks the last word.
   const free = el.type === 'text' && !el.wrap;
   const slack = free ? box.fontSize * zoom * 2 : 2;
   const shift = free ? slack * ({ left: 0, center: 0.5, right: 1 } as const)[box.align] : 0;
@@ -91,7 +92,7 @@ export function TextEditor() {
       aria-label={label}
       onChange={(e) => engine.updateEditingText(e.target.value)}
       onBlur={(e) => {
-        // Tocar el panel de estilo (color, tamaño) no cierra el editor.
+        // Touching the style panel (color, size) doesn't close the editor.
         const next = e.relatedTarget instanceof Element ? e.relatedTarget : null;
         if (next?.closest('[data-keep-editing]')) return;
         engine.finishEditing();
@@ -104,7 +105,7 @@ export function TextEditor() {
         }
         const { value, selectionStart: start, selectionEnd: end } = e.currentTarget;
         let edit: TextEdit | null = null;
-        // Tab no sale del editor: sangra (y Shift+Tab quita la sangría).
+        // Tab doesn't leave the editor: it indents (and Shift+Tab outdents).
         if (e.key === 'Tab') edit = indent(value, start, end, e.shiftKey);
         else if (e.key === 'Enter' && !e.shiftKey && !e.altKey)
           edit = continueList(value, start, end);

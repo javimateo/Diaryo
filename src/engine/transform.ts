@@ -14,8 +14,8 @@ import { unionBounds } from './geometry';
 import { normalizeAngle, rotateAround, rotateVec, type Vec } from './math';
 
 /**
- * Caja orientada: el "marco" de la selección. Para un solo elemento gira con él;
- * para varios, está alineada con los ejes.
+ * Oriented box: the selection "frame". For a single element it rotates with it; for
+ * several, it is axis-aligned.
  */
 export interface Box {
   cx: number;
@@ -25,12 +25,12 @@ export interface Box {
   rotation: number;
 }
 
-/** Punto del mundo → coordenadas de la caja (origen en su centro, sin giro). */
+/** World point → box coordinates (origin at its center, without rotation). */
 export function toBox(box: Box, p: Vec): Vec {
   return rotateVec({ x: p.x - box.cx, y: p.y - box.cy }, -box.rotation);
 }
 
-/** Coordenadas de la caja → punto del mundo. */
+/** Box coordinates → world point. */
 export function fromBox(box: Box, p: Vec): Vec {
   const r = rotateVec(p, box.rotation);
   return { x: r.x + box.cx, y: r.y + box.cy };
@@ -76,7 +76,7 @@ export function translateElement<T extends SceneElement>(el: T, dx: number, dy: 
 }
 
 export function rotateElement<T extends SceneElement>(el: T, pivot: Vec, angle: number): T {
-  // Las flechas no se giran: se giran sus extremos.
+  // Arrows aren't rotated: their ends are.
   if (el.type === 'arrow') {
     return withEnds(
       el,
@@ -90,10 +90,7 @@ export function rotateElement<T extends SceneElement>(el: T, pivot: Vec, angle: 
 
 const round = (v: number) => Math.round(v * 100) / 100;
 
-/**
- * Escala un elemento en los ejes de `box`, dejando fijo `anchor` (en coordenadas de
- * la caja).
- */
+/** Scales an element along the axes of `box`, keeping `anchor` fixed (in box coordinates). */
 export function scaleElement<T extends SceneElement>(
   el: T,
   box: Box,
@@ -109,7 +106,7 @@ export function scaleElement<T extends SceneElement>(
     });
   };
   if (el.type === 'arrow') {
-    // Al voltear, la curva cambia de lado.
+    // When flipping, the curve changes side.
     const bend = el.bend * Math.sqrt(Math.abs(sx * sy)) * Math.sign(sx * sy || 1);
     return { ...withEnds(el, map(arrowStart(el)), map(arrowEnd(el))), bend } as T;
   }
@@ -117,8 +114,8 @@ export function scaleElement<T extends SceneElement>(
 }
 
 /**
- * Trazos: si la escala es uniforme se conserva el giro del elemento; si no, el giro
- * se "hornea" en los puntos para que el trazo se estire exactamente como se ve.
+ * Strokes: if the scale is uniform the element's rotation is kept; otherwise, the
+ * rotation is "baked" into the points so the stroke stretches exactly as it looks.
  */
 function scaleStroke(
   el: StrokeElement,
@@ -159,9 +156,9 @@ function scaleStroke(
 }
 
 /**
- * Cajas: el centro sigue a la transformación y el tamaño cambia sin voltear ni
- * deformar el contenido. Solo las imágenes alineadas con el marco se estiran en un
- * eje; el texto y las notas siempre escalan proporcionalmente (con su letra).
+ * Boxes: the center follows the transform and the size changes without flipping or
+ * deforming the content. Only images aligned with the frame stretch along one axis; texts
+ * and notes always scale proportionally (with their font).
  */
 function scaleBox(
   el: BoxSceneElement,
@@ -172,8 +169,8 @@ function scaleBox(
 ): BoxSceneElement {
   const center = map(toWorld(el, { x: el.width / 2, y: el.height / 2 }));
   const aligned = Math.abs(normalizeAngle(el.rotation - box.rotation)) < 1e-6;
-  // Un texto estirado solo a lo ancho se vuelve una caja de ese ancho: el texto se
-  // reparte en líneas y la letra no cambia.
+  // A text stretched only in width becomes a box of that width: the text wraps into lines
+  // and the font doesn't change.
   if (el.type === 'text' && aligned && sy === 1 && sx !== 1) {
     const width = Math.max(el.width * Math.abs(sx), el.fontSize);
     const half = rotateVec({ x: width / 2, y: el.height / 2 }, el.rotation);
@@ -186,7 +183,7 @@ function scaleBox(
     });
   }
   const uniform = Math.sqrt(Math.abs(sx * sy));
-  // Imágenes y figuras se pueden estirar; texto y notas no se deforman.
+  // Images and shapes can be stretched; texts and notes don't deform.
   const stretch = (el.type === 'image' || el.type === 'shape') && aligned;
   const kx = stretch ? Math.abs(sx) : uniform;
   const ky = stretch ? Math.abs(sy) : uniform;
@@ -198,7 +195,7 @@ function scaleBox(
     case 'image':
       return { ...el, ...moved };
     case 'shape':
-      // El texto de dentro crece solo si la figura crece en proporción.
+      // The text inside only grows if the shape grows proportionally.
       return kx === ky ? { ...el, ...moved, label: scaleLabel(el.label, kx) } : { ...el, ...moved };
     default:
       return { ...el, ...moved, fontSize: el.fontSize * uniform };

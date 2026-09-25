@@ -26,10 +26,10 @@ import type { TextAlign } from './elements';
 
 export interface RenderContext {
   mode: ThemeMode;
-  /** Píxeles físicos por unidad del mundo (zoom × densidad de pantalla). */
+  /** Physical pixels per world unit (zoom × screen density). */
   pixelScale: number;
   assets: AssetStore;
-  /** Elemento que se está editando: su texto lo pinta el <textarea>, no el canvas. */
+  /** Element being edited: its text is painted by the <textarea>, not the canvas. */
   editingId: string | null;
 }
 
@@ -69,14 +69,14 @@ export function drawElement(
 export const notePadding = (note: { width: number }) => note.width * NOTE_PADDING_RATIO;
 
 export interface NoteTextLayout extends TextLayout {
-  /** Dónde empieza el texto dentro de la nota (coordenadas de la nota). */
+  /** Where the text starts inside the note (note coordinates). */
   x: number;
   y: number;
-  /** Anchura disponible para el texto. */
+  /** Width available for the text. */
   boxWidth: number;
 }
 
-/** Posición del texto dentro de una nota, según su alineación vertical. */
+/** Position of the text inside a note, according to its vertical alignment. */
 export function noteTextLayout(el: NoteElement): NoteTextLayout {
   const pad = notePadding(el);
   const boxWidth = el.width - pad * 2;
@@ -89,10 +89,10 @@ export function noteTextLayout(el: NoteElement): NoteTextLayout {
 export const noteInk = (el: NoteElement, mode: ThemeMode) =>
   el.textColor ? resolveColor(el.textColor, mode) : NOTE_INK;
 
-/** Dónde y cómo va el texto de un elemento: lo usa el editor para colocarse encima. */
+/** Where and how an element's text goes: the editor uses it to place itself on top. */
 export interface EditorBox {
   text: string;
-  /** Caja del texto en coordenadas del elemento. */
+  /** Text box in element coordinates. */
   x: number;
   y: number;
   width: number;
@@ -126,7 +126,7 @@ export function editorBox(el: EditableElement, mode: ThemeMode): EditorBox {
       color: noteInk(el, mode),
     };
   }
-  // Figuras: al editar siempre tienen etiqueta (el motor les pone una vacía).
+  // Shapes: while editing they always have a label (the engine gives them an empty one).
   const label = el.label!;
   const l = labelLayout(el, label);
   return {
@@ -186,7 +186,7 @@ function drawNote(
     });
     ctx.restore();
   }
-  // Chincheta, celo o clip van por encima del texto.
+  // Pin, tape or clip go on top of the text.
   drawNoteDecoration(ctx, el, rc.mode, rc.pixelScale);
   ctx.restore();
 }
@@ -223,7 +223,7 @@ function drawShapeElement(
   drawLabel(ctx, el, rc, opacity);
 }
 
-/** Texto dentro de una figura: del color del trazo. */
+/** Text inside a shape: the stroke color. */
 function drawLabel(
   ctx: CanvasRenderingContext2D,
   el: ContainerElement,
@@ -261,14 +261,14 @@ function drawImage(
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(image, 0, 0, el.width, el.height);
   } else {
-    // Mientras carga, un hueco del mismo tamaño.
+    // While loading, a gap of the same size.
     ctx.fillStyle = rc.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
     ctx.fillRect(0, 0, el.width, el.height);
   }
   ctx.restore();
 }
 
-/** Contorno fino de un elemento (selección o elemento bajo el cursor). */
+/** Thin outline of an element (selection or element under the cursor). */
 export function drawElementOutline(
   ctx: CanvasRenderingContext2D,
   el: SceneElement,

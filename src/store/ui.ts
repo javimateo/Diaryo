@@ -12,27 +12,34 @@ import type { Diary, DiaryState, TurnSpeed } from '../diary/diary';
 import type { SaveStatus } from '../storage/autosave';
 import { mergeToolStyle, parseRecentColors, parseStyles, RECENT_COLORS_LIMIT } from './styles';
 import { asRecord, readJSON, readText, writeJSON, writeText } from '../lib/saved';
+import { DEFAULT_LANGUAGE, isLanguage, setLanguage, type Language } from '../i18n';
 
 export type Theme = 'light' | 'dark';
-/** El tema elegido: claro, oscuro o el del sistema (y cambia con él). */
+/** The chosen theme: light, dark or the system one (and it follows it). */
 export type ThemePreference = Theme | 'system';
 
-/** Ajustes de la app (lo del aspecto del diario va aparte, en `bookStyle`). */
+/** App settings (the diary look is separate, in `bookStyle`). */
 export interface Settings {
-  /** Día con el que empieza la semana en el calendario: 1 = lunes, 0 = domingo. */
+  /** App language. */
+  language: Language;
+  /** Day the week starts on in the calendar: 1 = Monday, 0 = Sunday. */
   weekStart: 0 | 1;
   turnSpeed: TurnSpeed;
 }
 
-const DEFAULT_SETTINGS: Settings = { weekStart: 1, turnSpeed: 'normal' };
+const DEFAULT_SETTINGS: Settings = {
+  language: DEFAULT_LANGUAGE,
+  weekStart: 1,
+  turnSpeed: 'normal',
+};
 
 export const THEME_KEY = 'diaryo:theme';
-const SETTINGS_KEY = 'diaryo:settings';
+export const SETTINGS_KEY = 'diaryo:settings';
 const STYLES_KEY = 'diaryo:styles';
 const RECENT_COLORS_KEY = 'diaryo:recent-colors';
 const BOOK_KEY = 'diaryo:book';
 const TOAST_DURATION = 1800;
-/** Los avisos con botón (p. ej. "Deshacer") duran más para dar tiempo a pulsarlo. */
+/** Toasts with a button (e.g. "Undo") last longer to leave time to press it. */
 const ACTION_TOAST_DURATION = 6000;
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -49,6 +56,7 @@ const resolveTheme = (preference: ThemePreference): Theme =>
 function loadSettings(): Settings {
   const saved = asRecord(readJSON(SETTINGS_KEY));
   const settings = { ...DEFAULT_SETTINGS };
+  if (isLanguage(saved.language)) settings.language = saved.language;
   if (saved.weekStart === 0 || saved.weekStart === 1) settings.weekStart = saved.weekStart;
   if (saved.turnSpeed === 'normal' || saved.turnSpeed === 'fast' || saved.turnSpeed === 'off') {
     settings.turnSpeed = saved.turnSpeed;
@@ -56,19 +64,23 @@ function loadSettings(): Settings {
   return settings;
 }
 
-/** ¿Es una de las claves de ese catálogo? */
+/** Is it one of those values? */
+const isOneOf = <T extends string>(values: readonly T[], value: unknown): value is T =>
+  values.includes(value as T);
+
+/** Is it one of the keys of that catalog? */
 const isKeyOf = <T extends string>(catalog: Record<T, unknown>, value: unknown): value is T =>
   typeof value === 'string' && Object.hasOwn(catalog, value);
 
-/** Aspecto del diario guardado (con valores por defecto para lo que falte). */
+/** Saved diary look (with defaults for whatever is missing). */
 function loadBookStyle(): BookStyle {
   const saved = asRecord(readJSON(BOOK_KEY));
   const style = { ...DEFAULT_BOOK_STYLE };
   if (isPaperStyle(saved.paper)) style.paper = saved.paper;
-  if (isKeyOf(MATERIALS, saved.material)) style.material = saved.material;
+  if (isOneOf(MATERIALS, saved.material)) style.material = saved.material;
   if (typeof saved.elastic === 'boolean') style.elastic = saved.elastic;
-  // Antes de haber materiales la mesa era lisa por defecto: ahora es de madera.
-  if (isKeyOf(DESKS, saved.desk) && 'material' in saved) style.desk = saved.desk;
+  // Before cover materials existed the desk was plain by default: now it is wood.
+  if (isOneOf(DESKS, saved.desk) && 'material' in saved) style.desk = saved.desk;
   if (saved.binding === 'rings' || saved.binding === 'sewn') style.binding = saved.binding;
   if (isKeyOf(PAPER_COLORS, saved.paperColor)) style.paperColor = saved.paperColor;
   if (typeof saved.cover === 'string' && /^#[0-9a-f]{6}$/i.test(saved.cover)) {
@@ -76,6 +88,15 @@ function loadBookStyle(): BookStyle {
   }
   return style;
 }
+
+/** Activates the language for the texts and for the browser (screen readers, spell checker). */
+function applyLanguage(language: Language) {
+  setLanguage(language);
+  document.documentElement.lang = language;
+}
+
+const initialSettings = loadSettings();
+applyLanguage(initialSettings.language);
 
 const initialPreference = loadThemePreference();
 const initialTheme = resolveTheme(initialPreference);
@@ -96,13 +117,13 @@ interface UIState {
   engine: Engine | null;
   tool: ToolId;
   styles: ToolStyles;
-  /** Colores libres usados hace poco, para volver a ellos rápido. */
+  /** Custom colors used recently, to get back to them quickly. */
   recentColors: HexColor[];
   zoom: number;
   doc: EngineState;
-  /** Texto o nota que se está escribiendo. */
+  /** Text or note being written. */
   editing: EditingState | null;
-  /** Tema que se ve ahora (el del sistema ya resuelto). */
+  /** Theme shown now (the system one already resolved). */
   theme: Theme;
   themePreference: ThemePreference;
   settings: Settings;
@@ -111,22 +132,22 @@ interface UIState {
   saveStatus: SaveStatus;
   diary: Diary | null;
   diaryState: DiaryState;
-  /** Índice del diario (calendario y páginas) abierto. */
+  /** Diary index (calendar and pages) open. */
   diaryOpen: boolean;
   bookStyle: BookStyle;
-  /** Diálogo para elegir la página a la que enlazar lo seleccionado. */
+  /** Dialog to choose the page to link the selection to. */
   linkDialogOpen: boolean;
-  /** Vista mapa: todas las páginas de un vistazo. */
+  /** Map view: all the pages at a glance. */
   mapOpen: boolean;
-  /** Paleta de comandos y búsqueda (Ctrl+K). */
+  /** Command palette and search (Ctrl+K). */
   paletteOpen: boolean;
-  /** App de escritorio: modo, atajo, copias… (null en la web). */
+  /** Desktop app: mode, shortcut, backups… (null on the web). */
   desktop: DesktopInfo | null;
-  /** La conexión con la parte de escritorio (null en la web). */
+  /** The connection with the desktop side (null on the web). */
   desktopBridge: DesktopBridge | null;
-  /** Dónde estaba el libro en la pantalla al abrir el mapa (la hoja sale de ahí). */
+  /** Where the book was on screen when the map opened (the sheet flies from there). */
   mapOrigin: { x: number; y: number; width: number; height: number } | null;
-  /** Menú del clic derecho abierto. */
+  /** Right-click menu open. */
   contextMenu: ContextMenuRequest | null;
   toast: Toast | null;
   setEngine: (engine: Engine | null) => void;
@@ -139,6 +160,8 @@ interface UIState {
   toggleTheme: () => void;
   setThemePreference: (preference: ThemePreference) => void;
   setSettings: (patch: Partial<Settings>) => void;
+  /** Reads the saved settings again (another window changed them). */
+  reloadSettings: () => void;
   setSettingsOpen: (open: boolean) => void;
   setHelpOpen: (open: boolean) => void;
   setSaveStatus: (status: SaveStatus) => void;
@@ -179,7 +202,7 @@ export const useUI = create<UIState>()((set, get) => ({
   editing: null,
   theme: initialTheme,
   themePreference: initialPreference,
-  settings: loadSettings(),
+  settings: initialSettings,
   settingsOpen: false,
   helpOpen: false,
   saveStatus: 'loading',
@@ -223,8 +246,14 @@ export const useUI = create<UIState>()((set, get) => ({
     writeText(THEME_KEY, themePreference);
     set({ theme, themePreference });
   },
+  reloadSettings: () => {
+    const settings = loadSettings();
+    applyLanguage(settings.language);
+    set({ settings });
+  },
   setSettings: (patch) => {
     const settings = { ...get().settings, ...patch };
+    applyLanguage(settings.language);
     writeJSON(SETTINGS_KEY, settings);
     set({ settings });
   },
@@ -237,7 +266,7 @@ export const useUI = create<UIState>()((set, get) => ({
   setMapOpen: (mapOpen) => {
     if (mapOpen === get().mapOpen) return;
     const { diary, engine } = get();
-    // La miniatura de la página abierta, al día; la hoja del mapa sale de donde está el libro.
+    // The open page's thumbnail, up to date; the map sheet flies from where the book is.
     if (mapOpen) diary?.refreshThumbnail();
     set({
       mapOpen,
@@ -258,7 +287,7 @@ export const useUI = create<UIState>()((set, get) => ({
     get().diary?.refreshBook();
   },
   setDiaryOpen: (diaryOpen) => {
-    // Al abrir el índice, la miniatura de la página actual se pone al día.
+    // When opening the index, the current page's thumbnail is brought up to date.
     if (diaryOpen) get().diary?.refreshThumbnail();
     set({ diaryOpen });
   },
@@ -276,7 +305,7 @@ export const useUI = create<UIState>()((set, get) => ({
   },
 }));
 
-// Con el tema del sistema, la app cambia en cuanto cambia el sistema.
+// With the system theme, the app changes as soon as the system does.
 systemDark.addEventListener('change', () => {
   const { themePreference, setThemePreference } = useUI.getState();
   if (themePreference === 'system') setThemePreference('system');

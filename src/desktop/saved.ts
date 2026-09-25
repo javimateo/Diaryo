@@ -3,14 +3,14 @@ import type { DeskView } from '../engine/engine';
 import { asRecord, readJSON, writeJSON } from '../lib/saved';
 
 /**
- * Lo que comparten las ventanas de la app de escritorio a través del navegador (las dos
- * ventanas ven el mismo almacenamiento y se enteran de los cambios con `storage`).
+ * What the windows of the desktop app share through the browser (both windows see the
+ * same storage and learn about changes with `storage`).
  */
 
 /**
- * La vista fijada del diario flotante (centro y zoom), la que se elige con "Fijar vista".
- * El diario flotante se abre siempre así y la mesa del escritorio la usa, para que cada
- * cosa quede en el mismo sitio de la pantalla en los dos. Sin fijar, el libro entero.
+ * The pinned view of the floating diary (center and zoom), the one chosen with "Pin
+ * view". The floating diary always opens like that and the desktop desk uses it, so each
+ * thing stays in the same place on screen in both. Without a pinned view, the whole book.
  */
 export const DESK_VIEW_KEY = 'diaryo:desk-view';
 
@@ -27,21 +27,21 @@ export function readDeskView(): DeskView | null {
   return ok ? { center: { x, y }, zoom } : null;
 }
 
-/** Fija una vista. Devuelve si se ha podido guardar. */
+/** Pins a view. Returns whether it could be saved. */
 export const writeDeskView = (view: DeskView) => writeJSON(DESK_VIEW_KEY, view);
 
-/** ¿Se está viendo lo mismo? (medio píxel de diferencia no cuenta) */
+/** Is the same thing being shown? (half a pixel of difference doesn't count) */
 export function sameView(a: DeskView, b: DeskView): boolean {
   const zoom = Math.abs(a.zoom - b.zoom) / b.zoom < 0.001;
   const moved = Math.hypot(a.center.x - b.center.x, a.center.y - b.center.y) * b.zoom;
   return zoom && moved < 0.5;
 }
 
-/** La página de hoy para el mini diario del escritorio (la pone al día el diario). */
+/** Today's page for the desktop mini diary (the diary keeps it up to date). */
 export const TODAY_KEY = 'diaryo:today';
 
 export interface TodayCard extends TodayPreview {
-  /** Color de las tapas. */
+  /** Cover color. */
   cover: string;
 }
 

@@ -1,6 +1,6 @@
 import type { HexColor } from '../engine/palette';
 
-/** Color en HSV: tono 0–360, saturación y brillo 0–1. */
+/** HSV color: hue 0–360, saturation and value 0–1. */
 export interface Hsv {
   h: number;
   s: number;
@@ -36,7 +36,7 @@ export function hsvToHex({ h, s, v }: Hsv): HexColor {
   return `#${f(5)}${f(3)}${f(1)}`;
 }
 
-/** Acepta "abc", "#abc", "aabbcc" o "#aabbcc". Devuelve null si no es un color. */
+/** Accepts "abc", "#abc", "aabbcc" or "#aabbcc". Returns null if it isn't a color. */
 export function normalizeHex(input: string): HexColor | null {
   let value = input.trim().replace(/^#/, '');
   if (/^[0-9a-f]{3}$/i.test(value)) value = [...value].map((c) => c + c).join('');

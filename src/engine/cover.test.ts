@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { shade } from './cover';
 
-describe('tonos de las tapas', () => {
-  it('aclara y oscurece sin salirse de rango', () => {
+describe('cover tones', () => {
+  it('lightens and darkens without going out of range', () => {
     expect(shade('#808080', 0)).toBe('rgb(128, 128, 128)');
     expect(shade('#808080', -0.5)).toBe('rgb(64, 64, 64)');
     expect(shade('#808080', 1)).toBe('rgb(255, 255, 255)');

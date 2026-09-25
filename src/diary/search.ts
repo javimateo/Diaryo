@@ -1,41 +1,41 @@
 import { addDays, dayKey, parseDay, type DayKey } from '../lib/dates';
 
-/** Sin mayúsculas ni tildes, para comparar ("Mañana" → "manana"). */
+/** Without case or accents, to compare ("Mañana" → "manana"). */
 export function normalize(text: string): string {
   return text
-    .toLocaleLowerCase('es')
+    .toLocaleLowerCase()
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '');
 }
 
-/** Palabras de una búsqueda, ya normalizadas. */
+/** Words of a search, already normalized. */
 export function queryWords(query: string): string[] {
   return normalize(query).split(/\s+/).filter(Boolean);
 }
 
-/** ¿Están todas las palabras en el texto (sin importar tildes ni mayúsculas)? */
+/** Are all the words in the text (ignoring accents and case)? */
 export function matchesAll(text: string, words: string[]): boolean {
   const haystack = normalize(text);
   return words.every((word) => haystack.includes(word));
 }
 
 /**
- * ¿Empieza alguna palabra del texto por cada una de las buscadas? Para nombres cortos
- * (acciones, títulos): "lap" encuentra "Lápiz", pero "caja" no encuentra "encajar".
+ * Does some word of the text start with each of the searched ones? For short names
+ * (actions, titles): "lap" finds "Lápiz", but "caja" doesn't find "encajar".
  */
 export function matchesPrefixes(text: string, words: string[]): boolean {
   const own = normalize(text).split(/[^\p{L}\p{N}]+/u);
   return words.every((word) => own.some((w) => w.startsWith(word)));
 }
 
-/** Trozo de un texto con lo encontrado marcado. */
+/** A piece of text with the matches marked. */
 export interface Snippet {
   text: string;
-  /** Lo que coincide con la búsqueda: [inicio, fin) dentro de `text`, en orden. */
+  /** What matches the search: [start, end) within `text`, in order. */
   marks: [number, number][];
 }
 
-/** Normaliza recordando de qué carácter del original sale cada uno. */
+/** Normalizes while remembering which original character each one comes from. */
 function normalizeMapped(text: string) {
   let out = '';
   const map: number[] = [];
@@ -58,14 +58,14 @@ function mergeRanges(ranges: [number, number][]): [number, number][] {
   return merged;
 }
 
-/** Cuánto texto se deja antes de lo encontrado. */
+/** How much text is kept before the match. */
 const LEAD = 28;
-/** Largo máximo del trozo (luego se corta con "…" al pintarlo si no cabe). */
+/** Maximum length of the piece (then it is cut with "…" when drawn if it doesn't fit). */
 const LENGTH = 160;
 
 /**
- * Busca las palabras en un texto. Si están todas, devuelve el trozo que empieza un poco
- * antes de la primera coincidencia, en una sola línea y con lo encontrado marcado.
+ * Searches the words in a text. If all of them are there, returns the piece starting a
+ * bit before the first match, on a single line and with the matches marked.
  */
 export function findInText(text: string, words: string[]): Snippet | null {
   if (words.length === 0) return null;
@@ -82,7 +82,7 @@ export function findInText(text: string, words: string[]): Snippet | null {
   }
   const marks = mergeRanges(ranges);
   const first = marks[0][0];
-  // Se empieza en una palabra entera, un poco antes de lo encontrado.
+  // Start at a whole word, a bit before the match.
   let start = Math.max(0, first - LEAD);
   if (start > 0) {
     const space = flat.indexOf(' ', start);
@@ -99,7 +99,7 @@ export function findInText(text: string, words: string[]): Snippet | null {
   };
 }
 
-// ─── Fechas escritas a mano ("ayer", "lunes", "24 sept", "24/9") ────────────
+// ─── Dates typed by hand ("ayer", "lunes", "24 sept", "24/9") ─────────────
 
 const MONTHS = [
   'enero',
@@ -115,22 +115,50 @@ const MONTHS = [
   'noviembre',
   'diciembre',
 ];
-/** En el orden de `Date.getDay()`. */
+const MONTHS_EN = [
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
+];
+/** In the order of `Date.getDay()`. */
 const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+const WEEKDAYS_EN = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 const RELATIVE: Record<string, number> = {
   hoy: 0,
   ayer: -1,
   anteayer: -2,
   manana: 1,
   'pasado manana': 2,
+  today: 0,
+  yesterday: -1,
+  'day before yesterday': -2,
+  tomorrow: 1,
+  'day after tomorrow': 2,
 };
 
-/** Mes por su nombre o su principio ("sept", "ene"); -1 si no lo es. */
+/**
+ * Month by its name or its beginning, in Spanish or in English ("sept", "ene", "aug"); -1
+ * if not.
+ */
 function monthOf(word: string): number {
   if (word === 'set' || word === 'setiembre') return 8;
   if (word.length < 3) return -1;
-  return MONTHS.findIndex((month) => month.startsWith(word));
+  const es = MONTHS.findIndex((month) => month.startsWith(word));
+  return es >= 0 ? es : MONTHS_EN.findIndex((month) => month.startsWith(word));
 }
+
+/** Weekday (0 = Sunday) by its name in Spanish or in English. */
+const weekdayOf = (name: string) =>
+  WEEKDAYS.includes(name) ? WEEKDAYS.indexOf(name) : WEEKDAYS_EN.indexOf(name);
 
 function day(year: number, month: number, date: number): DayKey | null {
   if (month < 0 || month > 11 || date < 1) return null;
@@ -138,19 +166,25 @@ function day(year: number, month: number, date: number): DayKey | null {
   return dayKey(new Date(year, month, date, 12));
 }
 
-const WEEKDAY = `(${WEEKDAYS.join('|')})`;
+const WEEKDAY = `(${[...WEEKDAYS, ...WEEKDAYS_EN].join('|')})`;
 const WEEKDAY_QUERY = new RegExp(
-  `^(?:el )?(proximo |siguiente )?${WEEKDAY}( pasado| que viene| proximo| siguiente)?$`,
+  `^(?:el |the )?(proximo |siguiente |next |last |this )?${WEEKDAY}( pasado| que viene| proximo| siguiente)?$`,
 );
 const NUMERIC_QUERY = /^(\d{1,2})(?:[/.-](\d{1,2})(?:[/.-](\d{2}|\d{4}))?)?$/;
-const WRITTEN_QUERY = /^(\d{1,2})(?: de)? ([a-z]+)\.?(?:(?: de| del)? (\d{4}))?$/;
+/** "24 sept", "24 de septiembre de 2025", "24th of September". */
+const WRITTEN_QUERY =
+  /^(\d{1,2})(?:st|nd|rd|th)?(?: de| of)? ([a-z]+)\.?(?:(?: de| del)? (\d{4}))?$/;
+/** "September 24", "sep 24 2025" (in English, month first). */
+const MONTH_FIRST_QUERY = /^([a-z]+)\.? (\d{1,2})(?:st|nd|rd|th)?(?: (\d{4}))?$/;
 
 /**
- * Entiende un día escrito a mano: "hoy", "ayer", "lunes", "el lunes pasado",
- * "próximo viernes", "24", "24/9", "24/9/2025", "24 sept", "jueves 24 de septiembre de
- * 2025" o "2025-09-24". Sin año, es el de hoy. Devuelve null si no es un día.
+ * Understands a day typed by hand, in Spanish or in English: "hoy", "ayer", "lunes", "el
+ * lunes pasado", "próximo viernes", "24", "24/9", "24/9/2025", "24 sept", "jueves 24 de
+ * septiembre de 2025", "yesterday", "last monday", "Sep 24" or "2025-09-24". Without a
+ * year, it is this year. With `monthFirst` (English), "9/24" is month and day. Returns
+ * null if it isn't a day.
  */
-export function parseDayQuery(query: string, today: DayKey): DayKey | null {
+export function parseDayQuery(query: string, today: DayKey, monthFirst = false): DayKey | null {
   let q = normalize(query).trim().replace(/\s+/g, ' ').replace(/,/g, '');
   if (!q) return null;
   if (q in RELATIVE) return addDays(today, RELATIVE[q]);
@@ -159,18 +193,20 @@ export function parseDayQuery(query: string, today: DayKey): DayKey | null {
   const weekday = WEEKDAY_QUERY.exec(q);
   if (weekday) {
     const [, before, name, after] = weekday;
-    const target = WEEKDAYS.indexOf(name);
+    const target = weekdayOf(name);
     const current = now.getDay();
-    // Sin más, el último que ha habido (hoy si es ese día); "pasado", el anterior a hoy.
-    if (before || (after && after !== ' pasado')) {
+    const previous = after === ' pasado' || before === 'last ';
+    // Just the name: the last one that happened (today if it is that day);
+    // "pasado"/"last", the one before today.
+    if ((before && !previous && before !== 'this ') || (after && !previous)) {
       return addDays(today, (target - current + 7) % 7 || 7);
     }
     const back = (current - target + 7) % 7;
-    return addDays(today, after ? -(back || 7) : -back);
+    return addDays(today, previous ? -(back || 7) : -back);
   }
 
-  // "jueves 24…": el día de la semana sobra.
-  q = q.replace(new RegExp(`^${WEEKDAY} (?=\\d)`), '');
+  // "jueves 24…", "Thursday, September 24": the weekday is redundant.
+  q = q.replace(new RegExp(`^${WEEKDAY} (?=\\d|[a-z])`), '');
   const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(q);
   if (iso) return day(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
 
@@ -180,10 +216,17 @@ export function parseDayQuery(query: string, today: DayKey): DayKey | null {
   };
   const numeric = NUMERIC_QUERY.exec(q);
   if (numeric) {
-    const month = numeric[2] ? Number(numeric[2]) - 1 : now.getMonth();
-    return day(year(numeric[3]), month, Number(numeric[1]));
+    if (!numeric[2]) return day(now.getFullYear(), now.getMonth(), Number(numeric[1]));
+    const [a, b] = [Number(numeric[1]), Number(numeric[2])];
+    const [date, month] = monthFirst ? [b, a] : [a, b];
+    return day(year(numeric[3]), month - 1, date);
   }
   const written = WRITTEN_QUERY.exec(q);
   if (written) return day(year(written[3]), monthOf(written[2]), Number(written[1]));
+  const monthFirstWritten = MONTH_FIRST_QUERY.exec(q);
+  if (monthFirstWritten) {
+    const [, month, date, y] = monthFirstWritten;
+    return day(year(y), monthOf(month), Number(date));
+  }
   return null;
 }

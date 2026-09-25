@@ -3,23 +3,23 @@ import { belongsToDesk, type Desk } from './autosave';
 
 const desk = (): Desk => ({ ids: new Set(['nota']), onPage: new Map([['nota', false]]) });
 
-describe('mesa o página', () => {
-  it('lo nuevo es de donde queda', () => {
+describe('desk or page', () => {
+  it('new things belong where they end up', () => {
     const d = desk();
     expect(belongsToDesk(d, 'nuevo', false)).toBe(true);
     expect(belongsToDesk(d, 'otro', true)).toBe(false);
   });
 
-  it('lo de la mesa sigue siendo de la mesa aunque esté donde se abre el libro', () => {
-    // Puesto ahí desde el escritorio: ya estaba dentro la última vez.
+  it('desk things stay on the desk even where the book opens', () => {
+    // Placed there from the desktop: it was already inside last time.
     const d: Desk = { ids: new Set(['nota']), onPage: new Map([['nota', true]]) };
     expect(belongsToDesk(d, 'nota', true)).toBe(true);
   });
 
-  it('al cruzar el borde del libro cambia de sitio', () => {
+  it('crossing the edge of the book changes where it belongs', () => {
     const d = desk();
     expect(belongsToDesk(d, 'nota', true)).toBe(false);
-    // Ya en la página: si sale otra vez, vuelve a la mesa.
+    // Already on the page: if it leaves again, it goes back to the desk.
     d.ids.delete('nota');
     expect(belongsToDesk(d, 'nota', true)).toBe(false);
     expect(belongsToDesk(d, 'nota', false)).toBe(true);

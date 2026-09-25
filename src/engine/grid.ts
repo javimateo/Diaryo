@@ -1,16 +1,15 @@
 import type { Camera } from './camera';
 
-/** Separación base de la rejilla en unidades del mundo. */
+/** Base grid spacing in world units. */
 const BASE_SPACING = 24;
-/** Separación mínima en pantalla (px) del nivel principal; por debajo se agrupa. */
+/** Minimum on-screen spacing (px) of the main level; below it, dots are grouped. */
 const MIN_SCREEN_SPACING = 20;
 const DOT_SIZE = 1.6;
 
 /**
- * Dibuja una rejilla de puntos infinita. Siempre hay un nivel "principal" con
- * una separación en pantalla entre MIN y 2·MIN px, y un nivel intermedio que
- * aparece suavemente al acercarse, así el zoom se percibe continuo e infinito.
- * Se dibuja en coordenadas de pantalla (CSS px).
+ * Draws an infinite dot grid. There is always a "main" level with an on-screen spacing
+ * between MIN and 2·MIN px, and an intermediate level that fades in when zooming in, so
+ * the zoom feels continuous and infinite. It is drawn in screen coordinates (CSS px).
  */
 export function drawDotGrid(
   ctx: CanvasRenderingContext2D,
@@ -24,7 +23,7 @@ export function drawDotGrid(
   while (spacing * cam.zoom < MIN_SCREEN_SPACING) spacing *= 2;
   while (spacing * cam.zoom >= MIN_SCREEN_SPACING * 2) spacing /= 2;
 
-  // 0 justo tras cambiar de nivel, 1 justo antes del siguiente.
+  // 0 right after changing level, 1 right before the next one.
   const t = (spacing * cam.zoom - MIN_SCREEN_SPACING) / MIN_SCREEN_SPACING;
 
   ctx.fillStyle = color;
@@ -60,11 +59,11 @@ function drawLevel(
   ctx.beginPath();
   for (let r = 0; r <= rows; r++) {
     const j = j0 + r;
-    // Alineado a píxeles físicos para que los puntos se vean nítidos.
+    // Aligned to physical pixels so the dots look sharp.
     const y = Math.round((offsetY + r * step) * dpr) / dpr;
     for (let c = 0; c <= cols; c++) {
       const i = i0 + c;
-      // Los puntos del nivel fino que coinciden con el principal ya están pintados.
+      // The fine level's dots that match the main one are already painted.
       if (skipCoarse && i % 2 === 0 && j % 2 === 0) continue;
       const x = Math.round((offsetX + c * step) * dpr) / dpr;
       ctx.rect(x - half, y - half, DOT_SIZE, DOT_SIZE);

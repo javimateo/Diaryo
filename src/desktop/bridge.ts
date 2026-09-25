@@ -6,26 +6,30 @@ import { useUI } from '../store/ui';
 import { readDeskView, writeDeskView, writeToday, type TodayCard } from './saved';
 import type { DesktopInfo, DesktopMode } from './settings';
 import { call, listen, onDeskChangedElsewhere } from './tauri';
+import { t } from '../i18n';
 
-/** Cada cuánto se copia el diario si ha habido cambios (además de al esconderlo o salir). */
+/** How often the diary is backed up if there were changes (besides when hiding it or quitting). */
 const BACKUP_EVERY = 30 * 60 * 1000;
-/** Lo que dura el fundido del diario flotante al apartarse (ms; como en el CSS). */
+/** How long the floating diary takes to fade away (ms; as in the CSS). */
 const FADE = 180;
-/** Ancho de la imagen del mini diario (el doble de lo que ocupa, para que se vea nítida). */
+/** Width of the mini diary image (twice what it takes up, so it looks sharp). */
 const TODAY_WIDTH = 640;
-/** Espera tras un cambio antes de volver a dibujar el mini diario. */
+/** Wait after a change before drawing the mini diary again. */
 const TODAY_DELAY = 1200;
 
 /**
- * La ventana del diario en la app de escritorio: su modo (ventana o flotando sobre el
- * escritorio), el fundido al aparecer y apartarse, las copias automáticas, el mini diario
- * del escritorio y los avisos de la parte de escritorio. En la web no se crea.
+ * The diary window in the desktop app: its mode (window or floating over the desktop),
+ * the fade when appearing and going away, the automatic backups, the desktop mini diary
+ * and the messages from the desktop side. It isn't created on the web.
  */
 export class DesktopBridge {
-  /** Hay algo que copiar (se ha guardado algo desde la última copia, y al empezar). */
+  /**
+   * There is something to back up (something was saved since the last backup, and at the
+   * start).
+   */
   private dirty = true;
   private backingUp: Promise<void> | null = null;
-  /** Se está apartando: si se vuelve a enseñar antes de acabar, ya no se esconde. */
+  /** It is going away: if it is shown again before finishing, it isn't hidden. */
   private closing = false;
   private todayTimer = 0;
   private todayShown = todayKey();
@@ -37,12 +41,14 @@ export class DesktopBridge {
     private readonly diary: Diary,
   ) {}
 
-  /** Conecta la página con la parte de escritorio y enseña la ventana. */
+  /** Connects the page with the desktop side and shows the window. */
   async start() {
     const info = await call<DesktopInfo>('desktop_info');
     if (this.stopped) return;
     useUI.getState().setDesktop(info);
     this.applyMode(info.mode);
+    // The texts of the desktop side (the tray, the errors), in the same language.
+    void call('set_language', { language: useUI.getState().settings.language });
 
     this.publishToday(0);
     const dayTimer = window.setInterval(() => {
@@ -53,7 +59,9 @@ export class DesktopBridge {
       const saving = state.saveStatus === 'saving' && previous.saveStatus !== 'saving';
       if (saving) this.dirty = true;
       if (state.saveStatus === 'saved' && previous.saveStatus === 'saving') this.publishToday();
-      if (state.bookStyle !== previous.bookStyle || state.theme !== previous.theme) {
+      const language = state.settings.language !== previous.settings.language;
+      if (language) void call('set_language', { language: state.settings.language });
+      if (state.bookStyle !== previous.bookStyle || state.theme !== previous.theme || language) {
         this.publishToday();
       }
     });
@@ -69,15 +77,16 @@ export class DesktopBridge {
         this.applyMode(mode);
         void call('frontend_ready');
       }),
-      // La ventana ya se ve: el diario flotante aparece poco a poco.
+      // The window is already visible: the floating diary fades in.
       listen('diaryo://shown', () => {
         this.closing = false;
         requestAnimationFrame(() => setAway(false));
       }),
-      // Apartar el diario flotante (con el atajo o al pasar a otra app): antes, el fundido.
+      // Put the floating diary away (with the shortcut or when switching to another app):
+      // first, the fade.
       listen('diaryo://closing', () => void this.hide()),
-      // Al esconderse, se copia lo que haya cambiado. El diario flotante vuelve a la vista
-      // fijada: se abrirá así la próxima vez.
+      // When hidden, whatever changed is backed up. The floating diary goes back to the
+      // pinned view: it will open like that next time.
       listen('diaryo://hidden', () => {
         if (this.mode === 'widget') {
           setAway(true, true);
@@ -85,18 +94,18 @@ export class DesktopBridge {
         }
         void this.backup();
       }),
-      // Salir (desde la bandeja): antes, se guarda todo y se copia.
+      // Quit (from the tray): first, everything is saved and backed up.
       listen('diaryo://quit', () => void this.quit()),
-      // La mesa ha cambiado en el escritorio.
+      // The desk changed on the desktop.
       onDeskChangedElsewhere(() => void this.diary.reloadDesk()),
-      // El mini diario del escritorio abre el diario flotante en la página de hoy.
+      // The desktop mini diary opens the floating diary on today's page.
       listen('diaryo://go-today', () => void this.diary.goToToday()),
-      // Algo ha cambiado desde fuera de la página (la mesa, con su atajo).
+      // Something changed from outside the page (the desk, with its shortcut).
       listen<DesktopInfo>('diaryo://info', (next) => useUI.getState().setDesktop(next)),
     ]);
     this.cleanups.push(...unlisten);
     if (this.stopped) return this.stop();
-    // Ya se puede enseñar la ventana (con la página de hoy cargada).
+    // The window can be shown now (with today's page loaded).
     void call('frontend_ready');
   }
 
@@ -109,7 +118,7 @@ export class DesktopBridge {
     return useUI.getState().desktop?.mode;
   }
 
-  /** Aparta el diario: el flotante, con un fundido antes de esconder la ventana. */
+  /** Puts the diary away: the floating one, with a fade before hiding the window. */
   async hide() {
     if (this.mode !== 'widget') return call('hide_window');
     this.closing = true;
@@ -119,17 +128,19 @@ export class DesktopBridge {
     this.closing = false;
   }
 
-  /** Fija la vista de ahora: el diario flotante se abrirá así y la mesa del escritorio la usará. */
+  /**
+   * Pins the current view: the floating diary will open like this and the desktop desk
+   * will use it.
+   */
   pinView() {
     const saved = writeDeskView(this.engine.view());
-    useUI
-      .getState()
-      .showToast(
-        saved ? 'Vista fijada: el diario se abrirá así' : 'No se ha podido fijar la vista',
-      );
+    useUI.getState().showToast(saved ? t().view.pinDone : t().view.pinFailed);
   }
 
-  /** Copia del diario de hoy en la carpeta de las copias (si hay cambios, o siempre con `force`). */
+  /**
+   * Backup of today's diary in the backups folder (if there are changes, or always with
+   * `force`).
+   */
   backup(force = false): Promise<void> {
     if (this.backingUp) return this.backingUp;
     if (!useUI.getState().desktop?.backups || (!this.dirty && !force)) return Promise.resolve();
@@ -142,8 +153,8 @@ export class DesktopBridge {
         useUI.getState().setDesktop({ lastBackup: Date.now() });
       } catch (error) {
         this.dirty = true;
-        console.error('No se ha podido guardar la copia', error);
-        useUI.getState().showToast('No se ha podido guardar la copia automática');
+        console.error("Couldn't save the backup", error);
+        useUI.getState().showToast(t().desktop.backupFailed);
       } finally {
         this.backingUp = null;
       }
@@ -151,25 +162,25 @@ export class DesktopBridge {
     return this.backingUp;
   }
 
-  /** Sale de diaryo después de guardar todo y copiarlo. */
+  /** Quits diaryo after saving and backing up everything. */
   async quit() {
     await this.diary.flush().catch(() => undefined);
     await this.backup();
     await call('quit_app');
   }
 
-  /** Pone el aspecto del modo: en el widget, la mesa es el escritorio. */
+  /** Applies the look of the mode: in the widget, the desk is the desktop. */
   private applyMode(mode: DesktopMode) {
     document.documentElement.toggleAttribute('data-widget', mode === 'widget');
-    // El diario flotante empieza invisible y aparece cuando se enseña la ventana.
+    // The floating diary starts invisible and fades in when the window is shown.
     setAway(mode === 'widget', true);
     this.engine.setTransparentDesk(mode === 'widget', readDeskView());
     useUI.getState().setDesktop({ mode });
   }
 
   /**
-   * El mini diario del escritorio: la doble página de hoy, al día (un poco después de
-   * cada cambio, al cambiar el aspecto del diario y al empezar un día nuevo).
+   * The desktop mini diary: today's double page, up to date (shortly after each change,
+   * when the diary look changes and when a new day starts).
    */
   private publishToday(delay = TODAY_DELAY) {
     window.clearTimeout(this.todayTimer);
@@ -180,13 +191,13 @@ export class DesktopBridge {
         const card: TodayCard = { ...preview, cover: useUI.getState().bookStyle.cover };
         writeToday(card);
       } catch (error) {
-        console.error('No se ha podido preparar el mini diario', error);
+        console.error("Couldn't prepare the mini diary", error);
       }
     }, delay);
   }
 }
 
-/** El diario flotante aún no se ve (o se está apartando): así aparece con un fundido. */
+/** The floating diary isn't visible yet (or is going away): that way it fades in. */
 function setAway(away: boolean, instant = false) {
   const root = document.documentElement;
   root.toggleAttribute('data-instant', instant);
@@ -196,25 +207,25 @@ function setAway(away: boolean, instant = false) {
   root.removeAttribute('data-instant');
 }
 
-// ─── Para la interfaz ──────────────────────────────────────────
+// ─── For the UI ───────────────────────────────────────────────
 
 const bridge = () => useUI.getState().desktopBridge;
 
-/** Esconde el diario (sigue en la bandeja, listo para el atajo). */
+/** Hides the diary (it stays in the tray, ready for the shortcut). */
 export const hideDesktop = () => bridge()?.hide() ?? Promise.resolve();
 
-/** Guarda la copia de hoy aunque no haya cambios. */
+/** Saves today's backup even if nothing changed. */
 export async function backupDesktop() {
   await bridge()?.backup(true);
   const { desktop, showToast } = useUI.getState();
-  if (desktop?.lastBackup) showToast('Copia guardada');
+  if (desktop?.lastBackup) showToast(t().desktop.backupSaved);
 }
 
-/** Sale de diaryo después de guardar todo y copiarlo. */
+/** Quits diaryo after saving and backing up everything. */
 export const quitDesktop = () => bridge()?.quit() ?? call('quit_app');
 
-/** Pasa a la ventana o al diario flotante. */
+/** Switches to the window or to the floating diary. */
 export const showDesktopMode = (mode: DesktopMode) => call('show_mode', { mode });
 
-/** Fija la vista de ahora del diario flotante. */
+/** Pins the current view of the floating diary. */
 export const pinDeskView = () => bridge()?.pinView();

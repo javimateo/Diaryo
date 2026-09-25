@@ -3,13 +3,16 @@ import { applyStrokePaint, buildStrokePath } from '../strokes';
 import type { PointerInput, ToolContext, ToolHandler } from './types';
 
 interface ActiveStroke {
-  /** Puntos absolutos del mundo: [x, y, presión, …]. */
+  /** Absolute world points: [x, y, pressure, …]. */
   points: number[];
   size: number;
   simulatePressure: boolean;
 }
 
-/** Lápiz y marcador: el trazo en curso se pinta en la capa superior y al soltar pasa a la escena. */
+/**
+ * Pen and highlighter: the stroke in progress is painted on the top layer and moves to
+ * the scene on release.
+ */
 export class DrawHandler implements ToolHandler {
   private stroke: ActiveStroke | null = null;
 
@@ -23,7 +26,7 @@ export class DrawHandler implements ToolHandler {
     this.stroke = {
       points: [],
       size: style.size / this.ctx.camera.zoom,
-      // Solo los lápices digitales dan presión real.
+      // Only digital pens give real pressure.
       simulatePressure: input.pointerType !== 'pen',
     };
     this.addPoint(input);
@@ -88,11 +91,11 @@ export class DrawHandler implements ToolHandler {
     const points = this.stroke!.points;
     const n = points.length;
     const { x, y } = input.world;
-    // Ignorar puntos repetidos (el ratón quieto sigue enviando eventos).
+    // Ignore repeated points (a still mouse keeps sending events).
     if (n >= 3 && points[n - 3] === x && points[n - 2] === y) return;
     points.push(x, y, input.pressure || 0.5);
   }
 }
 
-/** Redondeo a centésimas: suficiente precisión y ocupa menos al guardar. */
+/** Rounded to hundredths: enough precision and it takes less space when saved. */
 const round = (v: number) => Math.round(v * 100) / 100;

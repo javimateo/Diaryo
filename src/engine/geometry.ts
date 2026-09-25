@@ -1,6 +1,6 @@
 import type { Vec } from './math';
 
-/** Caja alineada con los ejes (mismo formato que usa rbush). */
+/** Axis-aligned box (the same format rbush uses). */
 export interface Bounds {
   minX: number;
   minY: number;
@@ -26,7 +26,7 @@ export function unionBounds(a: Bounds, b: Bounds): Bounds {
   };
 }
 
-/** Distancia al cuadrado del punto `p` al segmento `a`–`b`. */
+/** Squared distance from point `p` to segment `a`–`b`. */
 export function pointSegmentDistanceSq(p: Vec, a: Vec, b: Vec): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -48,7 +48,7 @@ export function segmentsIntersect(a: Vec, b: Vec, c: Vec, d: Vec): boolean {
   return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
 }
 
-/** Distancia al cuadrado entre los segmentos `a`–`b` y `c`–`d`. */
+/** Squared distance between segments `a`–`b` and `c`–`d`. */
 export function segmentSegmentDistanceSq(a: Vec, b: Vec, c: Vec, d: Vec): number {
   if (segmentsIntersect(a, b, c, d)) return 0;
   return Math.min(

@@ -1,4 +1,4 @@
-/* ─── Ventanitas flotantes (selector de color y de fuente) ───── */
+/* ─── Small floating windows (color and font pickers) ────────── */
 
 .popover {
   position: fixed;
@@ -219,12 +219,12 @@
   transition: inset 120ms var(--ease);
 }
 
-/* El marcador se muestra translúcido, como se verá al pintar. */
+/* The highlighter shows translucent, as it will look when painting. */
 .swatch[data-translucent]::before {
   opacity: 0.7;
 }
 
-/* Colores de nota: cuadraditos, como las propias notas. */
+/* Note colors: small squares, like the notes themselves. */
 .swatch[data-square],
 .swatch[data-square]::before {
   border-radius: 5px;

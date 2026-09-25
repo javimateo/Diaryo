@@ -11,52 +11,53 @@ import { type NoteVariant } from '../../engine/notes';
 import { type Color, type NoteFill } from '../../engine/palette';
 import type { StylePatch } from '../../engine/restyle';
 import { useUI } from '../../store/ui';
+import { t } from '../../i18n';
 
-/** Qué enseña el panel de propiedades según el contexto y adónde van los cambios. */
+/** What the properties panel shows depending on the context and where the changes go. */
 
 export type ColorValue = Color | NoteFill | 'auto' | 'none';
 
 export interface ColorModel {
   label: string;
-  /** 'fill' = colores pastel con la opción "sin fondo". */
+  /** 'fill' = pastel colors with the "no fill" option. */
   palette: 'ink' | 'note' | 'fill';
-  /** Valor común de lo que se edita, o null si hay varios distintos. */
+  /** Common value of what is being edited, or null if there are several different ones. */
   value: ColorValue | null;
-  /** Ofrecer "automático" (texto de las notas). */
+  /** Offer "automatic" (note text). */
   allowAuto?: boolean;
-  /** Ofrecer quitar el color ("Sin fondo", "Sin borde"). */
+  /** Offer removing the color ("No fill", "No border"). */
   noneLabel?: string;
   translucent?: boolean;
   patchKey: 'color' | 'noteColor' | 'noteTextColor' | 'fill';
 }
 
 export interface PanelModel {
-  /** Estilo del post-it (solo notas). */
+  /** Sticky note style (notes only). */
   noteVariant?: NoteVariant | null;
   colors: ColorModel[];
   size?: { label: string; kind: SizedKind; value: number | null };
-  /** Tipo de relleno (si hay fondo). */
+  /** Fill type (if there is a fill). */
   fillStyle?: FillStyle | null;
-  /** Trazo limpio o a mano (rectángulos, elipses y flechas). */
+  /** Clean or hand-drawn stroke (rectangles, ellipses and arrows). */
   roughness?: Roughness | null;
-  /** Puntas de las flechas. */
+  /** Arrowheads. */
   heads?: { start: ArrowHead | null; end: ArrowHead | null };
-  /** Tamaño de letra del texto dentro de figuras (px de pantalla). */
+  /** Font size of the text inside shapes (screen px). */
   labelSize?: number | null;
   font?: string | null;
   align?: TextAlign | null;
   valign?: VerticalAlign | null;
   opacity: number;
-  /** Adónde van los cambios. */
+  /** Where the changes go. */
   apply: (patch: StylePatch) => void;
 }
 
-/** Si se está escribiendo, devolver el foco al texto después de tocar el panel. */
+/** While writing, give the focus back to the text after touching the panel. */
 export function refocusEditor() {
   document.querySelector<HTMLTextAreaElement>('.text-editor')?.focus({ preventScroll: true });
 }
 
-/** Traduce un cambio del panel a los estilos guardados de una herramienta. */
+/** Translates a panel change into a tool's saved styles. */
 function toolPatch(tool: keyof ToolStyles, patch: StylePatch): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (patch.size !== undefined) out.size = patch.size;
@@ -73,7 +74,7 @@ function toolPatch(tool: keyof ToolStyles, patch: StylePatch): Record<string, un
     for (const key of ['fill', 'fillStyle', 'roughness', 'labelSize', 'valign'] as const) {
       if (patch[key] !== undefined) out[key] = patch[key];
     }
-    // "Sin borde" quita el borde; elegir un color lo devuelve.
+    // "No border" removes the border; choosing a color brings it back.
     if (patch.color === null) out.border = false;
     else if (patch.color !== undefined) Object.assign(out, { color: patch.color, border: true });
     return out;
@@ -90,6 +91,7 @@ function toolPatch(tool: keyof ToolStyles, patch: StylePatch): Record<string, un
 }
 
 export function usePanelModel(): PanelModel | null {
+  useUI((s) => s.settings.language);
   const tool = useUI((s) => s.tool);
   const styles = useUI((s) => s.styles);
   const editing = useUI((s) => s.editing);
@@ -110,7 +112,7 @@ export function usePanelModel(): PanelModel | null {
     if (el.type === 'shape' || el.type === 'stroke') {
       const label = el.label!;
       return {
-        colors: [ink('Color', el.color)],
+        colors: [ink(t().props.color, el.color)],
         labelSize: label.fontSize * zoom,
         font: label.font,
         align: label.align,
@@ -123,7 +125,7 @@ export function usePanelModel(): PanelModel | null {
       ? {
           noteVariant: el.variant,
           colors: [noteFill(el.color), noteText(el.textColor ?? 'auto')],
-          size: { label: 'Tamaño de letra', kind: 'text', value: el.fontSize * zoom },
+          size: { label: t().props.fontSize, kind: 'text', value: el.fontSize * zoom },
           font: el.font,
           align: el.align,
           valign: el.valign,
@@ -131,8 +133,8 @@ export function usePanelModel(): PanelModel | null {
           apply,
         }
       : {
-          colors: [ink('Color', el.color)],
-          size: { label: 'Tamaño de letra', kind: 'text', value: el.fontSize * zoom },
+          colors: [ink(t().props.color, el.color)],
+          size: { label: t().props.fontSize, kind: 'text', value: el.fontSize * zoom },
           font: el.font,
           align: el.align,
           opacity: el.opacity,
@@ -143,8 +145,8 @@ export function usePanelModel(): PanelModel | null {
   if (tool === 'pen' || tool === 'marker') {
     const s = styles[tool];
     return {
-      colors: [{ ...ink('Trazo', s.color), translucent: tool === 'marker' }],
-      size: { label: 'Grosor', kind: tool, value: s.size },
+      colors: [{ ...ink(t().props.stroke, s.color), translucent: tool === 'marker' }],
+      size: { label: t().props.thickness, kind: tool, value: s.size },
       opacity: s.opacity,
       apply: toTool(tool),
     };
@@ -152,8 +154,8 @@ export function usePanelModel(): PanelModel | null {
   if (tool === 'text') {
     const s = styles.text;
     return {
-      colors: [ink('Color', s.color)],
-      size: { label: 'Tamaño de letra', kind: 'text', value: s.size },
+      colors: [ink(t().props.color, s.color)],
+      size: { label: t().props.fontSize, kind: 'text', value: s.size },
       font: s.font,
       align: s.align,
       opacity: s.opacity,
@@ -163,8 +165,8 @@ export function usePanelModel(): PanelModel | null {
   if (tool === 'arrow') {
     const s = styles.arrow;
     return {
-      colors: [ink('Trazo', s.color)],
-      size: { label: 'Grosor', kind: 'pen', value: s.size },
+      colors: [ink(t().props.stroke, s.color)],
+      size: { label: t().props.thickness, kind: 'pen', value: s.size },
       roughness: s.roughness,
       heads: { start: s.startHead, end: s.endHead },
       opacity: s.opacity,
@@ -176,7 +178,7 @@ export function usePanelModel(): PanelModel | null {
     return {
       colors: [border(s.border ? s.color : 'none'), fillColor(s.fill ?? 'none')],
       fillStyle: s.fill ? s.fillStyle : undefined,
-      size: { label: 'Grosor', kind: 'pen', value: s.size },
+      size: { label: t().props.thickness, kind: 'pen', value: s.size },
       roughness: s.roughness,
       opacity: s.opacity,
       apply: toTool('shape'),
@@ -187,7 +189,7 @@ export function usePanelModel(): PanelModel | null {
     return {
       noteVariant: s.variant,
       colors: [noteFill(s.color), noteText(s.textColor ?? 'auto')],
-      size: { label: 'Tamaño de letra', kind: 'text', value: s.size },
+      size: { label: t().props.fontSize, kind: 'text', value: s.size },
       font: s.font,
       align: s.align,
       valign: s.valign,
@@ -202,7 +204,7 @@ export function usePanelModel(): PanelModel | null {
       colors.push(
         selection.inkIsShapes
           ? border(selection.border === false ? 'none' : selection.color)
-          : ink(selection.hasText ? 'Color' : 'Trazo', selection.color),
+          : ink(selection.hasText ? t().props.color : t().props.stroke, selection.color),
       );
     }
     if (selection.hasFill) colors.push(fillColor(selection.fill));
@@ -215,7 +217,7 @@ export function usePanelModel(): PanelModel | null {
       colors,
       size: sizeKind
         ? {
-            label: sizeKind === 'text' ? 'Tamaño de letra' : 'Grosor',
+            label: sizeKind === 'text' ? t().props.fontSize : t().props.thickness,
             kind: sizeKind,
             value: selection.size === null ? null : selection.size * zoom,
           }
@@ -246,30 +248,30 @@ const ink = (label: string, value: Color | null): ColorModel => ({
   patchKey: 'color',
 });
 
-/** Borde de rectángulos y elipses: un color o ninguno (caja invisible). */
+/** Border of rectangles and ellipses: a color or none (invisible box). */
 const border = (value: Color | 'none' | null): ColorModel => ({
-  ...ink('Borde', null),
+  ...ink(t().props.border, null),
   value,
-  noneLabel: 'Sin borde',
+  noneLabel: t().props.noBorder,
 });
 
 const noteFill = (value: NoteFill | null): ColorModel => ({
-  label: 'Nota',
+  label: t().props.note,
   palette: 'note',
   value,
   patchKey: 'noteColor',
 });
 
 const fillColor = (value: NoteFill | 'none' | null): ColorModel => ({
-  label: 'Fondo',
+  label: t().props.fill,
   palette: 'fill',
   value,
-  noneLabel: 'Sin fondo',
+  noneLabel: t().props.noFill,
   patchKey: 'fill',
 });
 
 const noteText = (value: Color | 'auto' | null): ColorModel => ({
-  label: 'Color del texto',
+  label: t().props.textColor,
   palette: 'ink',
   value,
   allowAuto: true,

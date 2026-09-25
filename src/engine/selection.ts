@@ -11,16 +11,16 @@ import { boxCorners, fromBox, toBox, type Box } from './transform';
 export type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 export type Handle = ResizeHandle | 'rotate';
 
-/** Tamaños en píxeles de pantalla. */
+/** Sizes in screen pixels. */
 const HANDLE_SIZE = 9;
 const HANDLE_HIT = 7;
 const EDGE_HIT = 5;
 const ROTATE_OFFSET = 22;
 const ROTATE_RADIUS = 5;
-/** Por debajo de este tamaño en pantalla no se muestran asas: el marco solo sirve para mover. */
+/** Below this on-screen size no handles are shown: the frame is only for moving. */
 const MIN_HANDLES_SIZE = 16;
 
-/** Dirección de cada asa en coordenadas de la caja (-1, 0 o 1 en cada eje). */
+/** Direction of each handle in box coordinates (-1, 0 or 1 on each axis). */
 export const HANDLE_DIRECTIONS: Record<ResizeHandle, Vec> = {
   nw: { x: -1, y: -1 },
   n: { x: 0, y: -1 },
@@ -43,7 +43,7 @@ function rotateHandlePosition(box: Box, zoom: number): Vec {
   return { x: 0, y: -box.height / 2 - ROTATE_OFFSET / zoom };
 }
 
-/** ¿Qué asa hay bajo el punto? Primero girar, luego esquinas y por último bordes. */
+/** Which handle is under the point? First rotation, then corners and finally edges. */
 export function hitHandle(box: Box, world: Vec, zoom: number): Handle | null {
   if (!hasHandles(box, zoom)) return null;
   const p = toBox(box, world);
@@ -59,7 +59,7 @@ export function hitHandle(box: Box, world: Vec, zoom: number): Handle | null {
     if (Math.abs(p.x - d.x * w) <= tol && Math.abs(p.y - d.y * h) <= tol) return handle;
   }
 
-  // Los bordes se pueden arrastrar en toda su longitud.
+  // Edges can be dragged along their whole length.
   const edgeTol = EDGE_HIT / zoom;
   for (const handle of EDGES) {
     const d = HANDLE_DIRECTIONS[handle];
@@ -74,7 +74,7 @@ export function pointInBox(box: Box, world: Vec): boolean {
   return Math.abs(p.x) <= box.width / 2 && Math.abs(p.y) <= box.height / 2;
 }
 
-/** Cursor de redimensionar según la dirección del asa ya girada. */
+/** Resize cursor according to the direction of the already rotated handle. */
 export function resizeCursor(handle: ResizeHandle, rotation: number): string {
   const d = HANDLE_DIRECTIONS[handle];
   const angle = Math.atan2(d.y, d.x) + rotation;
@@ -82,7 +82,7 @@ export function resizeCursor(handle: ResizeHandle, rotation: number): string {
   return ['ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize'][octant];
 }
 
-/** Elemento más alto bajo el punto (con una tolerancia en unidades del mundo). */
+/** Topmost element under the point (with a tolerance in world units). */
 export function hitTestElement(
   scene: Scene,
   world: Vec,
@@ -102,7 +102,7 @@ export function hitTestElement(
   return null;
 }
 
-/** ¿Está el punto (coordenadas del elemento) dentro de la figura? */
+/** Is the point (element coordinates) inside the shape? */
 function insideContainer(el: ContainerElement, p: Vec): boolean {
   if (el.type === 'stroke') {
     const polygon: Vec[] = [];
@@ -120,8 +120,8 @@ function insideContainer(el: ContainerElement, p: Vec): boolean {
 }
 
 /**
- * La figura más alta que rodea el punto (aunque no tenga fondo): para escribir dentro
- * haciendo doble clic en su interior o con la herramienta de texto.
+ * The topmost shape surrounding the point (even without a fill): to write inside it by
+ * double-clicking in its interior or with the text tool.
  */
 export function containerAt(scene: Scene, world: Vec): ContainerElement | null {
   const candidates = scene.search({ minX: world.x, minY: world.y, maxX: world.x, maxY: world.y });
@@ -135,7 +135,7 @@ export function containerAt(scene: Scene, world: Vec): ContainerElement | null {
   return null;
 }
 
-/** Elementos completamente dentro del rectángulo. */
+/** Elements completely inside the rectangle. */
 export function elementsInRect(scene: Scene, rect: Bounds): SceneElement[] {
   return scene.search(rect).filter((el) => {
     if (el.locked) return false;
@@ -144,13 +144,13 @@ export function elementsInRect(scene: Scene, rect: Bounds): SceneElement[] {
   });
 }
 
-/** Proporción de puntos de un trazo que debe quedar dentro del lazo para seleccionarlo. */
+/** Share of a stroke's points that must be inside the lasso to select it. */
 const LASSO_THRESHOLD = 0.8;
 const LASSO_MAX_SAMPLES = 64;
 
 /**
- * Elementos rodeados por el lazo. No hace falta rodearlos a la perfección: basta con
- * que la mayor parte del trazo quede dentro (útil al rodear texto a mano alzada).
+ * Elements surrounded by the lasso. They don't need to be surrounded perfectly: it is
+ * enough for most of the stroke to be inside (useful when lassoing handwriting).
  */
 export function elementsInLasso(scene: Scene, polygon: Vec[]): SceneElement[] {
   if (polygon.length < 3) return [];
@@ -171,14 +171,14 @@ export function elementsInLasso(scene: Scene, polygon: Vec[]): SceneElement[] {
   });
 }
 
-// ─── Dibujo ────────────────────────────────────────────────────
+// ─── Drawing ──────────────────────────────────────────────────
 
 export interface SelectionColors {
   accent: string;
   handleFill: string;
 }
 
-/** Marco de la selección con sus asas. El contexto tiene la transformación del mundo. */
+/** Selection frame with its handles. The context has the world transform. */
 export function drawSelectionBox(
   ctx: CanvasRenderingContext2D,
   box: Box,

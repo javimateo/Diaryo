@@ -3,7 +3,7 @@ import { parseElement } from '../engine/clipboard';
 import type { SceneElement } from '../engine/elements';
 import type { AssetRow, DiaryDump, FontRow, PageRow, StoredPage } from './db';
 
-/** Formato de las copias: un JSON legible con todo lo necesario para recuperarlas. */
+/** Backup format: a readable JSON with everything needed to restore it. */
 const FILE_TYPE = 'diaryo/page';
 const DIARY_TYPE = 'diaryo/diary';
 export const FILE_EXTENSION = '.diaryo';
@@ -25,7 +25,7 @@ export function serializePage(page: PageFile): string {
   });
 }
 
-/** Copia de todo el diario: cada página con sus elementos. */
+/** Backup of the whole diary: each page with its elements. */
 export function serializeDiary(dump: DiaryDump): string {
   return JSON.stringify({
     type: DIARY_TYPE,
@@ -112,7 +112,7 @@ function parseStoredPage(raw: unknown, assets: AssetRow[]): StoredPage | null {
   return { page, elements: elements.map((el) => ({ pageId: page.id, id: el.id, data: el })) };
 }
 
-/** Lee una copia (de una página o de todo el diario). Devuelve null si no es de diaryo. */
+/** Reads a backup (of one page or of the whole diary). Returns null if it isn't from diaryo. */
 export function parseBackup(text: string): Backup | null {
   const data = parseJson(text);
   if (!data) return null;
@@ -133,13 +133,13 @@ export function parseBackup(text: string): Backup | null {
   return null;
 }
 
-/** Lee la copia de una sola página. Devuelve null si no lo es. */
+/** Reads the backup of a single page. Returns null if it isn't one. */
 export function parsePage(text: string): PageFile | null {
   const backup = parseBackup(text);
   return backup?.kind === 'page' ? backup.page : null;
 }
 
-/** Descarga un archivo en el navegador. */
+/** Downloads a file in the browser. */
 export function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -149,7 +149,7 @@ export function downloadBlob(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** "diaryo-2026-09-24" para nombrar las copias. */
+/** "diaryo-2026-09-24" to name the backups. */
 export function datedName(prefix = 'diaryo'): string {
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');

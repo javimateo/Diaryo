@@ -5,9 +5,8 @@ export const MIN_ZOOM = 0.02;
 export const MAX_ZOOM = 40;
 
 /**
- * Cámara del lienzo. `x`, `y` es el punto del mundo que queda en la esquina
- * superior izquierda de la pantalla; `zoom` son píxeles de pantalla por unidad
- * del mundo.
+ * Canvas camera. `x`, `y` is the world point at the top left corner of the screen; `zoom`
+ * is screen pixels per world unit.
  */
 export interface Camera {
   x: number;
@@ -25,30 +24,30 @@ export function worldToScreen(cam: Camera, p: Vec): Vec {
   return { x: (p.x - cam.x) * cam.zoom, y: (p.y - cam.y) * cam.zoom };
 }
 
-/** Cambia el zoom manteniendo fijo el punto del mundo que está bajo `anchor` (pantalla). */
+/** Changes the zoom keeping the world point under `anchor` (screen) fixed. */
 export function zoomAt(cam: Camera, anchor: Vec, zoom: number): Camera {
   const z = clampZoom(zoom);
   const w = screenToWorld(cam, anchor);
   return { x: w.x - anchor.x / z, y: w.y - anchor.y / z, zoom: z };
 }
 
-/** Desplaza la cámara como si arrastrásemos el lienzo `dx`, `dy` píxeles de pantalla. */
+/** Moves the camera as if the canvas were dragged `dx`, `dy` screen pixels. */
 export function panBy(cam: Camera, dx: number, dy: number): Camera {
   return { x: cam.x - dx / cam.zoom, y: cam.y - dy / cam.zoom, zoom: cam.zoom };
 }
 
-/** Punto del mundo en el centro de la pantalla. */
+/** World point at the center of the screen. */
 export function cameraCenter(cam: Camera, viewport: Size): Vec {
   return screenToWorld(cam, { x: viewport.width / 2, y: viewport.height / 2 });
 }
 
-/** Cámara con zoom `zoom` centrada en el punto del mundo `center`. */
+/** Camera with zoom `zoom` centered on the world point `center`. */
 export function cameraAt(center: Vec, zoom: number, viewport: Size): Camera {
   const z = clampZoom(zoom);
   return { x: center.x - viewport.width / 2 / z, y: center.y - viewport.height / 2 / z, zoom: z };
 }
 
-/** Cámara que encuadra `bounds` con un margen, sin acercarse más de `maxZoom`. */
+/** Camera that frames `bounds` with a margin, without zooming in beyond `maxZoom`. */
 export function fitCamera(bounds: Bounds, viewport: Size, padding: number, maxZoom = 1): Camera {
   const width = Math.max(bounds.maxX - bounds.minX, 1);
   const height = Math.max(bounds.maxY - bounds.minY, 1);
@@ -62,8 +61,8 @@ export function fitCamera(bounds: Bounds, viewport: Size, padding: number, maxZo
 }
 
 /**
- * Interpola entre dos cámaras. El zoom se interpola en escala logarítmica para
- * que acercarse y alejarse se sientan igual de rápidos.
+ * Interpolates between two cameras. The zoom is interpolated on a logarithmic scale so
+ * zooming in and out feel equally fast.
  */
 export function interpolateCamera(a: Camera, b: Camera, t: number, viewport: Size): Camera {
   const ca = cameraCenter(a, viewport);

@@ -1,34 +1,46 @@
 # diaryo
 
-Un diario infinito: cada página es un lienzo sin límites para dibujar, escribir, rodear y
-conectar ideas. Libre, gratuito y pensado para tomar notas rápido desde el PC.
+**English** · [Español](README.es.md)
 
-> En desarrollo. Consulta [PLAN.md](PLAN.md) para ver las fases y decisiones.
+An infinite diary: every page is a boundless canvas to draw, write, circle and connect
+ideas. Free, open source and made for quick note-taking on the PC.
 
-## Empezar
+> In development. See [PLAN.md](PLAN.md) (in Spanish) for the phases and decisions.
 
-Requisitos: [Node.js](https://nodejs.org) 20 o superior.
+## What it does
+
+- **A real diary**: one double page per day, turned by dragging the corner, with an
+  index, a calendar, tabs for important pages and a map of the whole diary.
+- **Infinite canvas**: pen, highlighter, text, sticky notes, shapes and arrows that stick
+  to what they connect; tasks with checkboxes (`[]` and space).
+- **The desk**: whatever is outside the book is shared by every page.
+- **Desktop app (Windows)**: a floating diary over the desktop (`Ctrl+Alt+D`), the desk and
+  a mini diary of today right on the Windows desktop (`Ctrl+Alt+N`), a tray icon and
+  automatic backups to a folder.
+- **In English or Spanish** (Settings → Appearance).
+- Everything is saved automatically on your computer; copies can be saved and opened.
+
+## Getting started
+
+Requirements: [Node.js](https://nodejs.org) 20 or later.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abre <http://localhost:5173>.
+Open <http://localhost:5173>.
 
-## App de escritorio (Windows)
+## Desktop app (Windows)
 
-La misma app en su propia ventana, con un **diario flotante** que aparece sobre el
-escritorio con `Ctrl+Alt+D`, icono en la bandeja y copias automáticas en una carpeta.
-
-Requisitos, además de Node.js: [Rust](https://rustup.rs) y las herramientas de C++ de
-Visual Studio (la carga de trabajo "Desarrollo para el escritorio con C++").
+Requirements, besides Node.js: [Rust](https://rustup.rs) and the Visual Studio C++ tools
+(the "Desktop development with C++" workload).
 
 ```bash
 npm run desktop
 ```
 
-Para generar el instalador (queda en `src-tauri/target/release/bundle/nsis`):
+To build the installer (it ends up in `src-tauri/target/release/bundle/nsis`):
 
 ```bash
 npm run desktop:build
@@ -36,20 +48,27 @@ npm run desktop:build
 
 ## Scripts
 
-| Comando                 | Qué hace                               |
-| ----------------------- | -------------------------------------- |
-| `npm run dev`           | Servidor de desarrollo                 |
-| `npm run build`         | Comprueba tipos y genera `dist/`       |
-| `npm run desktop`       | Abre la app de escritorio (desarrollo) |
-| `npm run desktop:build` | Genera el instalador de escritorio     |
-| `npm test`              | Ejecuta los tests                      |
-| `npm run lint`          | Revisa el código con ESLint            |
-| `npm run format`        | Formatea con Prettier                  |
+| Command                 | What it does                        |
+| ----------------------- | ----------------------------------- |
+| `npm run dev`           | Development server                  |
+| `npm run build`         | Type-checks and builds `dist/`      |
+| `npm run desktop`       | Opens the desktop app (development) |
+| `npm run desktop:build` | Builds the desktop installer        |
+| `npm test`              | Runs the tests                      |
+| `npm run lint`          | Lints the code with ESLint          |
+| `npm run format`        | Formats with Prettier               |
 
-## Atajos
+## Code
 
-Pulsa `?` dentro de la app para verlos todos.
+TypeScript with its own canvas engine (Canvas 2D, no React) and React only for the UI;
+the desktop app uses [Tauri](https://tauri.app) (Rust). The folders and the order of the
+layers are described in [PLAN.md](PLAN.md#arquitectura). Code and comments are in
+English; the app's texts live in `src/i18n`.
 
-## Licencia
+## Shortcuts
+
+Press `?` inside the app to see them all.
+
+## License
 
 [MIT](LICENSE)

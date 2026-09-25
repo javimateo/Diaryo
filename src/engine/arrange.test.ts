@@ -27,7 +27,7 @@ function line(id: string, z: number, x = 0): StrokeElement {
 
 const all = [line('a', 1), line('b', 2), line('c', 3), line('d', 4)];
 
-/** Orden resultante de abajo a arriba. */
+/** Resulting order from bottom to top. */
 const orderAfter = (ids: string[], mode: Parameters<typeof arrange>[2]) => {
   const changes = arrange(all, new Set(ids), mode);
   return all
@@ -36,31 +36,31 @@ const orderAfter = (ids: string[], mode: Parameters<typeof arrange>[2]) => {
     .map((el) => el!.id);
 };
 
-describe('capas', () => {
-  it('traer al frente y enviar al fondo', () => {
+describe('layers', () => {
+  it('bring to front and send to back', () => {
     expect(orderAfter(['b'], 'front')).toEqual(['a', 'c', 'd', 'b']);
     expect(orderAfter(['c'], 'back')).toEqual(['c', 'a', 'b', 'd']);
   });
 
-  it('adelante y atrás mueven un solo puesto', () => {
+  it('forward and backward move a single step', () => {
     expect(orderAfter(['a'], 'forward')).toEqual(['b', 'a', 'c', 'd']);
     expect(orderAfter(['d'], 'backward')).toEqual(['a', 'b', 'd', 'c']);
-    // Un bloque seleccionado se desliza entero.
+    // A selected block slides as a whole.
     expect(orderAfter(['a', 'b'], 'forward')).toEqual(['c', 'a', 'b', 'd']);
   });
 
-  it('solo cambia lo necesario', () => {
+  it('only changes what is needed', () => {
     expect(arrange(all, new Set(['d']), 'forward').size).toBe(0);
     expect(arrange(all, new Set(['a']), 'forward').size).toBe(2);
   });
 });
 
-describe('voltear', () => {
-  it('refleja respecto al centro de la selección', () => {
+describe('flip', () => {
+  it('mirrors around the center of the selection', () => {
     const [a, b] = [line('a', 1, 0), line('b', 2, 200)];
     const changes = flip([a, b], 'horizontal');
     const fa = changes.get('a') as StrokeElement;
-    // El que estaba a la izquierda pasa a la derecha.
+    // The one on the left goes to the right.
     const start = toWorld(fa, { x: fa.points[0], y: fa.points[1] });
     expect(start.x).toBeCloseTo(300, 0);
   });

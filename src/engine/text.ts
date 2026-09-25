@@ -2,9 +2,9 @@ import type { TextAlign } from './elements';
 import { DEFAULT_FONT, fonts } from './fonts';
 
 /**
- * Maquetación y dibujo de texto. Se mide y se pinta siempre a un tamaño de
- * referencia y luego se escala: así el resultado es idéntico a cualquier zoom
- * (incluso con letras diminutas en el mundo) y coincide con el <textarea> de edición.
+ * Text layout and drawing. It is always measured and painted at a reference size and then
+ * scaled: that way the result is identical at any zoom (even with tiny letters in the
+ * world) and matches the editing <textarea>.
  */
 const REF = 100;
 export const LINE_HEIGHT = 1.25;
@@ -12,7 +12,7 @@ export const LINE_HEIGHT = 1.25;
 export const fontAt = (px: number, font: string = DEFAULT_FONT) =>
   `400 ${px}px ${fonts.stack(font)}`;
 
-/** Margen interior de una nota respecto a su anchura. */
+/** Inner margin of a note relative to its width. */
 export const NOTE_PADDING_RATIO = 0.08;
 
 let measureCtx: CanvasRenderingContext2D | null = null;
@@ -45,13 +45,13 @@ function fontMetrics(font: string): Metrics {
 
 export interface TextLayout {
   lines: string[];
-  /** De qué línea del texto original (separadas por saltos de línea) sale cada una. */
+  /** Which line of the original text (separated by line breaks) each one comes from. */
   paragraphs: number[];
-  /** La línea es la primera de su párrafo (no la continuación de un ajuste). */
+  /** The line is the first of its paragraph (not the continuation of a wrap). */
   starts: boolean[];
-  /** Anchura de cada línea, en unidades del mundo. */
+  /** Width of each line, in world units. */
   lineWidths: number[];
-  /** Anchura (con espacios finales) y altura del bloque en unidades del mundo. */
+  /** Width (with trailing spaces) and height of the block in world units. */
   width: number;
   height: number;
 }
@@ -66,15 +66,15 @@ interface CachedLayout {
 
 const cache = new Map<string, CachedLayout>();
 
-/** Olvida las medidas (p. ej. cuando termina de cargar una fuente). */
+/** Forgets the measurements (e.g. when a font finishes loading). */
 export function clearTextCache() {
   cache.clear();
   metricsCache.clear();
 }
 
 /**
- * Parte el texto en líneas. Sin `maxWidth` solo se corta en los saltos de línea;
- * con él, además se ajusta por palabras como hace el <textarea> (pre-wrap).
+ * Splits the text into lines. Without `maxWidth` it only breaks at line breaks; with it,
+ * it also wraps by words like the <textarea> does (pre-wrap).
  */
 export function layoutText(
   text: string,
@@ -99,8 +99,8 @@ export function layoutText(
         starts.push(i === 0);
       });
     });
-    // Los espacios finales no cuentan para alinear (como en CSS), pero sí ocupan sitio
-    // mientras se escribe.
+    // Trailing spaces don't count for alignment (as in CSS), but they take up room while
+    // typing.
     const widthsRef = lines.map((line) => ctx.measureText(line.trimEnd()).width);
     const fullWidthRef = Math.max(0, ...lines.map((line) => ctx.measureText(line).width));
     entry = { lines, paragraphs, starts, widthsRef, fullWidthRef };
@@ -123,7 +123,7 @@ function wrapParagraph(ctx: CanvasRenderingContext2D, paragraph: string, max: nu
   let line = '';
   for (const token of paragraph.split(/(\s+)/)) {
     if (token === '') continue;
-    // Los espacios "cuelgan" al final de la línea: nunca provocan un salto.
+    // Spaces "hang" at the end of the line: they never cause a break.
     if (/^\s+$/.test(token)) {
       line += token;
       continue;
@@ -140,7 +140,7 @@ function wrapParagraph(ctx: CanvasRenderingContext2D, paragraph: string, max: nu
       line += token;
       continue;
     }
-    // Palabra más larga que la línea: se parte por letras.
+    // Word longer than the line: it is split by letters.
     for (const ch of token) {
       if (line !== '' && ctx.measureText(line + ch).width > max) {
         lines.push(line);
@@ -157,9 +157,9 @@ function wrapParagraph(ctx: CanvasRenderingContext2D, paragraph: string, max: nu
 const ALIGN_FACTOR: Record<TextAlign, number> = { left: 0, center: 0.5, right: 1 };
 
 /**
- * Pinta un bloque de texto con su esquina superior izquierda en (0, 0), alineando
- * cada línea dentro de `boxWidth`. La línea base se coloca como en CSS (interlineado
- * repartido arriba y abajo) para que el texto no "salte" al terminar de editar.
+ * Paints a block of text with its top left corner at (0, 0), aligning each line within
+ * `boxWidth`. The baseline is placed as in CSS (line spacing split above and below) so
+ * the text doesn't "jump" when editing ends.
  */
 export function drawTextBlock(
   ctx: CanvasRenderingContext2D,
@@ -185,7 +185,8 @@ export function drawTextBlock(
       ctx.fillText(line, x, y);
       return;
     }
-    // Tarea: la casilla en el sitio de "[ ]" y el resto, tachado y más suave si está hecha.
+    // Task: the checkbox in place of "[ ]" and the rest, struck through and softer if
+    // done.
     const box = taskBox(ctx, task, x, y);
     const checked = task[2] !== ' ';
     ctx.save();
@@ -206,7 +207,7 @@ export function drawTextBlock(
       ctx.globalAlpha *= 0.5;
     }
     const rest = line.slice(task[0].length);
-    // Igual con "[ ]" que con "[x]": el texto no se mueve al marcar la tarea.
+    // Same with "[ ]" as with "[x]": the text doesn't move when ticking the task.
     const restX = box.after;
     ctx.fillText(rest, restX, y);
     if (checked && rest.trim()) {
@@ -223,10 +224,10 @@ export function drawTextBlock(
   ctx.restore();
 }
 
-/** Tarea al principio de una línea: "[ ] algo" (por hacer) o "[x] algo" (hecha). */
+/** Task at the start of a line: "[ ] something" (to do) or "[x] something" (done). */
 const TASK = /^(\s*)\[([ xX])\]/;
 
-/** Dónde va la casilla de una tarea (a tamaño de referencia, desde el origen del bloque). */
+/** Where a task's checkbox goes (at reference size, from the block's origin). */
 function taskBox(ctx: CanvasRenderingContext2D, task: RegExpExecArray, x: number, y: number) {
   const start = x + ctx.measureText(task[1]).width;
   const mark = ctx.measureText('[ ]').width;
@@ -235,12 +236,12 @@ function taskBox(ctx: CanvasRenderingContext2D, task: RegExpExecArray, x: number
     x: start + (mark - size) / 2,
     y: y - REF * 0.3 - size / 2,
     size,
-    /** Dónde sigue el texto de la tarea. */
+    /** Where the task's text continues. */
     after: start + mark,
   };
 }
 
-/** Casilla de una tarea: su párrafo en el texto original y su caja (en unidades del mundo). */
+/** A task's checkbox: its paragraph in the original text and its box (in world units). */
 export interface TaskBox {
   paragraph: number;
   checked: boolean;
@@ -249,7 +250,7 @@ export interface TaskBox {
   size: number;
 }
 
-/** Las casillas de un bloque de texto, en sus coordenadas (las mismas que `drawTextBlock`). */
+/** The checkboxes of a text block, in its coordinates (the same as `drawTextBlock`). */
 export function taskBoxes(
   layout: TextLayout,
   options: { fontSize: number; font: string; align: TextAlign; boxWidth: number },
@@ -277,7 +278,7 @@ export function taskBoxes(
   return boxes;
 }
 
-/** Marca o desmarca la tarea de ese párrafo. */
+/** Ticks or unticks that paragraph's task. */
 export function toggleTask(text: string, paragraph: number): string {
   const lines = text.split('\n');
   lines[paragraph] = lines[paragraph].replace(TASK, (_, indent: string, mark: string) =>

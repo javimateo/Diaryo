@@ -6,12 +6,12 @@ import type { Scene } from '../scene';
 import { drawArrow, newSeed } from '../shapes';
 import type { PointerInput, ToolContext, ToolHandler } from './types';
 
-/** Distancia mínima (px de pantalla) para que el arrastre cree una flecha. */
+/** Minimum distance (screen px) for a drag to create an arrow. */
 const MIN_LENGTH = 8;
 
 /**
- * Lo que hay bajo el punto al que se puede enganchar una flecha (lo de más arriba),
- * o null. `except`: el elemento que no cuenta (la propia flecha o su otro extremo).
+ * What is under the point that an arrow can attach to (the topmost), or null. `except`:
+ * the element that doesn't count (the arrow itself or its other end).
  */
 export function bindTargetAt(
   scene: Scene,
@@ -37,8 +37,8 @@ export const bindingFor = (el: SceneElement | null, p: Vec): ArrowBinding | null
   el ? { elementId: el.id, focus: focusFor(el, p) } : null;
 
 /**
- * Flecha (A): se arrastra de un punto a otro. Si empieza o termina sobre una nota,
- * un texto, una figura o una imagen, se engancha a ella y la sigue al moverla.
+ * Arrow (A): drag from one point to another. If it starts or ends on a note, a text, a
+ * shape or an image, it attaches to it and follows it when it moves.
  */
 export class ArrowHandler implements ToolHandler {
   private drag: { start: Vec; current: Vec; seed: number } | null = null;
@@ -78,7 +78,7 @@ export class ArrowHandler implements ToolHandler {
   private hoverId: string | null = null;
 
   onHover(input: PointerInput): string | null {
-    // Resalta a qué se engancharía la flecha si se empieza aquí.
+    // Highlights what the arrow would attach to if it started here.
     const target = this.targetAt(input.world);
     if (target?.id !== this.hoverId) {
       this.hoverId = target?.id ?? null;
@@ -103,7 +103,7 @@ export class ArrowHandler implements ToolHandler {
     highlight(arrow.end?.elementId);
     g.save();
     g.globalAlpha = arrow.opacity;
-    // La vista previa ya muestra dónde quedará enganchada.
+    // The preview already shows where it will be attached.
     const preview = routeArrow(arrow, (id) => this.ctx.scene.get(id));
     g.translate(preview.x, preview.y);
     drawArrow(g, preview, this.ctx.mode);

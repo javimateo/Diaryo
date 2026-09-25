@@ -91,7 +91,7 @@ type CameraListener = (camera: Camera) => void;
 type StateListener = (state: EngineState) => void;
 type EditingListener = (state: EditingState | null) => void;
 
-/** Herramientas que muestran y conservan la selección. */
+/** Tools that show and keep the selection. */
 const SELECTION_TOOLS: ToolId[] = ['select', 'lasso'];
 
 type Gesture =
@@ -99,32 +99,32 @@ type Gesture =
       type: 'pan';
       pointerId: number;
       last: Vec;
-      /** Posiciones recientes para calcular la velocidad al soltar (inercia). */
+      /** Recent positions to compute the speed on release (inertia). */
       samples: { t: number; x: number; y: number }[];
     }
   | { type: 'tool'; pointerId: number; handler: ToolHandler }
   | { type: 'turn'; pointerId: number };
 
-/** Una rueda de ratón da saltos grandes (±100); un trackpad, muchos pequeños. */
+/** A mouse wheel makes big jumps (±100); a trackpad, many small ones. */
 const WHEEL_SMOOTH_THRESHOLD = 40;
 const WHEEL_ZOOM_SPEED = 0.0025;
 const PINCH_ZOOM_SPEED = 0.01;
 const ZOOM_STEP = 1.25;
 const FIT_PADDING = 64;
-/** Desplazamiento (px de pantalla) de lo duplicado respecto al original. */
+/** Offset (screen px) of duplicates from the original. */
 const DUPLICATE_OFFSET = 16;
-/** Cuánto dura el brillo que señala algo (p. ej. lo encontrado al buscar), en ms. */
+/** How long the glow pointing at something lasts (e.g. a search result), in ms. */
 const HIGHLIGHT_DURATION = 1800;
 
 /**
- * Motor del lienzo: dibuja en dos <canvas> superpuestos y gestiona cámara, entrada
- * y herramientas. Es TypeScript puro (sin React) para que el bucle de dibujo sea lo
- * más rápido posible; solo redibuja la capa que cambia.
+ * Canvas engine: draws on two stacked <canvas> and handles the camera, input and tools.
+ * It is plain TypeScript (no React) so the drawing loop is as fast as possible; it only
+ * redraws the layer that changes.
  */
 export class Engine {
   readonly scene = new Scene();
   private readonly history = new History(this.scene, () => this.onHistoryChange());
-  /** Imágenes de la página (el autoguardado escucha las nuevas). */
+  /** The page's images (the autosave listens to new ones). */
   readonly assets = new AssetStore(() => this.invalidateScene());
 
   private readonly sceneCanvas: HTMLCanvasElement;
@@ -149,38 +149,39 @@ export class Engine {
   private readonly handlers: Partial<Record<ToolId, ToolHandler>>;
   private spaceHeld = false;
   private selection = new Set<string>();
-  /** Cursor que pide la herramienta según lo que hay bajo el ratón (asas, elementos…). */
+  /** Cursor requested by the tool depending on what is under the mouse (handles, elements…). */
   private hoverCursor: string | null = null;
-  /** Última posición del ratón sobre el lienzo (para pegar donde está). */
+  /** Last mouse position over the canvas (to paste where it is). */
   private lastPointer: Vec | null = null;
   private editing: EditingState | null = null;
   private readonly editingListeners = new Set<EditingListener>();
-  /** La interfaz decide qué herramienta está activa; el motor solo puede pedírselo. */
+  /** The UI decides which tool is active; the engine can only ask for it. */
   private toolRequest: (tool: ToolId) => void = () => {};
   private contextMenuListener: (request: ContextMenuRequest) => void = () => {};
   private copiedStyle: { patch: StylePatch; type: SceneElement['type'] } | null = null;
 
   private gesture: Gesture | null = null;
-  /** Lo que la cámara hace sola: zoom y desplazamiento suaves, inercia y vuelos. */
+  /** What the camera does by itself: smooth zoom and panning, inertia and flights. */
   private readonly motion = new CameraMotion();
-  /** Doble página del diario sobre la que se escribe (null: lienzo sin libro). */
+  /** The diary double page being written on (null: canvas without a book). */
   private book: BookSpread | null = null;
   private pageTurnListener: (dir: TurnDirection) => void = () => {};
   private bookTabListener: (pageId: string) => void = () => {};
   private linkListener: (pageId: string) => void = () => {};
-  /** Nombre de cada página (para las etiquetas de los enlaces). */
+  /** Name of each page (for the link labels). */
   private linkLabels = new Map<string, string>();
-  /** El libro ya se encuadró una vez: al pasar página la cámara se queda donde está. */
+  private missingLinkLabel = '';
+  /** The book was framed once: when turning pages the camera stays where it is. */
   private bookFramed = false;
-  /** Lo que se señala un momento (p. ej. lo encontrado al buscar). */
+  /** What is pointed at for a moment (e.g. a search result). */
   private highlight: { id: string; start: number } | null = null;
-  /** Diario flotante: en vez de la mesa se ve el escritorio, con un velo suave. */
+  /** Floating diary: instead of the desk the desktop shows, with a soft veil. */
   private transparentDesk = false;
   private readonly deskLayer: boolean;
-  /** Cámara fija: siempre encuadra esto (también al cambiar el tamaño de la ventana). */
+  /** Fixed camera: it always frames this (also when the window is resized). */
   private lockedCamera: (() => Camera) | null = null;
   private deskIds: ReadonlySet<string> = new Set();
-  /** Al cambiar el tamaño de la ventana, volver a encuadrar el libro entero. */
+  /** When the window is resized, frame the whole book again. */
   private fitOnResize: (() => Camera) | null = null;
   private readonly pageTurner = new PageTurner({
     renderTexture: (target, scale) => this.renderSpread(target, scale),
@@ -202,7 +203,7 @@ export class Engine {
     const transparent = (options.transparent ?? false) || this.deskLayer;
     const sceneCtx = scene.getContext('2d', { alpha: transparent });
     const overlayCtx = overlay.getContext('2d');
-    if (!sceneCtx || !overlayCtx) throw new Error('Este navegador no soporta Canvas 2D');
+    if (!sceneCtx || !overlayCtx) throw new Error('This browser does not support Canvas 2D');
     this.sceneCanvas = scene;
     this.overlayCanvas = overlay;
     this.sceneCtx = sceneCtx;
@@ -226,7 +227,7 @@ export class Engine {
     this.listen(overlay, 'pointermove', this.onPointerMove);
     this.listen(overlay, 'pointerup', this.onPointerUp);
     this.listen(overlay, 'pointercancel', this.onPointerUp);
-    // Evita el autodesplazamiento de Windows con el botón central.
+    // Prevents Windows autoscroll with the middle button.
     this.listen(overlay, 'mousedown', (e: MouseEvent) => {
       if (e.button === 1) e.preventDefault();
     });
@@ -250,9 +251,8 @@ export class Engine {
     this.resize();
     this.updateCursor();
 
-    // Las medidas de texto dependen de la fuente: rehacerlas cuando termine de cargar.
-    // Las medidas de texto dependen de la fuente: rehacerlas cuando termine de cargar
-    // cada una. Las incluidas se precargan para que al elegirlas ya estén listas.
+    // Text measurements depend on the font: redo them when each one finishes loading. The
+    // bundled ones are preloaded so they are ready when chosen.
     this.cleanups.push(
       fonts.subscribe(() => {
         clearTextCache();
@@ -263,7 +263,7 @@ export class Engine {
     BUILTIN_FONTS.forEach((font) => void fonts.load(font.id));
   }
 
-  // ─── API pública ──────────────────────────────────────────────
+  // ─── Public API ───────────────────────────────────────────────
 
   getCamera(): Camera {
     return this.camera;
@@ -323,17 +323,17 @@ export class Engine {
     this.zoomBy(1 / ZOOM_STEP);
   }
 
-  /** Vuelve al 100 % sin moverse del sitio. */
+  /** Back to 100% without moving. */
   resetZoom() {
     this.animateTo(cameraAt(cameraCenter(this.camera, this.viewport), 1, this.viewport));
   }
 
-  /** Encuadra todo el contenido (y el libro). Si no hay nada, vuelve al origen. */
+  /** Frames all the content (and the book). If there is nothing, goes back to the origin. */
   zoomToFit() {
     this.animateTo(this.fitCamera());
   }
 
-  /** Muestra la doble página entera (sin animación, p. ej. antes de pasar página). */
+  /** Shows the whole double page (without animation, e.g. before turning the page). */
   showWholeBook() {
     if (!this.book) return;
     this.stopMotion();
@@ -341,10 +341,10 @@ export class Engine {
   }
 
   /**
-   * Mesa transparente (diario flotante sobre el escritorio) o la de siempre. Se dibuja
-   * ya, sin esperar al siguiente frame: la ventana puede estar escondida y enseñarse
-   * justo después. Se ve el libro entero o, en el diario flotante, la vista de la mesa
-   * del escritorio (`view`); se vuelve a poner cuando cambie el tamaño de la ventana.
+   * Transparent desk (floating diary over the desktop) or the usual one. It is drawn
+   * right away, without waiting for the next frame: the window may be hidden and shown
+   * right after. The whole book shows or, in the floating diary, the desktop desk view
+   * (`view`); it is set again when the window is resized.
    */
   setTransparentDesk(on: boolean, view: DeskView | null = null) {
     this.transparentDesk = on;
@@ -361,25 +361,25 @@ export class Engine {
     this.sceneDirty = false;
   }
 
-  /** Va (con animación) a una vista guardada. */
+  /** Goes (animated) to a saved view. */
   animateToView(view: DeskView) {
     this.animateTo(cameraAt(view.center, view.zoom, this.viewport));
   }
 
-  /** Lo que se está viendo: el punto del centro de la pantalla y el zoom. */
+  /** What is being viewed: the point at the center of the screen and the zoom. */
   view(): DeskView {
     return { center: cameraCenter(this.camera, this.viewport), zoom: this.camera.zoom };
   }
 
   /**
-   * Deja la cámara fija encuadrando estos límites, como el diario flotante encuadra el
-   * libro al abrirse: así la capa del escritorio pone la mesa en el mismo sitio.
+   * Fixes the camera framing these bounds, like the floating diary frames the book when
+   * it opens: that way the desktop layer puts the desk in the same place.
    */
   lockCamera(bounds: Bounds) {
     this.lock(() => fitCamera(bounds, this.viewport, FIT_PADDING));
   }
 
-  /** Deja la cámara fija en esta vista (la última del diario flotante). */
+  /** Fixes the camera on this view (the last one of the floating diary). */
   lockView(view: DeskView) {
     this.lock(() => cameraAt(view.center, view.zoom, this.viewport));
   }
@@ -391,9 +391,9 @@ export class Engine {
   }
 
   /**
-   * Dónde hay algo en la pantalla (en píxeles de la ventana, con un margen; más amplio en
-   * lo seleccionado, por sus asas). En la capa del escritorio, fuera de ahí los clics
-   * pasan al escritorio.
+   * Where there is something on screen (in window pixels, with a margin; wider for the
+   * selection, because of its handles). In the desktop layer, outside these clicks go
+   * through to the desktop.
    */
   hitAreas(margin = 6, selectedMargin = 40): ScreenRect[] {
     const areas: ScreenRect[] = [];
@@ -420,16 +420,16 @@ export class Engine {
     this.invalidateScene();
   }
 
-  // ─── Pasar página ─────────────────────────────────────────────
+  // ─── Turning pages ────────────────────────────────────────────
 
-  /** Páginas anterior y siguiente, para poder pasar a ellas arrastrando la esquina. */
+  /** Previous and next pages, to be able to turn to them by dragging the corner. */
   setTurnTargets(prev: TurnTarget | null, next: TurnTarget | null) {
     this.pageTurner.setTargets(prev, next);
   }
 
-  // ─── Enlaces a otras páginas ─────────────────────────────────
+  // ─── Links to other pages ─────────────────────────────────────
 
-  /** Enlaza lo seleccionado con una página (o quita el enlace con null). */
+  /** Links the selection to a page (or removes the link with null). */
   setSelectionLink(pageId: string | null): boolean {
     const elements = this.selectedElements();
     if (elements.length === 0) return false;
@@ -437,13 +437,14 @@ export class Engine {
     return true;
   }
 
-  /** Nombres de las páginas, para las etiquetas de los enlaces. */
-  setLinkLabels(labels: Map<string, string>) {
+  /** Page names, for the link labels, and what is shown if the page no longer exists. */
+  setLinkLabels(labels: Map<string, string>, missing: string) {
     this.linkLabels = labels;
+    this.missingLinkLabel = missing;
     this.invalidateScene();
   }
 
-  /** Avisa al pulsar la etiqueta de un enlace. */
+  /** Notifies when a link label is clicked. */
   onLinkOpen(listener: (pageId: string) => void) {
     this.linkListener = listener;
   }
@@ -451,24 +452,24 @@ export class Engine {
   private linkLabel = (pageId: string): LinkLabel => {
     const text = this.linkLabels.get(pageId);
     return text === undefined
-      ? { text: 'Página borrada', missing: true }
+      ? { text: this.missingLinkLabel, missing: true }
       : { text, missing: false };
   };
 
-  /** Etiquetas de enlace de lo que se ve. */
+  /** Link labels of what is visible. */
   private visibleBadges() {
     const elements = this.scene.search(this.visibleBounds()).filter((el) => el.link);
     return linkBadges(elements, this.linkLabel, this.camera.zoom);
   }
 
-  /** Página del enlace cuya etiqueta está bajo el punto, o null. */
+  /** Page of the link whose label is under the point, or null. */
   private linkUnder(world: Vec): string | null {
-    // En lo seleccionado mandan sus asas (su enlace se abre desde el panel).
+    // On the selection its handles win (its link opens from the panel).
     const badges = this.visibleBadges().filter((b) => !b.ids.some((id) => this.selection.has(id)));
     return badgeAt(badges, world)?.link ?? null;
   }
 
-  /** Tarea cuya casilla está bajo el punto (lo de más arriba primero), o null. */
+  /** Task whose checkbox is under the point (topmost first), or null. */
   private taskUnder(world: Vec): { el: SceneElement; paragraph: number } | null {
     if (this.tool !== 'select' && this.tool !== 'lasso') return null;
     const slop = 4 / this.camera.zoom;
@@ -481,17 +482,17 @@ export class Engine {
     return null;
   }
 
-  /** Avisa al pulsar la pestaña de una página marcada. */
+  /** Notifies when a marked page's tab is clicked. */
   onBookTab(listener: (pageId: string) => void) {
     this.bookTabListener = listener;
   }
 
-  /** Avisa cuando se suelta una hoja pasada la mitad: hay que abrir esa página. */
+  /** Notifies when a sheet is released past the middle: that page must open. */
   onPageTurn(listener: (dir: TurnDirection) => void) {
     this.pageTurnListener = listener;
   }
 
-  /** Pasa la hoja sola hasta mostrar `target` (queda así hasta endPageTurn). */
+  /** Turns the sheet by itself until `target` shows (it stays that way until endPageTurn). */
   animatePageTurn(dir: TurnDirection, target: TurnTarget, duration?: number): Promise<void> {
     if (!this.book) return Promise.resolve();
     this.cancelGesture();
@@ -499,17 +500,17 @@ export class Engine {
     return this.pageTurner.turn(dir, target, duration);
   }
 
-  /** La nueva página ya está cargada: se quita la hoja que se estaba pasando. */
+  /** The new page is loaded: the turning sheet is removed. */
   endPageTurn() {
     this.pageTurner.end();
   }
 
-  /** Miniatura de otra página (su doble página en pequeño), a ese ancho. */
+  /** Thumbnail of another page (its double page in small), at that width. */
   spreadThumbnail(target: TurnTarget, width: number): string {
     return this.renderSpread(target, width / (PAGE_WIDTH * 2)).toDataURL('image/webp', 0.85);
   }
 
-  /** Dibuja una doble página (papel y contenido, sin tapas) para la hoja que se pasa. */
+  /** Draws a double page (paper and content, without covers) for the turning sheet. */
   private renderSpread(target: TurnTarget, scale: number): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(PAGE_WIDTH * 2 * scale);
@@ -542,8 +543,8 @@ export class Engine {
   }
 
   /**
-   * Señala un elemento (p. ej. lo encontrado al buscar): si no se ve entero, la cámara
-   * va hasta él, y se ilumina un momento.
+   * Points at an element (e.g. a search result): if it isn't fully visible, the camera
+   * goes to it, and it lights up for a moment.
    */
   focusElement(id: string): boolean {
     const el = this.scene.get(id);
@@ -557,16 +558,16 @@ export class Engine {
       bounds.minY >= view.minY + margin &&
       bounds.maxY <= view.maxY - margin;
     const flight = 420;
-    // Con el mismo zoom si cabe; si no, lo justo para verlo entero.
+    // With the same zoom if it fits; otherwise, just enough to see it whole.
     if (!visible)
       this.animateTo(fitCamera(bounds, this.viewport, FIT_PADDING, this.camera.zoom), flight);
-    // El brillo empieza al llegar.
+    // The glow starts on arrival.
     this.highlight = { id, start: performance.now() + (visible ? 0 : flight * 0.6) };
     this.invalidateOverlay();
     return true;
   }
 
-  // ─── Selección ────────────────────────────────────────────────
+  // ─── Selection ────────────────────────────────────────────────
 
   selectAll() {
     this.setSelection(
@@ -600,7 +601,7 @@ export class Engine {
     return true;
   }
 
-  /** Mueve la selección unos píxeles de pantalla (flechas del teclado). */
+  /** Moves the selection a few screen pixels (keyboard arrows). */
   nudgeSelection(dx: number, dy: number): boolean {
     const elements = this.selectedElements().filter((el) => !el.locked);
     if (elements.length === 0 || this.gesture?.type === 'tool') return false;
@@ -617,7 +618,7 @@ export class Engine {
     return true;
   }
 
-  /** Texto para el portapapeles con lo seleccionado, o null si no hay selección. */
+  /** Clipboard text with the selection, or null if there is no selection. */
   copySelection(): string | null {
     const elements = this.selectedElements();
     if (elements.length === 0) return null;
@@ -629,7 +630,10 @@ export class Engine {
     return serializeElements({ elements, assets });
   }
 
-  /** Pega lo copiado desde diaryo bajo el ratón (o en el centro). Devuelve false si no lo reconoce. */
+  /**
+   * Pastes what was copied from diaryo under the mouse (or in the center). Returns false
+   * if it isn't recognized.
+   */
   paste(text: string): boolean {
     const content = parseElements(text);
     if (!content || this.gesture?.type === 'tool') return false;
@@ -638,7 +642,7 @@ export class Engine {
     return true;
   }
 
-  /** Crea un texto (p. ej. al pegar texto normal) bajo el ratón o en el centro. */
+  /** Creates a text (e.g. when pasting plain text) under the mouse or in the center. */
   insertText(text: string): boolean {
     const clean = text.replace(/\r\n?/g, '\n').replace(/\t/g, '    ');
     if (clean.trim() === '' || this.gesture?.type === 'tool') return false;
@@ -651,8 +655,8 @@ export class Engine {
   }
 
   /**
-   * Añade imágenes (pegadas o arrastradas). Se ven a su tamaño real en pantalla,
-   * reducidas si no caben, y en fila si son varias.
+   * Adds images (pasted or dragged). They show at their real screen size, scaled down if
+   * they don't fit, and in a row if there are several.
    */
   async insertImageFiles(files: File[], at?: Vec): Promise<boolean> {
     const images = files.filter(isImageFile);
@@ -692,8 +696,8 @@ export class Engine {
   }
 
   /**
-   * Cambia color o tamaño de lo seleccionado. Los cambios seguidos del mismo tipo
-   * (arrastrar el deslizador) se deshacen de una vez.
+   * Changes the color or size of the selection. Consecutive changes of the same kind
+   * (dragging the slider) are undone at once.
    */
   restyleSelection(patch: StylePatch) {
     const changes: Changes = new Map();
@@ -703,7 +707,7 @@ export class Engine {
     this.history.commit(changes, patchMergeKey(patch));
   }
 
-  // ─── Edición de texto ─────────────────────────────────────────
+  // ─── Text editing ─────────────────────────────────────────────
 
   subscribeEditing(listener: EditingListener): () => void {
     this.editingListeners.add(listener);
@@ -711,12 +715,12 @@ export class Engine {
     return () => this.editingListeners.delete(listener);
   }
 
-  /** La interfaz se entera de que el motor quiere cambiar de herramienta. */
+  /** The UI learns that the engine wants to change the tool. */
   onToolRequest(listener: (tool: ToolId) => void) {
     this.toolRequest = listener;
   }
 
-  /** Enter sobre un texto o nota seleccionados: editarlo. */
+  /** Enter on a selected text or note: edit it. */
   editSelection(): boolean {
     const [el] = this.selectedElements();
     if (this.selection.size !== 1 || !el || !isEditable(el)) return false;
@@ -732,7 +736,7 @@ export class Engine {
     });
   }
 
-  /** Cambiar color o tamaño mientras se escribe. */
+  /** Change the color or size while writing. */
   updateEditingStyle(patch: StylePatch) {
     const editing = this.editing;
     if (!editing) return;
@@ -741,8 +745,8 @@ export class Engine {
   }
 
   /**
-   * Cierra el editor guardando el resultado. Un texto vacío se descarta; una nota
-   * vacía se conserva (sirve como bloque de color).
+   * Closes the editor keeping the result. An empty text is discarded; an empty note is
+   * kept (it works as a block of color).
    */
   finishEditing(selectResult = true) {
     const editing = this.editing;
@@ -757,9 +761,9 @@ export class Engine {
       if (original) this.history.commit(new Map([[element.id, null]]));
       return;
     }
-    // Una figura sin texto deja de tener etiqueta.
+    // A shape without text stops having a label.
     if (isContainer(element) && empty) element = { ...element, label: null };
-    // Cualquier propiedad cuenta (texto, fuente, alineación, opacidad…).
+    // Any property counts (text, font, alignment, opacity…).
     const unchanged = !!original && JSON.stringify(original) === JSON.stringify(element);
     if (isNew || !unchanged) this.history.commit(new Map([[element.id, element]]));
     if (selectResult) {
@@ -771,7 +775,7 @@ export class Engine {
   private startEditing(element: EditableElement, isNew: boolean) {
     this.finishEditing(false);
     this.setSelection([]);
-    // Una figura sin texto recibe uno vacío con el estilo por defecto.
+    // A shape without text gets an empty one with the default style.
     const ready =
       isContainer(element) && !element.label
         ? { ...element, label: defaultLabel(this.styles, this.camera.zoom) }
@@ -790,7 +794,7 @@ export class Engine {
     if (!SELECTION_TOOLS.includes(this.tool) || this.editing) return;
     const world = screenToWorld(this.camera, this.localPoint(e));
     const hit = hitTestElement(this.scene, world, 4 / this.camera.zoom);
-    // Dentro de una figura (aunque no tenga fondo) se escribe en ella.
+    // Inside a shape (even without a fill) you write in it.
     const target = hit && isEditable(hit) ? hit : hit ? null : containerAt(this.scene, world);
     if (target) this.startEditing(target, false);
     else if (!hit) {
@@ -812,7 +816,7 @@ export class Engine {
     );
   }
 
-  /** Inserta copias de los elementos con su centro común en `center`. */
+  /** Inserts copies of the elements with their common center at `center`. */
   private insertCentered(elements: SceneElement[], center: Vec) {
     const bounds = elements.map(elementBounds).reduce(unionBounds);
     this.insertCopies(
@@ -822,14 +826,14 @@ export class Engine {
     );
   }
 
-  // ─── Organizar (menú contextual) ──────────────────────────────
+  // ─── Arrange (context menu) ───────────────────────────────────
 
-  /** El motor avisa de un clic derecho; la interfaz muestra el menú. */
+  /** The engine reports a right-click; the UI shows the menu. */
   onContextMenu(listener: (request: ContextMenuRequest) => void) {
     this.contextMenuListener = listener;
   }
 
-  /** Agrupa lo seleccionado: a partir de ahora se selecciona y se mueve junto. */
+  /** Groups the selection: from now on it is selected and moved together. */
   groupSelection(): boolean {
     const elements = this.selectedElements().filter((el) => !el.locked);
     if (elements.length < 2) return false;
@@ -845,7 +849,7 @@ export class Engine {
     return true;
   }
 
-  /** Bloquea (o desbloquea, si ya lo estaba todo) lo seleccionado. */
+  /** Locks (or unlocks, if everything already was) the selection. */
   toggleLockSelection(): boolean {
     const elements = this.selectedElements();
     if (elements.length === 0) return false;
@@ -876,7 +880,7 @@ export class Engine {
     return true;
   }
 
-  /** Recuerda el estilo del primer elemento seleccionado para pegarlo en otros. */
+  /** Remembers the style of the first selected element to paste it on others. */
   copyStyle(): boolean {
     const [el] = this.selectedElements();
     if (!el) return false;
@@ -912,7 +916,7 @@ export class Engine {
     if (!copied || this.selection.size === 0) return false;
     const changes: Changes = new Map();
     for (const el of this.selectedElements()) {
-      // Un grosor de trazo no tiene sentido como tamaño de letra (ni al revés).
+      // A stroke width makes no sense as a font size (nor the other way round).
       const { size, ...rest } = copied.patch;
       const patch = el.type === copied.type ? copied.patch : rest;
       void size;
@@ -922,7 +926,7 @@ export class Engine {
     return true;
   }
 
-  /** Copia lo seleccionado como imagen PNG (para pegarlo en otras aplicaciones). */
+  /** Copies the selection as a PNG image (to paste it into other apps). */
   async copySelectionAsPng(): Promise<boolean> {
     const elements = this.selectedElements();
     if (elements.length === 0 || typeof ClipboardItem === 'undefined') return false;
@@ -945,7 +949,7 @@ export class Engine {
     if (this.gesture) return;
     this.finishEditing(false);
     const world = screenToWorld(this.camera, this.localPoint(e));
-    // Con el menú también se alcanzan los bloqueados (para poder desbloquearlos).
+    // The menu also reaches locked elements (to be able to unlock them).
     const hit = hitTestElement(this.scene, world, 6 / this.camera.zoom, true);
     if (hit && !this.selection.has(hit.id)) this.setSelection([hit.id]);
     if (!hit) this.setSelection([]);
@@ -954,13 +958,13 @@ export class Engine {
     this.contextMenuListener({ x: e.clientX, y: e.clientY, onElement: !!hit });
   };
 
-  // ─── Documento (cargar, reemplazar, exportar) ────────────────
+  // ─── Document (load, replace, export) ─────────────────────────
 
   allElements(): SceneElement[] {
     return this.scene.all();
   }
 
-  /** Lo que es de la página abierta (en el diario, sin lo que hay en la mesa). */
+  /** What belongs to the open page (in the diary, without what is on the desk). */
   pageElements(): SceneElement[] {
     const all = this.scene.all();
     const desk = this.deskIds;
@@ -968,16 +972,16 @@ export class Engine {
   }
 
   /**
-   * Lo que es de la mesa (lo lleva el diario). Aunque esté donde se abre el libro, no es
-   * de la página.
+   * What belongs to the desk (the diary keeps track of it). Even where the book opens, it
+   * isn't part of the page.
    */
   setDeskIds(ids: ReadonlySet<string>) {
     this.deskIds = ids;
   }
 
   /**
-   * Pone en la mesa lo guardado en ella (se queda al pasar página) y quita lo que ya no
-   * está (`removed`). Sin historial.
+   * Puts what was saved on the desk (it stays when turning pages) and removes what is no
+   * longer there (`removed`). No history.
    */
   loadDesk(elements: SceneElement[], removed: string[] = []) {
     const notify = this.scene.onChange;
@@ -994,14 +998,14 @@ export class Engine {
   }
 
   /**
-   * Carga una página guardada: sin historial de deshacer y sin avisar de cambios.
-   * Sin cámara guardada, encuadra el contenido (o el origen si está vacía).
+   * Loads a saved page: without undo history and without reporting changes. Without a
+   * saved camera, it frames the content (or the origin if it is empty).
    */
   loadPage(elements: SceneElement[], camera?: Camera | null) {
     this.cancelGesture();
     this.finishEditing(false);
     this.setSelection([]);
-    // En el diario, lo que hay en la mesa se queda: solo cambia lo de dentro del libro.
+    // In the diary, what is on the desk stays: only what is inside the book changes.
     const leaving = this.book ? this.pageElements() : this.scene.all();
     const changes: Changes = new Map(leaving.map((el) => [el.id, null]));
     for (const el of elements) changes.set(el.id, el);
@@ -1011,8 +1015,8 @@ export class Engine {
     this.scene.onChange = notify;
     this.history.clear();
     this.stopMotion();
-    // En el diario, el libro no se mueve al pasar página (la primera vez se encuadra). Con
-    // la cámara fija, tampoco.
+    // In the diary, the book doesn't move when turning pages (the first time it is
+    // framed). With the fixed camera, neither.
     const keep = this.lockedCamera || (this.book && this.bookFramed);
     if (this.book && this.sized) this.bookFramed = true;
     this.setCamera(
@@ -1026,11 +1030,11 @@ export class Engine {
     this.invalidateScene();
   }
 
-  /** Miniatura de toda la página (siempre en tema claro), o null si está vacía. */
+  /** Thumbnail of the whole page (always in the light theme), or null if it is empty. */
   thumbnail(width: number, height: number): string | null {
     const elements = this.pageElements();
     if (elements.length === 0) return null;
-    // En el diario, la doble página en pequeño (papel, fecha y contenido en su sitio).
+    // In the diary, the double page in small (paper, date and content in place).
     if (this.book) {
       const spread = this.renderSpread(
         { id: '', elements, book: this.book },
@@ -1042,7 +1046,7 @@ export class Engine {
     return canvas.toDataURL('image/webp', 0.8);
   }
 
-  /** Dónde están las dos páginas en la ventana (px), para animar la entrada al mapa. */
+  /** Where the two pages are in the window (px), to animate entering the map. */
   bookScreenRect(): { x: number; y: number; width: number; height: number } | null {
     if (!this.book) return null;
     const a = worldToScreen(this.camera, { x: -PAGE_WIDTH, y: -PAGE_HEIGHT / 2 });
@@ -1050,7 +1054,7 @@ export class Engine {
     return { x: a.x + this.origin.x, y: a.y + this.origin.y, width: b.x - a.x, height: b.y - a.y };
   }
 
-  /** Sustituye toda la página (p. ej. al abrir una copia). Se puede deshacer. */
+  /** Replaces the whole page (e.g. when opening a backup). It can be undone. */
   replaceAll(elements: SceneElement[]) {
     this.finishEditing(false);
     this.setSelection([]);
@@ -1060,7 +1064,7 @@ export class Engine {
     this.zoomToFit();
   }
 
-  /** Imagen PNG de toda la página (o null si está vacía). */
+  /** PNG image of the whole page (or null if it is empty). */
   exportPng(): Promise<Blob | null> {
     const elements = this.scene.all();
     if (elements.length === 0) return Promise.resolve(null);
@@ -1080,17 +1084,18 @@ export class Engine {
     this.editingListeners.clear();
   }
 
-  /** Añade copias desplazadas (ids nuevos, encima de todo, mismo orden) y las selecciona. */
+  /** Adds offset copies (new ids, on top of everything, same order) and selects them. */
   private insertCopies(elements: SceneElement[], dx: number, dy: number) {
     let z = this.scene.nextZ();
-    // Las copias forman grupos nuevos (no se mezclan con los originales).
+    // The copies form new groups (they don't mix with the originals).
     const groups = new Map<string, string>();
     const groupFor = (id: string | null) => {
       if (!id) return null;
       if (!groups.has(id)) groups.set(id, createId());
       return groups.get(id)!;
     };
-    // Las flechas copiadas se enganchan a las copias (o se sueltan si no se copió su elemento).
+    // Copied arrows attach to the copies (or are detached if their element wasn't
+    // copied).
     const ids = new Map(elements.map((el) => [el.id, createId()]));
     const rebind = (b: ArrowBinding | null) =>
       b && ids.has(b.elementId) ? { ...b, elementId: ids.get(b.elementId)! } : null;
@@ -1121,7 +1126,7 @@ export class Engine {
     return result;
   }
 
-  /** Selecciona, añadiendo siempre el resto de miembros de cada grupo. */
+  /** Selects, always adding the other members of each group. */
   private setSelection(ids: Iterable<string>) {
     const next = new Set(ids);
     const groups = new Set<string>();
@@ -1142,7 +1147,7 @@ export class Engine {
     this.emitState();
   }
 
-  // ─── Herramientas ─────────────────────────────────────────────
+  // ─── Tools ────────────────────────────────────────────────────
 
   private createToolContext(): ToolContext {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -1174,7 +1179,7 @@ export class Engine {
         this.invalidateOverlay();
       },
       commitPreview: (originals) => {
-        // Estado final → restaurar el original → aplicarlo con historial (un solo deshacer).
+        // Final state → restore the original → apply it with history (a single undo).
         const final: Changes = new Map();
         let changed = false;
         for (const [id, original] of originals) {
@@ -1227,7 +1232,7 @@ export class Engine {
   }
 
   private onHistoryChange() {
-    // Deshacer puede quitar elementos seleccionados.
+    // Undo may remove selected elements.
     const alive = [...this.selection].filter((id) => this.scene.get(id));
     if (alive.length !== this.selection.size) this.selection = new Set(alive);
     this.invalidateScene();
@@ -1235,7 +1240,7 @@ export class Engine {
     this.emitState();
   }
 
-  /** Termina (confirmando) lo que la herramienta estuviera haciendo. */
+  /** Ends (confirming) whatever the tool was doing. */
   private endToolGesture() {
     const gesture = this.gesture;
     if (gesture?.type !== 'tool') return;
@@ -1243,26 +1248,26 @@ export class Engine {
     gesture.handler.onUp();
   }
 
-  // ─── Entrada ──────────────────────────────────────────────────
+  // ─── Input ────────────────────────────────────────────────────
 
   private onPointerDown = (e: PointerEvent) => {
     if (this.gesture) return;
-    // Mientras la hoja cae sola no se puede tocar el lienzo.
+    // While the sheet falls by itself the canvas can't be touched.
     if (this.pageTurner.busy) {
       e.preventDefault();
       return;
     }
-    // Agarrar la esquina de la hoja para pasar página (con cualquier herramienta).
+    // Grab the corner of the sheet to turn the page (with any tool).
     if (e.button === 0 && !this.editing && !this.spaceHeld && this.tool !== 'hand') {
       const world = screenToWorld(this.camera, this.localPoint(e));
-      // La etiqueta de un enlace lleva a su página.
+      // A link label leads to its page.
       const link = this.linkUnder(world);
       if (link) {
         e.preventDefault();
         this.linkListener(link);
         return;
       }
-      // La casilla de una tarea se marca o se desmarca (sin seleccionar nada).
+      // A task's checkbox is ticked or unticked (without selecting anything).
       const task = this.taskUnder(world);
       if (task) {
         e.preventDefault();
@@ -1270,7 +1275,7 @@ export class Engine {
         this.history.commit(new Map([[toggled.id, toggled]]));
         return;
       }
-      // Una pestaña lleva a su página.
+      // A tab leads to its page.
       const tab = this.book && tabAt(this.book, world);
       if (tab) {
         e.preventDefault();
@@ -1282,7 +1287,7 @@ export class Engine {
         try {
           this.overlayCanvas.setPointerCapture(e.pointerId);
         } catch {
-          // No es crítico.
+          // Not critical.
         }
         this.stopMotion();
         this.gesture = { type: 'turn', pointerId: e.pointerId };
@@ -1292,8 +1297,8 @@ export class Engine {
     }
     if (this.editing && e.button === 0) {
       e.preventDefault();
-      // Clic dentro de lo que se edita (p. ej. el borde de la nota o un doble clic):
-      // se sigue escribiendo. Un clic fuera cierra el editor y no hace nada más.
+      // A click inside what is being edited (e.g. the note's border or a double-click):
+      // writing continues. A click outside closes the editor and does nothing else.
       const world = screenToWorld(this.camera, this.localPoint(e));
       if (!elementHitsSegment(this.editing.element, world, world, 0)) this.finishEditing();
       return;
@@ -1304,10 +1309,10 @@ export class Engine {
 
     e.preventDefault();
     try {
-      // Seguir recibiendo el movimiento aunque el ratón salga de la ventana.
+      // Keep receiving the movement even if the mouse leaves the window.
       this.overlayCanvas.setPointerCapture(e.pointerId);
     } catch {
-      // Puntero ya inactivo (p. ej. eventos sintéticos): no es crítico.
+      // Pointer already inactive (e.g. synthetic events): not critical.
     }
     this.stopMotion();
 
@@ -1340,7 +1345,7 @@ export class Engine {
       return;
     }
     if (gesture.type === 'tool') {
-      // Los eventos agrupados traen todos los puntos intermedios: trazos más finos.
+      // Coalesced events bring all the intermediate points: finer strokes.
       const events = e.getCoalescedEvents?.() ?? [];
       gesture.handler.onMove((events.length > 0 ? events : [e]).map((ev) => this.pointerInput(ev)));
       return;
@@ -1375,7 +1380,7 @@ export class Engine {
       return;
     }
 
-    // Si se suelta en movimiento, el lienzo sigue deslizándose un poco.
+    // If released while moving, the canvas keeps sliding a bit.
     const first = gesture.samples[0];
     const last = gesture.samples[gesture.samples.length - 1];
     const dt = last.t - first.t;
@@ -1390,7 +1395,7 @@ export class Engine {
     const zooming = e.ctrlKey || e.metaKey;
     const target = e.target instanceof Element ? e.target : null;
     if (!zooming && target?.closest('[data-scrollable]')) return;
-    e.preventDefault(); // también bloquea el zoom del navegador con Ctrl+rueda
+    e.preventDefault(); // also blocks the browser zoom with Ctrl+wheel
 
     const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? this.viewport.height : 1;
     let dx = e.deltaX * unit;
@@ -1449,7 +1454,7 @@ export class Engine {
     this.requestFrame();
   }
 
-  /** Suelta el gesto en curso (se descarta lo que estuviera a medias). */
+  /** Releases the gesture in progress (whatever was halfway is discarded). */
   private cancelGesture() {
     const gesture = this.gesture;
     if (!gesture) return;
@@ -1477,10 +1482,10 @@ export class Engine {
     };
   }
 
-  /** Pregunta a la herramienta qué cursor mostrar según lo que hay bajo el ratón. */
+  /** Asks the tool which cursor to show depending on what is under the mouse. */
   private updateHover(e: PointerEvent) {
     const handler = this.activeHandler;
-    // Cerca de la esquina de una hoja, esta se levanta y se puede agarrar.
+    // Near the corner of a sheet, it lifts and can be grabbed.
     const canTurn = !!this.book && !this.editing && !this.spaceHeld && this.tool !== 'hand';
     if (canTurn) this.pageTurner.setScale(this.dpr * this.camera.zoom);
     const world = screenToWorld(this.camera, this.localPoint(e));
@@ -1501,14 +1506,14 @@ export class Engine {
     }
   }
 
-  // ─── Animación ────────────────────────────────────────────────
+  // ─── Animation ────────────────────────────────────────────────
 
   private tick = (now: number) => {
     this.frame = 0;
     const dt = this.lastTick ? Math.min(now - this.lastTick, 50) : 16;
     this.lastTick = now;
 
-    // Todas las animaciones avanzan en cada frame (no cortocircuitar).
+    // All the animations advance on every frame (no short-circuiting).
     const motion = this.motion.step(this.camera, this.viewport, now, dt);
     if (motion.camera !== this.camera) this.setCamera(motion.camera);
     const steps = [motion.moving, this.pageTurner.step(now)];
@@ -1516,7 +1521,7 @@ export class Engine {
     const toolAnimating = this.activeHandler?.isAnimating?.(now) ?? false;
     if (toolAnimating) this.overlayDirty = true;
     if (this.highlight && now - this.highlight.start > HIGHLIGHT_DURATION) {
-      // Un último frame para borrarlo.
+      // One last frame to erase it.
       this.highlight = null;
       this.overlayDirty = true;
     }
@@ -1536,7 +1541,7 @@ export class Engine {
     else this.lastTick = 0;
   };
 
-  // ─── Dibujo ───────────────────────────────────────────────────
+  // ─── Drawing ──────────────────────────────────────────────────
 
   private setCamera(camera: Camera) {
     this.camera = camera;
@@ -1569,7 +1574,7 @@ export class Engine {
     };
   }
 
-  /** Transformación mundo → píxeles físicos del canvas. */
+  /** World → physical canvas pixels transform. */
   private applyWorldTransform(ctx: CanvasRenderingContext2D) {
     const k = this.dpr * this.camera.zoom;
     ctx.setTransform(k, 0, 0, k, -this.camera.x * k, -this.camera.y * k);
@@ -1607,22 +1612,22 @@ export class Engine {
       editingId: editing?.id ?? null,
     };
     for (const el of this.scene.search(this.visibleBounds())) {
-      // Lo que se edita se pinta con su versión actual (puede haber crecido).
+      // What is being edited is drawn in its current version (it may have grown).
       if (el.id === editing?.id) continue;
       drawElement(ctx, el, rc, handler?.elementOpacity?.(el.id) ?? 1);
     }
-    // Notas y figuras (el texto lo pinta el editor); un texto suelto es solo el editor.
+    // Notes and shapes (the editor draws the text); a loose text is only the editor.
     if (editing && editing.type !== 'text') drawElement(ctx, editing, rc);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     if (book) drawBinding(ctx, book, pixelScale);
-    // Etiquetas de los enlaces, siempre encima (y del mismo tamaño en pantalla).
+    // Link labels, always on top (and the same size on screen).
     for (const badge of this.visibleBadges()) {
       drawLinkBadge(ctx, badge, this.camera.zoom, this.theme.accent);
     }
   }
 
-  /** Lo que va debajo de todo: la mesa, el velo del diario flotante o nada. */
+  /** What goes under everything: the desk, the floating diary veil or nothing. */
   private backdrop(): Backdrop {
     if (this.deskLayer) return { kind: 'clear' };
     if (this.transparentDesk) return { kind: 'veil' };
@@ -1644,7 +1649,7 @@ export class Engine {
       const t = (now - this.highlight.start) / HIGHLIGHT_DURATION;
       drawHighlight(ctx, elementBounds(highlighted), t, this.camera.zoom, this.theme.accent);
     }
-    // La hoja que se está pasando (las anillas quedan entre la página de debajo y la hoja).
+    // The turning sheet (the rings sit between the page underneath and the sheet).
     if (this.pageTurner.active && this.book) {
       this.applyWorldTransform(ctx);
       const pixelScale = this.dpr * this.camera.zoom;
@@ -1677,7 +1682,7 @@ export class Engine {
       this.stopMotion();
       this.setCamera(target());
     }
-    // Cambiar el tamaño borra los canvas: redibujar ya para evitar un parpadeo.
+    // Resizing clears the canvases: redraw right away to avoid a flicker.
     const now = performance.now();
     this.renderScene();
     this.renderOverlay(now);
@@ -1685,7 +1690,10 @@ export class Engine {
     this.overlayDirty = false;
   }
 
-  /** Vuelve a medir si cambia la densidad de píxeles (p. ej. al mover la ventana a otra pantalla). */
+  /**
+   * Measures again if the pixel density changes (e.g. when moving the window to another
+   * screen).
+   */
   private watchDpr() {
     const query = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     const onChange = () => {

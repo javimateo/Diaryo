@@ -1,4 +1,4 @@
-/* ─── Diario: pie de página, índice y pasar página ─────────── */
+/* ─── Diary: page footer, index and page turning ───────────── */
 
 .bottom-right {
   bottom: 16px;
@@ -84,7 +84,7 @@
   background: var(--accent-soft);
 }
 
-/* Índice */
+/* Index */
 
 .diary-panel {
   flex-direction: column;
@@ -135,14 +135,14 @@
   color: var(--text-muted);
 }
 
-/* Opciones con texto dentro de un grupo: del ancho de su texto. */
+/* Text options inside a group: as wide as their text. */
 .segmented-group .text-option {
   width: auto;
   padding: 0 9px;
   white-space: nowrap;
 }
 
-/* Cabecera de "Hoja" con el selector de todo el diario / esta página. */
+/* Header of "Paper" with the whole diary / this page selector. */
 .book-style-head {
   display: flex;
   align-items: center;
@@ -174,7 +174,7 @@
   cursor: pointer;
 }
 
-/* Miniaturas para elegir hoja o mesa. */
+/* Thumbnails to choose the paper or the desk. */
 .style-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
@@ -300,7 +300,7 @@
   background: var(--hover);
 }
 
-/* Días con páginas: un punto debajo del número. */
+/* Days with pages: a dot under the number. */
 .calendar-day[data-pages]::after {
   content: '';
   position: absolute;
@@ -412,7 +412,7 @@
   cursor: pointer;
 }
 
-/* Las miniaturas son hojas de papel claro en los dos temas. */
+/* Thumbnails are sheets of light paper in both themes. */
 .page-thumb {
   flex: none;
   width: 64px;
@@ -458,7 +458,7 @@
   color: var(--text-muted);
 }
 
-/* Pestaña de las páginas marcadas: asoma por el borde derecho de la fila. */
+/* Tab of marked pages: it sticks out from the right edge of the row. */
 .page-item-tab {
   flex: none;
   width: 10px;

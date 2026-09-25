@@ -1,4 +1,4 @@
-/* ─── Marca, pistas y avisos ─────────────────────────────────── */
+/* ─── Brand, hints and toasts ────────────────────────────────── */
 
 .brand {
   padding: 8px 4px;
@@ -8,7 +8,7 @@
   pointer-events: none;
 }
 
-/* Sobre madera, corcho o lino, el nombre y el estado van en una píldora para leerse bien. */
+/* On wood, cork or linen, the name and the status go in a pill so they are easy to read. */
 :root[data-textured-desk] .brand,
 :root[data-widget] .brand,
 :root[data-textured-desk] .hint,

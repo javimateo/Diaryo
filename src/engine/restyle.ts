@@ -12,24 +12,24 @@ import type {
 import type { NoteVariant } from './notes';
 import type { Color, NoteFill } from './palette';
 
-/** Cambio de estilo desde el panel (a la selección o al texto que se escribe). */
+/** Style change from the panel (to the selection or to the text being written). */
 export interface StylePatch {
-  /** Color de trazos, textos y figuras (null = figura sin borde). */
+  /** Color of strokes, texts and shapes (null = shape without a border). */
   color?: Color | null;
-  /** Color de fondo de las notas. */
+  /** Note background color. */
   noteColor?: NoteFill;
-  /** Estilo del post-it. */
+  /** Sticky note style. */
   noteVariant?: NoteVariant;
-  /** Color del texto de las notas (null = automático). */
+  /** Note text color (null = automatic). */
   noteTextColor?: Color | null;
-  /** Grosor (trazos y figuras) o tamaño de letra (textos y notas), en px de pantalla. */
+  /** Stroke width (strokes and shapes) or font size (texts and notes), in screen px. */
   size?: number;
-  /** Puntas de las flechas. */
+  /** Arrowheads. */
   startHead?: ArrowHead;
   endHead?: ArrowHead;
-  /** Tamaño de letra del texto dentro de figuras, en px de pantalla. */
+  /** Font size of the text inside shapes, in screen px. */
   labelSize?: number;
-  /** Fondo de figuras y trazos cerrados (null = sin fondo). */
+  /** Fill of shapes and closed strokes (null = no fill). */
   fill?: NoteFill | null;
   fillStyle?: FillStyle;
   roughness?: Roughness;
@@ -40,8 +40,8 @@ export interface StylePatch {
 }
 
 /**
- * Aplica un cambio de estilo a un elemento. Solo toca lo que tiene sentido para su
- * tipo (una imagen solo cambia de opacidad) y reajusta la caja si cambia la letra.
+ * Applies a style change to an element. It only touches what makes sense for its type (an
+ * image only changes opacity) and refits the box if the font changes.
  */
 export function applyStyle<T extends SceneElement>(element: T, patch: StylePatch, zoom: number): T {
   return restyle(element, patch, zoom) as T;
@@ -59,7 +59,7 @@ function restyle(el: SceneElement, patch: StylePatch, zoom: number): SceneElemen
         opacity,
         color: patch.color ?? el.color,
         size: world ?? el.size,
-        // El fondo solo tiene sentido en trazos cerrados.
+        // The fill only makes sense on closed strokes.
         fill: closed && patch.fill !== undefined ? patch.fill : el.fill,
         fillStyle: patch.fillStyle ?? el.fillStyle,
         label: restyleLabel(el.label, patch, zoom),
@@ -70,7 +70,7 @@ function restyle(el: SceneElement, patch: StylePatch, zoom: number): SceneElemen
         ...el,
         opacity,
         color: patch.color ?? el.color,
-        // Elegir un color devuelve el borde; "sin borde" lo quita.
+        // Choosing a color brings the border back; "no border" removes it.
         border: patch.color === undefined ? el.border : patch.color !== null,
         strokeWidth: world ?? el.strokeWidth,
         fill: patch.fill !== undefined ? patch.fill : el.fill,
@@ -128,8 +128,8 @@ function restyleLabel(label: Label | null, patch: StylePatch, zoom: number): Lab
 }
 
 /**
- * Clave para fundir cambios seguidos en el historial: arrastrar un deslizador o el
- * selector de color produce muchos cambios que se deshacen de una vez.
+ * Key to merge consecutive changes in the history: dragging a slider or the color picker
+ * produces many changes that are undone at once.
  */
 export function patchMergeKey(patch: StylePatch): string | undefined {
   if (patch.size !== undefined) return 'restyle-size';

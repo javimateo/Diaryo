@@ -11,45 +11,46 @@ import type {
 import type { NoteVariant } from './notes';
 import type { Color, NoteFill, ThemeMode } from './palette';
 
-/** Lo que el motor cuenta y recibe: tipos públicos, sin lógica. */
+/** What the engine reports and receives: public types, no logic. */
 
 export interface EngineTheme {
   mode: ThemeMode;
   background: string;
   dots: string;
-  /** Color de la selección. */
+  /** Selection color. */
   accent: string;
-  /** Relleno de las asas de la selección. */
+  /** Fill of the selection handles. */
   handleFill: string;
 }
 
 export interface EngineCanvases {
-  /** Capa de contenido: fondo, rejilla y elementos. */
+  /** Content layer: background, grid and elements. */
   scene: HTMLCanvasElement;
-  /** Capa superior, transparente: lo que se está dibujando ahora. Recibe el ratón. */
+  /** Top layer, transparent: what is being drawn now. It takes the mouse. */
   overlay: HTMLCanvasElement;
 }
 
 export interface EngineOptions {
   /**
-   * La mesa puede volverse transparente (en la app de escritorio, el diario flotante
-   * deja ver el escritorio). Si no, el fondo es siempre opaco, que es algo más rápido.
+   * The desk can become transparent (in the desktop app, the floating diary lets the
+   * desktop show through). Otherwise the background is always opaque, which is a bit
+   * faster.
    */
   transparent?: boolean;
   /**
-   * Capa del escritorio (app de escritorio): solo lo que hay en la mesa, sin fondo, sobre
-   * el escritorio de Windows y con la cámara fija (ver `lockCamera`).
+   * Desktop layer (desktop app): only what is on the desk, without a background, over the
+   * Windows desktop and with a fixed camera (see `lockCamera`).
    */
   deskLayer?: boolean;
 }
 
-/** Una vista: el punto del mundo en el centro de la pantalla y el zoom. */
+/** A view: the world point at the center of the screen and the zoom. */
 export interface DeskView {
   center: Vec;
   zoom: number;
 }
 
-/** Un rectángulo en píxeles de la ventana. */
+/** A rectangle in window pixels. */
 export interface ScreenRect {
   x: number;
   y: number;
@@ -57,80 +58,80 @@ export interface ScreenRect {
   height: number;
 }
 
-/** Estilo común de lo seleccionado, para poder cambiarlo desde el panel. */
+/** Common style of the selection, to change it from the panel. */
 export interface SelectionStyle {
-  /** Hay trazos o textos (se les aplica la paleta de tinta). */
+  /** There are strokes or texts (the ink palette applies to them). */
   hasInk: boolean;
-  /** Color de tinta si todos lo comparten. */
+  /** Ink color if they all share it. */
   color: Color | null;
   hasNotes: boolean;
   noteColor: NoteFill | null;
   noteVariant: NoteVariant | null;
-  /** Color del texto de las notas ('auto' = tinta automática; null = distintos). */
+  /** Note text color ('auto' = automatic ink; null = different). */
   noteTextColor: Color | 'auto' | null;
-  /** Hay textos o notas: se puede cambiar la fuente y la alineación. */
+  /** There are texts or notes: the font and alignment can be changed. */
   hasText: boolean;
   font: string | null;
   align: TextAlign | null;
-  /** Alineación vertical (notas y texto dentro de figuras). */
+  /** Vertical alignment (notes and text inside shapes). */
   valign: VerticalAlign | null;
-  /** Hay figuras o trazos cerrados: admiten fondo. */
+  /** There are shapes or closed strokes: they accept a fill. */
   hasFill: boolean;
-  /** Fondo común ('none' = sin fondo; null = distintos). */
+  /** Common fill ('none' = no fill; null = different). */
   fill: NoteFill | 'none' | null;
   fillStyle: FillStyle | null;
-  /** Hay rectángulos o elipses: se puede elegir lo "a mano" del trazo. */
+  /** There are rectangles or ellipses: the "hand-drawn" style of the stroke can be chosen. */
   hasShapes: boolean;
-  /** Hay flechas: se pueden cambiar sus puntas. */
+  /** There are arrows: their arrowheads can be changed. */
   hasArrows: boolean;
   startHead: ArrowHead | null;
   endHead: ArrowHead | null;
-  /** Las figuras tienen borde (null = unas sí y otras no). */
+  /** The shapes have a border (null = some do and some don't). */
   border: boolean | null;
-  /** Lo que tiene color de tinta son solo rectángulos y elipses (su color es el borde). */
+  /** What has an ink color is only rectangles and ellipses (their color is the border). */
   inkIsShapes: boolean;
   roughness: Roughness | null;
-  /** Hay texto dentro de figuras: su tamaño de letra (mundo) del primero. */
+  /** There is text inside shapes: the font size (world) of the first one. */
   hasLabels: boolean;
   labelSize: number | null;
-  /** Qué rango de tamaño usar, o null si la selección mezcla cosas de tamaño distinto. */
+  /** Which size range to use, or null if the selection mixes things with different sizes. */
   sizeKind: SizedKind | null;
-  /** Grosor o tamaño de letra (unidades del mundo) del primer elemento. */
+  /** Stroke width or font size (world units) of the first element. */
   size: number | null;
-  /** Opacidad del primer elemento. */
+  /** Opacity of the first element. */
   opacity: number;
 }
 
-/** Lo que la interfaz necesita saber del documento. */
+/** What the UI needs to know about the document. */
 export interface EngineState {
   canUndo: boolean;
   canRedo: boolean;
   isEmpty: boolean;
   selectionCount: number;
   selectionStyle: SelectionStyle | null;
-  /** Hay algún grupo dentro de lo seleccionado. */
+  /** There is some group in the selection. */
   selectionGrouped: boolean;
-  /** Todo lo seleccionado está bloqueado. */
+  /** Everything selected is locked. */
   selectionLocked: boolean;
-  /** Hay algo bloqueado en la página. */
+  /** Something on the page is locked. */
   hasLocked: boolean;
-  /** Hay un estilo copiado listo para pegar. */
+  /** There is a copied style ready to paste. */
   hasCopiedStyle: boolean;
-  /** Algo de lo seleccionado lleva a otra página. */
+  /** Something in the selection leads to another page. */
   selectionHasLink: boolean;
-  /** Página a la que lleva lo seleccionado (si todo lleva a la misma). */
+  /** Page the selection leads to (if everything leads to the same one). */
   selectionLink: string | null;
 }
 
 export interface ContextMenuRequest {
-  /** Posición del clic en la ventana. */
+  /** Click position in the window. */
   x: number;
   y: number;
-  /** Se hizo sobre un elemento (ya seleccionado) o sobre un hueco. */
+  /** It was on an element (already selected) or on an empty spot. */
   onElement: boolean;
 }
 
-/** Texto o nota abiertos en el editor. */
+/** Text or note open in the editor. */
 export interface EditingState {
   element: EditableElement;
   isNew: boolean;

@@ -7,12 +7,12 @@ import { Autosave, type Desk } from './autosave';
 import { DESK_ID, DESK_INFO, DiaryoDB, loadPage, saveChanges, type PageInfo } from './db';
 
 /**
- * Lo que va a la página y lo que va a la mesa al guardar (con una base de datos de
- * verdad en memoria y un motor mínimo: solo su escena).
+ * What goes to the page and what goes to the desk when saving (with a real in-memory
+ * database and a minimal engine: just its scene).
  */
 
 const PAGE: PageInfo = { id: 'hoy', date: '2026-09-25', order: 1, title: '' };
-/** Dentro del libro (x = 0) y fuera, a la derecha (x = 2000). */
+/** Inside the book (x = 0) and outside, to the right (x = 2000). */
 const INSIDE = 0;
 const OUTSIDE = 2000;
 
@@ -53,7 +53,7 @@ afterEach(async () => {
   await db?.delete();
 });
 
-/** Un diario con la página de hoy abierta y lo que haya ya guardado en la mesa. */
+/** A diary with today's page open and whatever is already saved on the desk. */
 async function open(deskElements: StrokeElement[] = []) {
   db = new DiaryoDB(`autosave-desk-${++count}`);
   const empty = { upserts: [], deletes: [], assets: [], fonts: [] };
@@ -81,8 +81,8 @@ async function open(deskElements: StrokeElement[] = []) {
   return { engine, autosave, desk, move, ids, deskSaves: () => deskSaves };
 }
 
-describe('la mesa y la página al guardar', () => {
-  it('lo nuevo va a donde queda: dentro del libro a la página, fuera a la mesa', async () => {
+describe('the desk and the page when saving', () => {
+  it('new things go where they end up: inside the book to the page, outside to the desk', async () => {
     const { engine, autosave, ids, deskSaves } = await open();
     engine.scene.apply(
       new Map([
@@ -96,8 +96,9 @@ describe('la mesa y la página al guardar', () => {
     expect(deskSaves()).toBe(1);
   });
 
-  it('lo de la mesa que está donde se abre el libro sigue en la mesa al cambiarlo', async () => {
-    // Puesto ahí desde el escritorio: es de la mesa aunque caiga dentro del libro.
+  it('a desk thing where the book opens stays on the desk when changed', async () => {
+    // Placed there from the desktop: it belongs to the desk even if it falls inside the
+    // book.
     const { move, autosave, ids } = await open([stroke('nota', INSIDE)]);
     move('nota', INSIDE + 50);
     await autosave.flush();
@@ -105,7 +106,7 @@ describe('la mesa y la página al guardar', () => {
     expect(await ids(PAGE.id)).toEqual([]);
   });
 
-  it('al cruzar el borde del libro pasa de la página a la mesa, y al volver, a la página', async () => {
+  it('crossing the edge of the book moves it from the page to the desk, and back to the page', async () => {
     const { engine, move, autosave, ids } = await open();
     engine.scene.apply(new Map([['s', stroke('s', INSIDE)]]));
     await autosave.flush();
@@ -119,7 +120,7 @@ describe('la mesa y la página al guardar', () => {
     expect(await ids(DESK_ID)).toEqual([]);
   });
 
-  it('borrar algo de la mesa lo quita de la mesa', async () => {
+  it('deleting something from the desk removes it from the desk', async () => {
     const { engine, autosave, desk, ids } = await open([stroke('nota', OUTSIDE)]);
     engine.scene.apply(new Map([['nota', null]]));
     await autosave.flush();

@@ -3,6 +3,7 @@ import { useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import type { HexColor } from '../engine/palette';
 import { useUI } from '../store/ui';
 import { hexToHsv, hsvToHex, normalizeHex, type Hsv } from './color';
+import { useT } from './useT';
 
 interface EyeDropperResult {
   sRGBHex: string;
@@ -10,11 +11,11 @@ interface EyeDropperResult {
 type EyeDropperCtor = new () => { open: () => Promise<EyeDropperResult> };
 
 /**
- * Selector de color libre: cuadro de saturación/brillo, barra de tono, código hex,
- * cuentagotas (si el navegador lo permite) y los últimos colores usados.
- * Los cambios se aplican en vivo.
+ * Custom color picker: saturation/brightness square, hue bar, hex code, eyedropper (if
+ * the browser allows it) and the recently used colors. Changes apply live.
  */
 export function ColorPicker(props: { value: HexColor; onChange: (color: HexColor) => void }) {
+  const t = useT();
   const { value, onChange } = props;
   const recent = useUI((s) => s.recentColors);
   const [hsv, setHsv] = useState<Hsv>(() => hexToHsv(value));
@@ -71,7 +72,7 @@ export function ColorPicker(props: { value: HexColor; onChange: (color: HexColor
         min={0}
         max={360}
         value={Math.round(hsv.h)}
-        aria-label="Tono"
+        aria-label={t.colors.hue}
         onChange={(e) => apply({ ...hsv, h: Number(e.target.value) })}
       />
       <div className="color-row">
@@ -80,7 +81,7 @@ export function ColorPicker(props: { value: HexColor; onChange: (color: HexColor
           className="hex-input"
           value={hexDraft}
           spellCheck={false}
-          aria-label="Código de color"
+          aria-label={t.colors.code}
           onChange={(e) => {
             setHexDraft(e.target.value as HexColor);
             const hex = normalizeHex(e.target.value);
@@ -92,15 +93,15 @@ export function ColorPicker(props: { value: HexColor; onChange: (color: HexColor
           <button
             type="button"
             className="icon-btn"
-            aria-label="Cuentagotas"
-            data-tip="Coger un color de la pantalla"
+            aria-label={t.colors.eyedropper}
+            data-tip={t.colors.eyedropperTip}
             onClick={async () => {
               try {
                 const { sRGBHex } = await new EyeDropper().open();
                 const hex = normalizeHex(sRGBHex);
                 if (hex) applyHex(hex);
               } catch {
-                // Cancelado.
+                // Cancelled.
               }
             }}
           >
@@ -109,7 +110,7 @@ export function ColorPicker(props: { value: HexColor; onChange: (color: HexColor
         )}
       </div>
       {recent.length > 0 && (
-        <div className="recent-colors" aria-label="Colores recientes">
+        <div className="recent-colors" aria-label={t.colors.recent}>
           {recent.map((color) => (
             <button
               key={color}

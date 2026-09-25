@@ -1,28 +1,19 @@
 import type { NoteElement } from './elements';
 import { resolveNoteColor, type ThemeMode } from './palette';
 
-/** Estilos de post-it (dibujados a mano en el canvas, sin imágenes). */
+/** Sticky note styles (drawn by hand on the canvas, no images). */
 export type NoteVariant = 'plain' | 'strip' | 'pin' | 'tape' | 'clip' | 'curl';
 
 export const NOTE_VARIANTS: NoteVariant[] = ['plain', 'strip', 'pin', 'tape', 'clip', 'curl'];
 
-export const NOTE_VARIANT_LABELS: Record<NoteVariant, string> = {
-  plain: 'Lisa',
-  strip: 'Franja adhesiva',
-  pin: 'Chincheta',
-  tape: 'Celo',
-  clip: 'Clip',
-  curl: 'Esquina doblada',
-};
-
-// ─── Colores ───────────────────────────────────────────────────
+// ─── Colors ───────────────────────────────────────────────────
 
 function toRgb(hex: string): [number, number, number] {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** Mezcla dos colores hex: t = 0 → a, t = 1 → b. */
+/** Mixes two hex colors: t = 0 → a, t = 1 → b. */
 function mix(a: string, b: string, t: number, alpha = 1): string {
   const [r1, g1, b1] = toRgb(a);
   const [r2, g2, b2] = toRgb(b);
@@ -30,12 +21,12 @@ function mix(a: string, b: string, t: number, alpha = 1): string {
   return `rgba(${c(r1, r2)}, ${c(g1, g2)}, ${c(b1, b2)}, ${alpha})`;
 }
 
-// ─── Cuerpo ────────────────────────────────────────────────────
+// ─── Body ─────────────────────────────────────────────────────
 
-/** Tamaño de la esquina doblada respecto a la anchura. */
+/** Size of the curled corner relative to the width. */
 const CURL = 0.17;
 
-/** Silueta del papel: cuadrada, o con la esquina inferior derecha levantada. */
+/** Paper outline: square, or with the bottom right corner lifted. */
 function bodyPath(ctx: CanvasRenderingContext2D, el: NoteElement) {
   const { width: w, height: h, variant } = el;
   ctx.beginPath();
@@ -55,8 +46,8 @@ function bodyPath(ctx: CanvasRenderingContext2D, el: NoteElement) {
 }
 
 /**
- * Papel con sombra y un degradado muy suave (más claro arriba), como la luz sobre un
- * post-it real. La sombra no sigue la transformación del canvas: se escala a mano.
+ * Paper with a shadow and a very soft gradient (lighter at the top), like the light on a
+ * real sticky note. The shadow doesn't follow the canvas transform: it is scaled by hand.
  */
 export function drawNoteBody(
   ctx: CanvasRenderingContext2D,
@@ -80,7 +71,7 @@ export function drawNoteBody(
   ctx.restore();
 
   if (el.variant === 'strip') {
-    // La franja adhesiva: algo más clara, con un filo muy fino debajo.
+    // The sticky strip: slightly lighter, with a very thin edge under it.
     const band = w * 0.13;
     ctx.fillStyle = mix(base, '#ffffff', 0.28, 0.6);
     ctx.fillRect(0, 0, w, band);
@@ -89,7 +80,7 @@ export function drawNoteBody(
   }
 }
 
-// ─── Adornos (encima del texto) ────────────────────────────────
+// ─── Decorations (over the text) ──────────────────────────────
 
 export function drawNoteDecoration(
   ctx: CanvasRenderingContext2D,
@@ -118,7 +109,7 @@ function drawPin(ctx: CanvasRenderingContext2D, w: number, pixelScale: number) {
   const cy = w * 0.065;
   const r = w * 0.052;
   ctx.save();
-  // Aguja clavada: una línea corta hacia abajo a la derecha.
+  // Pinned needle: a short line going down to the right.
   ctx.strokeStyle = '#9aa0a6';
   ctx.lineWidth = w * 0.009;
   ctx.lineCap = 'round';
@@ -126,7 +117,7 @@ function drawPin(ctx: CanvasRenderingContext2D, w: number, pixelScale: number) {
   ctx.moveTo(cx, cy);
   ctx.lineTo(cx + r * 0.9, cy + r * 1.35);
   ctx.stroke();
-  // Cabeza con sombra y brillo.
+  // Head with a shadow and a highlight.
   ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
   ctx.shadowBlur = Math.min(r * 0.8 * pixelScale, 40);
   ctx.shadowOffsetX = Math.min(r * 0.35 * pixelScale, 12);
@@ -155,7 +146,7 @@ function drawTape(ctx: CanvasRenderingContext2D, w: number, mode: ThemeMode) {
   ctx.save();
   ctx.translate(w / 2, 0);
   ctx.rotate(-0.045);
-  // Rectángulo con los extremos dentados, como celo cortado a mano.
+  // Rectangle with jagged ends, like tape torn by hand.
   ctx.beginPath();
   ctx.moveTo(-tw / 2, -th / 2);
   ctx.lineTo(tw / 2, -th / 2);
@@ -169,7 +160,7 @@ function drawTape(ctx: CanvasRenderingContext2D, w: number, mode: ThemeMode) {
     ctx.lineTo(-tw / 2 - (i % 2 ? depth : 0), y);
   }
   ctx.closePath();
-  // Celo algo mate y azulado, con sombra: se distingue sobre cualquier color de nota.
+  // Slightly matte, bluish tape with a shadow: it stands out on any note color.
   ctx.save();
   ctx.shadowColor = 'rgba(0, 0, 0, 0.18)';
   ctx.shadowBlur = w * 0.012;
@@ -180,13 +171,13 @@ function drawTape(ctx: CanvasRenderingContext2D, w: number, mode: ThemeMode) {
   ctx.strokeStyle = 'rgba(70, 90, 120, 0.28)';
   ctx.lineWidth = w * 0.004;
   ctx.stroke();
-  // Brillo del plástico.
+  // Plastic sheen.
   ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
   ctx.fillRect(-tw / 2, -th / 2 + th * 0.18, tw, th * 0.16);
   ctx.restore();
 }
 
-/** Clip metálico cruzando el borde superior, cerca de la esquina derecha. */
+/** Metal clip across the top edge, near the right corner. */
 function drawClip(ctx: CanvasRenderingContext2D, w: number, pixelScale: number) {
   const W = w * 0.075;
   const L = w * 0.3;
@@ -197,7 +188,7 @@ function drawClip(ctx: CanvasRenderingContext2D, w: number, pixelScale: number) 
   ctx.save();
   ctx.translate(w * 0.74, -L * 0.3);
   ctx.rotate(0.06);
-  // Un solo alambre con tres curvas, como un clip de verdad.
+  // A single wire with three bends, like a real clip.
   const wire = new Path2D();
   wire.moveTo(a, L * 0.34);
   wire.lineTo(a, L - inner - a);
@@ -227,7 +218,7 @@ function drawClip(ctx: CanvasRenderingContext2D, w: number, pixelScale: number) 
   ctx.restore();
 }
 
-/** Esquina inferior derecha levantada: se ve el dorso del papel y su sombra. */
+/** Bottom right corner lifted: the back of the paper and its shadow show. */
 function drawCurl(
   ctx: CanvasRenderingContext2D,
   el: NoteElement,
@@ -256,7 +247,7 @@ function drawCurl(
   flap.addColorStop(1, mix(base, '#ffffff', 0.45));
   ctx.fillStyle = flap;
   ctx.fill();
-  // Un filo apenas marcado en el pliegue.
+  // A barely visible edge on the fold.
   ctx.shadowColor = 'transparent';
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
   ctx.lineWidth = w * 0.003;

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { formatDayMonth } from '../lib/dates';
+import { formatDayMonth } from '../i18n/dates';
 import { Diary } from '../diary/diary';
 import type { PageMeta } from '../diary/pages';
 import { followLink } from './diaryActions';
@@ -9,8 +9,9 @@ import { Engine } from '../engine/engine';
 import { getDB } from '../storage/db';
 import { useUI } from '../store/ui';
 import { readCanvasTheme } from './canvasTheme';
+import { t } from '../i18n';
 
-/** Nombre corto de cada página para la etiqueta de los enlaces: título o "21 sept". */
+/** Short name of each page for the link labels: title or "21 sept". */
 function linkLabels(pages: PageMeta[]): Map<string, string> {
   const short = (text: string) => (text.length > 24 ? `${text.slice(0, 23)}…` : text);
   return new Map(pages.map((p) => [p.id, short(p.title || formatDayMonth(p.date))]));
@@ -23,6 +24,7 @@ export function CanvasView() {
   const tool = useUI((s) => s.tool);
   const styles = useUI((s) => s.styles);
   const theme = useUI((s) => s.theme);
+  const language = useUI((s) => s.settings.language);
 
   useEffect(() => {
     const {
@@ -37,7 +39,7 @@ export function CanvasView() {
       setDiaryState,
     } = useUI.getState();
     const desktop = isDesktop();
-    // En la app de escritorio, el diario flotante deja ver el escritorio.
+    // In the desktop app, the floating diary lets the desktop show through.
     const instance = new Engine(
       { scene: sceneRef.current!, overlay: overlayRef.current! },
       { transparent: desktop },
@@ -49,25 +51,25 @@ export function CanvasView() {
     instance.onContextMenu(openContextMenu);
     instance.onLinkOpen((pageId) => void followLink(pageId));
     setEngine(instance);
-    // Abrir el diario (la página de hoy) y, desde ahí, guardar cada cambio.
+    // Open the diary (today's page) and, from then on, save every change.
     const diary = new Diary(getDB(), instance, {
       onState: (state) => {
         setDiaryState(state);
-        instance.setLinkLabels(linkLabels(state.pages));
+        instance.setLinkLabels(linkLabels(state.pages), t().props.deletedPage);
       },
       onStatus: setSaveStatus,
       bookStyle: () => useUI.getState().bookStyle,
       turnSpeed: () => useUI.getState().settings.turnSpeed,
-      // La capa del escritorio enseña la misma mesa: se le avisa para que se ponga al día.
+      // The desktop layer shows the same desk: it is told so it catches up.
       onDeskSaved: desktop ? notifyDeskSaved : undefined,
     });
     setDiary(diary);
-    // En la app de escritorio, en cuanto está la página de hoy se conecta con ella.
+    // In the desktop app, as soon as today's page is there it connects with it.
     const bridge = desktop ? new DesktopBridge(instance, diary) : null;
     useUI.getState().setDesktopBridge(bridge);
     if (bridge) void diary.start().then(() => bridge.start());
     else void diary.start();
-    // Solo en desarrollo: acceso desde la consola para depurar y medir.
+    // Development only: access from the console for debugging and measuring.
     if (import.meta.env.DEV) Object.assign(window, { diaryo: instance });
     return () => {
       bridge?.stop();
@@ -93,6 +95,14 @@ export function CanvasView() {
   useEffect(() => {
     engine?.setTheme(readCanvasTheme(theme));
   }, [engine, theme]);
+
+  // When the language changes, what is written on the book (the date, "hoy", the labels)
+  // and the link labels.
+  useEffect(() => {
+    const { diary, diaryState } = useUI.getState();
+    diary?.refreshBook();
+    engine?.setLinkLabels(linkLabels(diaryState.pages), t().props.deletedPage);
+  }, [engine, language]);
 
   return (
     <>

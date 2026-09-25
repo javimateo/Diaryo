@@ -1,4 +1,4 @@
-/** Interruptor de sí o no. */
+/** Yes/no switch. */
 export function Switch({
   checked,
   label,

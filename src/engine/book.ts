@@ -5,92 +5,111 @@ import type { ThemeMode } from './palette';
 
 export type PaperStyle = 'lines' | 'grid' | 'dots' | 'plain' | 'cornell' | 'planner' | 'isometric';
 
-/** Tipos de hoja, en el orden en que se ofrecen. */
-export const PAPERS: Record<PaperStyle, string> = {
-  lines: 'Rayas',
-  grid: 'Cuadrícula',
-  dots: 'Puntos',
-  plain: 'Lisa',
-  cornell: 'Cornell',
-  planner: 'Agenda',
-  isometric: 'Isométrica',
-};
+/** Paper types, in the order they are offered. */
+export const PAPER_STYLES: PaperStyle[] = [
+  'lines',
+  'grid',
+  'dots',
+  'plain',
+  'cornell',
+  'planner',
+  'isometric',
+];
 
 export const isPaperStyle = (value: unknown): value is PaperStyle =>
-  typeof value === 'string' && Object.hasOwn(PAPERS, value);
+  PAPER_STYLES.includes(value as PaperStyle);
+
+/** Bindings, in the order they are offered. */
+export const BINDINGS: Binding[] = ['rings', 'sewn'];
 export type Binding = 'rings' | 'sewn';
 export type PaperColor = 'cream' | 'white' | 'yellow' | 'pink' | 'blue' | 'green' | 'kraft';
 
-/** Colores de hoja: el de día y su versión "de noche" (tema oscuro). */
-export const PAPER_COLORS: Record<PaperColor, { name: string; light: string; dark: string }> = {
-  cream: { name: 'Crema', light: '#fdfbf5', dark: '#25241f' },
-  white: { name: 'Blanco', light: '#ffffff', dark: '#262626' },
-  yellow: { name: 'Amarillo', light: '#fbf3cf', dark: '#2c2a1d' },
-  pink: { name: 'Rosa', light: '#fbe6e4', dark: '#2e2324' },
-  blue: { name: 'Azul', light: '#e6effa', dark: '#1f2530' },
-  green: { name: 'Verde', light: '#e7f2e2', dark: '#212a22' },
-  kraft: { name: 'Kraft', light: '#e4d1ad', dark: '#2d271d' },
+/** Paper colors: the daytime one and its "night" version (dark theme). */
+export const PAPER_COLORS: Record<PaperColor, { light: string; dark: string }> = {
+  cream: { light: '#fdfbf5', dark: '#25241f' },
+  white: { light: '#ffffff', dark: '#262626' },
+  yellow: { light: '#fbf3cf', dark: '#2c2a1d' },
+  pink: { light: '#fbe6e4', dark: '#2e2324' },
+  blue: { light: '#e6effa', dark: '#1f2530' },
+  green: { light: '#e7f2e2', dark: '#212a22' },
+  kraft: { light: '#e4d1ad', dark: '#2d271d' },
 };
 
-/** Aspecto del diario. La hoja es la de todo el diario, salvo en las páginas que tengan otra. */
+/** Diary look. The paper is the whole diary's, except on pages that have their own. */
 export interface BookStyle {
   paper: PaperStyle;
   paperColor: PaperColor;
   binding: Binding;
-  /** Color de las tapas. */
+  /** Cover color. */
   cover: string;
   material: CoverMaterial;
-  /** Goma elástica en la tapa de atrás (asoma arriba y abajo). */
+  /** Elastic band on the back cover (it shows at the top and bottom). */
   elastic: boolean;
-  /** La mesa sobre la que está el diario. */
+  /** The desk the diary sits on. */
   desk: DeskStyle;
 }
 
-/** Pestaña de una página marcada como importante. */
+/** Tab of a page marked as important. */
 export interface BookTab {
   pageId: string;
   label: string;
   color: string;
-  /** Asoma por la izquierda (página anterior) o por la derecha (siguiente o abierta). */
+  /** It sticks out on the left (previous page) or on the right (next or open one). */
   side: 'left' | 'right';
-  /** Es la página abierta. */
+  /** It is the open page. */
   current: boolean;
 }
 
-/** La doble página abierta: un día del diario. */
-export interface BookSpread {
-  style: BookStyle;
-  /** Fecha escrita a mano arriba de la página izquierda. */
-  date: string;
-  /** Título de la página, arriba de la derecha. */
-  title: string;
-  today: boolean;
-  /** Número de la página izquierda (la derecha es el siguiente). */
-  pageNumber: number;
-  /** Pestañas de las páginas importantes, en el orden del diario. */
-  tabs: BookTab[];
+/**
+ * What is written on the book besides each page's content: today's label and the printed
+ * labels of the Cornell and Planner papers. They arrive already in the app language.
+ */
+export interface BookLabels {
+  today: string;
+  cues: string;
+  notes: string;
+  summary: string;
+  tasks: string;
 }
 
-/** Tamaño de cada página en unidades del mundo (proporción parecida a A5). */
+/** The open double page: a diary day. */
+export interface BookSpread {
+  style: BookStyle;
+  /** Handwritten date at the top of the left page. */
+  date: string;
+  /** Page title, at the top of the right one. */
+  title: string;
+  today: boolean;
+  /** Number of the left page (the right one is the next). */
+  pageNumber: number;
+  /** Tabs of the important pages, in diary order. */
+  tabs: BookTab[];
+  labels: BookLabels;
+}
+
+/** Size of each page in world units (proportions similar to A5). */
 export const PAGE_WIDTH = 760;
 export const PAGE_HEIGHT = 1040;
 const TOP = -PAGE_HEIGHT / 2;
 const BOTTOM = PAGE_HEIGHT / 2;
-/** Canto de hojas que asoma bajo cada página, y en cuántas rayas se ve. */
+/** Edge of the sheets showing under each page, and in how many lines it shows. */
 const BLOCK = 8;
 const BLOCK_LINES = 6;
-/** Lo que sobresalen las tapas más allá del canto de las hojas. */
+/** How far the covers stick out beyond the edge of the sheets. */
 const COVER_MARGIN = 16;
 const COVER_OUT = BLOCK + COVER_MARGIN;
 const COVER_RADIUS = 18;
-/** Grosor de las tapas: su canto asoma por abajo. */
+/** Cover thickness: its edge shows at the bottom. */
 const COVER_THICKNESS = 5;
-/** Separación entre las dos tapas en el lomo (con anillas). */
+/** Gap between the two covers at the spine (with rings). */
 const RING_GAP = 7;
-/** Media anchura del lomo de tela (cosido). */
+/** Half width of the cloth spine (sewn). */
 const SPINE_STRIP = 34;
 const ELASTIC_WIDTH = 14;
-/** Distancia de la goma al canto de fuera de las tapas, y lo que asoma arriba y abajo. */
+/**
+ * Distance from the elastic to the outer edge of the covers, and how much it shows at the
+ * top and bottom.
+ */
 const ELASTIC_INSET = 34;
 const ELASTIC_PEEK = 22;
 const RING_COUNT = 14;
@@ -113,15 +132,16 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
 
 export const COVER_COLORS = ['#b8573f', '#c9677e', '#46699c', '#4f7d5c', '#c99a2e', '#2f2d2a'];
 
-/** Las dos páginas: la izquierda termina en el lomo (x = 0) y la derecha empieza en él. */
+/** The two pages: the left one ends at the spine (x = 0) and the right one starts there. */
 export const PAGES = {
   left: { minX: -PAGE_WIDTH, minY: TOP, maxX: 0, maxY: BOTTOM },
   right: { minX: 0, minY: TOP, maxX: PAGE_WIDTH, maxY: BOTTOM },
 } satisfies Record<string, Bounds>;
 
 /**
- * ¿Es de la página (está dentro del libro) o de la mesa (fuera, común a todo el
- * diario)? Cuenta el centro del elemento: al sacar algo del libro pasa a la mesa.
+ * Does it belong to the page (inside the book) or to the desk (outside, shared by the
+ * whole diary)? The element's center counts: taking something out of the book moves it to
+ * the desk.
  */
 export function isOnPage(bounds: Bounds): boolean {
   const cx = (bounds.minX + bounds.maxX) / 2;
@@ -130,14 +150,14 @@ export function isOnPage(bounds: Bounds): boolean {
 }
 
 /**
- * Todo el libro abierto, con las tapas (y sitio para las pestañas a los dos lados si
- * hay alguna: así el encuadre no cambia cuando una pestaña se pasa al otro lado).
+ * The whole open book, with the covers (and room for the tabs on both sides if there is
+ * any: that way the framing doesn't change when a tab moves to the other side).
  */
 export function bookBounds(spread?: BookSpread | null): Bounds {
   return bookBoundsWith(!!spread?.tabs.length);
 }
 
-/** Todo el libro abierto, con sitio para las pestañas si las hay. */
+/** The whole open book, with room for the tabs if there are any. */
 export function bookBoundsWith(hasTabs: boolean): Bounds {
   const m = COVER_OUT;
   const tabs = hasTabs ? TAB_OUT + TAB_CURRENT_EXTRA : 0;
@@ -149,7 +169,7 @@ export function bookBoundsWith(hasTabs: boolean): Bounds {
   };
 }
 
-/** Lo que asoma cada pestaña por fuera de las tapas, su alto y la separación. */
+/** How far each tab sticks out beyond the covers, its height and the gap. */
 const TAB_OUT = 104;
 const TAB_CURRENT_EXTRA = 14;
 const TAB_HEIGHT = 74;
@@ -161,9 +181,9 @@ export interface TabRect extends Bounds {
 }
 
 /**
- * Dónde va cada pestaña. Todas tienen su hueco fijo en el canto (en el orden del
- * diario), así no se mueven al pasar página: solo cambian de lado. Si no caben, se
- * solapan un poco, como pestañas de verdad.
+ * Where each tab goes. They all have their fixed slot on the edge (in diary order), so
+ * they don't move when turning pages: they only change sides. If they don't fit, they
+ * overlap a little, like real tabs.
  */
 export function tabRects(spread: BookSpread): TabRect[] {
   const n = spread.tabs.length;
@@ -174,7 +194,7 @@ export function tabRects(spread: BookSpread): TabRect[] {
   return spread.tabs.map((tab, i) => {
     const out = TAB_OUT + (tab.current ? TAB_CURRENT_EXTRA : 0);
     const minY = TAB_TOP + i * step;
-    // Empiezan bajo las tapas (se ve solo lo que asoma).
+    // They start under the covers (only the part that sticks out is visible).
     const inner = PAGE_WIDTH - 40;
     return tab.side === 'right'
       ? { tab, minX: inner, maxX: edge + out, minY, maxY: minY + TAB_HEIGHT }
@@ -182,7 +202,7 @@ export function tabRects(spread: BookSpread): TabRect[] {
   });
 }
 
-/** Pestaña bajo ese punto (solo la parte que asoma), o null. */
+/** Tab under that point (only the part that sticks out), or null. */
 export function tabAt(spread: BookSpread, p: { x: number; y: number }): BookTab | null {
   const edge = PAGE_WIDTH + COVER_OUT;
   for (const r of tabRects(spread).reverse()) {
@@ -203,14 +223,14 @@ function drawTabs(ctx: CanvasRenderingContext2D, spread: BookSpread, pixelScale:
     ctx.shadowBlur = 8 * pixelScale;
     ctx.shadowOffsetY = 2 * pixelScale;
     ctx.beginPath();
-    // Esquinas de fuera redondeadas, como una pestaña adhesiva.
+    // Rounded outer corners, like a sticky tab.
     const radius = right ? [0, 16, 16, 0] : [16, 0, 0, 16];
     ctx.roundRect(r.minX, r.minY, r.maxX - r.minX, r.maxY - r.minY, radius);
     ctx.fillStyle = tab.color;
     ctx.fill();
     ctx.restore();
 
-    // Texto en la parte que asoma, ajustado al hueco.
+    // Text on the part that sticks out, fitted to the slot.
     const out = TAB_OUT + (tab.current ? TAB_CURRENT_EXTRA : 0) - 18;
     ctx.font = `600 30px ${HAND_FONT}`;
     let label = tab.label;
@@ -230,10 +250,10 @@ function drawTabs(ctx: CanvasRenderingContext2D, spread: BookSpread, pixelScale:
 interface Colors {
   paper: string;
   sheet: [string, string];
-  /** Agujeros de las anillas. */
+  /** Ring holes. */
   hole: string;
   line: string;
-  /** Líneas que separan zonas (Cornell, agenda). */
+  /** Lines separating areas (Cornell, planner). */
   divider: string;
   margin: string;
   pencil: string;
@@ -251,7 +271,7 @@ const COLORS: Record<ThemeMode, Colors> = {
     pencil: '#a0957f',
     ink: '#2b3242',
   },
-  // "Papel de noche": hojas oscuras y tinta clara.
+  // "Night paper": dark sheets and light ink.
   dark: {
     paper: '#25241f',
     sheet: ['#1d1c18', '#302e28'],
@@ -264,12 +284,12 @@ const COLORS: Record<ThemeMode, Colors> = {
   },
 };
 
-/** Grosor de línea: el del papel, pero nunca menos de un píxel físico. */
+/** Line width: the paper's, but never less than one physical pixel. */
 const hairline = (world: number, pixelScale: number) => Math.max(world, 1 / pixelScale);
 
 /**
- * Dibuja el libro abierto bajo el contenido: tapas, grosor de hojas, papel con su
- * pauta, la fecha escrita a mano y los números de página. Coordenadas del mundo.
+ * Draws the open book under the content: covers, sheet thickness, paper with its ruling,
+ * the handwritten date and the page numbers. World coordinates.
  */
 export function drawBook(
   ctx: CanvasRenderingContext2D,
@@ -282,7 +302,7 @@ export function drawBook(
   const { style } = spread;
 
   if (!pagesOnly) {
-    // Las pestañas y la goma salen de debajo de las tapas.
+    // The tabs and the elastic come out from under the covers.
     drawTabs(ctx, spread, pixelScale);
     if (style.elastic) drawElastic(ctx, pixelScale);
     drawCovers(ctx, style, mode, pixelScale);
@@ -291,12 +311,12 @@ export function drawBook(
 
   const colors = colorsFor(mode, style.paperColor);
   for (const side of ['left', 'right'] as const) {
-    drawPaper(ctx, side, style.paper, colors, pixelScale);
+    drawPaper(ctx, side, style.paper, colors, pixelScale, spread.labels);
   }
   if (style.binding === 'rings') drawRingHoles(ctx, colors);
   drawSpineShade(ctx, style, mode);
 
-  // Fecha escrita a mano y título.
+  // Handwritten date and title.
   ctx.fillStyle = c.ink;
   ctx.textBaseline = 'alphabetic';
   ctx.font = `600 54px ${HAND_FONT}`;
@@ -305,13 +325,15 @@ export function drawBook(
   ctx.fillText(spread.date, dateX, dateY);
   if (spread.today) {
     const x = dateX + ctx.measureText(spread.date).width + 22;
+    // The label, as wide as its word ("hoy", "today").
+    ctx.font = `600 36px ${HAND_FONT}`;
+    const width = ctx.measureText(spread.labels.today).width + 36;
     ctx.beginPath();
-    ctx.roundRect(x, dateY - 40, 84, 48, 24);
+    ctx.roundRect(x, dateY - 40, width, 48, 24);
     ctx.fillStyle = '#e9785f';
     ctx.fill();
-    ctx.font = `600 36px ${HAND_FONT}`;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('hoy', x + 18, dateY - 5);
+    ctx.fillText(spread.labels.today, x + 18, dateY - 5);
   }
   if (spread.title) {
     ctx.font = `600 50px ${HAND_FONT}`;
@@ -319,7 +341,7 @@ export function drawBook(
     ctx.fillText(spread.title, 90, dateY, PAGE_WIDTH - 150);
   }
 
-  // Números de página en las esquinas de fuera.
+  // Page numbers in the outer corners.
   ctx.font = `400 34px ${HAND_FONT}`;
   ctx.fillStyle = c.pencil;
   ctx.textAlign = 'left';
@@ -329,7 +351,7 @@ export function drawBook(
   ctx.textAlign = 'left';
 }
 
-/** Aro de la goma elástica (va por detrás de la tapa de atrás y asoma arriba y abajo). */
+/** Loop of the elastic band (it goes behind the back cover and shows at the top and bottom). */
 function drawElastic(ctx: CanvasRenderingContext2D, pixelScale: number) {
   const x = PAGE_WIDTH + COVER_OUT - ELASTIC_INSET;
   const top = TOP - COVER_OUT - ELASTIC_PEEK;
@@ -343,7 +365,7 @@ function drawElastic(ctx: CanvasRenderingContext2D, pixelScale: number) {
   ctx.roundRect(x - ELASTIC_WIDTH / 2, top, ELASTIC_WIDTH, height, ELASTIC_WIDTH / 2);
   ctx.fill();
   ctx.restore();
-  // Tejido de la goma: estrías finas y un brillo a un lado.
+  // Elastic weave: fine ridges and a highlight on one side.
   ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
   for (let y = top + 3; y < top + height - 3; y += 4) {
     ctx.fillRect(x - ELASTIC_WIDTH / 2 + 1.5, y, ELASTIC_WIDTH - 3, 1.4);
@@ -373,15 +395,15 @@ function grainPattern(ctx: CanvasRenderingContext2D, texture: HTMLCanvasElement)
   return pattern;
 }
 
-/** Color de las tapas (el cartón lleva el suyo). */
+/** Cover color (cardboard has its own). */
 export const coverColor = (style: BookStyle) =>
   style.material === 'kraft' ? KRAFT_COLOR : style.cover;
 
 /**
- * Tapas: con anillas son dos cartones separados en el lomo; cosido, una sola tapa con
- * su lomo de tela. Tienen grosor (su canto, más oscuro, asoma abajo y por fuera), el
- * grano de su material, una luz suave y, si son de cuero, un pespunte en el borde.
- * Proyectan una sombra en dos capas: pegada al libro y difusa.
+ * Covers: with rings they are two boards separated at the spine; sewn, a single cover
+ * with its cloth spine. They have thickness (their darker edge shows at the bottom and
+ * outside), the grain of their material, a soft light and, if leather, stitching along
+ * the border. They cast a two-layer shadow: one close to the book and a diffuse one.
  */
 function drawCovers(
   ctx: CanvasRenderingContext2D,
@@ -389,7 +411,7 @@ function drawCovers(
   mode: ThemeMode,
   pixelScale: number,
 ) {
-  // Tonos de las tapas (de noche, algo más apagadas, como el resto del diario).
+  // Cover tones (at night, a bit more muted, like the rest of the diary).
   const night = mode === 'dark' ? 0.78 : 1;
   const tone = (amount: number) => shade(coverColor(style), (1 + amount) * night - 1);
   const color = tone(0);
@@ -417,7 +439,7 @@ function drawCovers(
     }
   };
 
-  // Sombra en dos capas: la difusa y la de contacto.
+  // Two-layer shadow: the diffuse one and the contact one.
   const dark = mode === 'dark';
   const tint = dark ? '0, 0, 0' : '50, 32, 15';
   for (const [blur, offset, alpha] of [
@@ -434,7 +456,7 @@ function drawCovers(
     ctx.restore();
   }
 
-  // Canto (grosor) y cara de la tapa, un poco levantada.
+  // Edge (thickness) and face of the cover, slightly raised.
   trace();
   ctx.fillStyle = tone(-0.32);
   ctx.fill();
@@ -445,7 +467,7 @@ function drawCovers(
   ctx.save();
   trace(0, COVER_THICKNESS);
   ctx.clip();
-  // Lomo de tela (cosido): una franja algo más oscura con sus pliegues.
+  // Cloth spine (sewn): a slightly darker strip with its folds.
   if (!rings) {
     ctx.fillStyle = tone(-0.14);
     ctx.fillRect(-SPINE_STRIP, top, SPINE_STRIP * 2, bottom - top);
@@ -463,7 +485,7 @@ function drawCovers(
       ctx.stroke();
     }
   }
-  // Grano del material (se funde de lejos, donde ya no se distingue).
+  // Material grain (it fades out from afar, where it can no longer be seen).
   const grain = coverGrain(style.material);
   const grainAlpha = Math.min(1, Math.max(0, (pixelScale * GRAIN_SCALE - 0.35) / 0.4));
   const pattern = grain && grainAlpha > 0 ? grainPattern(ctx, grain) : null;
@@ -475,7 +497,7 @@ function drawCovers(
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
   }
-  // Luz suave desde arriba a la izquierda.
+  // Soft light from the top left.
   const light = ctx.createLinearGradient(-outer, top, outer * 0.6, bottom);
   light.addColorStop(0, 'rgba(255, 255, 255, 0.13)');
   light.addColorStop(0.45, 'rgba(255, 255, 255, 0)');
@@ -484,7 +506,7 @@ function drawCovers(
   ctx.fillRect(-outer, top, outer * 2, bottom - top);
   ctx.restore();
 
-  // Pespunte del cuero, cerca del borde.
+  // Leather stitching, near the border.
   if (style.material === 'leather') {
     const inset = 9;
     ctx.save();
@@ -504,8 +526,9 @@ function drawCovers(
 }
 
 /**
- * Canto de las hojas: el bloque de papel bajo cada página, que asoma por fuera y por
- * abajo en rayas muy finas. Siempre igual, así el libro no cambia al pasar página.
+ * Edge of the sheets: the block of paper under each page, showing outside and at the
+ * bottom in very thin lines. Always the same, so the book doesn't change when turning
+ * pages.
  */
 function drawPageBlock(ctx: CanvasRenderingContext2D, c: Colors) {
   const step = BLOCK / BLOCK_LINES;
@@ -517,11 +540,11 @@ function drawPageBlock(ctx: CanvasRenderingContext2D, c: Colors) {
   }
 }
 
-/** Agujeros de las anillas en el papel (se ve la hoja de debajo). */
+/** Ring holes in the paper (the sheet underneath shows). */
 function drawRingHoles(ctx: CanvasRenderingContext2D, c: Colors) {
   for (const y of ringPositions()) {
     for (const x of [-RING_HOLE_X, RING_HOLE_X]) {
-      // Dentro del agujero, la hoja de debajo en sombra.
+      // Inside the hole, the sheet underneath in shadow.
       ctx.fillStyle = c.hole;
       ctx.beginPath();
       ctx.arc(x, y, RING_HOLE_RADIUS, 0, Math.PI * 2);
@@ -535,7 +558,7 @@ function drawRingHoles(ctx: CanvasRenderingContext2D, c: Colors) {
   }
 }
 
-/** Sombra del lomo: la hoja se hunde hacia el centro (mucho más si es cosido). */
+/** Spine shadow: the sheet sinks towards the center (much more if sewn). */
 function drawSpineShade(ctx: CanvasRenderingContext2D, style: BookStyle, mode: ThemeMode) {
   const sewn = style.binding === 'sewn';
   const width = sewn ? 170 : 80;
@@ -545,7 +568,7 @@ function drawSpineShade(ctx: CanvasRenderingContext2D, style: BookStyle, mode: T
     const gradient = ctx.createLinearGradient(0, 0, dir * width, 0);
     gradient.addColorStop(0, `rgba(${tint}, ${deep})`);
     gradient.addColorStop(0.22, `rgba(${tint}, ${deep * 0.35})`);
-    // La hoja se levanta un poco antes de aplanarse: un brillo muy leve.
+    // The sheet rises a little before flattening: a very faint highlight.
     if (sewn && mode === 'light') gradient.addColorStop(0.55, 'rgba(255, 255, 255, 0.06)');
     gradient.addColorStop(1, `rgba(${tint}, 0)`);
     ctx.fillStyle = gradient;
@@ -558,11 +581,11 @@ function colorsFor(mode: ThemeMode, paperColor: PaperColor): Colors {
   return { ...COLORS[mode], paper: paper[mode] };
 }
 
-/** Márgenes de las líneas: más cerca del canto de fuera que del lomo. */
+/** Line margins: closer to the outer edge than to the spine. */
 const insetsOf = (side: 'left' | 'right'): [number, number] =>
   side === 'left' ? [30, 40] : [40, 30];
 
-/** Líneas horizontales de `from` a `to`. */
+/** Horizontal lines from `from` to `to`. */
 function ruled(
   ctx: CanvasRenderingContext2D,
   page: Bounds,
@@ -582,7 +605,7 @@ function ruled(
 
 const PRINT_FONT = '"Inter Variable", system-ui, sans-serif';
 
-/** Rótulo impreso en la hoja ("RESUMEN", "TAREAS"…), pequeño y en gris. */
+/** Label printed on the sheet ("SUMMARY", "TASKS"…), small and grey. */
 function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, c: Colors) {
   ctx.save();
   ctx.font = `600 15px ${PRINT_FONT}`;
@@ -593,13 +616,14 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
   ctx.restore();
 }
 
-/** Cornell: columna de ideas clave, notas y un resumen abajo. */
+/** Cornell: cue column, notes and a summary at the bottom. */
 function drawCornell(
   ctx: CanvasRenderingContext2D,
   page: Bounds,
   side: 'left' | 'right',
   c: Colors,
   pixelScale: number,
+  labels: BookLabels,
 ) {
   const [left, right] = insetsOf(side);
   const header = TOP + 128;
@@ -617,22 +641,23 @@ function drawCornell(
   ctx.lineTo(page.maxX - right, summary);
   ctx.stroke();
   const row = FIRST_LINE + 27;
-  label(ctx, 'IDEAS CLAVE', page.minX + left + 12, row, c);
-  label(ctx, 'NOTAS', cue + 16, row, c);
-  label(ctx, 'RESUMEN', page.minX + left + 12, summary + 27, c);
+  label(ctx, labels.cues, page.minX + left + 12, row, c);
+  label(ctx, labels.notes, cue + 16, row, c);
+  label(ctx, labels.summary, page.minX + left + 12, summary + 27, c);
 }
 
 const HOUR_HEIGHT = 50;
 const FIRST_HOUR = 7;
 const LAST_HOUR = 22;
 
-/** Agenda: horas a la izquierda; tareas con su casilla y notas a la derecha. */
+/** Planner: hours on the left; tasks with their checkbox and notes on the right. */
 function drawPlanner(
   ctx: CanvasRenderingContext2D,
   page: Bounds,
   side: 'left' | 'right',
   c: Colors,
   pixelScale: number,
+  labels: BookLabels,
 ) {
   const [left, right] = insetsOf(side);
   const start = FIRST_LINE;
@@ -641,7 +666,7 @@ function drawPlanner(
 
   if (side === 'left') {
     const column = page.minX + left + 74;
-    // Medias horas, más suaves.
+    // Half hours, softer.
     ctx.save();
     ctx.globalAlpha = 0.55;
     ctx.setLineDash([6, 8]);
@@ -671,7 +696,7 @@ function drawPlanner(
 
   const tasks = 9;
   ruled(ctx, page, side, start, lineAt(rows) + 1, HOUR_HEIGHT);
-  label(ctx, 'TAREAS', page.minX + left + 12, start - 12, c);
+  label(ctx, labels.tasks, page.minX + left + 12, start - 12, c);
   ctx.strokeStyle = c.divider;
   ctx.lineWidth = hairline(2, pixelScale);
   const box = 20;
@@ -685,7 +710,7 @@ function drawPlanner(
   ctx.moveTo(page.minX + left, lineAt(tasks + 1));
   ctx.lineTo(page.maxX - right, lineAt(tasks + 1));
   ctx.stroke();
-  label(ctx, 'NOTAS', page.minX + left + 12, lineAt(tasks + 1) + 30, c);
+  label(ctx, labels.notes, page.minX + left + 12, lineAt(tasks + 1) + 30, c);
 }
 
 function drawPaper(
@@ -694,6 +719,7 @@ function drawPaper(
   paper: PaperStyle,
   c: Colors,
   pixelScale: number,
+  labels: BookLabels,
 ) {
   const page = PAGES[side];
   ctx.fillStyle = c.paper;
@@ -703,7 +729,7 @@ function drawPaper(
 
   if (paper === 'lines') {
     ruled(ctx, page, side, FIRST_LINE, page.maxY - 60, LINE_SPACING);
-    // Margen rojo.
+    // Red margin.
     const x = side === 'left' ? page.minX + 96 : page.minX + 110;
     ctx.strokeStyle = c.margin;
     ctx.beginPath();
@@ -732,7 +758,7 @@ function drawPaper(
     }
     ctx.fill();
   } else if (paper === 'isometric') {
-    // Puntos en triángulos: cada fila, desplazada media separación.
+    // Dots in triangles: each row, shifted half a gap.
     const r = hairline(2.2, pixelScale);
     const rowHeight = (GRID_SPACING * Math.sqrt(3)) / 2;
     ctx.fillStyle = c.line;
@@ -746,26 +772,27 @@ function drawPaper(
     }
     ctx.fill();
   } else if (paper === 'cornell') {
-    drawCornell(ctx, page, side, c, pixelScale);
+    drawCornell(ctx, page, side, c, pixelScale, labels);
   } else if (paper === 'planner') {
-    drawPlanner(ctx, page, side, c, pixelScale);
+    drawPlanner(ctx, page, side, c, pixelScale, labels);
   }
 }
 
 const previews = new Map<string, string>();
 
 /**
- * Una página de ese tipo en pequeño (la izquierda; la de la agenda lleva las horas),
- * para elegir la hoja. Se guarda para no volver a dibujarla.
+ * A page of that type in small (the left one; the planner's carries the hours), to choose
+ * the paper. It is cached so it isn't drawn again.
  */
 export function paperPreview(
   paper: PaperStyle,
   mode: ThemeMode,
   paperColor: PaperColor,
   width: number,
+  labels: BookLabels,
 ): string {
   const dpr = window.devicePixelRatio || 1;
-  const key = `${paper}/${mode}/${paperColor}/${width}/${dpr}`;
+  const key = `${paper}/${mode}/${paperColor}/${width}/${dpr}/${labels.notes}`;
   const cached = previews.get(key);
   if (cached) return cached;
   const scale = (width / PAGE_WIDTH) * dpr;
@@ -774,22 +801,22 @@ export function paperPreview(
   canvas.height = Math.round(PAGE_HEIGHT * scale);
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(scale, 0, 0, scale, PAGE_WIDTH * scale, (PAGE_HEIGHT / 2) * scale);
-  drawPaper(ctx, 'left', paper, colorsFor(mode, paperColor), scale);
+  drawPaper(ctx, 'left', paper, colorsFor(mode, paperColor), scale, labels);
   const url = canvas.toDataURL();
   previews.set(key, url);
   return url;
 }
 
-/** Altura de cada anilla. */
+/** Height of each ring. */
 function ringPositions(): number[] {
   const step = (PAGE_HEIGHT - 100) / (RING_COUNT - 1);
   return Array.from({ length: RING_COUNT }, (_, i) => TOP + 50 + i * step);
 }
 
-/** Encuadernación por encima del contenido: anillas o costura en el lomo. */
+/** Binding above the content: rings or stitching on the spine. */
 export function drawBinding(ctx: CanvasRenderingContext2D, spread: BookSpread, pixelScale: number) {
   if (spread.style.binding === 'sewn') {
-    // Hilo en el pliegue central.
+    // Thread in the central fold.
     ctx.strokeStyle = 'rgba(120, 100, 80, 0.55)';
     ctx.lineWidth = hairline(2.2, pixelScale);
     ctx.setLineDash([26, 30]);
@@ -802,13 +829,13 @@ export function drawBinding(ctx: CanvasRenderingContext2D, spread: BookSpread, p
   }
   ctx.lineCap = 'round';
   for (const y of ringPositions()) {
-    // Sombra del aro sobre el papel.
+    // Ring shadow on the paper.
     ctx.strokeStyle = 'rgba(40, 28, 16, 0.2)';
     ctx.lineWidth = 8;
     ctx.beginPath();
     ctx.ellipse(4, y + 4, 26, 15, 0, Math.PI * 1.05, Math.PI * 1.95);
     ctx.stroke();
-    // Metal: borde oscuro, cuerpo y un brillo.
+    // Metal: dark border, body and a highlight.
     for (const [color, width] of [
       ['#50555d', 10],
       ['#9ba1aa', 6.5],

@@ -29,8 +29,8 @@ const opacityOf = (raw: Raw, fallback: number) =>
 const sizeOf = (raw: Raw, kind: SizedKind, fallback: number) =>
   typeof raw?.size === 'number' && Number.isFinite(raw.size) ? clampSize(kind, raw.size) : fallback;
 
-// Las fuentes subidas aún no están registradas al arrancar: se aceptan igualmente y,
-// si no aparecen, se dibuja con la fuente por defecto.
+// Uploaded fonts aren't registered yet at startup: they are accepted anyway and, if they
+// don't show up, the default font is used.
 const fontOf = (raw: Raw, fallback: string) =>
   typeof raw?.font === 'string' && (fonts.has(raw.font) || raw.font.startsWith('custom-'))
     ? raw.font
@@ -117,7 +117,7 @@ function shapeStyle(raw: Raw): ShapeStyle {
   };
 }
 
-/** Lee los estilos guardados, corrigiendo lo que falte o no sea válido. */
+/** Reads the saved styles, fixing whatever is missing or invalid. */
 export function parseStyles(json: string | null): ToolStyles {
   try {
     const saved = JSON.parse(json ?? 'null') as Record<string, Raw> | null;
@@ -134,7 +134,7 @@ export function parseStyles(json: string | null): ToolStyles {
   }
 }
 
-/** Qué rango de tamaños usa cada herramienta. */
+/** Which size range each tool uses. */
 export const SIZE_KIND: Record<keyof ToolStyles, SizedKind> = {
   pen: 'pen',
   marker: 'marker',
@@ -154,7 +154,7 @@ export function mergeToolStyle<K extends keyof ToolStyles>(
   return { ...styles, [tool]: next };
 }
 
-/** Colores libres usados hace poco (los más recientes primero). */
+/** Custom colors used recently (most recent first). */
 export const RECENT_COLORS_LIMIT = 8;
 
 export function parseRecentColors(json: string | null): HexColor[] {

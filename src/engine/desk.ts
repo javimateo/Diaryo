@@ -3,18 +3,13 @@ import type { ThemeMode } from './palette';
 
 export type DeskStyle = 'plain' | 'wood' | 'cork' | 'linen';
 
-/** Mesas, en el orden en que se ofrecen. */
-export const DESKS: Record<DeskStyle, string> = {
-  plain: 'Lisa',
-  wood: 'Madera',
-  cork: 'Corcho',
-  linen: 'Lino',
-};
+/** Desks, in the order they are offered. */
+export const DESKS: DeskStyle[] = ['plain', 'wood', 'cork', 'linen'];
 
-/** Lado de la textura, en píxeles. */
+/** Side of the texture, in pixels. */
 export const DESK_TILE = 512;
 
-/** Unidades del mundo por píxel de cada textura (tablas anchas, gránulos pequeños…). */
+/** World units per pixel of each texture (wide planks, small granules…). */
 export const DESK_SCALE: Record<DeskStyle, number> = {
   plain: 1,
   wood: 2.5,
@@ -24,7 +19,7 @@ export const DESK_SCALE: Record<DeskStyle, number> = {
 
 type RGB = [number, number, number];
 
-/** Colores de cada mesa: base y veta (o grano), de día y de noche. */
+/** Colors of each desk: base and grain, for day and night. */
 const PALETTES: Record<Exclude<DeskStyle, 'plain'>, Record<ThemeMode, [RGB, RGB]>> = {
   wood: {
     light: [
@@ -58,7 +53,7 @@ const PALETTES: Record<Exclude<DeskStyle, 'plain'>, Record<ThemeMode, [RGB, RGB]
   },
 };
 
-/** Color de fondo mientras no se ve la textura (y de lo que queda muy lejos). */
+/** Background color while the texture isn't visible (and for what is very far away). */
 export function deskColor(style: DeskStyle, mode: ThemeMode): string | null {
   if (style === 'plain') return null;
   const [base, grain] = PALETTES[style][mode];
@@ -68,7 +63,10 @@ export function deskColor(style: DeskStyle, mode: ThemeMode): string | null {
 
 const PLANK = DESK_TILE / 4;
 
-/** Madera: tablas horizontales con su veta y sus juntas. Devuelve cuánta veta hay (0 a 1). */
+/**
+ * Wood: horizontal planks with their grain and joints. Returns how much grain there is (0
+ * to 1).
+ */
 function wood(x: number, y: number): number {
   const u = x / DESK_TILE;
   const v = y / DESK_TILE;
@@ -79,7 +77,7 @@ function wood(x: number, y: number): number {
   const fine = fbm(u, v, 64, 256, 1, 5);
   const tone = fbm(u, v, 2, 8, 2, 31 + plank) - 0.5 + (hash(plank, 0, 3) - 0.5) * 0.5;
   let grain = 0.28 + streak * 0.45 + (fine - 0.5) * 0.16 + tone * 0.35;
-  // Juntas entre tablas y el final de cada una (a un sitio distinto en cada tabla).
+  // Joints between planks and the end of each one (at a different place on each plank).
   const inPlank = y - plank * PLANK;
   if (inPlank < 1.5 || inPlank > PLANK - 1) grain = 0.95;
   const end = Math.floor(hash(plank, 1, 7) * DESK_TILE);
@@ -87,7 +85,7 @@ function wood(x: number, y: number): number {
   return grain;
 }
 
-/** Corcho: gránulos de distintos tamaños y alguna mota oscura. */
+/** Cork: granules of different sizes and some dark specks. */
 function cork(x: number, y: number): number {
   const u = x / DESK_TILE;
   const v = y / DESK_TILE;
@@ -98,7 +96,7 @@ function cork(x: number, y: number): number {
   return grain;
 }
 
-/** Lino: hilos cruzados muy finos, con irregularidades a lo largo de cada hilo. */
+/** Linen: very fine crossed threads, with irregularities along each thread. */
 function linen(x: number, y: number): number {
   const u = x / DESK_TILE;
   const v = y / DESK_TILE;
@@ -113,7 +111,7 @@ function linen(x: number, y: number): number {
 
 const GRAIN = { wood, cork, linen };
 
-/** Píxeles (RGBA) de la textura de una mesa. */
+/** Pixels (RGBA) of a desk texture. */
 export function deskPixels(
   style: Exclude<DeskStyle, 'plain'>,
   mode: ThemeMode,
@@ -136,7 +134,7 @@ export function deskPixels(
 
 const textures = new Map<string, HTMLCanvasElement>();
 
-/** La textura de la mesa (se hace una vez por mesa y tema), o null si es lisa. */
+/** The desk texture (made once per desk and theme), or null if plain. */
 export function deskTexture(style: DeskStyle, mode: ThemeMode): HTMLCanvasElement | null {
   if (style === 'plain') return null;
   const key = `${style}/${mode}`;
@@ -154,7 +152,7 @@ export function deskTexture(style: DeskStyle, mode: ThemeMode): HTMLCanvasElemen
 
 const urls = new Map<string, string>();
 
-/** La textura como imagen (para el fondo del mapa y las muestras). */
+/** The texture as an image (for the map background and the swatches). */
 export function deskImage(style: DeskStyle, mode: ThemeMode): string | null {
   const texture = deskTexture(style, mode);
   if (!texture) return null;

@@ -2,18 +2,18 @@ import { elementBounds, type SceneElement } from './elements';
 import { unionBounds, type Bounds } from './geometry';
 import type { Vec } from './math';
 
-/** Etiqueta de un enlace: su texto y si la página existe. */
+/** A link label: its text and whether the page exists. */
 export interface LinkLabel {
   text: string;
   missing: boolean;
 }
 
-/** Medidas de la etiqueta en píxeles de pantalla (no crece ni mengua con el zoom). */
+/** Label measurements in screen pixels (it doesn't grow or shrink with the zoom). */
 const HEIGHT = 22;
 const PADDING = 8;
 const FONT_SIZE = 12.5;
 const FONT = `600 ${FONT_SIZE}px "Inter Variable", system-ui, sans-serif`;
-/** Separación sobre la esquina superior derecha (deja libre el asa de esa esquina). */
+/** Offset above the top right corner (it leaves that corner's handle free). */
 const LIFT = 10;
 const OUTSET = 4;
 
@@ -26,7 +26,7 @@ function textWidth(text: string): number {
 
 const labelText = (label: LinkLabel) => `→ ${label.text}`;
 
-/** Una etiqueta de enlace en el lienzo: puede representar a varios elementos. */
+/** A link label on the canvas: it may represent several elements. */
 export interface LinkBadge {
   link: string;
   ids: string[];
@@ -38,9 +38,8 @@ const overlaps = (a: Bounds, b: Bounds) =>
   a.minX < b.maxX && b.minX < a.maxX && a.minY < b.maxY && b.minY < a.maxY;
 
 /**
- * Etiquetas de los enlaces. Lo que lleva a la misma página y está agrupado o
- * superpuesto (una foto sobre un pósit) comparte una sola etiqueta, en la esquina
- * superior derecha del conjunto.
+ * Link labels. Whatever leads to the same page and is grouped or overlapping (a photo on
+ * a sticky note) shares a single label, at the top right corner of the set.
  */
 export function linkBadges(
   elements: SceneElement[],
@@ -78,7 +77,7 @@ export function linkBadges(
   });
 }
 
-/** Dónde va la etiqueta (mundo): sobre la esquina superior derecha de `box`. */
+/** Where the label goes (world): above the top right corner of `box`. */
 function badgeRect(box: Bounds, label: LinkLabel, zoom: number): Bounds {
   const width = (textWidth(labelText(label)) + PADDING * 2) / zoom;
   const height = HEIGHT / zoom;
@@ -87,7 +86,7 @@ function badgeRect(box: Bounds, label: LinkLabel, zoom: number): Bounds {
   return { minX: maxX - width, minY, maxX, maxY: minY + height };
 }
 
-/** Pinta la etiqueta "→ destino" (el contexto tiene la transformación del mundo). */
+/** Paints the label "→ destination" (the context has the world transform). */
 export function drawLinkBadge(
   ctx: CanvasRenderingContext2D,
   badge: LinkBadge,
@@ -115,7 +114,7 @@ export function drawLinkBadge(
   ctx.restore();
 }
 
-/** Etiqueta bajo el punto (la última dibujada, que queda encima), o null. */
+/** Label under the point (the last one drawn, which is on top), or null. */
 export function badgeAt(badges: LinkBadge[], p: Vec): LinkBadge | null {
   for (let i = badges.length - 1; i >= 0; i--) {
     const r = badges[i].rect;

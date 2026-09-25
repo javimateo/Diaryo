@@ -12,7 +12,7 @@ const BASE_OPTIONS: Record<StrokeKind, StrokeOptions> = {
     start: { cap: true, taper: 0 },
     end: { cap: true, taper: 0 },
   },
-  // El marcador es plano: no reacciona a la presión.
+  // The highlighter is flat: it doesn't react to pressure.
   marker: {
     thinning: 0,
     smoothing: 0.6,
@@ -39,7 +39,7 @@ function toTriples(points: number[]): number[][] {
   return result;
 }
 
-/** Contorno del trazo como Path2D, en coordenadas de los puntos. */
+/** Stroke outline as a Path2D, in point coordinates. */
 export function buildStrokePath(stroke: StrokeInput, complete: boolean): Path2D {
   const outline = getStroke(toTriples(stroke.points), {
     ...BASE_OPTIONS[stroke.kind],
@@ -50,7 +50,7 @@ export function buildStrokePath(stroke: StrokeInput, complete: boolean): Path2D 
   return outlineToPath(outline);
 }
 
-/** Une los puntos del contorno con curvas cuadráticas para que el borde sea suave. */
+/** Joins the outline points with quadratic curves so the edge is smooth. */
 function outlineToPath(outline: number[][]): Path2D {
   const path = new Path2D();
   const n = outline.length;
@@ -68,8 +68,8 @@ function outlineToPath(outline: number[][]): Path2D {
 }
 
 /**
- * Caché del contorno por array de puntos: mover o girar un trazo crea un elemento
- * nuevo pero reutiliza los mismos puntos, así no hay que recalcular el contorno.
+ * Outline cache per point array: moving or rotating a stroke creates a new element but
+ * reuses the same points, so the outline doesn't have to be recomputed.
  */
 const pathCache = new WeakMap<number[], { key: string; path: Path2D }>();
 
@@ -82,7 +82,7 @@ export function strokePath(el: StrokeElement): Path2D {
   return path;
 }
 
-/** Aplica la posición y el giro del elemento al contexto (que ya tiene la del mundo). */
+/** Applies the element's position and rotation to the context (which already has the world one). */
 export function applyElementTransform(
   ctx: CanvasRenderingContext2D,
   el: { x: number; y: number; rotation: number },
@@ -92,9 +92,9 @@ export function applyElementTransform(
 }
 
 /**
- * Prepara el contexto para pintar un trazo. El marcador se mezcla con "multiply"
- * en tema claro (y "screen" en oscuro) para que no tape la tinta, como un
- * subrayador real.
+ * Prepares the context to paint a stroke. The highlighter blends with "multiply" in the
+ * light theme (and "screen" in dark) so it doesn't cover the ink, like a real
+ * highlighter.
  */
 export function applyStrokePaint(
   ctx: CanvasRenderingContext2D,
@@ -113,7 +113,7 @@ export function applyStrokePaint(
   }
 }
 
-/** Dibuja un trazo terminado. El contexto debe tener la transformación del mundo. */
+/** Draws a finished stroke. The context must have the world transform. */
 export function drawStroke(
   ctx: CanvasRenderingContext2D,
   el: StrokeElement,
@@ -127,12 +127,12 @@ export function drawStroke(
   ctx.restore();
 }
 
-/** ¿El segmento `a`–`b` (mundo) pasa a menos de `radius` del trazo? */
+/** Does the segment `a`–`b` (world) pass within `radius` of the stroke? */
 export function strokeHitsSegment(el: StrokeElement, a: Vec, b: Vec, radius: number): boolean {
   const reach = radius + el.size / 2;
   const reachSq = reach * reach;
   const { points } = el;
-  // Pasamos el segmento a coordenadas del trazo en lugar de mover todos sus puntos.
+  // We move the segment into stroke coordinates instead of moving all its points.
   const la = toLocal(el, a);
   const lb = toLocal(el, b);
 

@@ -1,14 +1,14 @@
-/** Ayudas del editor de texto: sangría con Tab y listas que continúan solas. */
+/** Text editor helpers: indentation with Tab and lists that continue by themselves. */
 
 export interface TextEdit {
   value: string;
-  /** Selección tras el cambio. */
+  /** Selection after the change. */
   start: number;
   end: number;
 }
 
 const INDENT = '    ';
-/** Viñeta al principio de la línea: "- ", "• ", "* ", "1. ", "2) ", "[ ] ", "[x] ". */
+/** Bullet at the start of the line: "- ", "• ", "* ", "1. ", "2) ", "[ ] ", "[x] ". */
 const LIST_ITEM = /^(\s*)([-•*]|\d+[.)]|\[[ xX]\])(\s+)/;
 
 const lineStartOf = (value: string, index: number) => value.lastIndexOf('\n', index - 1) + 1;
@@ -18,7 +18,7 @@ function lineEndOf(value: string, index: number) {
   return end === -1 ? value.length : end;
 }
 
-/** La viñeta de la línea siguiente: los números cuentan y las casillas salen vacías. */
+/** The next line's bullet: numbers count up and checkboxes start empty. */
 function nextMarker(marker: string): string {
   const number = /^(\d+)([.)])$/.exec(marker);
   if (number) return `${Number(number[1]) + 1}${number[2]}`;
@@ -27,8 +27,8 @@ function nextMarker(marker: string): string {
 }
 
 /**
- * Enter dentro de una lista: la línea nueva empieza con la siguiente viñeta. En una
- * viñeta vacía, Enter termina la lista (quita la viñeta). Fuera de listas, null.
+ * Enter inside a list: the new line starts with the next bullet. On an empty bullet,
+ * Enter ends the list (removes the bullet). Outside lists, null.
  */
 export function continueList(value: string, start: number, end: number): TextEdit | null {
   const lineStart = lineStartOf(value, start);
@@ -47,8 +47,8 @@ export function continueList(value: string, start: number, end: number): TextEdi
 }
 
 /**
- * Tab: en una lista (o con varias líneas seleccionadas) mete las líneas hacia dentro;
- * si no, añade un espaciado donde está el cursor. Shift+Tab las saca hacia fuera.
+ * Tab: in a list (or with several lines selected) indents the lines; otherwise, adds
+ * spacing at the cursor. Shift+Tab outdents them.
  */
 export function indent(value: string, start: number, end: number, outdent: boolean): TextEdit {
   const first = lineStartOf(value, start);
@@ -84,8 +84,8 @@ export function indent(value: string, start: number, end: number, outdent: boole
 }
 
 /**
- * "[]" y espacio al principio de una línea: se convierte en una tarea ("[ ] "), que se
- * pinta como una casilla. Si no, null.
+ * "[]" and space at the start of a line: it becomes a task ("[ ] "), drawn as a checkbox.
+ * Otherwise, null.
  */
 export function taskShortcut(value: string, start: number, end: number): TextEdit | null {
   if (start !== end) return null;

@@ -7,12 +7,12 @@ import { layoutText, taskBoxes, toggleTask, type TextLayout } from './text';
 import type { TextAlign } from './elements';
 
 /**
- * Tareas: líneas que empiezan por "[ ]" (por hacer) o "[x]" (hecha) en textos, notas y
- * figuras. Se pintan como casillas y un clic en la casilla la marca o la desmarca.
+ * Tasks: lines starting with "[ ]" (to do) or "[x]" (done) in texts, notes and shapes.
+ * They are painted as checkboxes and a click on the checkbox ticks or unticks it.
  */
 
 interface TextBlock {
-  /** Dónde empieza el texto dentro del elemento. */
+  /** Where the text starts inside the element. */
   x: number;
   y: number;
   layout: TextLayout;
@@ -48,7 +48,7 @@ function textBlock(el: SceneElement): TextBlock | null {
   return null;
 }
 
-/** El párrafo de la tarea cuya casilla está bajo el punto (con un margen), o null. */
+/** Paragraph of the task whose checkbox is under the point (with a margin), or null. */
 export function taskAt(el: SceneElement, world: Vec, slop: number): number | null {
   const block = textBlock(el);
   if (!block || !/\[[ xX]\]/.test(isEditable(el) ? textOf(el) : '')) return null;
@@ -65,7 +65,7 @@ export function taskAt(el: SceneElement, world: Vec, slop: number): number | nul
   return null;
 }
 
-/** El elemento con esa tarea marcada (o desmarcada). */
+/** The element with that task ticked (or unticked). */
 export function withTaskToggled(el: SceneElement, paragraph: number): SceneElement {
   return isEditable(el) ? withText(el, toggleTask(textOf(el), paragraph)) : el;
 }

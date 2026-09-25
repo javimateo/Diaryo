@@ -6,22 +6,22 @@ import type { NoteVariant } from './notes';
 import type { Color, NoteFill } from './palette';
 
 export type StrokeKind = 'pen' | 'marker';
-/** Lo que tiene un tamaño ajustable en el panel: grosor de trazo o tamaño de letra. */
+/** What has an adjustable size in the panel: stroke width or font size. */
 export type SizedKind = StrokeKind | 'text';
 
 export type TextAlign = 'left' | 'center' | 'right';
 export type VerticalAlign = 'top' | 'middle' | 'bottom';
 
-/** Cómo se rellena el fondo de una figura cerrada (como en Excalidraw). */
+/** How a closed shape's fill is drawn (like in Excalidraw). */
 export type FillStyle = 'solid' | 'hachure' | 'cross-hatch' | 'dots' | 'zigzag';
 export type ShapeKind = 'rect' | 'ellipse';
-/** 0 = líneas limpias, 1 = a mano, 2 = muy a mano. */
+/** 0 = clean lines, 1 = hand-drawn, 2 = very hand-drawn. */
 export type Roughness = 0 | 1 | 2;
 
-/** Texto dentro de una figura (la figura hace de contenedor). Usa el color del trazo. */
+/** Text inside a shape (the shape acts as a container). It uses the stroke color. */
 export interface Label {
   text: string;
-  /** En unidades del mundo. */
+  /** In world units. */
   fontSize: number;
   font: string;
   align: TextAlign;
@@ -31,12 +31,12 @@ export interface Label {
 export interface StrokeStyle {
   color: Color;
   /**
-   * Grosor (o tamaño de letra) en píxeles de pantalla. Al crear se divide por el zoom,
-   * así se ve igual en pantalla lo alejado o acercado que estés: puedes escribir en
-   * pequeño muy de cerca o títulos gigantes desde lejos.
+   * Stroke width (or font size) in screen pixels. When creating it is divided by the
+   * zoom, so it looks the same on screen however far out or in you are: you can write
+   * small from very close or giant titles from afar.
    */
   size: number;
-  /** 0 (invisible) a 1 (opaco). */
+  /** 0 (invisible) to 1 (opaque). */
   opacity: number;
 }
 
@@ -48,9 +48,9 @@ export interface TextStyle extends StrokeStyle {
 export interface NoteStyle {
   variant: NoteVariant;
   color: NoteFill;
-  /** Color del texto; null = tinta oscura automática. */
+  /** Text color; null = automatic dark ink. */
   textColor: Color | null;
-  /** Tamaño de letra en píxeles de pantalla. */
+  /** Font size in screen pixels. */
   size: number;
   font: string;
   align: TextAlign;
@@ -58,18 +58,18 @@ export interface NoteStyle {
   opacity: number;
 }
 
-/** Rectángulo y elipse comparten estilo. */
+/** Rectangle and ellipse share a style. */
 export interface ShapeStyle {
   color: Color;
   border: boolean;
-  /** Grosor del trazo en píxeles de pantalla. */
+  /** Stroke width in screen pixels. */
   size: number;
   fill: NoteFill | null;
   fillStyle: FillStyle;
   roughness: Roughness;
   opacity: number;
   font: string;
-  /** Tamaño de letra del texto de dentro, en píxeles de pantalla. */
+  /** Font size of the text inside, in screen pixels. */
   labelSize: number;
   align: TextAlign;
   valign: VerticalAlign;
@@ -79,7 +79,7 @@ export type ArrowHead = 'none' | 'arrow';
 
 export interface ArrowStyle {
   color: Color;
-  /** Grosor en píxeles de pantalla. */
+  /** Width in screen pixels. */
   size: number;
   roughness: Roughness;
   opacity: number;
@@ -137,7 +137,7 @@ export interface SizeRange {
   min: number;
   max: number;
   step: number;
-  /** Tamaños rápidos del panel. */
+  /** Quick sizes in the panel. */
   presets: number[];
 }
 
@@ -153,7 +153,7 @@ export function clampSize(kind: SizedKind, size: number): number {
   return Math.min(max, Math.max(min, snapped));
 }
 
-/** Siguiente tamaño al pulsar + o − (pasos proporcionales: finos en tamaños pequeños). */
+/** Next size when pressing + or − (proportional steps: fine at small sizes). */
 export function stepSize(kind: SizedKind, size: number, direction: 1 | -1): number {
   const { step } = SIZE_RANGES[kind];
   const next =
@@ -161,46 +161,46 @@ export function stepSize(kind: SizedKind, size: number, direction: 1 | -1): numb
   return clampSize(kind, next);
 }
 
-/** Tamaño de una nota nueva en píxeles de pantalla. */
+/** Size of a new note in screen pixels. */
 export const NOTE_SIZE = 220;
 
 interface BaseElement {
   id: string;
-  /** Orden de apilado: mayor = encima. */
+  /** Stacking order: higher = on top. */
   z: number;
-  /** Origen del elemento en el mundo (esquina superior izquierda en los de tipo caja). */
+  /** The element's origin in the world (top left corner for box elements). */
   x: number;
   y: number;
-  /** Giro en radianes alrededor del origen (x, y). */
+  /** Rotation in radians around the origin (x, y). */
   rotation: number;
-  /** 0 (invisible) a 1 (opaco). */
+  /** 0 (invisible) to 1 (opaque). */
   opacity: number;
-  /** Grupo al que pertenece: se selecciona y se mueve junto con el resto. */
+  /** Group it belongs to: it is selected and moved together with the rest. */
   groupId: string | null;
-  /** Bloqueado: no se puede seleccionar, mover ni borrar hasta desbloquearlo. */
+  /** Locked: it can't be selected, moved or deleted until unlocked. */
   locked: boolean;
-  /** Enlace a otra página del diario (su id): lleva una etiqueta que abre esa página. */
+  /** Link to another diary page (its id): it carries a label that opens that page. */
   link?: string | null;
 }
 
 export interface StrokeElement extends BaseElement {
   type: 'stroke';
   kind: StrokeKind;
-  /** Puntos relativos a (x, y), aplanados: [x0, y0, presión0, x1, y1, presión1, …]. */
+  /** Points relative to (x, y), flattened: [x0, y0, pressure0, x1, y1, pressure1, …]. */
   points: number[];
-  /** Con ratón la presión se simula a partir de la velocidad. */
+  /** With a mouse the pressure is simulated from the speed. */
   simulatePressure: boolean;
   color: Color;
-  /** Grosor en unidades del mundo. */
+  /** Width in world units. */
   size: number;
-  /** Fondo (solo tiene efecto si el trazo es una figura cerrada). */
+  /** Fill (only takes effect if the stroke is a closed shape). */
   fill: NoteFill | null;
   fillStyle: FillStyle;
-  /** Texto dentro (solo en trazos cerrados). */
+  /** Text inside (only in closed strokes). */
   label: Label | null;
 }
 
-/** Elementos con forma de caja: ocupan [0, width] × [0, height] en sus coordenadas. */
+/** Box-shaped elements: they occupy [0, width] × [0, height] in their coordinates. */
 interface BoxElement extends BaseElement {
   width: number;
   height: number;
@@ -209,26 +209,26 @@ interface BoxElement extends BaseElement {
 export interface TextElement extends BoxElement {
   type: 'text';
   text: string;
-  /** En unidades del mundo. */
+  /** In world units. */
   fontSize: number;
   color: Color;
   font: string;
   align: TextAlign;
   /**
-   * Caja de ancho fijo: el texto salta de línea al llegar al borde y la caja crece hacia
-   * abajo. Si es false, la caja se ajusta a lo escrito (cada línea tan larga como sea).
+   * Fixed-width box: the text wraps at the edge and the box grows downwards. If false,
+   * the box fits what is written (each line as long as it is).
    */
   wrap: boolean;
 }
 
 export interface NoteElement extends BoxElement {
   type: 'note';
-  /** Estilo del post-it: liso, con chincheta, celo, clip… */
+  /** Sticky note style: plain, with a pin, tape, clip… */
   variant: NoteVariant;
   text: string;
   fontSize: number;
   color: NoteFill;
-  /** Color del texto; null = tinta oscura automática. */
+  /** Text color; null = automatic dark ink. */
   textColor: Color | null;
   font: string;
   align: TextAlign;
@@ -237,48 +237,48 @@ export interface NoteElement extends BoxElement {
 
 export interface ImageElement extends BoxElement {
   type: 'image';
-  /** Referencia a la imagen en el almacén de recursos (se comparte entre copias). */
+  /** Reference to the image in the asset store (shared between copies). */
   assetId: string;
 }
 
 export interface ShapeElement extends BoxElement {
   type: 'shape';
   shape: ShapeKind;
-  /** Color del trazo (y del texto de dentro). */
+  /** Stroke color (and of the text inside). */
   color: Color;
-  /** Se dibuja el borde. Sin borde, la figura es una caja invisible (o solo su fondo). */
+  /** The border is drawn. Without a border, the shape is an invisible box (or only its fill). */
   border: boolean;
-  /** Grosor del trazo en unidades del mundo. */
+  /** Stroke width in world units. */
   strokeWidth: number;
   roughness: Roughness;
-  /** Semilla para que el trazo "a mano" sea siempre el mismo. */
+  /** Seed so the "hand-drawn" stroke is always the same. */
   seed: number;
   fill: NoteFill | null;
   fillStyle: FillStyle;
   label: Label | null;
 }
 
-/** Extremo de una flecha enganchado a otro elemento. */
+/** Arrow end attached to another element. */
 export interface ArrowBinding {
   elementId: string;
-  /** Adónde apunta dentro del elemento (0 a 1 en cada eje de su caja; 0.5 = el centro). */
+  /** Where it points inside the element (0 to 1 on each axis of its box; 0.5 = the center). */
   focus: Vec;
 }
 
 /**
- * Flecha entre dos puntos, recta o curva. Sus extremos pueden engancharse a otros
- * elementos y los siguen al moverlos. Nunca está girada: sus puntos ya lo están.
+ * Arrow between two points, straight or curved. Its ends can attach to other elements and
+ * follow them when they move. It is never rotated: its points already are.
  */
 export interface ArrowElement extends BaseElement {
   type: 'arrow';
-  /** Inicio y final relativos a (x, y), aplanados como los trazos: [x0, y0, 0, x1, y1, 0]. */
+  /** Start and end relative to (x, y), flattened like strokes: [x0, y0, 0, x1, y1, 0]. */
   points: number[];
-  /** Curva: cuánto se separa su centro de la recta (unidades del mundo; 0 = recta). */
+  /** Curve: how far its middle moves away from the straight line (world units; 0 = straight). */
   bend: number;
   start: ArrowBinding | null;
   end: ArrowBinding | null;
   color: Color;
-  /** Grosor en unidades del mundo. */
+  /** Width in world units. */
   size: number;
   roughness: Roughness;
   seed: number;
@@ -289,15 +289,18 @@ export interface ArrowElement extends BaseElement {
 export type SceneElement =
   StrokeElement | TextElement | NoteElement | ImageElement | ShapeElement | ArrowElement;
 export type BoxSceneElement = TextElement | NoteElement | ImageElement | ShapeElement;
-/** Lo que puede contener texto (figuras y trazos cerrados). */
+/** What can contain text (shapes and closed strokes). */
 export type ContainerElement = ShapeElement | StrokeElement;
-/** Lo que se puede abrir en el editor de texto. */
+/** What can be opened in the text editor. */
 export type EditableElement = TextElement | NoteElement | ContainerElement;
 
 export const isBox = (el: SceneElement): el is BoxSceneElement =>
   el.type !== 'stroke' && el.type !== 'arrow';
 
-/** Caja del elemento en sus propias coordenadas (antes de girar y mover), con el grosor incluido. */
+/**
+ * The element's box in its own coordinates (before rotating and moving), including the
+ * stroke width.
+ */
 export function localBounds(el: SceneElement): Bounds {
   if (isBox(el)) return { minX: 0, minY: 0, maxX: el.width, maxY: el.height };
   if (el.type === 'arrow') return arrowLocalBounds(el);
@@ -318,14 +321,14 @@ export function localBounds(el: SceneElement): Bounds {
   return { minX: minX - pad, minY: minY - pad, maxX: maxX + pad, maxY: maxY + pad };
 }
 
-/** Caja alineada con los ejes que envuelve el elemento en el mundo (ya girado). */
+/** Axis-aligned box that wraps the element in the world (already rotated). */
 export function elementBounds(el: SceneElement): Bounds {
   const { x, y, rotation } = el;
   if (rotation === 0) {
     const b = localBounds(el);
     return { minX: b.minX + x, minY: b.minY + y, maxX: b.maxX + x, maxY: b.maxY + y };
   }
-  // Girado: se giran los puntos del trazo (más ajustado) o las esquinas de la caja.
+  // Rotated: the stroke's points are rotated (tighter) or the box corners.
   const cos = Math.cos(rotation);
   const sin = Math.sin(rotation);
   let minX = Infinity;
@@ -353,12 +356,12 @@ export function elementBounds(el: SceneElement): Bounds {
   return { minX: x + minX - pad, minY: y + minY - pad, maxX: x + maxX + pad, maxY: y + maxY + pad };
 }
 
-/** Pasa un punto del mundo a las coordenadas propias del elemento. */
+/** Converts a world point to the element's own coordinates. */
 export function toLocal(el: SceneElement, p: Vec): Vec {
   return rotateVec({ x: p.x - el.x, y: p.y - el.y }, -el.rotation);
 }
 
-/** Pasa un punto de las coordenadas del elemento al mundo. */
+/** Converts a point from the element's coordinates to the world. */
 export function toWorld(el: SceneElement, p: Vec): Vec {
   const r = rotateVec(p, el.rotation);
   return { x: r.x + el.x, y: r.y + el.y };

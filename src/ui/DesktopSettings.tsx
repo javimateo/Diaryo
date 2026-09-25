@@ -14,25 +14,22 @@ import { shortcutFromEvent, shortcutKeys } from '../desktop/shortcuts';
 import { useUI } from '../store/ui';
 import { SettingsRow } from './SettingsRow';
 import { Switch } from './Switch';
+import { formatTime } from '../i18n/dates';
+import { useT } from './useT';
 
-const time = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' });
-
-/** Ajustes de la app de escritorio: diario flotante, arranque con Windows y copias. */
+/** Settings of the desktop app: floating diary, start with Windows and backups. */
 export function DesktopSettings() {
+  const t = useT();
   const desktop = useUI((s) => s.desktop);
   if (!desktop) return null;
 
   return (
     <>
       <section className="settings-section">
-        <h3>Escritorio</h3>
+        <h3>{t.desktop.title}</h3>
         <SettingsRow
-          label="Diario flotante"
-          hint={
-            desktop.shortcutOk
-              ? 'Aparece sobre el escritorio desde cualquier sitio. Esc lo esconde.'
-              : 'Otra app ya usa este atajo: elige otro.'
-          }
+          label={t.desktop.floatingDiary}
+          hint={desktop.shortcutOk ? t.desktop.floatingDiaryHint : t.desktop.shortcutTaken}
         >
           <ShortcutField
             shortcut={desktop.shortcut}
@@ -41,12 +38,8 @@ export function DesktopSettings() {
           />
         </SettingsRow>
         <SettingsRow
-          label="Mesa en el escritorio"
-          hint={
-            desktop.deskShortcutOk
-              ? 'Lo que hay en la mesa, sobre el fondo del escritorio. El atajo la enseña o la esconde.'
-              : 'Otra app ya usa este atajo: elige otro.'
-          }
+          label={t.desktop.deskLayer}
+          hint={desktop.deskShortcutOk ? t.desktop.deskLayerHint : t.desktop.shortcutTaken}
         >
           <div className="settings-buttons">
             <ShortcutField
@@ -56,34 +49,31 @@ export function DesktopSettings() {
             />
             <Switch
               checked={desktop.deskLayer}
-              label="Mesa en el escritorio"
+              label={t.desktop.deskLayer}
               onChange={(enabled) => void setDeskLayer(enabled)}
             />
           </div>
         </SettingsRow>
-        <SettingsRow label="Arrancar con Windows" hint="Escondido, listo para el atajo.">
+        <SettingsRow label={t.desktop.autostart} hint={t.desktop.autostartHint}>
           <Switch
             checked={desktop.autostart}
-            label="Arrancar con Windows"
+            label={t.desktop.autostart}
             onChange={(enabled) => void setAutostart(enabled)}
           />
         </SettingsRow>
       </section>
 
       <section className="settings-section">
-        <h3>Copias automáticas</h3>
-        <SettingsRow
-          label="Una copia cada día"
-          hint="Al esconder o cerrar diaryo, y cada media hora si hay cambios. Se guardan las de las dos últimas semanas."
-        >
+        <h3>{t.desktop.backups}</h3>
+        <SettingsRow label={t.desktop.dailyBackup} hint={t.desktop.dailyBackupHint}>
           <Switch
             checked={desktop.backups}
-            label="Copias automáticas"
+            label={t.desktop.backups}
             onChange={(enabled) => void setBackups(enabled)}
           />
         </SettingsRow>
         <SettingsRow
-          label="Carpeta"
+          label={t.desktop.folder}
           hint={
             <span className="settings-path" title={desktop.backupDir}>
               {desktop.backupDir}
@@ -92,24 +82,24 @@ export function DesktopSettings() {
         >
           <div className="settings-buttons">
             <button type="button" className="settings-btn" onClick={() => void chooseBackupDir()}>
-              <FolderPen size={15} strokeWidth={1.75} /> Cambiar
+              <FolderPen size={15} strokeWidth={1.75} /> {t.desktop.change}
             </button>
             <button type="button" className="settings-btn" onClick={() => void openBackupDir()}>
-              <FolderOpen size={15} strokeWidth={1.75} /> Abrir
+              <FolderOpen size={15} strokeWidth={1.75} /> {t.desktop.open}
             </button>
           </div>
         </SettingsRow>
         {desktop.backups && (
           <SettingsRow
-            label="Copiar ahora"
+            label={t.desktop.backupNow}
             hint={
               desktop.lastBackup
-                ? `Última copia: hoy a las ${time.format(desktop.lastBackup)}.`
-                : 'Aún no se ha copiado en esta sesión.'
+                ? t.desktop.lastBackup(formatTime(desktop.lastBackup))
+                : t.desktop.noBackupYet
             }
           >
             <button type="button" className="settings-btn" onClick={() => void backupDesktop()}>
-              <Save size={15} strokeWidth={1.75} /> Copiar
+              <Save size={15} strokeWidth={1.75} /> {t.desktop.copy}
             </button>
           </SettingsRow>
         )}
@@ -118,7 +108,7 @@ export function DesktopSettings() {
   );
 }
 
-/** Muestra el atajo; al pulsarlo, espera la combinación nueva (Esc para dejarlo como estaba). */
+/** Shows the shortcut; when pressed, waits for the new combination (Esc to leave it as it was). */
 function ShortcutField({
   shortcut,
   ok,
@@ -128,6 +118,7 @@ function ShortcutField({
   ok: boolean;
   onChange: (shortcut: string) => void;
 }) {
+  const t = useT();
   const [recording, setRecording] = useState(false);
 
   useEffect(() => {
@@ -154,12 +145,12 @@ function ShortcutField({
       className="shortcut-field"
       data-recording={recording || undefined}
       data-error={!ok || undefined}
-      aria-label={recording ? 'Pulsa el atajo nuevo' : `Atajo: ${shortcut}. Pulsa para cambiarlo`}
+      aria-label={recording ? t.desktop.pressShortcutLabel : t.desktop.shortcutLabel(shortcut)}
       onClick={() => setRecording(!recording)}
     >
       {recording
-        ? 'Pulsa el atajo…'
-        : shortcutKeys(shortcut).map((key) => <kbd key={key}>{key}</kbd>)}
+        ? t.desktop.pressShortcut
+        : shortcutKeys(shortcut, t.keys.space).map((key) => <kbd key={key}>{key}</kbd>)}
     </button>
   );
 }

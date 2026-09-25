@@ -2,17 +2,27 @@ use std::time::Duration;
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Emitter,
+    AppHandle, Emitter, Manager, Wry,
 };
 
+use crate::state::lang;
 use crate::window::{self, Mode};
 
-/// Icono junto al reloj: clic para abrir el diario; menú con el diario flotante y salir.
+/// The menu entries, to change their text when the language changes.
+struct TrayItems {
+    open: MenuItem<Wry>,
+    widget: MenuItem<Wry>,
+    quit: MenuItem<Wry>,
+}
+
+/// Icon next to the clock: click to open the diary; menu with the floating diary and
+/// quit.
 pub fn build(app: &AppHandle) -> tauri::Result<()> {
-    let open = MenuItem::with_id(app, "open", "Abrir diaryo", true, None::<&str>)?;
-    let widget = MenuItem::with_id(app, "widget", "Diario flotante", true, None::<&str>)?;
+    let texts = lang(app);
+    let open = MenuItem::with_id(app, "open", texts.open_diary(), true, None::<&str>)?;
+    let widget = MenuItem::with_id(app, "widget", texts.floating_diary(), true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
-    let quit = MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", texts.quit(), true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open, &widget, &separator, &quit])?;
     let mut tray = TrayIconBuilder::with_id("main")
         .tooltip("diaryo")
@@ -38,11 +48,23 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         tray = tray.icon(icon.clone());
     }
     tray.build(app)?;
+    app.manage(TrayItems { open, widget, quit });
     Ok(())
 }
 
-/// Salir: la página guarda lo pendiente (y su copia) y contesta con `quit_app`. Si no
-/// contesta a tiempo, se sale igual.
+/// Puts the menu in the current language.
+pub fn update_texts(app: &AppHandle) {
+    let Some(items) = app.try_state::<TrayItems>() else {
+        return;
+    };
+    let texts = lang(app);
+    let _ = items.open.set_text(texts.open_diary());
+    let _ = items.widget.set_text(texts.floating_diary());
+    let _ = items.quit.set_text(texts.quit());
+}
+
+/// Quit: the page saves what is pending (and its backup) and replies with `quit_app`. If
+/// it doesn't reply in time, it quits anyway.
 fn request_quit(app: &AppHandle) {
     let _ = app.emit("diaryo://quit", ());
     let app = app.clone();

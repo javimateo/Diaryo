@@ -1,4 +1,4 @@
-/* ─── Botones ────────────────────────────────────────────────── */
+/* ─── Buttons ────────────────────────────────────────────────── */
 
 .icon-btn {
   position: relative;
@@ -40,14 +40,6 @@
 .tool-btn[data-active] {
   background: var(--accent-soft);
   color: var(--accent-text);
-}
-
-.tool-btn[data-soon] {
-  color: var(--text-muted);
-}
-
-.tool-btn[data-soon] svg {
-  opacity: 0.6;
 }
 
 .tool-key {

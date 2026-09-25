@@ -4,15 +4,15 @@ import { clampSize, SIZE_RANGES, type SizedKind } from '../../engine/elements';
 import { fonts } from '../../engine/fonts';
 import {
   COLOR_IDS,
-  COLOR_LABELS,
   isHexColor,
   NOTE_COLOR_IDS,
-  NOTE_COLOR_LABELS,
   NOTE_INK,
   resolveColor,
   resolveNoteColor,
   type Color,
+  type ColorId,
   type HexColor,
+  type NoteColor,
   type NoteFill,
 } from '../../engine/palette';
 import { useUI } from '../../store/ui';
@@ -20,8 +20,9 @@ import { ColorPicker } from '../ColorPicker';
 import { FontPicker, useFonts } from '../FontPicker';
 import { Popover } from '../Popover';
 import { refocusEditor, type ColorModel } from './model';
+import { useT } from '../useT';
 
-/** Las piezas del panel de propiedades. */
+/** The pieces of the properties panel. */
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -39,6 +40,7 @@ export function ColorRow({
   model: ColorModel;
   onPick: (value: Color | NoteFill | null) => void;
 }) {
+  const t = useT();
   const theme = useUI((s) => s.theme);
   const addRecentColor = useUI((s) => s.addRecentColor);
   const [customAnchor, setCustomAnchor] = useState<HTMLButtonElement | null>(null);
@@ -52,9 +54,7 @@ export function ColorRow({
   const resolve = (id: string) =>
     palette === 'ink' ? resolveColor(id as Color, theme) : resolveNoteColor(id as NoteFill, theme);
   const label = (id: string) =>
-    palette === 'ink'
-      ? COLOR_LABELS[id as keyof typeof COLOR_LABELS]
-      : NOTE_COLOR_LABELS[id as keyof typeof NOTE_COLOR_LABELS];
+    palette === 'ink' ? t.catalog.colors[id as ColorId] : t.catalog.noteColors[id as NoteColor];
 
   const closePicker = () => {
     setPickerOpen(false);
@@ -67,7 +67,7 @@ export function ColorRow({
       {allowAuto && (
         <Swatch
           color={NOTE_INK}
-          label="Automático"
+          label={t.props.auto}
           active={value === 'auto'}
           auto
           onPick={() => onPick(null)}
@@ -99,8 +99,8 @@ export function ColorRow({
         className="swatch swatch-custom"
         data-active={custom !== null || undefined}
         style={custom ? ({ '--swatch': custom } as CSSProperties) : undefined}
-        aria-label="Otro color"
-        data-tip="Otro color"
+        aria-label={t.props.otherColor}
+        data-tip={t.props.otherColor}
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => (pickerOpen ? closePicker() : setPickerOpen(true))}
       />
@@ -154,9 +154,10 @@ export function SizeControls(props: {
   value: number | null;
   onChange: (size: number) => void;
 }) {
+  const t = useT();
   const { kind, value, onChange } = props;
   const range = SIZE_RANGES[kind];
-  // El valor puede venir de un zoom cualquiera: se muestra redondeado al paso del rango.
+  // The value may come from any zoom: it is shown rounded to the range step.
   const shown = value === null ? null : clampSize(kind, value);
 
   return (
@@ -185,9 +186,10 @@ export function SizeControls(props: {
         max={range.max}
         step={range.step}
         value={shown ?? range.min}
-        aria-label="Tamaño"
+        aria-label={t.props.size}
         onChange={(e) => onChange(Number(e.target.value))}
-        // Al soltar, devolver el foco (al lienzo o al texto) para que el teclado siga funcionando.
+        // On release, give the focus back (to the canvas or the text) so the keyboard
+        // keeps working.
         onPointerUp={(e) => {
           e.currentTarget.blur();
           refocusEditor();
@@ -197,7 +199,7 @@ export function SizeControls(props: {
   );
 }
 
-/** Campo numérico: se confirma con Enter o al salir; Escape lo deja como estaba. */
+/** Number field: confirmed with Enter or on leaving; Escape leaves it as it was. */
 export function SizeInput({
   value,
   onCommit,
@@ -205,6 +207,7 @@ export function SizeInput({
   value: number | null;
   onCommit: (v: number) => void;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState(value === null ? '' : String(value));
   const cancelled = useRef(false);
 
@@ -217,13 +220,13 @@ export function SizeInput({
   };
 
   return (
-    <label className="size-input" data-tip="Tamaño exacto — teclas + y −">
+    <label className="size-input" data-tip={t.props.exactSize}>
       <input
         type="text"
         inputMode="decimal"
         value={draft}
         placeholder="—"
-        aria-label="Tamaño en píxeles"
+        aria-label={t.props.sizeInPixels}
         onChange={(e) => setDraft(e.target.value)}
         onFocus={(e) => e.target.select()}
         onBlur={commit}
@@ -247,6 +250,7 @@ export function FontButton({
   value: string | null;
   onChange: (font: string) => void;
 }) {
+  const t = useT();
   useFonts();
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -265,7 +269,7 @@ export function FontButton({
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => (open ? close() : setOpen(true))}
       >
-        <span>{value ? fonts.get(value).name : 'Varias'}</span>
+        <span>{value ? fonts.get(value).name : t.props.mixed}</span>
         <ChevronDown size={14} strokeWidth={1.75} />
       </button>
       {open && (

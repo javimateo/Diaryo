@@ -1,0 +1,52 @@
+---
+import '@fontsource-variable/inter';
+import '../styles/global.css';
+import { otherLang, texts, type Lang } from '../i18n';
+import { SITE } from '../site';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = texts(lang);
+const other = otherLang(lang);
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{t.meta.title}</title>
+    <meta name="description" content={t.meta.description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="es" href={new URL('/', Astro.site)} />
+    <link rel="alternate" hreflang="en" href={new URL('/en/', Astro.site)} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:title" content={t.meta.title} />
+    <meta property="og:description" content={t.meta.description} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href={lang === 'es' ? '/' : '/en/'}>{SITE.name}</a>
+      <nav>
+        <a href="#features">{t.nav.features}</a>
+        <a href="#download">{t.nav.download}</a>
+        <a href={SITE.repo}>{t.nav.source}</a>
+        <a href={other.href} hreflang={other.lang} lang={other.lang}>{t.nav.language}</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <p>{t.footer.privacy}</p>
+      <p>
+        <a href={SITE.repo}>{t.footer.openSource}</a>
+      </p>
+    </footer>
+  </body>
+</html>

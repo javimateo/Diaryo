@@ -1,6 +1,6 @@
 /**
- * Ruido para texturas hechas por el programa (mesa, tapas). Se repite cada cierto número
- * de celdas, así las texturas no tienen costuras al ponerlas una junto a otra.
+ * Noise for procedurally made textures (desk, covers). It repeats every certain number of
+ * cells, so the textures have no seams when tiled.
  */
 
 export function hash(x: number, y: number, seed: number): number {
@@ -13,7 +13,7 @@ export function hash(x: number, y: number, seed: number): number {
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const wrap = (i: number, period: number) => ((i % period) + period) % period;
 
-/** Ruido suave en una rejilla que se repite cada `px` × `py` celdas (0 a 1). */
+/** Smooth noise on a grid that repeats every `px` × `py` cells (0 to 1). */
 export function noise(x: number, y: number, px: number, py: number, seed: number): number {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
@@ -31,8 +31,8 @@ export function noise(x: number, y: number, px: number, py: number, seed: number
 }
 
 /**
- * Varias capas de ruido, cada una el doble de fina (0 a 1). `u` y `v` van de 0 a 1 en
- * la textura; `cx` × `cy` son las celdas de la primera capa.
+ * Several layers of noise, each one twice as fine (0 to 1). `u` and `v` go from 0 to 1
+ * across the texture; `cx` × `cy` are the cells of the first layer.
  */
 export function fbm(u: number, v: number, cx: number, cy: number, octaves: number, seed: number) {
   let sum = 0;
@@ -47,7 +47,7 @@ export function fbm(u: number, v: number, cx: number, cy: number, octaves: numbe
   return sum / total;
 }
 
-/** Una textura en escala de grises (128 = sin cambio) como canvas, a partir de su valor en cada píxel. */
+/** A greyscale texture (128 = no change) as a canvas, from its value at each pixel. */
 export function grayTexture(size: number, valueAt: (x: number, y: number) => number) {
   const canvas = document.createElement('canvas');
   canvas.width = size;

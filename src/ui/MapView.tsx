@@ -1,22 +1,23 @@
 import { X } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { formatMonth, formatShortDay, parseDay, todayKey } from '../lib/dates';
+import { parseDay, todayKey } from '../lib/dates';
+import { formatMonth, formatShortDay } from '../i18n/dates';
 import { sortPages, type PageMeta } from '../diary/pages';
 import { PAPER_COLORS, coverColor } from '../engine/book';
 import type { PageLink } from '../storage/db';
 import { useUI } from '../store/ui';
+import { useT } from './useT';
 
 type Rect = { x: number; y: number; width: number; height: number };
 
 const EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
-/** Lo que tarda la hoja en ir del libro a su sitio en el mapa (y al revés). */
+/** How long the sheet takes to go from the book to its place on the map (and back). */
 const FLY = 420;
 
 /**
- * Mapa del diario: todas las páginas de un vistazo, por meses, con las conexiones
- * entre ellas (una flecha de cada página a las que enlaza). Clic en una hoja la abre.
- * Al entrar, la doble página abierta se encoge hasta su hoja; al salir, la hoja crece
- * hasta ser el libro.
+ * Diary map: all the pages at a glance, by month, with the connections between them (an
+ * arrow from each page to the ones it links to). Clicking a sheet opens it. On entering,
+ * the open double page shrinks into its sheet; on leaving, the sheet grows into the book.
  */
 export function MapView() {
   const open = useUI((s) => s.mapOpen);
@@ -24,7 +25,7 @@ export function MapView() {
   return <DiaryMap />;
 }
 
-/** Transformación que lleva `from` (su caja natural) a ocupar `to`. */
+/** Transform that takes `from` (its natural box) to fill `to`. */
 function flip(from: DOMRect, to: Rect): string {
   const sx = to.width / from.width;
   const sy = to.height / from.height;
@@ -32,6 +33,7 @@ function flip(from: DOMRect, to: Rect): string {
 }
 
 function DiaryMap() {
+  const t = useT();
   const setOpen = useUI((s) => s.setMapOpen);
   const diary = useUI((s) => s.diary);
   const engine = useUI((s) => s.engine);
@@ -43,7 +45,7 @@ function DiaryMap() {
   useEffect(() => {
     let alive = true;
     void diary?.links().then((result) => alive && setLinks(result));
-    // Las miniaturas antiguas se rehacen como doble página (se van viendo al terminar).
+    // Old thumbnails are redone as double pages (they show up as they finish).
     void diary?.refreshOldThumbnails();
     return () => {
       alive = false;
@@ -51,15 +53,16 @@ function DiaryMap() {
   }, [diary]);
 
   /**
-   * Vuelve al libro: la hoja elegida (o la de la página abierta) crece hasta donde
-   * estará el libro y el mapa se desvanece dejando ver la página ya cargada debajo.
+   * Back to the book: the chosen sheet (or the open page's) grows to where the book will
+   * be and the map fades out, revealing the page already loaded underneath.
    */
   const close = (page?: PageMeta) => {
     const root = rootRef.current;
     if (closing.current || !root) return;
     closing.current = true;
     const target = page ?? current;
-    // Se carga ya, debajo del mapa (sin pasar las hojas: la hoja del mapa hace de libro).
+    // It loads right away, under the map (without turning sheets: the map sheet acts as
+    // the book).
     if (target && target.id !== current?.id) void diary?.goToPage(target.id, false);
     engine?.showWholeBook();
     const book = engine?.bookScreenRect();
@@ -69,7 +72,7 @@ function DiaryMap() {
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const animations: Animation[] = [];
     if (sheet && book && !reduced) {
-      // Su hoja pasa por encima de todo (del resto de hojas y de las flechas).
+      // Its sheet goes on top of everything (the other sheets and the arrows).
       const card = sheet.closest<HTMLElement>('.map-card')!;
       card.style.zIndex = '5';
       card.dataset.flying = '';
@@ -83,14 +86,14 @@ function DiaryMap() {
           },
         ),
       );
-      // Todo lo demás (también la hoja que era la actual) se desvanece.
+      // Everything else (including the sheet that was the current one) fades out.
       root.querySelectorAll<HTMLElement>('.map-fade, .map-card').forEach((el) => {
         if (el.contains(sheet)) return;
         animations.push(
           el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }),
         );
       });
-      // Al final, el mapa se funde con el libro de verdad, que está en el mismo sitio.
+      // At the end, the map blends into the real book, which is in the same place.
       animations.push(
         root.animate([{ opacity: 1 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }], {
           duration: FLY + 160,
@@ -117,7 +120,7 @@ function DiaryMap() {
     return () => window.removeEventListener('keydown', onKeyDown, true);
   });
 
-  // La página abierta también sale aunque aún esté vacía (así se ve dónde se está).
+  // The open page also shows even if it is still empty (so you can see where you are).
   const all = sortPages(
     current && !pages.some((p) => p.id === current.id) ? [...pages, current] : pages,
   );
@@ -127,25 +130,25 @@ function DiaryMap() {
       ref={rootRef}
       className="map-view"
       role="dialog"
-      aria-label="Mapa del diario"
+      aria-label={t.zoom.map}
       onWheel={(e) => {
-        // El lienzo de detrás no se mueve; acercarse (Ctrl + rueda) vuelve al libro.
+        // The canvas behind doesn't move; zooming in (Ctrl + wheel) goes back to the
+        // book.
         e.stopPropagation();
         if ((e.ctrlKey || e.metaKey) && e.deltaY < 0) close();
       }}
     >
       <header className="map-header map-fade">
-        <h2>Mapa del diario</h2>
+        <h2>{t.zoom.map}</h2>
         <span className="map-count">
-          {all.length === 1 ? '1 página' : `${all.length} páginas`}
-          {links.length > 0 &&
-            ` · ${links.length === 1 ? '1 conexión' : `${links.length} conexiones`}`}
+          {t.diary.pageCount(all.length)}
+          {links.length > 0 && ` · ${t.map.links(links.length)}`}
         </span>
         <button
           type="button"
           className="icon-btn"
-          aria-label="Volver al libro"
-          data-tip="Volver al libro — Esc"
+          aria-label={t.map.back}
+          data-tip={`${t.map.back} — Esc`}
           data-tip-align="end"
           onClick={() => close()}
         >
@@ -163,6 +166,7 @@ function Board(props: {
   links: PageLink[];
   onOpen: (page: PageMeta) => void;
 }) {
+  const t = useT();
   const { pages, current, links, onOpen } = props;
   const style = useUI((s) => s.bookStyle);
   const theme = useUI((s) => s.theme);
@@ -171,8 +175,8 @@ function Board(props: {
   const svgRef = useRef<SVGSVGElement>(null);
   const today = todayKey();
 
-  // Al abrir: la página actual a la vista, y la hoja sale de donde estaba el libro
-  // mientras el resto aparece alrededor.
+  // On opening: the current page in view, and its sheet flies from where the book was
+  // while the rest appears around it.
   useLayoutEffect(() => {
     const content = contentRef.current;
     const sheet = content?.querySelector<HTMLElement>('[data-current] .map-sheet');
@@ -182,7 +186,7 @@ function Board(props: {
     const card = sheet?.closest<HTMLElement>('.map-card');
     if (sheet && card && origin) {
       card.style.zIndex = '5';
-      // Mientras vuela no lleva el anillo de "página actual" (se agrandaría con ella).
+      // While flying it doesn't have the "current page" ring (it would grow with it).
       card.dataset.flying = '';
       const fly = sheet.animate(
         [{ transform: flip(sheet.getBoundingClientRect(), origin) }, { transform: 'none' }],
@@ -194,7 +198,7 @@ function Board(props: {
       };
       fly.finished.then(land, land);
       animations.push(fly);
-      // Su fecha y su título aparecen cuando la hoja ya ha llegado.
+      // Its date and title appear once the sheet has arrived.
       const text = card.querySelector<HTMLElement>('.map-card-text');
       if (text) {
         animations.push(
@@ -218,11 +222,11 @@ function Board(props: {
       );
     });
     return () => animations.forEach((a) => a.cancel());
-    // Solo al abrir el mapa (el libro de partida no cambia mientras está abierto).
+    // Only when opening the map (the starting book doesn't change while it is open).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Las conexiones se dibujan sobre las hojas ya colocadas (y al cambiar de tamaño).
+  // The connections are drawn over the sheets once placed (and on resize).
   useLayoutEffect(() => {
     const content = contentRef.current;
     const svg = svgRef.current;
@@ -257,9 +261,7 @@ function Board(props: {
   return (
     <div className="map-scroll" data-scrollable>
       <div className="map-content" ref={contentRef}>
-        {pages.length === 0 && (
-          <p className="map-empty">Aún no hay páginas: escribe algo y aparecerá aquí.</p>
-        )}
+        {pages.length === 0 && <p className="map-empty">{t.map.empty}</p>}
         {groups.map((group) => (
           <section key={group.key} className="map-month">
             <h3 className="map-fade">{group.label}</h3>
@@ -291,7 +293,7 @@ function Board(props: {
                     <span className="map-card-text">
                       <span className="map-card-day">
                         {formatShortDay(page.date)}
-                        {page.date === today && <span className="map-today">hoy</span>}
+                        {page.date === today && <span className="map-today">{t.map.today}</span>}
                       </span>
                       {page.title && <span className="map-card-title">{page.title}</span>}
                     </span>
@@ -308,13 +310,13 @@ function Board(props: {
 }
 
 /**
- * Una flecha curva de cada página a las que enlaza. Entre hojas de la misma fila, un
- * arco por encima de una a otra; si no, de borde a borde. Se dibuja directamente en
- * el <svg> (depende de dónde quedaron las hojas).
+ * A curved arrow from each page to the ones it links to. Between sheets of the same row,
+ * an arc over from one to the other; otherwise, edge to edge. It is drawn directly into
+ * the <svg> (it depends on where the sheets ended up).
  */
 function drawLinks(content: HTMLElement, svg: SVGSVGElement, links: PageLink[]) {
-  // Posición de maquetación (relativa al contenido): no cambia con las animaciones,
-  // aunque la hoja actual esté aún volando cuando se dibuja.
+  // Layout position (relative to the content): it doesn't change with the animations,
+  // even if the current sheet is still flying when drawn.
   const origin = { left: 0, top: 0 };
   const sheets = new Map<string, DOMRect>();
   content.querySelectorAll<HTMLElement>('[data-page-id]').forEach((card) => {
@@ -337,7 +339,7 @@ function drawLinks(content: HTMLElement, svg: SVGSVGElement, links: PageLink[]) 
     x: r.left - origin.left + r.width / 2,
     y: r.top - origin.top + r.height / 2,
   });
-  /** Punto del borde de la hoja en dirección a `toward`, con un pequeño margen. */
+  /** Point on the sheet's edge in the direction of `toward`, with a small margin. */
   const edge = (r: DOMRect, toward: { x: number; y: number }, gap: number) => {
     const c = center(r);
     const dx = toward.x - c.x;
@@ -360,8 +362,8 @@ function drawLinks(content: HTMLElement, svg: SVGSVGElement, links: PageLink[]) 
     const ca = center(a);
     const cb = center(b);
     if (Math.abs(ca.y - cb.y) < a.height / 2) {
-      // Misma fila: sale de la parte de arriba de una hoja (del lado que mira a la otra)
-      // y cae sobre la otra. Hacia atrás en el tiempo, algo más alto para no taparse.
+      // Same row: it leaves from the top of one sheet (the side facing the other) and
+      // lands on the other. Backwards in time, a bit higher so they don't overlap.
       const top = a.top - origin.top;
       const dx = cb.x - ca.x;
       const dir = Math.sign(dx);
@@ -374,7 +376,7 @@ function drawLinks(content: HTMLElement, svg: SVGSVGElement, links: PageLink[]) 
     }
     const start = edge(a, cb, 3);
     const end = edge(b, ca, 5);
-    // Curva suave hacia un lado: dos enlaces opuestos no se tapan.
+    // Gentle curve to one side: two opposite links don't overlap.
     const mx = (start.x + end.x) / 2;
     const my = (start.y + end.y) / 2;
     const len = Math.hypot(end.x - start.x, end.y - start.y) || 1;

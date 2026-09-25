@@ -7,8 +7,8 @@ import { shapeHitsPoint } from './shapes';
 import { strokeHitsSegment } from './strokes';
 
 /**
- * ¿El segmento `a`–`b` (mundo) toca el elemento, con un margen `radius`? Sirve para
- * el clic (a = b), el borrador y el cursor.
+ * Does the segment `a`–`b` (world) touch the element, with a `radius` margin? Used for
+ * clicks (a = b), the eraser and the cursor.
  */
 export function elementHitsSegment(el: SceneElement, a: Vec, b: Vec, radius: number): boolean {
   if (el.type === 'arrow') {
@@ -21,7 +21,7 @@ export function elementHitsSegment(el: SceneElement, a: Vec, b: Vec, radius: num
   }
   if (!isBox(el)) {
     if (strokeHitsSegment(el, a, b, radius)) return true;
-    // Un trazo cerrado con fondo o texto se puede coger por dentro.
+    // A closed stroke with a fill or text can be grabbed from inside.
     if ((el.fill || el.label?.text) && isClosedStroke(el)) {
       const polygon: Vec[] = [];
       for (let i = 0; i < el.points.length; i += 3) {
@@ -31,7 +31,7 @@ export function elementHitsSegment(el: SceneElement, a: Vec, b: Vec, radius: num
     }
     return false;
   }
-  // Una figura se coge por el borde (o por dentro si tiene fondo o texto).
+  // A shape is grabbed by its border (or from inside if it has a fill or text).
   if (el.type === 'shape' && a.x === b.x && a.y === b.y) {
     return shapeHitsPoint(el, toLocal(el, a), radius);
   }
@@ -56,8 +56,8 @@ export function elementHitsSegment(el: SceneElement, a: Vec, b: Vec, radius: num
 }
 
 /**
- * Puntos repartidos sobre el elemento (mundo) para decidir si el lazo lo rodea:
- * a lo largo del trazo, o una rejilla de 3 × 3 sobre las cajas.
+ * Points spread over the element (world) to decide whether the lasso surrounds it: along
+ * the stroke, or a 3 × 3 grid over boxes.
  */
 export function elementSamples(el: SceneElement, count: number): Vec[] {
   if (isBox(el)) {
@@ -73,8 +73,8 @@ export function elementSamples(el: SceneElement, count: number): Vec[] {
 }
 
 /**
- * Puntos a distancias iguales a lo largo de un trazo (coordenadas locales). Así cuenta
- * la longitud, no cuántos vértices tiene cada tramo.
+ * Points at equal distances along a stroke (local coordinates). That way the length
+ * counts, not how many vertices each segment has.
  */
 function samplePath(points: number[], count: number): Vec[] {
   const n = points.length / 3;

@@ -26,37 +26,37 @@ import {
 import { bindingFor, bindTargetAt } from './arrow';
 import type { PointerInput, ToolContext, ToolHandler } from './types';
 
-/** Distancia (px de pantalla) antes de considerar que un clic es un arrastre. */
+/** Distance (screen px) before a click counts as a drag. */
 const DRAG_THRESHOLD = 3;
-/** Tolerancia (px de pantalla) para acertar a un trazo con el ratón. */
+/** Tolerance (screen px) to hit a stroke with the mouse. */
 const HIT_TOLERANCE = 6;
-/** Separación mínima (px de pantalla) entre puntos del lazo. */
+/** Minimum gap (screen px) between lasso points. */
 const LASSO_SPACING = 2;
-/** Con Shift el giro salta de 15 en 15 grados. */
+/** With Shift the rotation snaps in 15-degree steps. */
 const ROTATION_SNAP = Math.PI / 12;
 const MIN_SCALE = 0.01;
-/** Radio (px de pantalla) de los puntos para editar una flecha. */
+/** Radius (screen px) of the points to edit an arrow. */
 const ARROW_HANDLE = 6;
-/** Por debajo de esta curva (px de pantalla) la flecha vuelve a ser recta. */
+/** Below this curve (screen px) the arrow becomes straight again. */
 const STRAIGHT_SNAP = 8;
 
 type ArrowPoint = 'start' | 'end' | 'bend';
 
 type State =
   | { type: 'idle' }
-  /** Botón pulsado sobre algo; aún no se sabe si es un clic o un arrastre. */
+  /** Button pressed on something; it isn't known yet whether it is a click or a drag. */
   | { type: 'pending'; start: PointerInput; onClick: (() => void) | null }
   | { type: 'move'; start: Vec; originals: Changes }
   | { type: 'resize'; handle: ResizeHandle; box: Box; originals: Changes }
   | { type: 'rotate'; box: Box; startAngle: number; delta: number; originals: Changes }
   | { type: 'marquee'; start: Vec; current: Vec; base: Set<string> }
   | { type: 'lasso'; points: Vec[]; base: Set<string>; additive: boolean }
-  /** Arrastrando un extremo de la flecha seleccionada, o su centro para curvarla. */
+  /** Dragging an end of the selected arrow, or its middle to curve it. */
   | { type: 'arrow'; point: ArrowPoint; original: ArrowElement; target: string | null };
 
 /**
- * Seleccionar (V) y lazo (L). Comparten todo salvo lo que ocurre al arrastrar sobre
- * un hueco: V dibuja un rectángulo (o un lazo con Alt) y L siempre un lazo.
+ * Select (V) and lasso (L). They share everything except what happens when dragging on an
+ * empty spot: V draws a rectangle (or a lasso with Alt) and L always a lasso.
  */
 export class SelectHandler implements ToolHandler {
   private state: State = { type: 'idle' };
@@ -110,7 +110,8 @@ export class SelectHandler implements ToolHandler {
 
     if (hit) {
       if (input.shiftKey && onSelected) {
-        // Shift + clic sobre algo seleccionado lo quita de la selección (con su grupo).
+        // Shift + click on something selected removes it from the selection (with its
+        // group).
         const inGroup = (id: string) =>
           id === hit.id || (!!hit.groupId && ctx.scene.get(id)?.groupId === hit.groupId);
         ctx.setSelection([...selection].filter((id) => !inGroup(id)));
@@ -122,7 +123,8 @@ export class SelectHandler implements ToolHandler {
         ctx.setSelection([hit.id]);
         this.state = { type: 'pending', start: input, onClick: null };
       } else {
-        // Clic (sin arrastrar) sobre uno de varios seleccionados: quedarse solo con él.
+        // Click (without dragging) on one of several selected elements: keep only that
+        // one.
         const onClick = selection.size > 1 ? () => ctx.setSelection([hit.id]) : null;
         this.state = { type: 'pending', start: input, onClick };
       }
@@ -130,7 +132,7 @@ export class SelectHandler implements ToolHandler {
     }
 
     if (insideBox) {
-      // Dentro del marco se puede arrastrar; un clic sin arrastrar deselecciona.
+      // Inside the frame you can drag; a click without dragging deselects.
       this.state = { type: 'pending', start: input, onClick: () => ctx.setSelection([]) };
       return;
     }
@@ -180,7 +182,7 @@ export class SelectHandler implements ToolHandler {
         };
         const ids = elementsInRect(this.ctx.scene, rect).map((el) => el.id);
         this.ctx.setSelection(new Set([...state.base, ...ids]));
-        // El rectángulo se redibuja siempre, aunque la selección no haya cambiado.
+        // The rectangle is always redrawn, even if the selection didn't change.
         this.ctx.invalidateOverlay();
         return;
       }
@@ -269,12 +271,12 @@ export class SelectHandler implements ToolHandler {
     }
 
     const selected = this.selectedElements();
-    // Con varios elementos se marca cada uno para ver qué entra en la selección.
+    // With several elements each one is marked to see what goes into the selection.
     if (selected.length > 1 && selected.length <= 500) {
       for (const el of selected) drawElementOutline(g, el, zoom, accent, 0.5);
     }
 
-    // Una flecha sola no lleva marco: sus puntos para editarla (y lo que se enganchará).
+    // A lone arrow has no frame: its points to edit it (and what it will attach to).
     const arrow = this.selectedArrow();
     if (arrow) {
       if (state.type === 'arrow' && state.target) {
@@ -329,12 +331,12 @@ export class SelectHandler implements ToolHandler {
     }
   }
 
-  // ─── Gestos ─────────────────────────────────────────────────
+  // ─── Gestures ───────────────────────────────────────────────
 
   private move(state: Extract<State, { type: 'move' }>, input: PointerInput) {
     let dx = input.world.x - state.start.x;
     let dy = input.world.y - state.start.y;
-    // Shift: solo en horizontal o en vertical.
+    // Shift: only horizontally or vertically.
     if (input.shiftKey) {
       if (Math.abs(dx) > Math.abs(dy)) dy = 0;
       else dx = 0;
@@ -343,8 +345,8 @@ export class SelectHandler implements ToolHandler {
   }
 
   /**
-   * Las esquinas mantienen la proporción (Shift para deformar libremente) y los
-   * bordes estiran en un solo eje (Shift para mantenerla). Alt escala desde el centro.
+   * Corners keep the proportions (Shift to deform freely) and edges stretch along a
+   * single axis (Shift to keep them). Alt scales from the center.
    */
   private resize(state: Extract<State, { type: 'resize' }>, input: PointerInput) {
     const { box, handle } = state;
@@ -405,7 +407,7 @@ export class SelectHandler implements ToolHandler {
       ...state.points.map((p) => Math.hypot(p.x - first.x, p.y - first.y) * zoom),
     );
 
-    // Un lazo diminuto es un clic: selecciona lo que haya debajo.
+    // A tiny lasso is a click: it selects whatever is underneath.
     if (extent < 4) {
       const hit = hitTestElement(ctx.scene, first, HIT_TOLERANCE / zoom);
       if (hit) ctx.setSelection(state.additive ? [...state.base, hit.id] : [hit.id]);
@@ -415,7 +417,7 @@ export class SelectHandler implements ToolHandler {
     ctx.setSelection(new Set([...state.base, ...ids]));
   }
 
-  // ─── Utilidades ─────────────────────────────────────────────
+  // ─── Utilities ──────────────────────────────────────────────
 
   private selectedElements(): SceneElement[] {
     const result: SceneElement[] = [];
@@ -427,12 +429,12 @@ export class SelectHandler implements ToolHandler {
   }
 
   private box(): Box | null {
-    // Una flecha sola se edita por sus puntos, no con el marco.
+    // A lone arrow is edited by its points, not with the frame.
     if (this.selectedArrow()) return null;
     return selectionBox(this.selectedElements());
   }
 
-  /** La flecha seleccionada, si es lo único seleccionado (y no está bloqueada). */
+  /** The selected arrow, if it is the only thing selected (and isn't locked). */
   private selectedArrow(): ArrowElement | null {
     const selected = this.selectedElements();
     const [el] = selected;
@@ -456,8 +458,8 @@ export class SelectHandler implements ToolHandler {
   }
 
   /**
-   * Los extremos se mueven (y se enganchan a lo que haya debajo); el centro curva la
-   * flecha. Cerca de la recta vuelve a ser recta.
+   * The ends move (and attach to whatever is underneath); the middle curves the arrow.
+   * Close to the straight line it becomes straight again.
    */
   private editArrow(state: Extract<State, { type: 'arrow' }>, input: PointerInput) {
     const { ctx } = this;
@@ -504,7 +506,7 @@ export class SelectHandler implements ToolHandler {
         0,
         Math.PI * 2,
       );
-      // Relleno del color de acento: ese extremo está enganchado.
+      // Filled with the accent color: that end is attached.
       g.fillStyle = bound ? accent : handleFill;
       g.strokeStyle = accent;
       g.globalAlpha = point === 'bend' ? 0.8 : 1;
@@ -514,7 +516,7 @@ export class SelectHandler implements ToolHandler {
     g.restore();
   }
 
-  /** Estado de lo que se va a transformar (lo bloqueado no se mueve). */
+  /** State of what is about to be transformed (locked elements don't move). */
   private snapshot(): Changes {
     return new Map(
       this.selectedElements()
@@ -524,8 +526,8 @@ export class SelectHandler implements ToolHandler {
   }
 
   /**
-   * Transforma lo seleccionado. Las flechas que se mueven sin lo que conectan se
-   * sueltan de ello (si no, volverían a pegarse a sus elementos).
+   * Transforms the selection. Arrows that move without what they connect detach from it
+   * (otherwise they would stick back to their elements).
    */
   private mapOriginals(originals: Changes, fn: (el: SceneElement) => SceneElement): Changes {
     const moving = new Set(originals.keys());

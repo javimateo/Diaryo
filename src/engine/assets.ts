@@ -7,20 +7,21 @@ interface Asset {
 }
 
 /**
- * Imágenes de la página. Los elementos solo guardan el id: así duplicar o copiar una
- * imagen no duplica sus datos.
+ * The page's images. Elements only store the id: that way duplicating or copying an image
+ * doesn't duplicate its data.
  */
 export class AssetStore {
   private readonly assets = new Map<string, Asset>();
 
-  /** Se llama con cada imagen nueva (lo usa el autoguardado). */
+  /** Called with each new image (the autosave uses it). */
   onAdd: (id: string, src: string) => void = () => {};
 
   constructor(private readonly onLoad: () => void) {}
 
   /**
-   * Registra una imagen (data URL) y devuelve su id. Si el id ya existe, no hace nada.
-   * Sin `notify` no se avisa (p. ej. imágenes ya guardadas de otras páginas).
+   * Registers an image (data URL) and returns its id. If the id already exists, it does
+   * nothing. Without `notify` nobody is told (e.g. already saved images from other
+   * pages).
    */
   add(src: string, id: string = createId(), notify = true): string {
     if (this.assets.has(id)) return id;
@@ -36,7 +37,7 @@ export class AssetStore {
     return id;
   }
 
-  /** Espera a que las imágenes estén listas para dibujarse (las que fallen, se ignoran). */
+  /** Waits until the images are ready to draw (those that fail are ignored). */
   async whenReady(ids: Iterable<string>): Promise<void> {
     await Promise.all(
       [...ids].map((id) =>
@@ -56,14 +57,14 @@ export class AssetStore {
     return this.assets.get(id)?.src;
   }
 
-  /** La imagen lista para pintar, o null si aún se está cargando. */
+  /** The image ready to paint, or null if it is still loading. */
   image(id: string): HTMLImageElement | null {
     const asset = this.assets.get(id);
     return asset?.ready ? asset.image : null;
   }
 }
 
-/** Lado máximo al importar: las imágenes más grandes se reducen (y ocupan mucho menos). */
+/** Maximum side when importing: larger images are scaled down (and take much less space). */
 const MAX_SIDE = 2560;
 
 export interface LoadedImage {
@@ -76,7 +77,7 @@ export function isImageFile(file: File): boolean {
   return file.type.startsWith('image/');
 }
 
-/** Lee un archivo de imagen como data URL, reduciéndolo si es enorme. */
+/** Reads an image file as a data URL, scaling it down if it is huge. */
 export async function loadImageFile(file: File): Promise<LoadedImage> {
   const bitmap = await createImageBitmap(file);
   const { width, height } = bitmap;

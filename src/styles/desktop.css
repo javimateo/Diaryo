@@ -1,9 +1,9 @@
-/* ─── App de escritorio ─────────────────────────────────────── */
+/* ─── Desktop app ────────────────────────────────────────────── */
 
-/* Diario flotante: la ventana es transparente y el escritorio hace de mesa. */
+/* Floating diary: the window is transparent and the desktop acts as the desk. */
 :root[data-widget],
 :root[data-desk-layer] {
-  /* Con "dark", el navegador pinta un fondo opaco y se pierde la transparencia. */
+  /* With "dark", the browser paints an opaque background and transparency is lost. */
   color-scheme: normal;
 }
 
@@ -14,7 +14,7 @@
   background: transparent;
 }
 
-/* El diario flotante aparece y se aparta con un fundido. */
+/* The floating diary fades in and out. */
 :root[data-widget] .app {
   transition: opacity 260ms ease-out;
 }
@@ -24,7 +24,7 @@
   transition: opacity 180ms ease-in;
 }
 
-/* Con la ventana escondida, sin esperar al fundido. */
+/* With the window hidden, without waiting for the fade. */
 :root[data-instant] .app {
   transition: none;
 }
@@ -46,7 +46,7 @@
   color: var(--text-muted);
 }
 
-/* El atajo del diario flotante: se pulsa y se graba el nuevo. */
+/* The floating diary shortcut: press it and the new one is recorded. */
 .shortcut-field {
   display: inline-flex;
   flex: none;
@@ -99,7 +99,7 @@
   white-space: nowrap;
 }
 
-/* ─── Mini diario (en el escritorio de Windows) ─────────────────── */
+/* ─── Mini diary (on the Windows desktop) ──────────────────────── */
 
 .mini-diary {
   position: absolute;
@@ -112,7 +112,7 @@
   cursor: grabbing;
 }
 
-/* Las tapas asoman alrededor de las páginas, como el diario abierto. */
+/* The covers show around the pages, like the open diary. */
 .mini-diary-book {
   padding: 7px;
   border-radius: 9px;
@@ -144,16 +144,16 @@
   font-weight: 500;
 }
 
-/* ─── Vista fijada (diario flotante) ────────────────────────────── */
+/* ─── Pinned view (floating diary) ─────────────────────────────── */
 
 .view-controls .icon-btn[data-active] {
   background: var(--accent-soft);
   color: var(--accent-text);
 }
 
-/* ─── La ventana de la app (sin el marco de Windows) ────────────── */
+/* ─── The app window (without the Windows frame) ───────────────── */
 
-/* Por dónde se arrastra: la franja de arriba, detrás de los paneles. */
+/* Where it is dragged from: the strip at the top, behind the panels. */
 .window-drag-region {
   position: absolute;
   top: 0;

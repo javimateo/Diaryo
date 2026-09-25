@@ -1,4 +1,4 @@
-/* Ajustes */
+/* Settings */
 
 .settings-dialog {
   width: min(560px, 100%);
@@ -28,7 +28,7 @@
   color: var(--text-muted);
 }
 
-/* Dentro de los ajustes, el aspecto del diario no lleva su propia raya. */
+/* Inside the settings, the diary look doesn't get its own divider. */
 .settings-section .book-style {
   padding: 0;
   border-bottom: 0;

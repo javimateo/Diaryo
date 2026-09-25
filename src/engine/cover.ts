@@ -2,35 +2,30 @@ import { fbm, grayTexture, hash, noise } from './noise';
 
 export type CoverMaterial = 'leather' | 'cloth' | 'kraft' | 'plain';
 
-/** Materiales de las tapas, en el orden en que se ofrecen. */
-export const MATERIALS: Record<CoverMaterial, string> = {
-  leather: 'Cuero',
-  cloth: 'Tela',
-  kraft: 'Cartón',
-  plain: 'Lisa',
-};
+/** Cover materials, in the order they are offered. */
+export const MATERIALS: CoverMaterial[] = ['leather', 'cloth', 'kraft', 'plain'];
 
-/** El cartón tiene su propio color (el elegido para las tapas no se usa). */
+/** Cardboard has its own color (the one chosen for the covers isn't used). */
 export const KRAFT_COLOR = '#b58c5e';
 
-/** Lado de la textura del grano, en píxeles. */
+/** Side of the grain texture, in pixels. */
 const GRAIN_TILE = 256;
-/** Unidades del mundo por píxel del grano. */
+/** World units per grain pixel. */
 export const GRAIN_SCALE = 2;
 
-/** Cuero: poros pequeños y apretados, con zonas algo más claras y más oscuras. */
+/** Leather: small, tight pores, with slightly lighter and darker areas. */
 function leather(x: number, y: number): number {
   const u = x / GRAIN_TILE;
   const v = y / GRAIN_TILE;
   const pores = noise(u * 96, v * 96, 96, 96, 3);
   const fine = noise(u * 192, v * 192, 192, 192, 4);
   const tone = fbm(u, v, 4, 4, 2, 7);
-  // Los poros se hunden más de lo que sobresalen.
+  // The pores sink more than they stick out.
   const pore = pores < 0.35 ? (pores - 0.35) * 0.7 : (pores - 0.35) * 0.2;
   return 0.5 + pore + (fine - 0.5) * 0.12 + (tone - 0.5) * 0.22;
 }
 
-/** Tela: hilos que se cruzan por encima y por debajo, con irregularidades. */
+/** Cloth: threads crossing over and under, with irregularities. */
 function cloth(x: number, y: number): number {
   const u = x / GRAIN_TILE;
   const v = y / GRAIN_TILE;
@@ -42,7 +37,7 @@ function cloth(x: number, y: number): number {
   return 0.5 + (weave - 0.5) * 0.16 + (slub - 0.5) * 0.2;
 }
 
-/** Cartón: fibras cortas y motas. */
+/** Cardboard: short fibres and specks. */
 function kraft(x: number, y: number): number {
   const u = x / GRAIN_TILE;
   const v = y / GRAIN_TILE;
@@ -55,7 +50,7 @@ function kraft(x: number, y: number): number {
 const GRAIN = { leather, cloth, kraft };
 const grains = new Map<CoverMaterial, HTMLCanvasElement>();
 
-/** Grano del material (gris: se mezcla con el color de las tapas), o null si es lisa. */
+/** Material grain (grey: it blends with the cover color), or null if plain. */
 export function coverGrain(material: CoverMaterial): HTMLCanvasElement | null {
   if (material === 'plain') return null;
   let texture = grains.get(material);
@@ -66,7 +61,7 @@ export function coverGrain(material: CoverMaterial): HTMLCanvasElement | null {
   return texture;
 }
 
-/** Aclara (> 0) u oscurece (< 0) un color #rrggbb. */
+/** Lightens (> 0) or darkens (< 0) a #rrggbb color. */
 export function shade(hex: string, amount: number): string {
   const n = parseInt(hex.slice(1), 16);
   const channel = (v: number) => Math.round(amount < 0 ? v * (1 + amount) : v + (255 - v) * amount);

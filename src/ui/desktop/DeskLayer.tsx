@@ -8,8 +8,8 @@ import { TextEditor } from '../TextEditor';
 import { MiniDiary } from './MiniDiary';
 
 /**
- * La ventana de la mesa en el escritorio de Windows (ver `DeskLayerController`): el
- * lienzo con lo que hay en la mesa, el editor de texto y el mini diario.
+ * The window of the desk on the Windows desktop (see `DeskLayerController`): the canvas
+ * with what is on the desk, the text editor and the mini diary.
  */
 export function DeskLayer() {
   const sceneRef = useRef<HTMLCanvasElement>(null);
@@ -32,7 +32,7 @@ export function DeskLayer() {
     );
     controllerRef.current = controller;
     useUI.getState().setEngine(instance);
-    // Solo en desarrollo: acceso desde la consola para depurar.
+    // Development only: access from the console for debugging.
     if (import.meta.env.DEV) Object.assign(window, { diaryo: instance });
     void controller.start();
     return () => {

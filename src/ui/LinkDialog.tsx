@@ -1,16 +1,17 @@
 import { Search, X } from 'lucide-react';
 import { useState } from 'react';
-import { formatDay } from '../lib/dates';
+import { formatDay } from '../i18n/dates';
 import { sortPages, type PageMeta } from '../diary/pages';
 import { matchesAll, queryWords } from '../diary/search';
 import { useUI } from '../store/ui';
+import { useT } from './useT';
 
-/** Nombre de una página para mostrarla: su título o su fecha. */
+/** A page's display name: its title or its date. */
 export const pageName = (page: PageMeta) => page.title || formatDay(page.date);
 
 /**
- * Elegir la página a la que llevará lo seleccionado. Se busca por título o por fecha
- * ("lunes", "21 septiembre"…); Enter elige la primera.
+ * Choose the page the selection will lead to. It is searched by title or date ("lunes",
+ * "21 septiembre"…); Enter chooses the first one.
  */
 export function LinkDialog() {
   const open = useUI((s) => s.linkDialogOpen);
@@ -19,6 +20,7 @@ export function LinkDialog() {
 }
 
 function Dialog() {
+  const t = useT();
   const setOpen = useUI((s) => s.setLinkDialogOpen);
   const { pages, current } = useUI((s) => s.diaryState);
   const engine = useUI((s) => s.engine);
@@ -36,7 +38,7 @@ function Dialog() {
   const pick = (page: PageMeta) => {
     engine?.setSelectionLink(page.id);
     close();
-    showToast(`Enlazado con ${pageName(page)}`);
+    showToast(t.link.linked(pageName(page)));
   };
 
   return (
@@ -49,8 +51,8 @@ function Dialog() {
         onClick={(e) => e.stopPropagation()}
       >
         <header className="dialog-header">
-          <h2 id="link-title">Enlazar con una página</h2>
-          <button type="button" className="icon-btn" aria-label="Cerrar" onClick={close}>
+          <h2 id="link-title">{t.props.addLink}</h2>
+          <button type="button" className="icon-btn" aria-label={t.common.close} onClick={close}>
             <X size={18} strokeWidth={1.75} />
           </button>
         </header>
@@ -59,8 +61,8 @@ function Dialog() {
           <input
             autoFocus
             value={query}
-            placeholder="Buscar por título o fecha"
-            aria-label="Buscar página"
+            placeholder={t.link.search}
+            aria-label={t.link.searchLabel}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
               e.stopPropagation();
@@ -72,9 +74,7 @@ function Dialog() {
         <ul className="link-results" data-scrollable>
           {results.length === 0 && (
             <li className="link-empty">
-              {pages.length <= 1
-                ? 'Aún no hay otras páginas. Escribe en otro día y podrás enlazarlo.'
-                : 'No hay ninguna página con eso.'}
+              {pages.length <= 1 ? t.link.noOtherPages : t.link.noMatch}
             </li>
           )}
           {results.map((page) => (

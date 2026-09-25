@@ -1,11 +1,11 @@
 import { interpolateCamera, panBy, zoomAt, type Camera } from './camera';
 import { clamp, easeOutCubic, smoothingFactor, type Size, type Vec } from './math';
 
-/** Constantes de tiempo (ms) de los suavizados. */
+/** Time constants (ms) of the smoothing. */
 const ZOOM_TAU = 55;
 const PAN_TAU = 45;
 const INERTIA_TAU = 160;
-/** Velocidades de la inercia (px/ms): por debajo de la mínima se para; hace falta la de salida para empezar. */
+/** Inertia speeds (px/ms): below the minimum it stops; the starting one is needed to begin. */
 const INERTIA_MIN_SPEED = 0.02;
 const INERTIA_START_SPEED = 0.1;
 
@@ -14,7 +14,7 @@ interface ZoomAnimation {
   anchor: Vec;
 }
 
-/** Lo que deja un paso de un frame: la cámara y si sigue moviéndose. */
+/** What a one-frame step leaves: the camera and whether it keeps moving. */
 interface Step {
   camera: Camera;
   moving: boolean;
@@ -28,10 +28,10 @@ interface CameraTween {
 }
 
 /**
- * Cómo se mueve la cámara sola, frame a frame: el zoom suave hacia un objetivo (rueda,
- * botones), el desplazamiento suave de la rueda, la inercia al soltar y los vuelos
- * animados (ir a algo). No dibuja ni guarda la cámara: el motor le pasa la de ahora en
- * cada frame y aplica la que devuelve.
+ * How the camera moves by itself, frame by frame: smooth zoom towards a target (wheel,
+ * buttons), smooth wheel panning, inertia on release and animated flights (going to
+ * something). It doesn't draw or store the camera: the engine passes the current one each
+ * frame and applies the one it returns.
  */
 export class CameraMotion {
   private zoom: ZoomAnimation | null = null;
@@ -39,7 +39,7 @@ export class CameraMotion {
   private inertia: Vec | null = null;
   private tween: CameraTween | null = null;
 
-  /** Para todo movimiento en curso. */
+  /** Stops any movement in progress. */
   stop() {
     this.inertia = null;
     this.tween = null;
@@ -47,54 +47,55 @@ export class CameraMotion {
     this.pan = { x: 0, y: 0 };
   }
 
-  /** Para la inercia y los vuelos (la rueda manda a partir de ahora). */
+  /** Stops the inertia and the flights (the wheel rules from now on). */
   interrupt() {
     this.inertia = null;
     this.tween = null;
   }
 
-  /** El zoom al que se va (si ya se está acercando), para sumar pasos de rueda seguidos. */
+  /** The zoom it is heading to (if it is already zooming), to add up consecutive wheel steps. */
   zoomTarget(current: number): number {
     return this.zoom?.target ?? current;
   }
 
-  /** Acerca o aleja poco a poco hasta `target`, sin mover el punto `anchor` de la pantalla. */
+  /** Zooms in or out gradually to `target`, without moving the `anchor` point on screen. */
   zoomTo(target: number, anchor: Vec) {
     this.tween = null;
     this.zoom = { target, anchor };
   }
 
-  /** Olvida el zoom suave (el zoom se pone de golpe). */
+  /** Forgets the smooth zoom (the zoom is set at once). */
   cancelZoom() {
     this.zoom = null;
   }
 
-  /** Desplaza poco a poco (la rueda de ratón da saltos grandes). */
+  /** Pans gradually (a mouse wheel makes big jumps). */
   panBy(dx: number, dy: number) {
     this.pan = { x: this.pan.x + dx, y: this.pan.y + dy };
   }
 
-  /** Al soltar en movimiento, el lienzo sigue deslizándose un poco. Devuelve si arranca. */
+  /** When released while moving, the canvas keeps sliding a bit. Returns whether it starts. */
   fling(velocity: Vec): boolean {
     if (Math.hypot(velocity.x, velocity.y) <= INERTIA_START_SPEED) return false;
     this.inertia = velocity;
     return true;
   }
 
-  /** Vuela de una cámara a otra. */
+  /** Flies from one camera to another. */
   flyTo(from: Camera, to: Camera, now: number, duration: number) {
     this.stop();
     this.tween = { from, to, start: now, duration };
   }
 
   /**
-   * Avanza un frame. Devuelve la cámara resultante (la misma si no se mueve) y si hay
-   * que seguir pidiendo frames.
+   * Advances one frame. Returns the resulting camera (the same one if it doesn't move)
+   * and whether more frames are needed.
    */
   step(camera: Camera, viewport: Size, now: number, dt: number) {
     let current = camera;
     let moving = false;
-    // Todas avanzan en cada frame, una tras otra sobre la cámara que deja la anterior.
+    // They all advance each frame, one after another on the camera left by the previous
+    // one.
     const steps = [
       () => this.stepTween(now, viewport),
       () => this.stepZoom(current, dt),

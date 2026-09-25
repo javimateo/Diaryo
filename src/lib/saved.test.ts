@@ -18,26 +18,26 @@ function fakeStorage(fail = false) {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('lo guardado en el navegador', () => {
-  it('guarda y lee JSON', () => {
+describe('what is saved in the browser', () => {
+  it('saves and reads JSON', () => {
     fakeStorage();
     expect(writeJSON('a', { x: 1 })).toBe(true);
     expect(readJSON('a')).toEqual({ x: 1 });
     expect(readJSON('nada')).toBeNull();
   });
 
-  it('lo que no es JSON se lee como nada', () => {
+  it("what isn't JSON reads as nothing", () => {
     fakeStorage().set('roto', '{no es json');
     expect(readJSON('roto')).toBeNull();
   });
 
-  it('sin almacenamiento no rompe nada', () => {
+  it('without storage nothing breaks', () => {
     fakeStorage(true);
     expect(readText('a')).toBeNull();
     expect(writeJSON('a', 1)).toBe(false);
   });
 
-  it('asRecord da un objeto vacío si no hay objeto', () => {
+  it('asRecord gives an empty object if there is no object', () => {
     expect(asRecord(null)).toEqual({});
     expect(asRecord(3)).toEqual({});
     expect(asRecord({ a: 1 })).toEqual({ a: 1 });

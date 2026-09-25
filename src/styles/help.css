@@ -1,4 +1,4 @@
-/* ─── Diálogo de atajos ──────────────────────────────────────── */
+/* ─── Shortcuts dialog ───────────────────────────────────────── */
 
 .dialog-backdrop {
   position: fixed;
@@ -67,15 +67,6 @@
   padding: 7px 0;
   border-bottom: 1px solid var(--surface-border);
   font-size: 13.5px;
-}
-
-.shortcut-list li[data-soon] > span:first-child {
-  color: var(--text-muted);
-}
-
-.shortcut-list em {
-  font-style: normal;
-  font-size: 12px;
 }
 
 .combos,

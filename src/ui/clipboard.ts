@@ -1,9 +1,10 @@
+import { t } from '../i18n';
 import { useUI } from '../store/ui';
 
 /**
- * Portapapeles desde botones o menús (sin atajo de teclado): se usa la API
- * asíncrona del navegador. Con Ctrl+C/X/V se usan los eventos normales (ver
- * useShortcuts), que no piden permiso.
+ * Clipboard from buttons or menus (without a keyboard shortcut): the browser's async API
+ * is used. With Ctrl+C/X/V the normal events are used (see useShortcuts), which don't ask
+ * for permission.
  */
 
 function ensureSelectionTool() {
@@ -18,7 +19,7 @@ export async function copySelection(): Promise<boolean> {
     await navigator.clipboard.writeText(text);
     return true;
   } catch {
-    useUI.getState().showToast('No se ha podido copiar');
+    useUI.getState().showToast(t().toasts.copyFailed);
     return false;
   }
 }
@@ -45,6 +46,6 @@ export async function pasteFromClipboard(): Promise<void> {
       }
     }
   } catch {
-    showToast('Usa Ctrl+V para pegar');
+    showToast(t().toasts.useCtrlV);
   }
 }

@@ -7,19 +7,20 @@ import {
   TextAlignStart,
 } from 'lucide-react';
 import { type TextAlign, type VerticalAlign } from '../../engine/elements';
-import { NOTE_VARIANT_LABELS, NOTE_VARIANTS } from '../../engine/notes';
+import { NOTE_VARIANTS } from '../../engine/notes';
 import type { StylePatch } from '../../engine/restyle';
 import { ColorRow, FontButton, Section, Segmented, SizeControls } from './controls';
 import { LinkSection } from './LinkSection';
 import { refocusEditor, usePanelModel } from './model';
 import { FILL_STYLES, HEADS, ROUGHNESS, VARIANT_ICONS } from './options';
+import { useT } from '../useT';
 
 /**
- * Panel lateral de propiedades. Según el contexto cambia el estilo de la herramienta
- * activa (lápiz, marcador, texto, nota), del texto que se está escribiendo o de lo
- * seleccionado.
+ * Side properties panel. Depending on the context it changes the style of the active tool
+ * (pen, highlighter, text, note), of the text being written or of the selection.
  */
 export function PropertiesPanel() {
+  const t = useT();
   const model = usePanelModel();
   if (!model) return null;
   const { noteVariant, colors, size, fillStyle, roughness, labelSize, heads } = model;
@@ -28,12 +29,12 @@ export function PropertiesPanel() {
   return (
     <aside
       className="props-panel floating"
-      aria-label="Propiedades"
+      aria-label={t.props.label}
       data-keep-editing
       data-scrollable
     >
       {noteVariant !== undefined && (
-        <Section title="Estilo de nota">
+        <Section title={t.props.noteStyle}>
           <div className="variant-grid">
             {NOTE_VARIANTS.map((variant) => {
               const Icon = VARIANT_ICONS[variant];
@@ -43,9 +44,9 @@ export function PropertiesPanel() {
                   type="button"
                   className="icon-btn"
                   data-active={noteVariant === variant || undefined}
-                  aria-label={NOTE_VARIANT_LABELS[variant]}
+                  aria-label={t.catalog.noteVariants[variant]}
                   aria-pressed={noteVariant === variant}
-                  data-tip={NOTE_VARIANT_LABELS[variant]}
+                  data-tip={t.catalog.noteVariants[variant]}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => apply({ noteVariant: variant })}
                 >
@@ -62,17 +63,17 @@ export function PropertiesPanel() {
         </Section>
       ))}
       {fillStyle !== undefined && (
-        <Section title="Relleno">
+        <Section title={t.props.fillStyle}>
           <div className="segmented-group wide" role="group">
-            {FILL_STYLES.map(([id, label, Preview]) => (
+            {FILL_STYLES.map(([id, Preview]) => (
               <button
                 key={id}
                 type="button"
                 className="icon-btn"
                 data-active={fillStyle === id || undefined}
-                aria-label={label}
+                aria-label={t.props.fillStyles[id]}
                 aria-pressed={fillStyle === id}
-                data-tip={label}
+                data-tip={t.props.fillStyles[id]}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => apply({ fillStyle: id })}
               >
@@ -83,9 +84,10 @@ export function PropertiesPanel() {
         </Section>
       )}
       {heads && (
-        <Section title="Puntas">
+        <Section title={t.props.arrowHeads}>
           <div className="segmented-group wide" role="group">
-            {HEADS.map(([start, end, label, Icon]) => {
+            {HEADS.map(([start, end, kind, Icon]) => {
+              const label = t.props.heads[kind];
               const active = heads.start === start && heads.end === end;
               return (
                 <button
@@ -112,17 +114,17 @@ export function PropertiesPanel() {
         </Section>
       )}
       {roughness !== undefined && (
-        <Section title="Trazado">
+        <Section title={t.props.roughness}>
           <div className="segmented-group wide" role="group">
-            {ROUGHNESS.map(([id, label, Preview]) => (
+            {ROUGHNESS.map(([id, Preview]) => (
               <button
                 key={id}
                 type="button"
                 className="icon-btn"
                 data-active={roughness === id || undefined}
-                aria-label={label}
+                aria-label={t.props.roughnessNames[id]}
                 aria-pressed={roughness === id}
-                data-tip={label}
+                data-tip={t.props.roughnessNames[id]}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => apply({ roughness: id })}
               >
@@ -133,7 +135,7 @@ export function PropertiesPanel() {
         </Section>
       )}
       {labelSize !== undefined && (
-        <Section title="Tamaño del texto">
+        <Section title={t.props.labelSize}>
           <SizeControls
             kind="text"
             value={labelSize}
@@ -142,20 +144,20 @@ export function PropertiesPanel() {
         </Section>
       )}
       {font !== undefined && (
-        <Section title="Fuente">
+        <Section title={t.props.font}>
           <FontButton value={font} onChange={(value) => apply({ font: value })} />
         </Section>
       )}
       {align !== undefined && (
-        <Section title="Alineación">
+        <Section title={t.props.align}>
           <div className="segmented">
             <Segmented<TextAlign>
               value={align}
               onChange={(value) => apply({ align: value })}
               options={[
-                ['left', 'Izquierda', TextAlignStart],
-                ['center', 'Centro', TextAlignCenter],
-                ['right', 'Derecha', TextAlignEnd],
+                ['left', t.props.left, TextAlignStart],
+                ['center', t.props.center, TextAlignCenter],
+                ['right', t.props.right, TextAlignEnd],
               ]}
             />
             {valign !== undefined && (
@@ -163,16 +165,16 @@ export function PropertiesPanel() {
                 value={valign}
                 onChange={(value) => apply({ valign: value })}
                 options={[
-                  ['top', 'Arriba', AlignVerticalJustifyStart],
-                  ['middle', 'En medio', AlignVerticalJustifyCenter],
-                  ['bottom', 'Abajo', AlignVerticalJustifyEnd],
+                  ['top', t.props.top, AlignVerticalJustifyStart],
+                  ['middle', t.props.middle, AlignVerticalJustifyCenter],
+                  ['bottom', t.props.bottom, AlignVerticalJustifyEnd],
                 ]}
               />
             )}
           </div>
         </Section>
       )}
-      <Section title="Opacidad">
+      <Section title={t.props.opacity}>
         <div className="opacity-row">
           <input
             type="range"
@@ -180,7 +182,7 @@ export function PropertiesPanel() {
             min={0}
             max={100}
             value={Math.round(opacity * 100)}
-            aria-label="Opacidad"
+            aria-label={t.props.opacity}
             onChange={(e) => apply({ opacity: Number(e.target.value) / 100 })}
             onPointerUp={(e) => {
               e.currentTarget.blur();

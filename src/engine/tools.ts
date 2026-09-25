@@ -11,7 +11,7 @@ export type ToolId =
   | 'rect'
   | 'ellipse';
 
-/** Cursor CSS de cada herramienta mientras no se está arrastrando. */
+/** CSS cursor of each tool while not dragging. */
 export const TOOL_CURSORS: Record<ToolId, string> = {
   hand: 'grab',
   select: 'default',

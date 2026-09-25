@@ -64,8 +64,8 @@ const note: NoteElement = {
   height: 220,
 };
 
-describe('elementos caja', () => {
-  it('se aciertan en cualquier punto de su caja, también girados', () => {
+describe('box elements', () => {
+  it('they are hit anywhere in their box, also rotated', () => {
     expect(elementHitsSegment(text, { x: 50, y: 12 }, { x: 50, y: 12 }, 0)).toBe(true);
     expect(elementHitsSegment(text, { x: 150, y: 12 }, { x: 150, y: 12 }, 0)).toBe(false);
     const rotated = rotateElement(image, { x: 100, y: 150 }, Math.PI / 2);
@@ -73,11 +73,11 @@ describe('elementos caja', () => {
     expect(elementHitsSegment(rotated, { x: 190, y: 150 }, { x: 190, y: 150 }, 0)).toBe(false);
   });
 
-  it('el borrador los toca al cruzar un borde', () => {
+  it('the eraser touches them when crossing an edge', () => {
     expect(elementHitsSegment(note, { x: 250, y: 100 }, { x: 350, y: 100 }, 1)).toBe(true);
   });
 
-  it('el lazo los selecciona si rodea la caja', () => {
+  it('the lasso selects them if it surrounds the box', () => {
     const scene = new Scene();
     scene.apply(new Map([[text.id, text]]));
     const around = [
@@ -89,7 +89,7 @@ describe('elementos caja', () => {
     expect(elementsInLasso(scene, around).map((e) => e.id)).toEqual(['t']);
   });
 
-  it('desde una esquina, el texto escala en proporción con su letra', () => {
+  it('from a corner, text scales proportionally with its font', () => {
     const box = selectionBox([text])!;
     const scaled = scaleElement(text, box, { x: -box.width / 2, y: -box.height / 2 }, 2, 2);
     expect(scaled.fontSize).toBeCloseTo(40);
@@ -98,7 +98,7 @@ describe('elementos caja', () => {
     expect(scaled.wrap).toBe(false);
   });
 
-  it('una imagen alineada con el marco se puede estirar en un eje', () => {
+  it('an image aligned with the frame can be stretched along one axis', () => {
     const box = selectionBox([image])!;
     const scaled = scaleElement(image, box, { x: -box.width / 2, y: 0 }, 2, 1);
     expect(scaled.width).toBeCloseTo(400);
@@ -106,18 +106,18 @@ describe('elementos caja', () => {
     expect(elementBounds(scaled).minX).toBeCloseTo(0);
   });
 
-  it('copiar una imagen incluye sus datos', () => {
+  it('copying an image includes its data', () => {
     const src = 'data:image/png;base64,AAAA';
     const content = parseElements(serializeElements({ elements: [image], assets: { a: src } }));
     expect(content?.elements[0].type).toBe('image');
     expect(content?.assets.a).toBe(src);
-    // Sin los datos de la imagen no se puede pegar.
+    // Without the image data it can't be pasted.
     expect(parseElements(serializeElements({ elements: [image], assets: {} }))).toBeNull();
   });
 });
 
-describe('historial agrupado', () => {
-  it('cambios seguidos con la misma clave se deshacen de una vez', () => {
+describe('merged history', () => {
+  it('consecutive changes with the same key are undone at once', () => {
     const scene = new Scene();
     const history = new History(scene, () => {});
     history.commit(new Map([[text.id, text]]));
@@ -132,7 +132,7 @@ describe('historial agrupado', () => {
     expect((scene.get('t') as TextElement).fontSize).toBe(50);
   });
 
-  it('claves distintas no se funden', () => {
+  it("different keys don't merge", () => {
     const scene = new Scene();
     const history = new History(scene, () => {});
     history.commit(new Map([[text.id, text]]));

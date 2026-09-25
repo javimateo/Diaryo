@@ -1,4 +1,4 @@
-/* Aviso con botón (p. ej. deshacer un borrado) */
+/* Toast with a button (e.g. undoing a deletion) */
 
 .toast {
   display: flex;

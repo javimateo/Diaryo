@@ -9,8 +9,9 @@ import {
   parseBackup,
   serializeDiary,
 } from '../storage/files';
+import { t } from '../i18n';
 
-/** Descarga una copia de todo el diario, con imágenes y fuentes. */
+/** Downloads a backup of the whole diary, with images and fonts. */
 export async function saveCopy(diary: Diary) {
   const dump = await diary.dump();
   downloadBlob(
@@ -20,15 +21,15 @@ export async function saveCopy(diary: Diary) {
 }
 
 /**
- * Abre una copia. La de todo el diario se mezcla con lo que hay (entra cada página que
- * falte o sea más nueva, así que no se pierde nada reciente). La de una sola página
- * sustituye la página abierta y se puede deshacer.
+ * Opens a backup. A whole-diary one is merged with what is here (each page that is
+ * missing or newer goes in, so nothing recent is lost). A single-page one replaces the
+ * open page and can be undone.
  */
 export async function openCopy(engine: Engine, diary: Diary, file: File) {
   const { showToast } = useUI.getState();
   const backup = parseBackup(await file.text());
   if (!backup) {
-    showToast('Ese archivo no es una copia de diaryo');
+    showToast(t().toasts.notABackup);
     return;
   }
   const data = backup.kind === 'page' ? backup.page : backup.diary;
@@ -38,25 +39,17 @@ export async function openCopy(engine: Engine, diary: Diary, file: File) {
   if (backup.kind === 'page') {
     for (const asset of backup.page.assets) engine.assets.add(asset.src, asset.id);
     engine.replaceAll(backup.page.elements);
-    showToast('Copia abierta · Ctrl+Z para volver atrás');
+    showToast(t().toasts.copyOpened);
     return;
   }
   const { pages, desk } = await diary.merge(backup.diary);
-  const parts = [
-    pages === 1 ? '1 página' : pages > 1 ? `${pages} páginas` : '',
-    desk ? 'lo de la mesa' : '',
-  ].filter(Boolean);
-  showToast(
-    parts.length === 0
-      ? 'Ya tenías todo lo de esa copia'
-      : `Se ha${pages > 1 ? 'n' : ''} recuperado ${parts.join(' y ')}`,
-  );
+  showToast(t().toasts.merged(pages, desk));
 }
 
 export async function exportPng(engine: Engine) {
   const blob = await engine.exportPng();
   if (!blob) {
-    useUI.getState().showToast('La página está vacía');
+    useUI.getState().showToast(t().toasts.emptyPage);
     return;
   }
   downloadBlob(blob, datedName() + '.png');

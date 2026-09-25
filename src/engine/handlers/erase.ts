@@ -3,14 +3,14 @@ import type { Vec } from '../math';
 import { elementHitsSegment } from '../hit';
 import type { PointerInput, ToolContext, ToolHandler } from './types';
 
-/** Radio del borrador en píxeles de pantalla. */
+/** Eraser radius in screen pixels. */
 export const ERASER_RADIUS = 8;
 const TRAIL_MS = 180;
 const ERASING_OPACITY = 0.2;
 
 /**
- * Borra trazos completos al pasar por encima. Mientras se arrastra, los trazos
- * tocados se atenúan; al soltar se borran todos juntos (un solo "deshacer").
+ * Deletes whole strokes when passing over them. While dragging, the touched strokes are
+ * dimmed; on release they are all deleted together (a single "undo").
  */
 export class EraseHandler implements ToolHandler {
   private readonly erasing = new Set<string>();
@@ -64,7 +64,7 @@ export class EraseHandler implements ToolHandler {
     return this.trail.length > 0;
   }
 
-  /** Rastro que se desvanece detrás del borrador. */
+  /** Trail fading behind the eraser. */
   renderOverlay(g: CanvasRenderingContext2D, now: number) {
     this.trail = this.trail.filter((p) => now - p.t < TRAIL_MS);
     const trail = this.trail;

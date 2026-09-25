@@ -2,23 +2,26 @@ use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager};
 
-/// Ajustes que necesita la parte de escritorio antes de que cargue la página: el atajo
-/// global, por ejemplo, funciona aunque la ventana no se haya abierto todavía.
+/// Settings the desktop side needs before the page loads: the global shortcut, for
+/// example, works even if the window hasn't opened yet.
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
-    /// Atajo global del diario flotante.
+    /// Global shortcut of the floating diary.
     pub shortcut: String,
-    /// Copias automáticas en una carpeta.
+    /// Automatic backups in a folder.
     pub backups: bool,
-    /// Carpeta de las copias (None: Documentos\diaryo).
+    /// Backups folder (None: Documents\diaryo).
     pub backup_dir: Option<String>,
-    /// El arranque con Windows ya se activó la primera vez (luego manda lo que se elija).
+    /// Start with Windows was already enabled the first time (then whatever is chosen
+    /// rules).
     pub autostart_ready: bool,
-    /// La mesa en el escritorio de Windows.
+    /// The desk on the Windows desktop.
     pub desk_layer: bool,
-    /// Atajo global que la enseña o la esconde.
+    /// Global shortcut that shows or hides it.
     pub desk_shortcut: String,
+    /// App language ("es" or "en"; set by the page).
+    pub language: String,
 }
 
 impl Default for Settings {
@@ -30,6 +33,7 @@ impl Default for Settings {
             autostart_ready: false,
             desk_layer: true,
             desk_shortcut: "Ctrl+Alt+N".into(),
+            language: "es".into(),
         }
     }
 }

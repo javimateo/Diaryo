@@ -3,13 +3,13 @@ import type { Vec } from '../math';
 import { drawShape, newSeed } from '../shapes';
 import type { PointerInput, ToolContext, ToolHandler } from './types';
 
-/** Tamaño (px de pantalla) de una figura creada con un simple clic. */
+/** Size (screen px) of a shape created with a simple click. */
 const DEFAULT_SIZE = { rect: { w: 160, h: 100 }, ellipse: { w: 120, h: 120 } };
 
 /**
- * Rectángulo (R) y elipse (O): se arrastra de esquina a esquina. Shift la hace
- * cuadrada o circular; Alt la dibuja desde el centro. Al soltar se puede escribir
- * dentro enseguida, como en una nota (si no se escribe nada, queda la figura sola).
+ * Rectangle (R) and ellipse (O): drag from corner to corner. Shift makes it square or
+ * circular; Alt draws it from the center. On release you can write inside right away,
+ * like in a note (if nothing is written, the shape stays alone).
  */
 export class ShapeHandler implements ToolHandler {
   private drag: { start: Vec; current: Vec; shift: boolean; alt: boolean; seed: number } | null =
@@ -44,7 +44,7 @@ export class ShapeHandler implements ToolHandler {
     this.drag = null;
     const { zoom } = this.ctx.camera;
     let element = this.build(drag);
-    // Un clic sin arrastrar crea una figura de tamaño normal centrada en el punto.
+    // A click without dragging creates a normal-size shape centered on the point.
     if (element.width * zoom < 6 && element.height * zoom < 6) {
       const { w, h } = DEFAULT_SIZE[this.shape];
       element = {

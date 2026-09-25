@@ -2,7 +2,7 @@ import type { ArrowElement } from './elements';
 import type { Bounds } from './geometry';
 import type { Vec } from './math';
 
-/** Tramos con los que se aproxima la curva (para dibujar, tocar y encuadrar). */
+/** Segments that approximate the curve (for drawing, hit testing and framing). */
 const SEGMENTS = 24;
 
 export const arrowStart = (el: ArrowElement): Vec => ({
@@ -16,8 +16,8 @@ export const arrowEnd = (el: ArrowElement): Vec => ({
 });
 
 /**
- * Punto de control de la curva (cuadrática) que hace que el centro de la flecha se
- * separe `bend` de la recta entre los extremos (a la izquierda, mirando hacia el final).
+ * Control point of the (quadratic) curve that moves the arrow's middle `bend` away from
+ * the straight line between the ends (to the left, looking towards the end).
  */
 export function arrowControl(start: Vec, end: Vec, bend: number): Vec {
   const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
@@ -28,7 +28,7 @@ export function arrowControl(start: Vec, end: Vec, bend: number): Vec {
   return { x: mid.x + nx * bend * 2, y: mid.y + ny * bend * 2 };
 }
 
-/** Centro visible de la flecha (donde está el asa para curvarla). */
+/** Visible middle of the arrow (where the handle to curve it is). */
 export function arrowMidpoint(el: ArrowElement): Vec {
   return quadratic(arrowStart(el), arrowControlOf(el), arrowEnd(el), 0.5);
 }
@@ -44,7 +44,7 @@ function quadratic(a: Vec, c: Vec, b: Vec, t: number): Vec {
   };
 }
 
-/** Puntos a lo largo de la flecha, en el mundo. */
+/** Points along the arrow, in the world. */
 export function arrowPath(el: ArrowElement): Vec[] {
   const a = arrowStart(el);
   const b = arrowEnd(el);
@@ -53,7 +53,7 @@ export function arrowPath(el: ArrowElement): Vec[] {
   return Array.from({ length: SEGMENTS + 1 }, (_, i) => quadratic(a, c, b, i / SEGMENTS));
 }
 
-/** Caja de la flecha en sus coordenadas (relativas a x, y), con la curva y el grosor. */
+/** The arrow's box in its coordinates (relative to x, y), with the curve and the width. */
 export function arrowLocalBounds(el: ArrowElement): Bounds {
   let minX = Infinity;
   let minY = Infinity;
@@ -69,10 +69,10 @@ export function arrowLocalBounds(el: ArrowElement): Bounds {
   return { minX: minX - pad, minY: minY - pad, maxX: maxX + pad, maxY: maxY + pad };
 }
 
-/** Largo de las puntas: crece con el grosor, pero nunca es diminuto. */
+/** Arrowhead length: it grows with the width, but it is never tiny. */
 export const headLength = (el: { size: number }) => Math.max(el.size * 5, 16);
 
-/** Dirección en la que llega la flecha a cada extremo (para orientar las puntas). */
+/** Direction in which the arrow reaches each end (to orient the arrowheads). */
 export function arrowTangents(el: ArrowElement): { start: Vec; end: Vec } {
   const a = arrowStart(el);
   const b = arrowEnd(el);

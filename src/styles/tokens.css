@@ -3,7 +3,7 @@
 :root {
   --font: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* La mesa sobre la que está el diario. */
+  /* The desk the diary sits on. */
   --canvas-bg: #e7e2d8;
   --canvas-dots: #c4bdb1;
 

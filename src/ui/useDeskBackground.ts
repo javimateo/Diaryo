@@ -2,13 +2,10 @@ import { useEffect } from 'react';
 import { DESK_SCALE, DESK_TILE, deskColor, deskImage } from '../engine/desk';
 import { useUI } from '../store/ui';
 
-/** En el mapa, la mesa se ve como de lejos. */
+/** On the map, the desk looks as seen from afar. */
 const MAP_SCALE = 0.35;
 
-/**
- * La mesa también fuera del lienzo (en el mapa del diario): su textura y su color como
- * variables de CSS.
- */
+/** The desk outside the canvas too (on the diary map): its texture and color as CSS variables. */
 export function useDeskBackground() {
   const desk = useUI((s) => s.bookStyle.desk);
   const theme = useUI((s) => s.theme);
@@ -16,7 +13,7 @@ export function useDeskBackground() {
   useEffect(() => {
     const root = document.documentElement.style;
     const image = deskImage(desk, theme);
-    // Sobre una mesa con textura, lo que va suelto encima (el nombre) lleva fondo.
+    // On a textured desk, whatever floats on top (the name) gets a background.
     document.documentElement.toggleAttribute('data-textured-desk', image !== null);
     const color = deskColor(desk, theme);
     if (image && color) {

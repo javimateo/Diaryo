@@ -16,7 +16,7 @@ import {
 const viewport = { width: 800, height: 600 };
 
 describe('camera', () => {
-  it('convierte entre pantalla y mundo en ambos sentidos', () => {
+  it('converts between screen and world both ways', () => {
     const cam: Camera = { x: -120, y: 40, zoom: 2.5 };
     const p = { x: 333, y: 71 };
     const back = worldToScreen(cam, screenToWorld(cam, p));
@@ -24,7 +24,7 @@ describe('camera', () => {
     expect(back.y).toBeCloseTo(p.y);
   });
 
-  it('zoomAt mantiene fijo el punto bajo el cursor', () => {
+  it('zoomAt keeps the point under the cursor fixed', () => {
     const cam: Camera = { x: 10, y: -30, zoom: 1 };
     const anchor = { x: 250, y: 400 };
     const before = screenToWorld(cam, anchor);
@@ -33,13 +33,13 @@ describe('camera', () => {
     expect(after.y).toBeCloseTo(before.y);
   });
 
-  it('limita el zoom', () => {
+  it('limits the zoom', () => {
     const cam: Camera = { x: 0, y: 0, zoom: 1 };
     expect(zoomAt(cam, { x: 0, y: 0 }, 1e6).zoom).toBe(MAX_ZOOM);
     expect(zoomAt(cam, { x: 0, y: 0 }, 1e-6).zoom).toBe(MIN_ZOOM);
   });
 
-  it('panBy mueve el mundo junto con el puntero', () => {
+  it('panBy moves the world along with the pointer', () => {
     const cam: Camera = { x: 0, y: 0, zoom: 2 };
     const world = screenToWorld(cam, { x: 100, y: 100 });
     const moved = panBy(cam, 50, -20);
@@ -48,13 +48,13 @@ describe('camera', () => {
     expect(screen.y).toBeCloseTo(80);
   });
 
-  it('cameraAt centra el punto pedido', () => {
+  it('cameraAt centers the requested point', () => {
     const center = cameraCenter(cameraAt({ x: 42, y: -7 }, 0.5, viewport), viewport);
     expect(center.x).toBeCloseTo(42);
     expect(center.y).toBeCloseTo(-7);
   });
 
-  it('fitCamera encuadra el contenido sin pasar del 100 %', () => {
+  it('fitCamera frames the content without going over 100%', () => {
     const small = fitCamera({ minX: 0, minY: 0, maxX: 100, maxY: 100 }, viewport, 50);
     expect(small.zoom).toBe(1);
     expect(cameraCenter(small, viewport).x).toBeCloseTo(50);
@@ -63,7 +63,7 @@ describe('camera', () => {
     expect(big.zoom).toBeCloseTo(700 / 7000);
   });
 
-  it('interpola el zoom en escala logarítmica', () => {
+  it('interpolates the zoom on a logarithmic scale', () => {
     const a = cameraAt({ x: 0, y: 0 }, 1, viewport);
     const b = cameraAt({ x: 100, y: 0 }, 4, viewport);
     const mid = interpolateCamera(a, b, 0.5, viewport);

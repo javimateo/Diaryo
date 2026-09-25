@@ -64,8 +64,8 @@ afterEach(async () => {
 
 const empty = { upserts: [], deletes: [], assets: [], fonts: [] };
 
-describe('autoguardado en la base de datos', () => {
-  it('guarda y recupera elementos, imágenes y cámara', async () => {
+describe('autosave to the database', () => {
+  it('saves and restores elements, images and camera', async () => {
     db = new DiaryoDB('test-1');
     await saveChanges(db, info('p'), {
       ...empty,
@@ -79,7 +79,7 @@ describe('autoguardado en la base de datos', () => {
     expect(page.camera).toEqual({ x: 5, y: 6, zoom: 2 });
   });
 
-  it('solo escribe lo que cambia: actualizar y borrar', async () => {
+  it('only writes what changes: update and delete', async () => {
     db = new DiaryoDB('test-2');
     await saveChanges(db, info('p'), { ...empty, upserts: [stroke('a'), stroke('b')] });
     await saveChanges(db, info('p'), { ...empty, upserts: [stroke('a', 99)], deletes: ['b'] });
@@ -88,22 +88,22 @@ describe('autoguardado en la base de datos', () => {
     expect(page.elements[0].x).toBe(99);
   });
 
-  it('las páginas no se mezclan', async () => {
+  it("pages don't mix", async () => {
     db = new DiaryoDB('test-3');
     await saveChanges(db, info('p1'), { ...empty, upserts: [stroke('a')] });
     await saveChanges(db, info('p2'), { ...empty, upserts: [stroke('b')] });
     expect((await loadPage(db, 'p1')).elements.map((e) => e.id)).toEqual(['a']);
   });
 
-  it('descarta una imagen sin sus datos en lugar de romper la carga', async () => {
+  it('discards an image without its data instead of breaking the load', async () => {
     db = new DiaryoDB('test-4');
     await saveChanges(db, info('p'), { ...empty, upserts: [image, stroke('s')] });
     expect((await loadPage(db, 'p')).elements.map((e) => e.id)).toEqual(['s']);
   });
 });
 
-describe('páginas del diario', () => {
-  it('la página se crea al guardar con su día y conserva el título', async () => {
+describe('diary pages', () => {
+  it('the page is created on save with its day and keeps the title', async () => {
     db = new DiaryoDB('test-5');
     await updatePage(db, info('p', '2026-01-02'), { title: 'Ideas' });
     await saveChanges(db, info('p', '2026-01-02'), { ...empty, upserts: [stroke('a')] });
@@ -111,7 +111,7 @@ describe('páginas del diario', () => {
     expect(page).toMatchObject({ id: 'p', date: '2026-01-02', title: 'Ideas' });
   });
 
-  it('descarta las páginas vacías sin título', async () => {
+  it('discards empty untitled pages', async () => {
     db = new DiaryoDB('test-6');
     await saveChanges(db, info('vacia'), { ...empty, camera: { x: 0, y: 0, zoom: 1 } });
     await updatePage(db, info('titulada'), { title: 'Pendiente' });
@@ -120,7 +120,7 @@ describe('páginas del diario', () => {
     expect((await listPages(db)).map((p) => p.id).sort()).toEqual(['llena', 'titulada']);
   });
 
-  it('borrar una página se puede deshacer', async () => {
+  it('deleting a page can be undone', async () => {
     db = new DiaryoDB('test-7');
     await saveChanges(db, info('p'), { ...empty, upserts: [stroke('a'), stroke('b')] });
     const stored = (await deletePage(db, 'p'))!;
@@ -130,7 +130,7 @@ describe('páginas del diario', () => {
     expect((await loadPage(db, 'p')).elements).toHaveLength(2);
   });
 
-  it('actualiza la página de la fase 5 (sin día) al abrir la base de datos', async () => {
+  it('upgrades the phase 5 page (without a day) when opening the database', async () => {
     const old = new Dexie('test-8');
     old.version(1).stores({
       pages: 'id, updatedAt',
@@ -149,8 +149,8 @@ describe('páginas del diario', () => {
   });
 });
 
-describe('conexiones entre páginas', () => {
-  it('lista qué página enlaza con cuál, sin repetir y sin la mesa', async () => {
+describe('connections between pages', () => {
+  it('lists which page links to which, without repeats and without the desk', async () => {
     db = new DiaryoDB('test-12');
     const linked = (id: string, link: string) => ({ ...stroke(id), link });
     await saveChanges(db, info('p'), {
@@ -162,8 +162,8 @@ describe('conexiones entre páginas', () => {
   });
 });
 
-describe('hoja propia de una página', () => {
-  it('se guarda, va en las copias y guarda la página aunque esté vacía', async () => {
+describe("a page's own paper", () => {
+  it('it is saved, goes into backups and keeps the page even if empty', async () => {
     db = new DiaryoDB('test-14');
     await updatePage(db, info('agenda'), { paper: 'planner' });
     expect(await pruneEmptyPages(db)).toEqual([]);
@@ -172,7 +172,7 @@ describe('hoja propia de una página', () => {
     const backup = parseBackup(serializeDiary(await dumpDiary(db)));
     if (backup?.kind !== 'diary') throw new Error('copia no válida');
     expect(backup.diary.pages[0].page.paper).toBe('planner');
-    // Una hoja desconocida en una copia se ignora.
+    // An unknown paper in a backup is ignored.
     const tampered = serializeDiary(await dumpDiary(db)).replace('"planner"', '"hexagonal"');
     const parsed = parseBackup(tampered);
     if (parsed?.kind !== 'diary') throw new Error('copia no válida');
@@ -180,8 +180,8 @@ describe('hoja propia de una página', () => {
   });
 });
 
-describe('buscar', () => {
-  it('lista lo escrito en textos, notas y figuras (también en la mesa)', async () => {
+describe('search', () => {
+  it('lists what is written in texts, notes and shapes (also on the desk)', async () => {
     db = new DiaryoDB('test-13');
     const labelled = (id: string, text: string) => ({
       ...stroke(id),
@@ -199,8 +199,8 @@ describe('buscar', () => {
   });
 });
 
-describe('la mesa', () => {
-  it('se guarda como una página más, pero no sale en el índice ni se descarta', async () => {
+describe('the desk', () => {
+  it("it is saved as one more page, but doesn't show in the index and isn't discarded", async () => {
     db = new DiaryoDB('test-11');
     await saveChanges(db, DESK_INFO, { ...empty, upserts: [stroke('postit')] });
     await saveChanges(db, info('p'), { ...empty, upserts: [stroke('a')] });
@@ -210,8 +210,8 @@ describe('la mesa', () => {
   });
 });
 
-describe('copias del diario', () => {
-  it('ida y vuelta de todo el diario', async () => {
+describe('diary backups', () => {
+  it('round trip of the whole diary', async () => {
     db = new DiaryoDB('test-9');
     await saveChanges(db, info('p1'), {
       ...empty,
@@ -229,11 +229,11 @@ describe('copias del diario', () => {
     expect(backup.diary.assets).toHaveLength(1);
   });
 
-  it('al recuperar una copia no se pierde lo más reciente', async () => {
+  it("restoring a backup doesn't lose the most recent", async () => {
     db = new DiaryoDB('test-10');
     await saveChanges(db, info('p'), { ...empty, upserts: [stroke('viejo')] });
     const dump = await dumpDiary(db);
-    // Después de la copia se sigue escribiendo en "p" y aparece "q" en la copia.
+    // After the backup, writing continues on "p" and "q" appears in the backup.
     await saveChanges(db, info('p'), { ...empty, upserts: [stroke('nuevo')] });
     const [copy] = dump.pages;
     dump.pages.push({
@@ -245,29 +245,29 @@ describe('copias del diario', () => {
     expect((await loadPage(db, 'q')).elements).toHaveLength(1);
   });
 
-  it('la mesa se junta con la de aquí: no se pierde ningún pósit de ninguna', async () => {
-    // En la web: los pósits "a" y "b" en la mesa.
+  it('the desk merges with the one here: no note from either is lost', async () => {
+    // On the web: the notes "a" and "b" on the desk.
     const web = new DiaryoDB('test-15');
     await saveChanges(web, DESK_INFO, { ...empty, upserts: [stroke('a'), stroke('b')] });
     const copy = await dumpDiary(web);
     web.close();
     await Dexie.delete('test-15');
-    // En la app: otra versión de "a" (más reciente) y un pósit "c" que solo está aquí.
+    // In the app: another version of "a" (more recent) and a note "c" that is only here.
     db = new DiaryoDB('test-16');
     await saveChanges(db, DESK_INFO, { ...empty, upserts: [stroke('a', 99), stroke('c')] });
 
     expect(await mergeDiary(db, copy)).toEqual([DESK_INFO.id]);
     const desk = (await loadPage(db, DESK_INFO.id)).elements;
     expect(desk.map((el) => el.id).sort()).toEqual(['a', 'b', 'c']);
-    // Lo que está en las dos se queda como en la mesa más reciente (la de aquí).
+    // What is in both stays as on the most recent desk (the one here).
     expect(desk.find((el) => el.id === 'a')?.x).toBe(99);
-    // Otra vez la misma copia: ya no hay nada nuevo que juntar.
+    // The same backup again: there is nothing new to merge.
     expect(await mergeDiary(db, copy)).toEqual([]);
   });
 });
 
-describe('copias en archivo', () => {
-  it('ida y vuelta', () => {
+describe('file backups', () => {
+  it('round trip', () => {
     const text = serializePage({
       elements: [stroke('s'), image],
       assets: [{ id: 'a1', src: 'data:image/png;base64,AAAA' }],
@@ -278,7 +278,7 @@ describe('copias en archivo', () => {
     expect(page.fonts[0].name).toBe('Mía');
   });
 
-  it('rechaza archivos que no son de diaryo', () => {
+  it("rejects files that aren't from diaryo", () => {
     expect(parsePage('{}')).toBeNull();
     expect(parsePage('no es json')).toBeNull();
   });

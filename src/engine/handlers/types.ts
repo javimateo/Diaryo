@@ -11,13 +11,13 @@ export interface PointerInput {
   screen: Vec;
   pressure: number;
   pointerType: string;
-  /** Marca de tiempo del evento (mismo reloj que requestAnimationFrame). */
+  /** Event timestamp (same clock as requestAnimationFrame). */
   time: number;
   shiftKey: boolean;
   altKey: boolean;
 }
 
-/** Lo que el motor ofrece a cada herramienta. */
+/** What the engine offers each tool. */
 export interface ToolContext {
   readonly camera: Camera;
   readonly scene: Scene;
@@ -27,35 +27,35 @@ export interface ToolContext {
   readonly selection: ReadonlySet<string>;
   setSelection(ids: Iterable<string>): void;
   commit(changes: Changes): void;
-  /** Aplica cambios provisionales (mientras se arrastra) sin pasar por el historial. */
+  /** Applies provisional changes (while dragging) without going through the history. */
   preview(changes: Changes): void;
-  /** Confirma lo previsualizado como una sola acción de deshacer. `originals` = estado previo. */
+  /** Confirms what was previewed as a single undo step. `originals` = previous state. */
   commitPreview(originals: Changes): void;
-  /** Descarta lo previsualizado y restaura `originals`. */
+  /** Discards what was previewed and restores `originals`. */
   cancelPreview(originals: Changes): void;
-  /** Pide a la interfaz cambiar de herramienta (p. ej. volver a seleccionar). */
+  /** Asks the UI to change the tool (e.g. back to select). */
   requestTool(tool: ToolId): void;
-  /** Abre el editor de texto sobre un texto o una nota (nuevo o existente). */
+  /** Opens the text editor on a text or a note (new or existing). */
   startEditing(element: EditableElement, isNew: boolean): void;
-  /** Redibujar la capa de contenido. */
+  /** Redraw the content layer. */
   invalidateScene(): void;
-  /** Redibujar la capa superior (trazo en curso, selección, rastro del borrador…). */
+  /** Redraw the top layer (stroke in progress, selection, eraser trail…). */
   invalidateOverlay(): void;
 }
 
-/** Comportamiento de una herramienta. */
+/** A tool's behaviour. */
 export interface ToolHandler {
   onDown(input: PointerInput): void;
-  /** Recibe todos los puntos intermedios (eventos agrupados) desde el último movimiento. */
+  /** Receives all the intermediate points (coalesced events) since the last move. */
   onMove(inputs: PointerInput[]): void;
   onUp(): void;
   onCancel(): void;
-  /** Movimiento sin botones pulsados. Devuelve el cursor a mostrar, o null para el de la herramienta. */
+  /** Movement without buttons pressed. Returns the cursor to show, or null for the tool's. */
   onHover?(input: PointerInput): string | null;
-  /** Dibuja en la capa superior. El contexto ya tiene la transformación del mundo. */
+  /** Draws on the top layer. The context already has the world transform. */
   renderOverlay?(ctx: CanvasRenderingContext2D, now: number): void;
-  /** Opacidad con la que pintar un elemento (p. ej. atenuado mientras se borra). */
+  /** Opacity to paint an element with (e.g. dimmed while erasing). */
   elementOpacity?(id: string): number;
-  /** ¿Necesita más frames aunque no haya eventos (animaciones)? */
+  /** Does it need more frames even without events (animations)? */
   isAnimating?(now: number): boolean;
 }

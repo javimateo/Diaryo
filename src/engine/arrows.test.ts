@@ -28,7 +28,7 @@ const box = (id: string, x: number, y: number): ShapeElement => ({
   label: null,
 });
 
-/** Flecha de la caja `a` (en 0,0) a la caja `b` (en 300,0), apuntando a sus centros. */
+/** Arrow from box `a` (at 0,0) to box `b` (at 300,0), pointing at their centers. */
 const arrow = (overrides: Partial<ArrowElement> = {}): ArrowElement => ({
   id: 'f',
   type: 'arrow',
@@ -66,12 +66,12 @@ function setup() {
   return { scene, history, get };
 }
 
-describe('flechas enganchadas', () => {
-  it('los extremos quedan en el borde de cada caja, sin tocarla', () => {
+describe('attached arrows', () => {
+  it("the ends stay on each box's edge, without touching it", () => {
     const { get } = setup();
     const start = arrowStart(get());
     const end = arrowEnd(get());
-    // Borde derecho de `a` (x = 100) y borde izquierdo de `b` (x = 300), con separación.
+    // Right edge of `a` (x = 100) and left edge of `b` (x = 300), with a gap.
     expect(start.x).toBeGreaterThan(100);
     expect(start.x).toBeLessThan(120);
     expect(end.x).toBeLessThan(300);
@@ -79,7 +79,7 @@ describe('flechas enganchadas', () => {
     expect(start.y).toBeCloseTo(50);
   });
 
-  it('al mover una caja, la flecha la sigue; deshacer la devuelve', () => {
+  it('when a box moves, the arrow follows it; undo brings it back', () => {
     const { scene, history, get } = setup();
     const before = arrowEnd(get());
     history.commit(new Map([['b', translateElement(scene.get('b')!, 0, 200)]]));
@@ -89,24 +89,24 @@ describe('flechas enganchadas', () => {
     expect(arrowEnd(get()).y).toBeCloseTo(before.y);
   });
 
-  it('si se borra una caja, el extremo se queda donde estaba; deshacer lo recoloca', () => {
+  it('if a box is deleted, the end stays where it was; undo repositions it', () => {
     const { scene, history, get } = setup();
     const end = arrowEnd(get());
     history.commit(new Map([['b', null]]));
     expect(arrowEnd(get())).toEqual(end);
     history.undo();
-    // Vuelve a seguir a la caja.
+    // It follows the box again.
     history.commit(new Map([['b', translateElement(scene.get('b')!, 0, 200)]]));
     expect(arrowEnd(get()).y).toBeGreaterThan(end.y + 100);
   });
 
-  it('mover la flecha sola la suelta; con lo que conecta, no', () => {
+  it("moving the arrow alone detaches it; with what it connects, it doesn't", () => {
     const f = arrow();
     expect(detachMoved(f, new Set(['f']))).toMatchObject({ start: null, end: null });
     expect(detachMoved(f, new Set(['f', 'a', 'b']))).toBe(f);
   });
 
-  it('sin nada enganchado, la flecha no se mueve sola', () => {
+  it("with nothing attached, the arrow doesn't move by itself", () => {
     const loose = arrow({ start: null, end: null });
     expect(routeArrow(loose, () => undefined)).toMatchObject({
       x: 50,

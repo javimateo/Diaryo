@@ -1,41 +1,36 @@
 import { useState, type CSSProperties } from 'react';
 import {
+  BINDINGS,
   COVER_COLORS,
   PAPER_COLORS,
-  PAPERS,
+  PAPER_STYLES,
   paperPreview,
-  type Binding,
   type PaperColor,
   type PaperStyle,
 } from '../engine/book';
-import { MATERIALS, type CoverMaterial } from '../engine/cover';
-import { DESKS, deskImage, type DeskStyle } from '../engine/desk';
+import { MATERIALS } from '../engine/cover';
+import { DESKS, deskImage } from '../engine/desk';
 import { useUI } from '../store/ui';
 import { setPagePaper } from './diaryActions';
 import { Switch } from './Switch';
+import { useT } from './useT';
 
-export const BINDINGS: Record<Binding, string> = {
-  rings: 'Anillas',
-  sewn: 'Cosido',
-};
-
-const COVER_NAMES = ['Teja', 'Rosa', 'Azul', 'Verde', 'Mostaza', 'Negro'];
-
-/** Ancho de las miniaturas de las hojas (px). */
+/** Width of the paper thumbnails (px). */
 const PREVIEW_WIDTH = 60;
 
 /**
- * Aspecto del diario: hoja (de todo el diario o solo de esta página), color de hoja,
- * encuadernación, tapas y mesa.
+ * Diary look: paper (for the whole diary or only this page), paper color, binding, covers
+ * and desk.
  */
 export function BookStyleSection() {
+  const t = useT();
+  const { catalog } = t;
   const style = useUI((s) => s.bookStyle);
   const setBookStyle = useUI((s) => s.setBookStyle);
   const theme = useUI((s) => s.theme);
   const current = useUI((s) => s.diaryState.current);
   const [scope, setScope] = useState<'diary' | 'page'>(() => (current?.paper ? 'page' : 'diary'));
   const pagePaper = current?.paper ?? null;
-  const papers = Object.keys(PAPERS) as PaperStyle[];
 
   const tile = (paper: PaperStyle, label: string, active: boolean, pick: () => void) => (
     <button
@@ -48,7 +43,7 @@ export function BookStyleSection() {
     >
       <img
         className="paper-preview"
-        src={paperPreview(paper, theme, style.paperColor, PREVIEW_WIDTH)}
+        src={paperPreview(paper, theme, style.paperColor, PREVIEW_WIDTH, t.book)}
         alt=""
         draggable={false}
       />
@@ -57,10 +52,10 @@ export function BookStyleSection() {
   );
 
   return (
-    <section className="book-style" aria-label="Aspecto del diario">
+    <section className="book-style" aria-label={t.bookStyle.label}>
       <div className="book-style-head">
-        <h3>Hoja</h3>
-        <div className="segmented-group" role="group" aria-label="Cambiar la hoja de">
+        <h3>{t.bookStyle.paper}</h3>
+        <div className="segmented-group" role="group" aria-label={t.bookStyle.paperScope}>
           <button
             type="button"
             className="icon-btn text-option"
@@ -68,7 +63,7 @@ export function BookStyleSection() {
             aria-pressed={scope === 'diary'}
             onClick={() => setScope('diary')}
           >
-            Todo el diario
+            {t.bookStyle.wholeDiary}
           </button>
           <button
             type="button"
@@ -77,24 +72,28 @@ export function BookStyleSection() {
             aria-pressed={scope === 'page'}
             onClick={() => setScope('page')}
           >
-            Esta página
+            {t.bookStyle.thisPage}
           </button>
         </div>
       </div>
       <div className="style-grid">
         {scope === 'diary'
-          ? papers.map((paper) =>
-              tile(paper, PAPERS[paper], style.paper === paper, () => setBookStyle({ paper })),
+          ? PAPER_STYLES.map((paper) =>
+              tile(paper, catalog.papers[paper], style.paper === paper, () =>
+                setBookStyle({ paper }),
+              ),
             )
           : [
-              tile(style.paper, 'Del diario', pagePaper === null, () => setPagePaper(null)),
-              ...papers.map((paper) =>
-                tile(paper, PAPERS[paper], pagePaper === paper, () => setPagePaper(paper)),
+              tile(style.paper, t.bookStyle.diaryPaper, pagePaper === null, () =>
+                setPagePaper(null),
+              ),
+              ...PAPER_STYLES.map((paper) =>
+                tile(paper, catalog.papers[paper], pagePaper === paper, () => setPagePaper(paper)),
               ),
             ]}
       </div>
 
-      <h3>Color de hoja</h3>
+      <h3>{t.bookStyle.paperColor}</h3>
       <div className="swatch-grid">
         {(Object.keys(PAPER_COLORS) as PaperColor[]).map((id) => (
           <button
@@ -104,17 +103,17 @@ export function BookStyleSection() {
             data-square
             data-active={style.paperColor === id || undefined}
             style={{ '--swatch': PAPER_COLORS[id][theme] } as CSSProperties}
-            aria-label={PAPER_COLORS[id].name}
+            aria-label={catalog.paperColors[id]}
             aria-pressed={style.paperColor === id}
-            data-tip={PAPER_COLORS[id].name}
+            data-tip={catalog.paperColors[id]}
             onClick={() => setBookStyle({ paperColor: id })}
           />
         ))}
       </div>
 
-      <h3>Encuadernación</h3>
+      <h3>{t.bookStyle.binding}</h3>
       <div className="segmented-group wide" role="group">
-        {(Object.keys(BINDINGS) as Binding[]).map((id) => (
+        {BINDINGS.map((id) => (
           <button
             key={id}
             type="button"
@@ -123,14 +122,14 @@ export function BookStyleSection() {
             aria-pressed={style.binding === id}
             onClick={() => setBookStyle({ binding: id })}
           >
-            {BINDINGS[id]}
+            {catalog.bindings[id]}
           </button>
         ))}
       </div>
 
-      <h3>Tapas</h3>
-      <div className="segmented-group wide" role="group" aria-label="Material de las tapas">
-        {(Object.keys(MATERIALS) as CoverMaterial[]).map((id) => (
+      <h3>{t.bookStyle.cover}</h3>
+      <div className="segmented-group wide" role="group" aria-label={t.bookStyle.coverMaterial}>
+        {MATERIALS.map((id) => (
           <button
             key={id}
             type="button"
@@ -139,12 +138,12 @@ export function BookStyleSection() {
             aria-pressed={style.material === id}
             onClick={() => setBookStyle({ material: id })}
           >
-            {MATERIALS[id]}
+            {catalog.materials[id]}
           </button>
         ))}
       </div>
       {style.material === 'kraft' ? (
-        <p className="book-style-note">El cartón tiene su propio color.</p>
+        <p className="book-style-note">{t.bookStyle.kraftNote}</p>
       ) : (
         <div className="swatch-grid cover-colors">
           {COVER_COLORS.map((color, i) => (
@@ -154,26 +153,26 @@ export function BookStyleSection() {
               className="swatch"
               data-active={style.cover === color || undefined}
               style={{ '--swatch': color } as CSSProperties}
-              aria-label={COVER_NAMES[i]}
+              aria-label={catalog.coverColors[i]}
               aria-pressed={style.cover === color}
-              data-tip={COVER_NAMES[i]}
+              data-tip={catalog.coverColors[i]}
               onClick={() => setBookStyle({ cover: color })}
             />
           ))}
         </div>
       )}
       <label className="book-style-row">
-        Goma elástica
+        {t.bookStyle.elastic}
         <Switch
           checked={style.elastic}
-          label="Goma elástica"
+          label={t.bookStyle.elastic}
           onChange={(elastic) => setBookStyle({ elastic })}
         />
       </label>
 
-      <h3>Mesa</h3>
+      <h3>{t.bookStyle.desk}</h3>
       <div className="style-grid">
-        {(Object.keys(DESKS) as DeskStyle[]).map((desk) => {
+        {DESKS.map((desk) => {
           const image = deskImage(desk, theme);
           return (
             <button
@@ -188,7 +187,7 @@ export function BookStyleSection() {
                 className="desk-preview"
                 style={image ? { backgroundImage: `url(${image})` } : undefined}
               />
-              <span>{DESKS[desk]}</span>
+              <span>{catalog.desks[desk]}</span>
             </button>
           );
         })}

@@ -1,0 +1,23 @@
+---
+import { texts, type Lang } from '../i18n';
+import { SITE } from '../site';
+
+interface Props {
+  lang: Lang;
+}
+
+/**
+ * The home page. For now only the hero: the full page (demo, features, download, FAQ)
+ * comes after its mockup is approved (PLAN.md, H2).
+ */
+const { lang } = Astro.props;
+const t = texts(lang);
+---
+
+<section class="hero">
+  <h1>{t.hero.title}</h1>
+  <p class="subtitle">{t.hero.subtitle}</p>
+  <div class="actions" id="download">
+    <a class="button primary" href={SITE.releases}>{t.hero.download}</a>
+  </div>
+</section>

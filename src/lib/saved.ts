@@ -1,7 +1,7 @@
 /**
- * Lo que se guarda en el navegador (ajustes, vistas, la última página…). Puede no estar
- * disponible o fallar (modo privado, sin espacio): leer devuelve null y escribir dice si
- * se pudo, pero nunca rompe la app.
+ * What is saved in the browser (settings, views, the last page…). It may be unavailable
+ * or fail (private mode, no space left): reading returns null and writing says whether it
+ * worked, but it never breaks the app.
  */
 
 export function readText(key: string): string | null {
@@ -21,7 +21,10 @@ export function writeText(key: string, value: string): boolean {
   }
 }
 
-/** Lo guardado como JSON, o null si no hay o no se entiende. Quien lo lee comprueba su forma. */
+/**
+ * What was saved as JSON, or null if there is nothing or it can't be parsed. Whoever
+ * reads it checks its shape.
+ */
 export function readJSON(key: string): unknown {
   const text = readText(key);
   if (text === null) return null;
@@ -36,7 +39,7 @@ export function writeJSON(key: string, value: unknown): boolean {
   return writeText(key, JSON.stringify(value));
 }
 
-/** Para leer campos de algo guardado sin saber aún si tiene la forma esperada. */
+/** To read fields of something saved without knowing yet whether it has the expected shape. */
 export function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
 }

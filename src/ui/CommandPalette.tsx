@@ -10,7 +10,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { formatDay, formatDayMonth, relativeDay, todayKey, type DayKey } from '../lib/dates';
+import { todayKey, type DayKey } from '../lib/dates';
+import { formatDay, formatDayMonth, relativeDay } from '../i18n/dates';
 import { comparePages, pagesOfDay, type PageMeta } from '../diary/pages';
 import {
   findInText,
@@ -24,6 +25,8 @@ import { DESK_ID, type TextEntry } from '../storage/db';
 import { useUI } from '../store/ui';
 import { getCommands, type Command, type CommandPrompt } from './commands';
 import { pageName } from './LinkDialog';
+import { getLanguage, t } from '../i18n';
+import { useT } from './useT';
 
 type Result =
   | { kind: 'command'; key: string; command: Command; showGroup?: boolean }
@@ -48,8 +51,9 @@ const TEXT_ICONS: Partial<Record<SceneElement['type'], LucideIcon>> = {
 };
 
 /**
- * Paleta de comandos y búsqueda (Ctrl+K): encuentra páginas, días ("ayer", "24 sept"),
- * lo escrito en cualquier página o en la mesa, y todo lo que se puede hacer.
+ * Command palette and search (Ctrl+K): finds pages, days ("ayer", "24 sept",
+ * "yesterday"), whatever is written on any page or on the desk, and everything that can
+ * be done.
  */
 export function CommandPalette() {
   const open = useUI((s) => s.paletteOpen);
@@ -58,6 +62,7 @@ export function CommandPalette() {
 }
 
 function Palette() {
+  const t = useT();
   const setOpen = useUI((s) => s.setPaletteOpen);
   const diary = useUI((s) => s.diary);
   const { pages, current } = useUI((s) => s.diaryState);
@@ -69,7 +74,8 @@ function Palette() {
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Lo escrito en todo el diario se lee una vez al abrir; luego se busca en memoria.
+  // Whatever is written in the whole diary is read once when opening; then it is searched
+  // in memory.
   useEffect(() => {
     let alive = true;
     void diary?.texts().then((entries) => alive && setTexts(entries));
@@ -85,12 +91,12 @@ function Palette() {
   const results = sections.flatMap((s) => s.results);
   const searching = !prompt && texts === null && queryWords(query).length > 0;
 
-  // Al pedir un texto (p. ej. el título), lo que había queda seleccionado para cambiarlo.
+  // When asking for a text (e.g. the title), what was there is selected to change it.
   useEffect(() => {
     if (prompt) inputRef.current?.select();
   }, [prompt]);
 
-  // Lo elegido siempre a la vista.
+  // The chosen item always in view.
   useLayoutEffect(() => {
     listRef.current?.querySelector('[data-active]')?.scrollIntoView({ block: 'nearest' });
   }, [active, sections]);
@@ -147,7 +153,7 @@ function Palette() {
         className="palette"
         role="dialog"
         aria-modal="true"
-        aria-label={prompt ? prompt.title : 'Buscar y comandos'}
+        aria-label={prompt ? prompt.title : t.topBar.search}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {prompt && <p className="palette-prompt-title">{prompt.title}</p>}
@@ -161,8 +167,8 @@ function Palette() {
             ref={inputRef}
             autoFocus
             value={query}
-            placeholder={prompt ? prompt.placeholder : 'Busca en tu diario, un día o qué hacer…'}
-            aria-label={prompt ? prompt.title : 'Buscar'}
+            placeholder={prompt ? prompt.placeholder : t.palette.placeholder}
+            aria-label={prompt ? prompt.title : t.palette.search}
             spellCheck={false}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -179,7 +185,7 @@ function Palette() {
             className="palette-results"
             role="listbox"
             data-scrollable
-            // Que el foco no deje el cuadro de búsqueda al pulsar.
+            // Keep the focus from leaving the search box when clicking.
             onMouseDown={(e) => e.preventDefault()}
           >
             {sections.map((section) => (
@@ -199,9 +205,9 @@ function Palette() {
                 })}
               </div>
             ))}
-            {searching && <p className="palette-note">Buscando en tu diario…</p>}
+            {searching && <p className="palette-note">{t.palette.searching}</p>}
             {!searching && results.length === 0 && (
-              <p className="palette-note">No hay nada con «{query.trim()}».</p>
+              <p className="palette-note">{t.palette.nothing(query.trim())}</p>
             )}
           </div>
         )}
@@ -213,25 +219,25 @@ function Palette() {
                 <kbd>
                   <CornerDownLeft size={11} strokeWidth={2} aria-label="Enter" />
                 </kbd>{' '}
-                guardar
+                {t.palette.save}
               </span>
               <span>
-                <kbd>Esc</kbd> volver
+                <kbd>Esc</kbd> {t.palette.back}
               </span>
             </>
           ) : (
             <>
               <span>
-                <kbd>↑</kbd> <kbd>↓</kbd> elegir
+                <kbd>↑</kbd> <kbd>↓</kbd> {t.palette.choose}
               </span>
               <span>
                 <kbd>
                   <CornerDownLeft size={11} strokeWidth={2} aria-label="Enter" />
                 </kbd>{' '}
-                abrir
+                {t.palette.open}
               </span>
               <span>
-                <kbd>Esc</kbd> cerrar
+                <kbd>Esc</kbd> {t.palette.close}
               </span>
             </>
           )}
@@ -269,6 +275,7 @@ function Row({
 }
 
 function RowContent({ result }: { result: Result }) {
+  const t = useT();
   switch (result.kind) {
     case 'command': {
       const { command } = result;
@@ -298,10 +305,10 @@ function RowContent({ result }: { result: Result }) {
           <span className="palette-icon">
             <CalendarPlus size={16} strokeWidth={1.75} />
           </span>
-          <span className="palette-label">
-            Ir al {formatDay(result.date).toLocaleLowerCase('es')}
+          <span className="palette-label">{t.palette.goToDay(formatDay(result.date))}</span>
+          <span className="palette-meta">
+            {relative ? `${relative} · ${t.palette.blank}` : t.palette.blank}
           </span>
-          <span className="palette-meta">{relative ? `${relative} · en blanco` : 'en blanco'}</span>
         </>
       );
     }
@@ -340,7 +347,7 @@ function RowContent({ result }: { result: Result }) {
   }
 }
 
-/** El trozo de texto con lo encontrado resaltado. */
+/** The piece of text with the matches highlighted. */
 function Marked({ snippet }: { snippet: Snippet }) {
   const parts = [];
   let at = 0;
@@ -360,6 +367,7 @@ function buildSections(
   current: PageMeta | null,
   texts: TextEntry[] | null,
 ): Section[] {
+  const p = t().palette;
   const words = queryWords(query);
   const sections: Section[] = [];
   const push = (title: string, results: Result[]) => {
@@ -371,7 +379,7 @@ function buildSections(
 
   if (words.length === 0) {
     push(
-      'Recientes',
+      p.recent,
       [...pages]
         .filter((p) => p.id !== current?.id)
         .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -384,27 +392,28 @@ function buildSections(
     return sections;
   }
 
-  // Un día escrito a mano: sus páginas, o ir a él en blanco si aún no tiene.
-  const date = parseDayQuery(query, todayKey());
+  // A day typed by hand: its pages, or going to it blank if it has none yet.
+  const date = parseDayQuery(query, todayKey(), getLanguage() === 'en');
   const ofDay = date ? pagesOfDay(pages, date) : [];
-  if (date && ofDay.length === 0) push('Ir a', [{ kind: 'day', key: `day-${date}`, date }]);
+  if (date && ofDay.length === 0) push(p.goTo, [{ kind: 'day', key: `day-${date}`, date }]);
   const matching = newestFirst.filter(
     (p) =>
       !ofDay.includes(p) && matchesPrefixes(`${p.title} ${formatDay(p.date)} ${p.date}`, words),
   );
   push(
-    'Páginas',
+    p.pages,
     [...ofDay, ...matching]
       .slice(0, MAX_PAGES)
       .map((page): Result => ({ kind: 'page', key: page.id, page })),
   );
 
   push(
-    'Acciones',
+    p.actions,
     commandResults(
       commands
         .filter((c) => matchesPrefixes(`${c.label} ${c.group} ${c.keywords ?? ''}`, words))
-        // Primero las que lo tienen todo en su nombre ("la del diario" no es "Mapa del diario").
+        // First those with everything in their name ("la del diario" isn't "Mapa del
+        // diario").
         .map((command) => ({
           command,
           score: words.filter((w) => matchesPrefixes(command.label, [w])).length,
@@ -426,9 +435,9 @@ function buildSections(
       const snippet = findInText(entry.text, words);
       if (!snippet) continue;
       const place = desk
-        ? 'Mesa'
+        ? p.desk
         : page === current
-          ? 'Esta página'
+          ? p.thisPage
           : page!.title || formatDayMonth(page!.date);
       found.push({
         kind: 'text',
@@ -438,7 +447,8 @@ function buildSections(
         place,
       });
     }
-    // Primero la página abierta y la mesa (se ven ya); luego, de lo más nuevo a lo más viejo.
+    // First the open page and the desk (they are already visible); then, from newest to
+    // oldest.
     const rank = (entry: TextEntry) => {
       if (entry.pageId === current?.id) return '~2';
       if (entry.pageId === DESK_ID) return '~1';
@@ -446,13 +456,12 @@ function buildSections(
       return `${page.date}-${page.order}`;
     };
     found.sort((a, b) => rank(b.entry).localeCompare(rank(a.entry)));
-    push('En tu diario', found.slice(0, MAX_TEXTS));
+    push(p.inYourDiary, found.slice(0, MAX_TEXTS));
 
-    // "tareas" o "pendientes": todas las tareas por hacer del diario, primero de todo.
+    // "tareas" or "pendientes" (in English, "tasks" or "todo"): all the pending tasks in
+    // the diary, before anything else.
     const asksTasks =
-      words.length === 1 &&
-      words[0].length >= 3 &&
-      ['tareas', 'pendientes'].some((w) => w.startsWith(words[0]));
+      words.length === 1 && words[0].length >= 3 && p.taskWords.some((w) => w.startsWith(words[0]));
     if (asksTasks) {
       const pending: Result[] = [];
       for (const entry of [...texts].sort((a, b) => rank(b).localeCompare(rank(a)))) {
@@ -460,9 +469,9 @@ function buildSections(
         const desk = entry.pageId === DESK_ID;
         if (!page && !desk) continue;
         const place = desk
-          ? 'Mesa'
+          ? p.desk
           : page === current
-            ? 'Esta página'
+            ? p.thisPage
             : page!.title || formatDayMonth(page!.date);
         entry.text.split('\n').forEach((line, i) => {
           const task = /^\s*\[ \]\s*(.*\S.*)$/.exec(line);
@@ -476,13 +485,13 @@ function buildSections(
           });
         });
       }
-      if (pending.length > 0) sections.unshift({ title: 'Tareas pendientes', results: pending });
+      if (pending.length > 0) sections.unshift({ title: p.pendingTasks, results: pending });
     }
   }
   return sections;
 }
 
-/** Lleva a lo elegido: una página, un día o algo escrito (que se ilumina al llegar). */
+/** Goes to the chosen item: a page, a day or something written (which lights up on arrival). */
 async function reveal(result: Result) {
   const { diary, engine, diaryState, mapOpen, setMapOpen } = useUI.getState();
   if (!diary || !engine) return;

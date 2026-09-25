@@ -5,6 +5,7 @@ import { hideDesktop } from '../desktop/bridge';
 import { useUI } from '../store/ui';
 import { addPage, goToToday, toggleBookmark, turnPage } from './diaryActions';
 import { findToolForKey } from './toolDefs';
+import { t } from '../i18n';
 
 const ARROWS: Record<string, [number, number]> = {
   ArrowUp: [0, -1],
@@ -13,19 +14,19 @@ const ARROWS: Record<string, [number, number]> = {
   ArrowRight: [1, 0],
 };
 
-/** Tras seleccionar algo desde el teclado, pasar a una herramienta que muestre la selección. */
+/** After selecting something from the keyboard, switch to a tool that shows the selection. */
 function ensureSelectionTool() {
   const { tool, setTool } = useUI.getState();
   if (tool !== 'select' && tool !== 'lasso') setTool('select');
 }
 
-/** Atajos globales de teclado (al estilo Excalidraw). */
+/** Global keyboard shortcuts (Excalidraw style). */
 export function useShortcuts() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // Mientras se escribe, las teclas son texto (aunque el foco aún no haya llegado).
+      // While writing, keys are text (even if the focus hasn't arrived yet).
       if (isEditableTarget(e.target) || useUI.getState().editing) return;
-      // Con los ajustes abiertos, solo Ctrl+, (para cerrarlos); Esc lo atienden ellos.
+      // With the settings open, only Ctrl+, (to close them); they handle Esc themselves.
       if (useUI.getState().settingsOpen) {
         if ((e.ctrlKey || e.metaKey) && e.key === ',') {
           e.preventDefault();
@@ -36,7 +37,7 @@ export function useShortcuts() {
       const { engine, helpOpen, setHelpOpen, setTool, toggleTheme, showToast } = useUI.getState();
       const mod = e.ctrlKey || e.metaKey;
 
-      // Ctrl+Alt: copiar y pegar estilos.
+      // Ctrl+Alt: copy and paste styles.
       if (mod && e.altKey && !e.shiftKey) {
         if (e.code === 'KeyC' && engine?.copyStyle()) e.preventDefault();
         else if (e.code === 'KeyV' && engine?.pasteStyle()) e.preventDefault();
@@ -44,7 +45,7 @@ export function useShortcuts() {
       }
       if (e.shiftKey && e.altKey && !mod && e.code === 'KeyC') {
         e.preventDefault();
-        void engine?.copySelectionAsPng().then((ok) => ok && showToast('Imagen copiada'));
+        void engine?.copySelectionAsPng().then((ok) => ok && showToast(t().commands.imageCopied));
         return;
       }
 
@@ -52,9 +53,10 @@ export function useShortcuts() {
         const key = e.key.toLowerCase();
         const arrange = { ArrowUp: 'forward', ArrowDown: 'backward' } as const;
         if (key === 's') {
-          // Se guarda solo; Ctrl+S solo lo confirma (y evita el "Guardar página" del navegador).
+          // It saves itself; Ctrl+S only confirms it (and avoids the browser's "Save
+          // page").
           void useUI.getState().diary?.flush();
-          showToast('Todo está guardado · se guarda solo');
+          showToast(t().toasts.allSaved);
         } else if (key === 'z' && !e.shiftKey) engine?.undo();
         else if ((key === 'z' && e.shiftKey) || key === 'y') engine?.redo();
         else if (e.code === 'KeyG') {
@@ -69,7 +71,8 @@ export function useShortcuts() {
         } else if (e.key === 'Home') goToToday();
         else if (e.key === ',') useUI.getState().setSettingsOpen(true);
         else if ((e.code === 'KeyK' || e.code === 'KeyF') && !e.shiftKey) {
-          // Buscar y comandos (también sustituye al "Buscar" del navegador, que no ve el lienzo).
+          // Search and commands (it also replaces the browser's "Find", which can't see
+          // the canvas).
           const { paletteOpen, setPaletteOpen } = useUI.getState();
           setPaletteOpen(!paletteOpen);
         } else if (e.code === 'KeyB' && !e.shiftKey) {
@@ -79,10 +82,10 @@ export function useShortcuts() {
           engine?.selectAll();
           ensureSelectionTool();
         } else if (key === 'd') {
-          // También evita que el navegador abra "Añadir a marcadores".
+          // It also keeps the browser from opening "Add bookmark".
           if (engine?.duplicateSelection()) ensureSelectionTool();
         }
-        // Sustituyen al zoom del navegador.
+        // They replace the browser's zoom.
         else if (e.key === '+' || e.key === '=') engine?.zoomIn();
         else if (e.key === '-') engine?.zoomOut();
         else if (e.key === '0') engine?.resetZoom();
@@ -112,7 +115,7 @@ export function useShortcuts() {
         const { doc, diaryOpen, setDiaryOpen, desktop } = useUI.getState();
         if (helpOpen) setHelpOpen(false);
         else if (doc.selectionCount === 0 && diaryOpen) setDiaryOpen(false);
-        // En el diario flotante, Esc lo aparta (como el atajo).
+        // In the floating diary, Esc puts it away (like the shortcut).
         else if (doc.selectionCount === 0 && desktop?.mode === 'widget') void hideDesktop();
         else engine?.clearSelection();
         return;
@@ -140,7 +143,7 @@ export function useShortcuts() {
         setHelpOpen(!helpOpen);
         return;
       }
-      // + / − cambian el grosor o el tamaño de letra (se puede mantener pulsado).
+      // + / − change the stroke width or the font size (can be held down).
       if (e.key === '+' || e.key === '-') {
         const direction = e.key === '+' ? 1 : -1;
         const { tool: current, styles, setToolStyle, doc, zoom } = useUI.getState();
@@ -176,11 +179,10 @@ export function useShortcuts() {
       const tool = findToolForKey(e);
       if (!tool) return;
       e.preventDefault();
-      if (tool.ready) setTool(tool.id);
-      else showToast(`${tool.label}: llegará muy pronto`);
+      setTool(tool.id);
     };
 
-    // Copiar, cortar y pegar usan los eventos del portapapeles del navegador.
+    // Copy, cut and paste use the browser's clipboard events.
     const onCopy = (e: ClipboardEvent) => {
       if (isEditableTarget(e.target)) return;
       const text = useUI.getState().engine?.copySelection();
@@ -194,7 +196,7 @@ export function useShortcuts() {
       if (e.defaultPrevented) useUI.getState().engine?.deleteSelection();
     };
 
-    // Pegar: imágenes, lo copiado desde diaryo o texto normal (se convierte en un texto).
+    // Paste: images, what was copied from diaryo or plain text (it becomes a text).
     const onPaste = (e: ClipboardEvent) => {
       const engine = useUI.getState().engine;
       if (isEditableTarget(e.target) || !engine) return;

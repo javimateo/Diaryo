@@ -5,16 +5,16 @@ import { clamp, easeOutCubic } from './math';
 import type { ThemeMode } from './palette';
 
 /**
- * Lo que va debajo de todo: la mesa con su textura, nada (la capa del escritorio) o un
- * velo suave sobre el escritorio (el diario flotante).
+ * What goes under everything: the desk with its texture, nothing (the desktop layer) or a
+ * soft veil over the desktop (the floating diary).
  */
 export type Backdrop = { kind: 'clear' } | { kind: 'veil' } | { kind: 'desk'; style: DeskStyle };
 
 const patterns = new WeakMap<HTMLCanvasElement, CanvasPattern>();
 
 /**
- * Pinta el fondo en píxeles físicos. La textura de la mesa va pegada al mundo (se mueve
- * con el libro); de muy lejos se funde con su color, para que no parpadee.
+ * Paints the background in physical pixels. The desk texture is stuck to the world (it
+ * moves with the book); from far away it fades into its color, so it doesn't flicker.
  */
 export function drawBackdrop(
   ctx: CanvasRenderingContext2D,
@@ -55,8 +55,8 @@ export function drawBackdrop(
 }
 
 /**
- * Brillo alrededor de algo señalado (en coordenadas del mundo): una onda que se abre y
- * un marco que se apaga. `t` va de 0 a 1 a lo largo del brillo.
+ * Glow around something pointed at (in world coordinates): a wave that opens and a frame
+ * that fades. `t` goes from 0 to 1 along the glow.
  */
 export function drawHighlight(
   ctx: CanvasRenderingContext2D,

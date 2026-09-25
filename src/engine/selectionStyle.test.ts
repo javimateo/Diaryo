@@ -8,19 +8,19 @@ const note = (color: string) => ({
   color: color as never,
 });
 
-describe('estilo común de lo seleccionado', () => {
-  it('sin nada seleccionado no hay estilo', () => {
+describe('common style of the selection', () => {
+  it('with nothing selected there is no style', () => {
     expect(selectionStyle([])).toBeNull();
   });
 
-  it('lo que comparten todos se ve; si difiere, queda en null', () => {
+  it('what they all share shows; if it differs, it is null', () => {
     const same = selectionStyle([note('yellow'), note('yellow')]);
     expect(same?.hasNotes).toBe(true);
     expect(same?.noteColor).toBe('yellow');
     expect(selectionStyle([note('yellow'), note('pink')])?.noteColor).toBeNull();
   });
 
-  it('el tamaño solo se puede cambiar si todo es del mismo tipo', () => {
+  it('the size can only change if everything is of the same kind', () => {
     const stroke: StrokeElement = {
       id: 's',
       type: 'stroke',
