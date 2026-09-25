@@ -1,7 +1,7 @@
 import { FolderOpen, FolderPen, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { backupDesktop } from '../desktop/bridge';
 import {
-  backupDesktop,
   chooseBackupDir,
   openBackupDir,
   setAutostart,
@@ -9,9 +9,8 @@ import {
   setDeskLayer,
   setDeskShortcut,
   setDesktopShortcut,
-  shortcutFromEvent,
-  shortcutKeys,
-} from '../desktop/desktop';
+} from '../desktop/settings';
+import { shortcutFromEvent, shortcutKeys } from '../desktop/shortcuts';
 import { useUI } from '../store/ui';
 import { SettingsRow } from './SettingsRow';
 import { Switch } from './Switch';

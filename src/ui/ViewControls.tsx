@@ -1,6 +1,7 @@
 import { LocateFixed, Pin } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { pinDeskView, readDeskView, sameView } from '../desktop/desktop';
+import { pinDeskView } from '../desktop/bridge';
+import { readDeskView, sameView } from '../desktop/saved';
 import type { DeskView } from '../engine/engine';
 import { useUI } from '../store/ui';
 
@@ -26,7 +27,7 @@ export function ViewControls() {
 
   const pin = () => {
     const view = engine.view();
-    pinDeskView(view);
+    pinDeskView();
     setPinned(view);
   };
 

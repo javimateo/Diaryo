@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { shortcutKeys } from '../desktop/desktop';
+import { shortcutKeys } from '../desktop/shortcuts';
 import { useUI } from '../store/ui';
 import { TOOLS } from './toolDefs';
 

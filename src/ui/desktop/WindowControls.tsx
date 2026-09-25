@@ -1,13 +1,8 @@
 import { Copy, Minus, Square, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useUI } from '../../store/ui';
-import { hideDesktop } from '../../desktop/desktop';
-
-/** La ventana de la app (sin el marco de Windows). */
-async function currentWindow() {
-  const { getCurrentWindow } = await import('@tauri-apps/api/window');
-  return getCurrentWindow();
-}
+import { hideDesktop } from '../../desktop/bridge';
+import { currentWindow } from '../../desktop/tauri';
 
 /** ¿Es la app de escritorio en su ventana (no el diario flotante)? */
 function useWindowMode() {

@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState, type PointerEvent } from 'react';
-import { call, readToday, TODAY_KEY, type TodayCard } from '../../desktop/desktop';
+import { readToday, TODAY_KEY, type TodayCard } from '../../desktop/saved';
+import { call, emit } from '../../desktop/tauri';
 import { asRecord, readJSON, writeJSON } from '../../lib/saved';
 
 const POSITION_KEY = 'diaryo:mini-diary';
@@ -24,7 +25,6 @@ function readPlace(): Place {
 
 /** Abre el diario flotante en la página de hoy. */
 async function openToday() {
-  const { emit } = await import('@tauri-apps/api/event');
   await emit('diaryo://go-today');
   await call('show_mode', { mode: 'widget' });
 }

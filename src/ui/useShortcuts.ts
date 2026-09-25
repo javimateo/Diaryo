@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { isEditableTarget } from '../engine/dom';
 import { stepSize } from '../engine/elements';
-import { hideDesktop } from '../desktop/desktop';
+import { hideDesktop } from '../desktop/bridge';
 import { useUI } from '../store/ui';
 import { addPage, goToToday, toggleBookmark, turnPage } from './diaryActions';
 import { findToolForKey } from './toolDefs';

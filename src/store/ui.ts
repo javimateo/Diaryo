@@ -6,7 +6,8 @@ import type { ToolStyles } from '../engine/elements';
 import type { ContextMenuRequest, EditingState, Engine, EngineState } from '../engine/engine';
 import type { HexColor } from '../engine/palette';
 import type { ToolId } from '../engine/tools';
-import type { DesktopInfo } from '../desktop/desktop';
+import type { DesktopBridge } from '../desktop/bridge';
+import type { DesktopInfo } from '../desktop/settings';
 import type { Diary, DiaryState, TurnSpeed } from '../diary/diary';
 import type { SaveStatus } from '../storage/autosave';
 import { mergeToolStyle, parseRecentColors, parseStyles, RECENT_COLORS_LIMIT } from './styles';
@@ -121,6 +122,8 @@ interface UIState {
   paletteOpen: boolean;
   /** App de escritorio: modo, atajo, copias… (null en la web). */
   desktop: DesktopInfo | null;
+  /** La conexión con la parte de escritorio (null en la web). */
+  desktopBridge: DesktopBridge | null;
   /** Dónde estaba el libro en la pantalla al abrir el mapa (la hoja sale de ahí). */
   mapOrigin: { x: number; y: number; width: number; height: number } | null;
   /** Menú del clic derecho abierto. */
@@ -147,6 +150,7 @@ interface UIState {
   setMapOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
   setDesktop: (patch: Partial<DesktopInfo>) => void;
+  setDesktopBridge: (bridge: DesktopBridge | null) => void;
   openContextMenu: (request: ContextMenuRequest) => void;
   closeContextMenu: () => void;
   showToast: (message: string, action?: ToastAction) => void;
@@ -188,6 +192,7 @@ export const useUI = create<UIState>()((set, get) => ({
   mapOrigin: null,
   paletteOpen: false,
   desktop: null,
+  desktopBridge: null,
   contextMenu: null,
   toast: null,
   setEngine: (engine) => set({ engine }),
@@ -245,6 +250,7 @@ export const useUI = create<UIState>()((set, get) => ({
     const desktop = get().desktop;
     set({ desktop: desktop ? { ...desktop, ...patch } : (patch as DesktopInfo) });
   },
+  setDesktopBridge: (desktopBridge) => set({ desktopBridge }),
   setBookStyle: (patch) => {
     const bookStyle = { ...get().bookStyle, ...patch };
     writeJSON(BOOK_KEY, bookStyle);

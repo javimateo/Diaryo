@@ -3,7 +3,8 @@ import { formatDayMonth } from '../lib/dates';
 import { Diary } from '../diary/diary';
 import type { PageMeta } from '../diary/pages';
 import { followLink } from './diaryActions';
-import { isDesktop, notifyDeskSaved, startDesktop } from '../desktop/desktop';
+import { DesktopBridge } from '../desktop/bridge';
+import { isDesktop, notifyDeskSaved } from '../desktop/tauri';
 import { Engine } from '../engine/engine';
 import { getDB } from '../storage/db';
 import { useUI } from '../store/ui';
@@ -61,19 +62,16 @@ export function CanvasView() {
       onDeskSaved: desktop ? notifyDeskSaved : undefined,
     });
     setDiary(diary);
-    let stopDesktop: (() => void) | null = null;
-    let stopped = false;
-    void diary.start().then(async () => {
-      if (!desktop || stopped) return;
-      const stop = await startDesktop(instance, diary);
-      if (stopped) stop();
-      else stopDesktop = stop;
-    });
+    // En la app de escritorio, en cuanto está la página de hoy se conecta con ella.
+    const bridge = desktop ? new DesktopBridge(instance, diary) : null;
+    useUI.getState().setDesktopBridge(bridge);
+    if (bridge) void diary.start().then(() => bridge.start());
+    else void diary.start();
     // Solo en desarrollo: acceso desde la consola para depurar y medir.
     if (import.meta.env.DEV) Object.assign(window, { diaryo: instance });
     return () => {
-      stopped = true;
-      stopDesktop?.();
+      bridge?.stop();
+      useUI.getState().setDesktopBridge(null);
       unsubscribeCamera();
       unsubscribeState();
       unsubscribeEditing();

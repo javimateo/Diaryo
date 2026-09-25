@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { TurnSpeed } from '../diary/diary';
 import { saveCopy } from './fileActions';
 import { useUI, type ThemePreference } from '../store/ui';
-import { isDesktop } from '../desktop/desktop';
+import { isDesktop } from '../desktop/tauri';
 import { BookStyleSection } from './BookStyleSection';
 import { DesktopSettings } from './DesktopSettings';
 import { SettingsRow } from './SettingsRow';

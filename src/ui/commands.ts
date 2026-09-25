@@ -63,14 +63,9 @@ import {
   turnPage,
 } from './diaryActions';
 import { BINDINGS } from './BookStyleSection';
-import {
-  backupDesktop,
-  hideDesktop,
-  openBackupDir,
-  quitDesktop,
-  shortcutKeys,
-  showDesktopMode,
-} from '../desktop/desktop';
+import { backupDesktop, hideDesktop, quitDesktop, showDesktopMode } from '../desktop/bridge';
+import { openBackupDir } from '../desktop/settings';
+import { shortcutKeys } from '../desktop/shortcuts';
 import { TOOLS } from './toolDefs';
 
 /** Lo que pide un comando que necesita que se escriba algo (p. ej. un título). */
