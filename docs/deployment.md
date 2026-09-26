@@ -35,6 +35,9 @@ The website's image takes two build arguments, with these defaults:
 | `SITE_URL` | `https://diaryo.javiermateo.dev`     | Canonical and alternate-language links                                |
 | `APP_URL`  | `https://app.diaryo.javiermateo.dev` | Links to the web app (without it, the site doesn't offer the web app) |
 
+| `UMAMI_SRC` | (empty) | Umami's script, e.g. `https://stats.javiermateo.dev/script.js` |
+| `UMAMI_ID` | (empty) | The website's id in Umami (without both, nothing is counted) |
+
 When built, the website asks the GitHub API for the latest release (version, installer
 size and link), so it has to be **redeployed after publishing a version**. Without an
 answer it falls back to the values in `web/src/site.ts`.
@@ -42,6 +45,21 @@ answer it falls back to the values in `web/src/site.ts`.
 GitHub allows 60 unauthenticated API requests per hour; Coolify shows how many are left
 when using a public repository. If that ever falls short, connect a GitHub App in
 Coolify (Sources) and use it for both resources.
+
+## Visits (Umami)
+
+The website counts visits and a few events with [Umami](https://umami.is), self-hosted
+on the same Coolify: no cookies, no personal data, and it only counts on the real domain.
+The events are `download` (with `place`: `hero`, `header` or `download`),
+`open-web-app` and `copy-download-link`. The apps send nothing.
+
+1. In Coolify: **New resource → Service → Umami**, with a domain such as
+   `https://stats.javiermateo.dev` (plus its `A` record).
+2. In Umami: log in, change the default password, **Settings → Websites → Add website**
+   with the domain `diaryo.javiermateo.dev`, and copy its **Website ID**.
+3. In the website's resource in Coolify, add the environment variables `UMAMI_SRC`
+   (`https://stats.javiermateo.dev/script.js`) and `UMAMI_ID`, marked as available at
+   build time, and redeploy.
 
 ## Caching
 

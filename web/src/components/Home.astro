@@ -27,13 +27,19 @@ const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
     <h1>{t.hero.title}</h1>
     <p class="subtitle">{t.hero.subtitle}</p>
     <div class="actions">
-      <a class="button primary" href="#download">
+      <a
+        class="button primary"
+        href={download.url}
+        data-installer
+        data-umami-event="download"
+        data-umami-event-place="hero"
+      >
         <span>{t.hero.download}</span>
         <small>{fill(t.hero.downloadInfo, { version: download.version, size })}</small>
       </a>
       {
         SITE.app && (
-          <a class="button chip" href={SITE.app}>
+          <a class="button chip" href={SITE.app} data-umami-event="open-web-app">
             {t.hero.tryWeb}
           </a>
         )
@@ -93,7 +99,7 @@ const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
           <h2>{t.webApp.title}</h2>
           <p>{t.webApp.text}</p>
         </div>
-        <a class="button dark" href={SITE.app}>
+        <a class="button dark" href={SITE.app} data-umami-event="open-web-app">
           {t.webApp.button}
         </a>
       </div>

@@ -145,7 +145,7 @@ export const en: WebMessages = {
   privacy: {
     eyebrow: 'Privacy',
     title: 'Your notes are yours',
-    text: 'No accounts, no servers and no ads. The diary is saved on your computer and leaves a copy in Documents every day. You can take the whole thing with you in one file whenever you want.',
+    text: 'No accounts, no servers and no ads. The diary is saved on your computer and leaves a copy in Documents every day. You can take the whole thing with you in one file whenever you want. This website only counts visits and downloads, anonymously and without cookies; the app sends nothing.',
     source: 'See the code on GitHub',
   },
   faq: {

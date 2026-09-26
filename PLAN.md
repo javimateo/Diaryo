@@ -318,7 +318,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           subir a `main`. La web se vuelve a desplegar al publicar cada versión (lee la
           última Release al compilarse).
     - [ ] **H8. Visitas sin cookies**: Umami como servicio de Coolify; visitas y
-          descargas (como evento), sin rastrear a nadie.
+          descargas (como evento), sin rastrear a nadie. La web ya está preparada
+          (`UMAMI_SRC` y `UMAMI_ID` al compilar; eventos `download`, `open-web-app` y
+          `copy-download-link`); falta montar Umami en Coolify (docs/deployment.md).
+          Los botones de descarga bajan el instalador directamente (en el móvil llevan a
+          la sección de descarga).
     - **Pendiente de decidir** antes de publicar:
       - [x] **Nombre**: diaryo (ver G).
       - [x] **Dominio**: `diaryo.javiermateo.dev` (web) y `app.diaryo.javiermateo.dev` (app).

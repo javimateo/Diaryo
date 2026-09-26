@@ -23,11 +23,21 @@ const { version, sizeMB, file, url } = await latestDownload();
     <p class="text">{d.text}</p>
     <p class="on-phone">{d.onPhone}</p>
     <div class="actions">
-      <a class="button primary get" href={url}>
+      <a
+        class="button primary get"
+        href={url}
+        data-umami-event="download"
+        data-umami-event-place="download"
+      >
         <span>{fill(d.button, { version })}</span>
         <small>{`${file} · ${formatSize(sizeMB, lang)}`}</small>
       </a>
-      <button class="button primary copy" type="button" data-copied={d.copied}>
+      <button
+        class="button primary copy"
+        type="button"
+        data-copied={d.copied}
+        data-umami-event="copy-download-link"
+      >
         {d.copyLink}
       </button>
       <a class="releases" href={SITE.releases}>{d.releases}</a>

@@ -4,6 +4,7 @@ import '@fontsource-variable/lora';
 import '@fontsource-variable/nunito-sans';
 import '../styles/global.css';
 import { homeHref, otherLang, texts, type Lang } from '../i18n';
+import { latestDownload } from '../release';
 import { SITE } from '../site';
 
 interface Props {
@@ -16,6 +17,7 @@ const other = otherLang(lang);
 const home = homeHref(lang);
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const langs: Lang[] = ['es', 'en'];
+const installer = (await latestDownload()).url;
 ---
 
 <!doctype html>
@@ -32,6 +34,17 @@ const langs: Lang[] = ['es', 'en'];
     <meta property="og:title" content={t.meta.title} />
     <meta property="og:description" content={t.meta.description} />
     <meta property="og:type" content="website" />
+    {
+      SITE.analytics.src && SITE.analytics.id && (
+        <script
+          is:inline
+          defer
+          src={SITE.analytics.src}
+          data-website-id={SITE.analytics.id}
+          data-domains={Astro.site?.hostname}
+        />
+      )
+    }
     <script is:inline>
       // Light unless the visitor chose dark (before painting, so there is no flash).
       try {
@@ -81,7 +94,13 @@ const langs: Lang[] = ['es', 'en'];
           <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
         </svg>
       </button>
-      <a class="button primary header-download" href="#download">
+      <a
+        class="button primary header-download"
+        href={installer}
+        data-installer
+        data-umami-event="download"
+        data-umami-event-place="header"
+      >
         <span class="wide">{t.nav.downloadWindows}</span>
         <span class="narrow">{t.nav.downloadShort}</span>
       </a>
@@ -98,6 +117,22 @@ const langs: Lang[] = ['es', 'en'];
     </footer>
   </body>
 </html>
+
+<script>
+  // The download buttons get the installer straight away and show, below, what to do if
+  // Windows warns. On a phone (no use for a Windows installer) they lead to that section,
+  // which offers to copy the link for the PC instead.
+  const phone = matchMedia('(pointer: coarse) and (max-width: 900px)').matches;
+  for (const link of document.querySelectorAll<HTMLAnchorElement>('a[data-installer]')) {
+    if (phone) {
+      link.href = '#download';
+      continue;
+    }
+    link.addEventListener('click', () => {
+      setTimeout(() => document.getElementById('download')?.scrollIntoView(), 300);
+    });
+  }
+</script>
 
 <script>
   // The theme button: light ⇄ dark, remembered in this browser.

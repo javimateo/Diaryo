@@ -6,6 +6,14 @@ export const SITE = {
   license: 'PolyForm Noncommercial 1.0.0',
   /** The web app (PLAN.md, H6). While it isn't set, the site doesn't offer it. */
   app: (import.meta.env.APP_URL as string | undefined) || null,
+  /**
+   * Umami (visits without cookies, PLAN.md H8): its script and this site's id. While they
+   * aren't set, nothing is counted.
+   */
+  analytics: {
+    src: (import.meta.env.UMAMI_SRC as string | undefined) || null,
+    id: (import.meta.env.UMAMI_ID as string | undefined) || null,
+  },
   /** The installer if GitHub can't be asked when building (see `release.ts`). */
-  download: { version: '0.2.0', sizeMB: 3.3, file: 'diaryo_0.2.0_x64-setup.exe' },
+  download: { version: '0.2.0', sizeMB: 4.2, file: 'diaryo_0.2.0_x64-setup.exe' },
 };

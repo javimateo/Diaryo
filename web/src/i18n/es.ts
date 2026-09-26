@@ -145,7 +145,7 @@ export const es = {
   privacy: {
     eyebrow: 'Privacidad',
     title: 'Tus notas son tuyas',
-    text: 'Sin cuentas, sin servidores y sin anuncios. El diario se guarda en tu ordenador y cada día deja una copia en Documentos. Puedes llevártelo entero en un archivo cuando quieras.',
+    text: 'Sin cuentas, sin servidores y sin anuncios. El diario se guarda en tu ordenador y cada día deja una copia en Documentos. Puedes llevártelo entero en un archivo cuando quieras. Esta web solo cuenta visitas y descargas, de forma anónima y sin cookies; la app no envía nada.',
     source: 'Ver el código en GitHub',
   },
   faq: {

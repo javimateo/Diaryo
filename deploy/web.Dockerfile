@@ -10,7 +10,10 @@ COPY . .
 # Its address and the web app's (the site links to it). Coolify can override them.
 ARG SITE_URL=https://diaryo.javiermateo.dev
 ARG APP_URL=https://app.diaryo.javiermateo.dev
-ENV SITE_URL=$SITE_URL APP_URL=$APP_URL
+# Umami (visits without cookies): its script and the site's id. Empty: nothing is counted.
+ARG UMAMI_SRC=
+ARG UMAMI_ID=
+ENV SITE_URL=$SITE_URL APP_URL=$APP_URL UMAMI_SRC=$UMAMI_SRC UMAMI_ID=$UMAMI_ID
 RUN npm --prefix web run build
 
 FROM nginx:1.27-alpine
