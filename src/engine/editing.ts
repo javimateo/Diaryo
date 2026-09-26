@@ -84,8 +84,14 @@ export function createText(
 }
 
 /** New note centered at `at`, the same size on screen at any zoom. */
-export function createNote(at: Vec, zoom: number, styles: ToolStyles, z: number): NoteElement {
-  const size = NOTE_SIZE / zoom;
+export function createNote(
+  at: Vec,
+  zoom: number,
+  styles: ToolStyles,
+  z: number,
+  screenSize = NOTE_SIZE,
+): NoteElement {
+  const size = screenSize / zoom;
   const { variant, color, textColor, font, align, valign, opacity } = styles.note;
   return {
     id: createId(),

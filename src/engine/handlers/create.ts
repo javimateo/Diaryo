@@ -30,7 +30,8 @@ export class CreateHandler implements ToolHandler {
       return;
     }
     if (this.kind === 'note') {
-      ctx.startEditing(createNote(input.world, zoom, ctx.styles, ctx.scene.nextZ()), true);
+      const note = createNote(input.world, zoom, ctx.styles, ctx.scene.nextZ(), ctx.noteSize);
+      ctx.startEditing(note, true);
       return;
     }
     this.drag = { start: input.world, current: input.world };

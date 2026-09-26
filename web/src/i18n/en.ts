@@ -14,6 +14,8 @@ export const en: WebMessages = {
     source: 'GitHub',
     downloadShort: 'Download',
     downloadWindows: 'Download for Windows',
+    toDark: 'Switch to dark mode',
+    toLight: 'Switch to light mode',
   },
   hero: {
     tagline: 'your diary, no margins',
@@ -31,10 +33,22 @@ export const en: WebMessages = {
     tasks: ['ask Ana', 'buy bread', 'record the videos'],
     doneTask: 1,
     boxed: 'beach or mountains?',
-    pageNote: 'turn the page!',
+    pageNote: '↙ pull the corner to see yesterday',
     deskNote: 'To do: finish the website',
     shortcutNote: "Ctrl+Alt+D and it's there",
     alt: 'An open diary on a wooden desk, with tasks, arrows and sticky notes.',
+  },
+  demo: {
+    live: 'Live · nothing is saved',
+    canvas: 'Diary demo: write, draw and turn the page',
+    tools: 'Tools',
+    undo: 'Undo',
+    redo: 'Redo',
+    yesterday: {
+      heading: 'Loose ideas',
+      list: '- a website for diaryo\n- learn watercolor\n- call grandma and grandpa',
+      note: "Marta's birthday on Saturday!",
+    },
   },
   strip: [
     { title: 'Handmade', text: 'Its own drawing engine, smooth with thousands of strokes.' },

@@ -36,6 +36,7 @@ import {
   elementBounds,
   type EditableElement,
   type ImageElement,
+  NOTE_SIZE,
   type SceneElement,
   type ToolStyles,
 } from './elements';
@@ -178,6 +179,8 @@ export class Engine {
   /** Floating diary: instead of the desk the desktop shows, with a soft veil. */
   private transparentDesk = false;
   private readonly deskLayer: boolean;
+  private readonly embedded: boolean;
+  private readonly noteSize: number;
   /** Fixed camera: it always frames this (also when the window is resized). */
   private lockedCamera: (() => Camera) | null = null;
   private deskIds: ReadonlySet<string> = new Set();
@@ -200,6 +203,8 @@ export class Engine {
 
   constructor({ scene, overlay }: EngineCanvases, options: EngineOptions = {}) {
     this.deskLayer = options.deskLayer ?? false;
+    this.embedded = options.embedded ?? false;
+    this.noteSize = options.noteSize ?? NOTE_SIZE;
     const transparent = (options.transparent ?? false) || this.deskLayer;
     const sceneCtx = scene.getContext('2d', { alpha: transparent });
     const overlayCtx = overlay.getContext('2d');
@@ -238,10 +243,14 @@ export class Engine {
     this.listen(overlay, 'dblclick', this.onDoubleClick);
     this.listen(overlay, 'dragover', (e: DragEvent) => e.preventDefault());
     this.listen(overlay, 'drop', this.onDrop);
-    this.listen(window, 'wheel', this.onWheel, { passive: false });
+    this.listen(this.embedded ? overlay : window, 'wheel', this.onWheel, { passive: false });
     this.listen(window, 'keydown', this.onKeyDown);
     this.listen(window, 'keyup', this.onKeyUp);
     this.listen(window, 'blur', this.onBlur);
+    // Embedded, the page scrolls the canvas: pointers are measured from where it is now.
+    if (this.embedded) {
+      this.listen(window, 'scroll', this.updateOrigin, { passive: true, capture: true });
+    }
 
     const resizeObserver = new ResizeObserver(() => this.resize());
     resizeObserver.observe(overlay);
@@ -338,6 +347,20 @@ export class Engine {
     if (!this.book) return;
     this.stopMotion();
     this.setCamera(fitCamera(bookBounds(this.book), this.viewport, FIT_PADDING));
+  }
+
+  /**
+   * Frames `bounds` inside a part of the canvas (`area`, in canvas pixels) without
+   * animating: e.g. the book beside the text laid over the canvas (the website demo).
+   */
+  frameInto(bounds: Bounds, area: ScreenRect, padding = FIT_PADDING) {
+    const camera = fitCamera(bounds, area, padding);
+    this.stopMotion();
+    this.setCamera({
+      x: camera.x - area.x / camera.zoom,
+      y: camera.y - area.y / camera.zoom,
+      zoom: camera.zoom,
+    });
   }
 
   /**
@@ -1162,6 +1185,7 @@ export class Engine {
       get styles() {
         return engine.styles;
       },
+      noteSize: this.noteSize,
       get mode() {
         return engine.theme.mode;
       },
@@ -1303,7 +1327,9 @@ export class Engine {
       if (!elementHitsSegment(this.editing.element, world, world, 0)) this.finishEditing();
       return;
     }
-    const wantsPan = e.button === 1 || (e.button === 0 && (this.tool === 'hand' || this.spaceHeld));
+    const wantsPan =
+      !this.embedded &&
+      (e.button === 1 || (e.button === 0 && (this.tool === 'hand' || this.spaceHeld)));
     const handler = e.button === 0 ? this.activeHandler : undefined;
     if (!wantsPan && !handler) return;
 
@@ -1393,6 +1419,8 @@ export class Engine {
 
   private onWheel = (e: WheelEvent) => {
     const zooming = e.ctrlKey || e.metaKey;
+    // Embedded, the view is fixed: the wheel scrolls the page.
+    if (this.embedded) return;
     const target = e.target instanceof Element ? e.target : null;
     if (!zooming && target?.closest('[data-scrollable]')) return;
     e.preventDefault(); // also blocks the browser zoom with Ctrl+wheel
@@ -1428,6 +1456,8 @@ export class Engine {
 
   private onKeyDown = (e: KeyboardEvent) => {
     if (e.code !== 'Space' || isEditableTarget(e.target)) return;
+    // Embedded, the view is fixed: the space bar scrolls the page.
+    if (this.embedded) return;
     e.preventDefault();
     if (!this.spaceHeld) {
       this.spaceHeld = true;
@@ -1728,6 +1758,11 @@ export class Engine {
         return TOOL_CURSORS[this.tool];
     }
   }
+
+  private updateOrigin = () => {
+    const rect = this.overlayCanvas.getBoundingClientRect();
+    this.origin = { x: rect.left, y: rect.top };
+  };
 
   private localPoint(e: MouseEvent): Vec {
     return { x: e.clientX - this.origin.x, y: e.clientY - this.origin.y };

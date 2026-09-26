@@ -22,6 +22,8 @@ export interface ToolContext {
   readonly camera: Camera;
   readonly scene: Scene;
   readonly styles: ToolStyles;
+  /** Side of new notes, in screen pixels. */
+  readonly noteSize: number;
   readonly mode: ThemeMode;
   readonly colors: SelectionColors;
   readonly selection: ReadonlySet<string>;

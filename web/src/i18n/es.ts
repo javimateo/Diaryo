@@ -12,6 +12,8 @@ export const es = {
     source: 'GitHub',
     downloadShort: 'Descargar',
     downloadWindows: 'Descargar para Windows',
+    toDark: 'Cambiar a modo oscuro',
+    toLight: 'Cambiar a modo claro',
   },
   hero: {
     tagline: 'tu diario, sin márgenes',
@@ -31,10 +33,23 @@ export const es = {
     tasks: ['preguntar a Ana', 'comprar pan', 'grabar los vídeos'],
     doneTask: 1,
     boxed: '¿playa o monte?',
-    pageNote: '¡pasa la página!',
+    pageNote: '↙ tira de la esquina para ver ayer',
     deskNote: 'Por hacer: terminar la web',
     shortcutNote: 'Ctrl+Alt+D y aparece',
     alt: 'Un diario abierto sobre una mesa de madera, con tareas, flechas y pósits.',
+  },
+  /** The live demo of the hero (the same texts on its pages as `book`). */
+  demo: {
+    live: 'En directo · no se guarda nada',
+    canvas: 'Demo del diario: escribe, dibuja y pasa la página',
+    tools: 'Herramientas',
+    undo: 'Deshacer',
+    redo: 'Rehacer',
+    yesterday: {
+      heading: 'Ideas sueltas',
+      list: '- una web para diaryo\n- aprender acuarela\n- llamar a los abuelos',
+      note: '¡Cumple de Marta el sábado!',
+    },
   },
   strip: [
     { title: 'Hecho a mano', text: 'Motor de dibujo propio, fluido con miles de trazos.' },

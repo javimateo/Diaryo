@@ -1,6 +1,7 @@
 ---
 import { fill, formatSize, texts, type Lang } from '../i18n';
 import { SITE } from '../site';
+import DemoIsland from '../demo/DemoIsland';
 import Book from './Book.astro';
 import Download from './Download.astro';
 import Features from './Features.astro';
@@ -16,7 +17,9 @@ const size = formatSize(SITE.download.sizeMB, lang);
 const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
 ---
 
-<section class="hero">
+<section class="hero" data-demo-host>
+  <!-- Only on computers (see DESKTOP in DemoIsland); on a phone, the picture below. -->
+  <DemoIsland client:media="(min-width: 961px) and (pointer: fine)" lang={lang} />
   <div class="hero-text">
     <span class="tagline">{t.hero.tagline}</span>
     <h1>{t.hero.title}</h1>
@@ -38,7 +41,11 @@ const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
       {t.hero.points.map((point) => <li>{point}</li>)}
     </ul>
   </div>
-  <Book lang={lang} />
+  <!-- The still picture (phones, and until the demo is ready); the demo puts the real
+       book in its place. -->
+  <div class="book-slot" data-demo-frame>
+    <Book lang={lang} />
+  </div>
 </section>
 
 <section class="strip wrap">
@@ -94,6 +101,7 @@ const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
 
 <style>
   .hero {
+    position: relative;
     margin: 0 clamp(8px, 1.7vw, 24px);
     padding: clamp(40px, 5vw, 72px) clamp(20px, 4.5vw, 64px) clamp(40px, 5vw, 64px);
     display: grid;
@@ -121,6 +129,24 @@ const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
         color-mix(in srgb, var(--wood-grain) 10%, transparent) 0 2px,
         transparent 2px 23px
       );
+  }
+
+  /* Over the demo, which fills the hero: nothing is drawn under the text. */
+  .hero-text,
+  .book-slot {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── With the live demo: the text on the desk, the real book where the picture was ─── */
+
+  .hero[data-live] {
+    /* Room at the bottom for the demo's toolbar, under the book. */
+    padding-bottom: 88px;
+  }
+
+  .hero[data-live] .book-slot {
+    visibility: hidden;
   }
 
   .hero-text {

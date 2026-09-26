@@ -42,6 +42,13 @@ export interface EngineOptions {
    * Windows desktop and with a fixed camera (see `lockCamera`).
    */
   deskLayer?: boolean;
+  /**
+   * Embedded in a page that scrolls (the website demo): the view is fixed (it is set with
+   * `frameInto`), and the wheel and the space bar scroll the page as usual.
+   */
+  embedded?: boolean;
+  /** Side of new notes in screen pixels (`NOTE_SIZE` by default). */
+  noteSize?: number;
 }
 
 /** A view: the world point at the center of the screen and the zoom. */

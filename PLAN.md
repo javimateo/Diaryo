@@ -279,9 +279,19 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           grandes en el escritorio de Windows y cuatro pequeñas), descarga con el aviso de
           SmartScreen (en el móvil, copiar el enlace), privacidad con preguntas
           frecuentes y la app web (solo si `APP_URL` está puesta).
-    - [ ] **H3. Demo en la portada**: el lienzo de verdad con un diario de ejemplo, para
-          escribir, poner pósits y pasar la página sin instalar nada (no guarda). Usa el
-          motor tal como quede tras la revisión del código (E).
+    - [x] **H3. Demo en la portada**: el motor y el diario de la app ocupan toda la
+          portada (la madera es la mesa de verdad) y el libro aparece donde estaba el
+          dibujo. Diario de ejemplo de hoy y de ayer, pósits en la mesa y la esquina para
+          pasar la página; su propia base de datos, que se vacía en cada visita. La web
+          importa el código de la app con el alias `@app` (`../src`). En el motor, la
+          opción `embedded` (la rueda desplaza la página; solo Ctrl+rueda hace zoom),
+          `noteSize` y `frameInto`; el editor de texto, sin el estado de la app
+          (`TextEditorView`). Solo en ordenadores (pantalla ancha y ratón, `client:media`):
+          en el móvil queda la imagen y la demo ni se descarga. El texto va sobre la mesa, a
+          la izquierda, y el libro a la derecha con la vista fija (la rueda desplaza la
+          página); debajo del texto no se puede dibujar.
+    - [x] **Tema de la web**: claro por defecto; botón en la cabecera para pasar a
+          oscuro (se recuerda en el navegador) y la demo lo sigue.
     - [ ] **H4. Funciones**: cada una con una animación corta (las mismas del punto I).
     - [ ] **H5. Descarga**: los instaladores en las Releases de GitHub; la web enlaza a la
           última (versión, tamaño y novedades) y explica el aviso de SmartScreen mientras
@@ -290,7 +300,8 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           siempre, guardando en el propio navegador.
     - [ ] **H7. Coolify**: dos recursos desde el repositorio (la web, con carpeta base
           `web/`, y la app web), cada uno con su dominio y HTTPS; se publican solos al
-          subir a `main`.
+          subir a `main`. Para construir la web hacen falta las dependencias de la raíz
+          y las de `web/` (la demo usa el código de la app).
     - [ ] **H8. Visitas sin cookies**: Umami como servicio de Coolify; visitas y
           descargas (como evento), sin rastrear a nadie.
     - **Pendiente de decidir** antes de publicar:

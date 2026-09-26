@@ -29,10 +29,10 @@ const buildDate = new Intl.DateTimeFormat(lang, {
       <ul class="tasks">
         {b.tasks.map((task, i) => <li class={i === b.doneTask ? 'done' : undefined}>{task}</li>)}
       </ul>
+      <div class="note green page-note" style="--tilt: -3deg">{b.pageNote}</div>
     </div>
     <div class="page right">
       <div class="boxed">{b.boxed}</div>
-      <div class="note green page-note" style="--tilt: 3deg">{b.pageNote}</div>
     </div>
     <svg class="arrow" viewBox="0 0 780 540">
       <path d="M205 100 C 280 40, 400 60, 472 130"></path>
@@ -220,7 +220,7 @@ const buildDate = new Intl.DateTimeFormat(lang, {
   }
 
   .page-note {
-    right: calc(var(--u) * 40);
+    left: calc(var(--u) * 150);
     bottom: calc(var(--u) * 50);
     width: calc(var(--u) * 150);
     height: calc(var(--u) * 130);

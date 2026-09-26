@@ -49,46 +49,49 @@
 
   --windows: #3f6fa6;
   --shadow: 0 12px 20px rgba(40, 20, 5, 0.28);
+  /* The desk's average color (the app's deskColor), for the veil behind the hero text. */
+  --desk-flat: rgb(193, 158, 116);
 
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ground: #161512;
-    --card: #211f1c;
-    --card-soft: #1b1a17;
-    --text: #ecebe8;
-    --text-soft: #cfcac1;
-    --muted: #b0aa9f;
-    --line: #34312c;
-    --line-soft: #2c2a26;
-    --chip: #2a2824;
-    --accent-link: #a9a9f2;
+/* Light by default; dark when the visitor chooses it (the button in the header). */
+:root[data-theme='dark'] {
+  --ground: #161512;
+  --card: #211f1c;
+  --card-soft: #1b1a17;
+  --text: #ecebe8;
+  --text-soft: #cfcac1;
+  --muted: #b0aa9f;
+  --line: #34312c;
+  --line-soft: #2c2a26;
+  --chip: #2a2824;
+  --accent-link: #a9a9f2;
 
-    --wood: rgb(46, 37, 29);
-    --wood-grain: rgb(31, 24, 18);
-    --hero-text: #f1e9dd;
-    --hero-soft: #d7cbbb;
-    --hero-chip: rgba(40, 34, 28, 0.9);
-    --hero-chip-text: #f1e9dd;
+  --wood: rgb(46, 37, 29);
+  --desk-flat: rgb(43, 34, 27);
+  --wood-grain: rgb(31, 24, 18);
+  --hero-text: #f1e9dd;
+  --hero-soft: #d7cbbb;
+  --hero-chip: rgba(40, 34, 28, 0.9);
+  --hero-chip-text: #f1e9dd;
 
-    --paper: #25241f;
-    --paper-line: #3a3831;
-    --paper-ink: #ecebe8;
-    --paper-faint: #8f897f;
-    --pen-blue: #9a9af0;
+  --paper: #25241f;
+  --paper-line: #3a3831;
+  --paper-ink: #ecebe8;
+  --paper-faint: #8f897f;
+  --pen-blue: #9a9af0;
 
-    --note-yellow: #e6cf6e;
-    --note-pink: #e0a3b7;
-    --note-green: #a5d1a2;
-    --note-orange: #e3ad7b;
+  --note-yellow: #e6cf6e;
+  --note-pink: #e0a3b7;
+  --note-green: #a5d1a2;
+  --note-orange: #e3ad7b;
 
-    --block: #221f1b;
-    --block-card: #2e2a25;
-    --windows: #2d5282;
-    --shadow: 0 12px 20px rgba(0, 0, 0, 0.45);
-  }
+  --block: #221f1b;
+  --block-card: #2e2a25;
+  --windows: #2d5282;
+  --shadow: 0 12px 20px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
 }
 
 * {
