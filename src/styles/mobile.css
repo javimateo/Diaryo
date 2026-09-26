@@ -69,11 +69,46 @@
     left: 10px;
     right: 10px;
     bottom: 116px;
-    max-height: 45vh;
   }
 
   .props-panel {
     width: 100%;
+    max-height: 45vh;
+  }
+
+  /* Folded: a small pill above the page navigation. */
+  .props-pill {
+    gap: 8px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 999px;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .props-swatch {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--surface-border);
+    border-radius: 50%;
+  }
+
+  .props-fold {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 6px 2px 8px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
   }
 
   .side-right {

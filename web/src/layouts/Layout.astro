@@ -250,6 +250,13 @@ const langs: Lang[] = ['es', 'en'];
     }
   }
 
+  /* On a small phone it doesn't fit: the hero's download button is right below. */
+  @media (max-width: 480px) {
+    .header-download {
+      display: none;
+    }
+  }
+
   .site-footer {
     display: flex;
     flex-wrap: wrap;

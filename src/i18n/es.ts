@@ -350,6 +350,7 @@ export const es = {
 
   props: {
     label: 'Propiedades',
+    style: 'Estilo',
     color: 'Color',
     stroke: 'Trazo',
     thickness: 'Grosor',

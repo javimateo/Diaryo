@@ -337,6 +337,7 @@ export const en: Messages = {
 
   props: {
     label: 'Properties',
+    style: 'Style',
     color: 'Color',
     stroke: 'Stroke',
     thickness: 'Thickness',

@@ -2,27 +2,75 @@ import {
   AlignVerticalJustifyCenter,
   AlignVerticalJustifyEnd,
   AlignVerticalJustifyStart,
+  ChevronDown,
+  ChevronUp,
   TextAlignCenter,
   TextAlignEnd,
   TextAlignStart,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { type TextAlign, type VerticalAlign } from '../../engine/elements';
+import { resolveColor, resolveNoteColor, type Color, type NoteFill } from '../../engine/palette';
 import { NOTE_VARIANTS } from '../../engine/notes';
 import type { StylePatch } from '../../engine/restyle';
 import { ColorRow, FontButton, Section, Segmented, SizeControls } from './controls';
 import { LinkSection } from './LinkSection';
-import { refocusEditor, usePanelModel } from './model';
+import { refocusEditor, usePanelModel, type ColorModel } from './model';
 import { FILL_STYLES, HEADS, ROUGHNESS, VARIANT_ICONS } from './options';
+import { useUI } from '../../store/ui';
 import { useT } from '../useT';
+
+/** A phone: the panel starts folded, so it doesn't cover what is being edited. */
+const NARROW = '(max-width: 640px)';
+
+function useNarrow() {
+  const [narrow, setNarrow] = useState(() => matchMedia(NARROW).matches);
+  useEffect(() => {
+    const query = matchMedia(NARROW);
+    const onChange = () => setNarrow(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+  return narrow;
+}
+
+/** The color shown on the folded panel (the first one being edited). */
+function swatchOf(color: ColorModel | undefined, theme: 'light' | 'dark') {
+  const value = color?.value;
+  if (!color || !value || value === 'auto' || value === 'none') return 'transparent';
+  return color.palette === 'ink'
+    ? resolveColor(value as Color, theme)
+    : resolveNoteColor(value as NoteFill, theme);
+}
 
 /**
  * Side properties panel. Depending on the context it changes the style of the active tool
- * (pen, highlighter, text, note), of the text being written or of the selection.
+ * (pen, highlighter, text, note), of the text being written or of the selection. On a
+ * phone it is a folded pill until it is opened.
  */
 export function PropertiesPanel() {
   const t = useT();
   const model = usePanelModel();
+  const theme = useUI((s) => s.theme);
+  const narrow = useNarrow();
+  const [open, setOpen] = useState(false);
   if (!model) return null;
+  if (narrow && !open) {
+    return (
+      <button
+        type="button"
+        className="props-pill floating"
+        data-keep-editing
+        aria-expanded={false}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen(true)}
+      >
+        <span className="props-swatch" style={{ background: swatchOf(model.colors[0], theme) }} />
+        {t.props.style}
+        <ChevronUp size={16} strokeWidth={1.75} />
+      </button>
+    );
+  }
   const { noteVariant, colors, size, fillStyle, roughness, labelSize, heads } = model;
   const { font, align, valign, opacity, apply } = model;
 
@@ -33,6 +81,18 @@ export function PropertiesPanel() {
       data-keep-editing
       data-scrollable
     >
+      {narrow && (
+        <button
+          type="button"
+          className="props-fold"
+          aria-expanded
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setOpen(false)}
+        >
+          {t.props.style}
+          <ChevronDown size={16} strokeWidth={1.75} />
+        </button>
+      )}
       {noteVariant !== undefined && (
         <Section title={t.props.noteStyle}>
           <div className="variant-grid">
