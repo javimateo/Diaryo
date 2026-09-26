@@ -323,6 +323,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       - [x] **Nombre**: diaryo (ver G).
       - [x] **Dominio**: `diaryo.javiermateo.dev` (web) y `app.diaryo.javiermateo.dev` (app).
       - [x] **Repositorio público** en GitHub.
+      - [x] **Licencia**: PolyForm Noncommercial 1.0.0 (código disponible, sin uso
+            comercial). Documentación en `docs/` (arquitectura, tecnologías, versiones,
+            despliegue) y `CONTRIBUTING.md`.
       - [x] **Actualizaciones automáticas**: plugin de Tauri con actualizaciones firmadas
             (clave en `~/.tauri/diaryo.key`, secreto `TAURI_SIGNING_PRIVATE_KEY` en
             GitHub). Ajuste «Actualizar automáticamente» (activado por defecto): se

@@ -5,7 +5,7 @@ export const en: WebMessages = {
   meta: {
     title: 'diaryo — an infinite diary for your PC',
     description:
-      'Every day, a boundless double page to write, draw, stick notes and connect ideas. Free and open source.',
+      'Every day, a boundless double page to write, draw, stick notes and connect ideas. Free, with its code in the open.',
   },
   nav: {
     features: 'Features',
@@ -25,7 +25,7 @@ export const en: WebMessages = {
     download: 'Download for Windows',
     downloadInfo: 'v{version} · {size} · free',
     tryWeb: 'Use it in the browser',
-    points: ['Open source', 'No accounts', 'Your notes never leave your PC'],
+    points: ['Code in the open', 'No accounts', 'Your notes never leave your PC'],
   },
   book: {
     today: 'today',
@@ -52,7 +52,7 @@ export const en: WebMessages = {
   },
   strip: [
     { title: 'Handmade', text: 'Its own drawing engine, smooth with thousands of strokes.' },
-    { title: 'Open source', text: 'MIT license. Read it, change it, share it.' },
+    { title: 'Code in the open', text: 'Read it, change it and share it, for non-commercial use.' },
     {
       title: 'No accounts, no cloud',
       text: 'Everything is saved on your computer, with daily backups.',
@@ -137,7 +137,7 @@ export const en: WebMessages = {
     onPhone: "You're on your phone: copy the link and open it on your computer.",
     smartscreen: {
       title: 'A blue Windows warning?',
-      text: "That's SmartScreen: it shows up for new programs not many people have run yet. diaryo is open source and you can check what it does.",
+      text: "That's SmartScreen: it shows up for new programs not many people have run yet. diaryo's code is public and you can check what it does.",
       press: 'Click',
       steps: ['More info', 'Run anyway'],
     },
@@ -151,7 +151,10 @@ export const en: WebMessages = {
   faq: {
     title: 'Questions',
     items: [
-      { q: 'Is it free?', a: 'Completely: no ads and no paid versions. And open source (MIT).' },
+      {
+        q: 'Is it free?',
+        a: 'Completely: no ads and no paid versions. And its code is public (for non-commercial use).',
+      },
       {
         q: 'Where are my notes saved?',
         a: 'On your computer. The desktop app also leaves a copy every day in Documents\\diaryo (you can pick another folder).',
@@ -174,7 +177,7 @@ export const en: WebMessages = {
     button: 'Open the web app',
   },
   footer: {
-    made: 'Made with care, open source · MIT',
+    made: 'Made with care · Source available for non-commercial use',
     language: 'Español',
   },
 };

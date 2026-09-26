@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.2.0",
   "description": "Diario infinito: cada página es un lienzo sin límites para dibujar, escribir y conectar ideas.",
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
