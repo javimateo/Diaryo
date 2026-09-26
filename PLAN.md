@@ -303,17 +303,20 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           al publicarlo llega a las apps instaladas. La web lee la última Release al
           compilarse (versión, tamaño y enlace directo) y explica el aviso de SmartScreen.
           Primera versión pública: 0.2.0.
-    - [ ] **H6. App web completa** en un subdominio (`app.`): la versión de navegador de
-          siempre, guardando en el propio navegador.
-    - [ ] **H7. Coolify**: dos recursos desde el repositorio (la web, con carpeta base
-          `web/`, y la app web), cada uno con su dominio y HTTPS; se publican solos al
-          subir a `main`. Para construir la web hacen falta las dependencias de la raíz
-          y las de `web/` (la demo usa el código de la app).
+    - [x] **H6. App web completa** en `app.diaryo.javiermateo.dev`: la misma app, guardando
+          en el propio navegador (`deploy/app.Dockerfile`, nginx con la página sin caché
+          y los archivos con huella para siempre).
+    - [ ] **H7. Coolify**: dos recursos desde el repositorio, rama `main`, tipo Dockerfile
+          y carpeta base la raíz: la web (`deploy/web.Dockerfile`, en
+          `diaryo.javiermateo.dev`) y la app (`deploy/app.Dockerfile`, en
+          `app.diaryo.javiermateo.dev`), puerto 80, HTTPS de Coolify y despliegue al
+          subir a `main`. La web se vuelve a desplegar al publicar cada versión (lee la
+          última Release al compilarse).
     - [ ] **H8. Visitas sin cookies**: Umami como servicio de Coolify; visitas y
           descargas (como evento), sin rastrear a nadie.
     - **Pendiente de decidir** antes de publicar:
       - [x] **Nombre**: diaryo (ver G).
-      - [ ] **Dominio**: cuál, y si la web va en el principal o en un subdominio.
+      - [x] **Dominio**: `diaryo.javiermateo.dev` (web) y `app.diaryo.javiermateo.dev` (app).
       - [x] **Repositorio público** en GitHub.
       - [x] **Actualizaciones automáticas**: plugin de Tauri con actualizaciones firmadas
             (clave en `~/.tauri/diaryo.key`, secreto `TAURI_SIGNING_PRIVATE_KEY` en

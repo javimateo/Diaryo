@@ -1,0 +1,8 @@
+# Only the sources go into the images (the dependencies are installed inside).
+.git
+node_modules
+dist
+web/node_modules
+web/dist
+web/.astro
+src-tauri/target
