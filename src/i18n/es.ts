@@ -85,11 +85,12 @@ export const es = {
     theme: (dark: boolean) => `Tema ${dark ? 'claro' : 'oscuro'}`,
     settings: 'Ajustes',
     menu: 'Menú',
-    menuTip: 'Copias y exportar',
+    menuTip: 'Imágenes, copias y exportar',
     savedWhere: (desktop: boolean) =>
       `Todo se guarda solo ${desktop ? 'en esta app' : 'en este navegador'}.`,
     saveCopy: 'Guardar una copia del diario',
     openCopy: 'Abrir una copia',
+    insertImage: 'Insertar imagen',
     exportPng: 'Exportar la página como imagen',
   },
 

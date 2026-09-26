@@ -4,6 +4,7 @@ import {
   Download,
   FolderOpen,
   Image as ImageIcon,
+  ImagePlus,
   LoaderCircle,
   Menu,
   Moon,
@@ -61,7 +62,7 @@ export function TopActions() {
       <FileMenu />
       <button
         type="button"
-        className="icon-btn"
+        className="icon-btn theme-btn"
         aria-label={t.topBar.theme(theme === 'dark')}
         data-tip={`${t.topBar.theme(theme === 'dark')} — Alt Shift D`}
         data-tip-align="end"
@@ -88,7 +89,7 @@ export function TopActions() {
   );
 }
 
-/** Backups and export. Normal saving is automatic. */
+/** Images, backups and export. Normal saving is automatic. */
 function FileMenu() {
   const t = useT();
   const engine = useUI((s) => s.engine);
@@ -97,6 +98,7 @@ function FileMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -142,6 +144,20 @@ function FileMenu() {
             type="button"
             role="menuitem"
             className="menu-item"
+            onClick={() => {
+              setOpen(false);
+              imageRef.current?.click();
+            }}
+          >
+            <span className="menu-label">
+              <ImagePlus size={15} strokeWidth={1.75} /> {t.topBar.insertImage}
+            </span>
+          </button>
+          <div className="menu-divider" role="separator" />
+          <button
+            type="button"
+            role="menuitem"
+            className="menu-item"
             onClick={run(() => void saveCopy(diary))}
           >
             <span className="menu-label">
@@ -176,6 +192,19 @@ function FileMenu() {
           </button>
         </div>
       )}
+      {/* On a phone it offers the gallery or the camera. */}
+      <input
+        ref={imageRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          const files = [...(e.target.files ?? [])];
+          if (files.length > 0) void engine?.insertImageFiles(files);
+          e.target.value = '';
+        }}
+      />
       <input
         ref={fileRef}
         type="file"

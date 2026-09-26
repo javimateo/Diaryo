@@ -1,0 +1,89 @@
+/* ─── Phone (narrow screens) ─────────────────────────────────── */
+
+/*
+ * Everything reachable with a thumb and nothing on top of anything else: undo/redo and
+ * the actions at the top, the page navigation and the tools (sliding sideways) at the
+ * bottom, and the style panel as a sheet above them. Zooming and moving the view are done
+ * with two fingers, so the zoom buttons go.
+ */
+@media (max-width: 640px) {
+  .top-left,
+  .hint,
+  .theme-btn,
+  .bottom-left > :not(.undo-controls) {
+    display: none;
+  }
+
+  /* Only the undo controls are left in this layer: they go up, where the logo was. */
+  .bottom-left {
+    top: 10px;
+    bottom: auto;
+    left: 10px;
+  }
+
+  .top-right {
+    top: 10px;
+    right: 10px;
+  }
+
+  .top-center {
+    top: auto;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+  }
+
+  .toolbar {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .toolbar .tool-btn {
+    flex-shrink: 0;
+  }
+
+  /* No keyboard: no shortcuts in the buttons and menus. */
+  .tool-key,
+  .context-menu .menu-item kbd {
+    display: none;
+  }
+
+  .bottom-right {
+    right: 0;
+    left: 0;
+    bottom: 64px;
+    justify-content: center;
+  }
+
+  .page-label {
+    min-width: 0;
+  }
+
+  .bottom-center {
+    bottom: 116px;
+  }
+
+  .side-left {
+    top: auto;
+    left: 10px;
+    right: 10px;
+    bottom: 116px;
+    max-height: 45vh;
+  }
+
+  .props-panel {
+    width: 100%;
+  }
+
+  .side-right {
+    top: 56px;
+    left: 10px;
+    right: 10px;
+    bottom: 116px;
+  }
+
+  .diary-panel {
+    width: 100%;
+  }
+}

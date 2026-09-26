@@ -306,6 +306,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
     - [x] **H6. App web completa** en `app.diaryo.javiermateo.dev`: la misma app, guardando
           en el propio navegador (`deploy/app.Dockerfile`, nginx con la página sin caché
           y los archivos con huella para siempre).
+          En el móvil: deshacer y acciones arriba, la navegación de páginas y las
+          herramientas (deslizables) abajo, el panel de estilo como hoja inferior, sin
+          botones de zoom. El motor entiende dos dedos (pellizcar y mover) y mantener
+          pulsado abre el menú contextual (copiar, pegar…). Nuevo «Insertar imagen» en el
+          menú (galería o cámara en el móvil).
     - [ ] **H7. Coolify**: dos recursos desde el repositorio, rama `main`, tipo Dockerfile
           y carpeta base la raíz: la web (`deploy/web.Dockerfile`, en
           `diaryo.javiermateo.dev`) y la app (`deploy/app.Dockerfile`, en

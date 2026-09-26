@@ -104,7 +104,14 @@ type Gesture =
       samples: { t: number; x: number; y: number }[];
     }
   | { type: 'tool'; pointerId: number; handler: ToolHandler }
-  | { type: 'turn'; pointerId: number };
+  | { type: 'turn'; pointerId: number }
+  /** Two fingers: pinch to zoom and drag to move (`pointerId` is the first one). */
+  | { type: 'pinch'; pointerId: number; other: number; center: Vec; distance: number };
+
+/** Holding a finger still this long (ms) opens the context menu, like a right click. */
+const LONG_PRESS = 500;
+/** How far (screen px) a finger may move and still be a long press. */
+const LONG_PRESS_SLOP = 8;
 
 /** A mouse wheel makes big jumps (±100); a trackpad, many small ones. */
 const WHEEL_SMOOTH_THRESHOLD = 40;
@@ -162,6 +169,11 @@ export class Engine {
   private copiedStyle: { patch: StylePatch; type: SceneElement['type'] } | null = null;
 
   private gesture: Gesture | null = null;
+  /** Fingers on the screen (touch): where each one is, in canvas pixels. */
+  private readonly touches = new Map<number, Vec>();
+  private longPress: { timer: ReturnType<typeof setTimeout>; start: Vec } | null = null;
+  /** Last touch: the browser's own long-press menu is ignored after it (ours opens). */
+  private lastTouch = -Infinity;
   /** What the camera does by itself: smooth zoom and panning, inertia and flights. */
   private readonly motion = new CameraMotion();
   /** The diary double page being written on (null: canvas without a book). */
@@ -346,7 +358,13 @@ export class Engine {
   showWholeBook() {
     if (!this.book) return;
     this.stopMotion();
-    this.setCamera(fitCamera(bookBounds(this.book), this.viewport, FIT_PADDING));
+    this.setCamera(fitCamera(bookBounds(this.book), this.viewport, this.fitPadding()));
+  }
+
+  /** The margin when framing: less on a small screen (a phone), where every pixel counts. */
+  private fitPadding() {
+    const side = Math.min(this.viewport.width, this.viewport.height);
+    return Math.min(FIT_PADDING, Math.round(side * 0.08));
   }
 
   /**
@@ -375,7 +393,7 @@ export class Engine {
       on && view
         ? cameraAt(view.center, view.zoom, this.viewport)
         : this.book
-          ? fitCamera(bookBounds(this.book), this.viewport, FIT_PADDING)
+          ? fitCamera(bookBounds(this.book), this.viewport, this.fitPadding())
           : this.camera;
     this.fitOnResize = target;
     this.stopMotion();
@@ -399,7 +417,7 @@ export class Engine {
    * it opens: that way the desktop layer puts the desk in the same place.
    */
   lockCamera(bounds: Bounds) {
-    this.lock(() => fitCamera(bounds, this.viewport, FIT_PADDING));
+    this.lock(() => fitCamera(bounds, this.viewport, this.fitPadding()));
   }
 
   /** Fixes the camera on this view (the last one of the floating diary). */
@@ -556,7 +574,7 @@ export class Engine {
     const book = this.book ? bookBounds(this.book) : null;
     const bounds = content && book ? unionBounds(content, book) : (content ?? book);
     return bounds
-      ? fitCamera(bounds, this.viewport, FIT_PADDING)
+      ? fitCamera(bounds, this.viewport, this.fitPadding())
       : cameraAt({ x: 0, y: 0 }, 1, this.viewport);
   }
 
@@ -583,7 +601,7 @@ export class Engine {
     const flight = 420;
     // With the same zoom if it fits; otherwise, just enough to see it whole.
     if (!visible)
-      this.animateTo(fitCamera(bounds, this.viewport, FIT_PADDING, this.camera.zoom), flight);
+      this.animateTo(fitCamera(bounds, this.viewport, this.fitPadding(), this.camera.zoom), flight);
     // The glow starts on arrival.
     this.highlight = { id, start: performance.now() + (visible ? 0 : flight * 0.6) };
     this.invalidateOverlay();
@@ -969,17 +987,109 @@ export class Engine {
 
   private handleContextMenu = (e: MouseEvent) => {
     e.preventDefault();
+    // With a finger, our own long press opens it (not every browser has one).
+    if (e.timeStamp - this.lastTouch < 1000) return;
     if (this.gesture) return;
+    this.openContextMenu(this.localPoint(e), e.clientX, e.clientY);
+  };
+
+  private openContextMenu(local: Vec, clientX: number, clientY: number) {
     this.finishEditing(false);
-    const world = screenToWorld(this.camera, this.localPoint(e));
+    const world = screenToWorld(this.camera, local);
     // The menu also reaches locked elements (to be able to unlock them).
     const hit = hitTestElement(this.scene, world, 6 / this.camera.zoom, true);
     if (hit && !this.selection.has(hit.id)) this.setSelection([hit.id]);
     if (!hit) this.setSelection([]);
     if (hit && !SELECTION_TOOLS.includes(this.tool)) this.toolRequest('select');
-    this.lastPointer = this.localPoint(e);
-    this.contextMenuListener({ x: e.clientX, y: e.clientY, onElement: !!hit });
-  };
+    this.lastPointer = local;
+    this.contextMenuListener({ x: clientX, y: clientY, onElement: !!hit });
+  }
+
+  // ─── Touch: two fingers and the long press ──────────────────────
+
+  /** A finger goes down. Returns true if it was handled here (a second finger). */
+  private onTouchDown(e: PointerEvent): boolean {
+    this.lastTouch = e.timeStamp;
+    const p = this.localPoint(e);
+    this.touches.set(e.pointerId, p);
+    this.clearLongPress();
+    if (this.touches.size === 1) {
+      // One finger: the tool as usual, and held still it opens the menu.
+      if (!this.embedded) {
+        const timer = setTimeout(
+          () => this.fireLongPress(e.pointerId, e.clientX, e.clientY),
+          LONG_PRESS,
+        );
+        this.longPress = { timer, start: p };
+      }
+      return false;
+    }
+    if (this.touches.size !== 2 || this.embedded || this.pageTurner.busy) return true;
+    // A second finger: whatever the first one started is dropped, and the view moves.
+    const first = [...this.touches.keys()].find((id) => id !== e.pointerId)!;
+    this.cancelGesture();
+    this.stopMotion();
+    const [a, b] = [this.touches.get(first)!, p];
+    this.gesture = {
+      type: 'pinch',
+      pointerId: first,
+      other: e.pointerId,
+      center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      distance: Math.max(Math.hypot(a.x - b.x, a.y - b.y), 1),
+    };
+    return true;
+  }
+
+  private onTouchMove(e: PointerEvent): boolean {
+    this.lastTouch = e.timeStamp;
+    const p = this.localPoint(e);
+    this.touches.set(e.pointerId, p);
+    const press = this.longPress;
+    if (press && Math.hypot(p.x - press.start.x, p.y - press.start.y) > LONG_PRESS_SLOP) {
+      this.clearLongPress();
+    }
+    const gesture = this.gesture;
+    if (gesture?.type !== 'pinch') return this.touches.size > 1;
+    const a = this.touches.get(gesture.pointerId);
+    const b = this.touches.get(gesture.other);
+    if (!a || !b) return true;
+    const center = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const distance = Math.max(Math.hypot(a.x - b.x, a.y - b.y), 1);
+    const zoomed = zoomAt(
+      this.camera,
+      gesture.center,
+      this.camera.zoom * (distance / gesture.distance),
+    );
+    this.setCamera(panBy(zoomed, center.x - gesture.center.x, center.y - gesture.center.y));
+    gesture.center = center;
+    gesture.distance = distance;
+    return true;
+  }
+
+  private onTouchUp(e: PointerEvent): boolean {
+    this.lastTouch = e.timeStamp;
+    this.touches.delete(e.pointerId);
+    this.clearLongPress();
+    const gesture = this.gesture;
+    if (gesture?.type !== 'pinch') return false;
+    // Lifting either finger ends it; the other one does nothing until it is lifted.
+    if (e.pointerId === gesture.pointerId || e.pointerId === gesture.other) this.gesture = null;
+    return true;
+  }
+
+  private fireLongPress(pointerId: number, clientX: number, clientY: number) {
+    this.longPress = null;
+    const at = this.touches.get(pointerId);
+    if (!at || this.touches.size !== 1 || this.gesture?.type === 'turn') return;
+    // Whatever the finger was doing (a stroke, a selection box) is dropped.
+    this.cancelGesture();
+    this.openContextMenu(at, clientX, clientY);
+  }
+
+  private clearLongPress() {
+    if (this.longPress) clearTimeout(this.longPress.timer);
+    this.longPress = null;
+  }
 
   // ─── Document (load, replace, export) ─────────────────────────
 
@@ -1047,7 +1157,7 @@ export class Engine {
         (keep
           ? this.camera
           : this.book
-            ? fitCamera(bookBounds(this.book), this.viewport, FIT_PADDING)
+            ? fitCamera(bookBounds(this.book), this.viewport, this.fitPadding())
             : this.fitCamera()),
     );
     this.invalidateScene();
@@ -1275,6 +1385,7 @@ export class Engine {
   // ─── Input ────────────────────────────────────────────────────
 
   private onPointerDown = (e: PointerEvent) => {
+    if (e.pointerType === 'touch' && this.onTouchDown(e)) return;
     if (this.gesture) return;
     // While the sheet falls by itself the canvas can't be touched.
     if (this.pageTurner.busy) {
@@ -1359,6 +1470,7 @@ export class Engine {
 
   private onPointerMove = (e: PointerEvent) => {
     this.lastPointer = this.localPoint(e);
+    if (e.pointerType === 'touch' && this.onTouchMove(e)) return;
     const gesture = this.gesture;
     if (!gesture) {
       this.updateHover(e);
@@ -1376,6 +1488,8 @@ export class Engine {
       gesture.handler.onMove((events.length > 0 ? events : [e]).map((ev) => this.pointerInput(ev)));
       return;
     }
+    // (Two fingers are handled in onTouchMove.)
+    if (gesture.type === 'pinch') return;
 
     const p = this.localPoint(e);
     this.setCamera(panBy(this.camera, p.x - gesture.last.x, p.y - gesture.last.y));
@@ -1387,6 +1501,7 @@ export class Engine {
   };
 
   private onPointerUp = (e: PointerEvent) => {
+    if (e.pointerType === 'touch' && this.onTouchUp(e)) return;
     const gesture = this.gesture;
     if (!gesture || e.pointerId !== gesture.pointerId) return;
     this.gesture = null;
@@ -1405,6 +1520,7 @@ export class Engine {
       else gesture.handler.onUp();
       return;
     }
+    if (gesture.type === 'pinch') return;
 
     // If released while moving, the canvas keeps sliding a bit.
     const first = gesture.samples[0];

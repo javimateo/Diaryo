@@ -75,10 +75,11 @@ export const en: Messages = {
     theme: (dark) => `${dark ? 'Light' : 'Dark'} theme`,
     settings: 'Settings',
     menu: 'Menu',
-    menuTip: 'Backups and export',
+    menuTip: 'Images, backups and export',
     savedWhere: (desktop) =>
       `Everything is saved automatically ${desktop ? 'in this app' : 'in this browser'}.`,
     saveCopy: 'Save a copy of the diary',
+    insertImage: 'Insert image',
     openCopy: 'Open a copy',
     exportPng: 'Export the page as an image',
   },
