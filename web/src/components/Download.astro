@@ -1,5 +1,6 @@
 ---
 import { fill, formatSize, texts, type Lang } from '../i18n';
+import { latestDownload } from '../release';
 import { SITE } from '../site';
 
 interface Props {
@@ -12,7 +13,7 @@ interface Props {
  */
 const { lang } = Astro.props;
 const d = texts(lang).download;
-const { version, sizeMB } = SITE.download;
+const { version, sizeMB, file, url } = await latestDownload();
 ---
 
 <section id="download" class="download">
@@ -22,9 +23,9 @@ const { version, sizeMB } = SITE.download;
     <p class="text">{d.text}</p>
     <p class="on-phone">{d.onPhone}</p>
     <div class="actions">
-      <a class="button primary get" href={SITE.releases}>
+      <a class="button primary get" href={url}>
         <span>{fill(d.button, { version })}</span>
-        <small>{`diaryo_${version}_x64-setup.exe · ${formatSize(sizeMB, lang)}`}</small>
+        <small>{`${file} · ${formatSize(sizeMB, lang)}`}</small>
       </a>
       <button class="button primary copy" type="button" data-copied={d.copied}>
         {d.copyLink}

@@ -6,6 +6,6 @@ export const SITE = {
   license: 'MIT',
   /** The web app (PLAN.md, H6). While it isn't set, the site doesn't offer it. */
   app: (import.meta.env.APP_URL as string | undefined) || null,
-  /** The current installer. H5 will read it from GitHub Releases when building. */
-  download: { version: '0.1.0', sizeMB: 3.3 },
+  /** The installer if GitHub can't be asked when building (see `release.ts`). */
+  download: { version: '0.2.0', sizeMB: 3.3, file: 'diaryo_0.2.0_x64-setup.exe' },
 };

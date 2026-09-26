@@ -25,12 +25,15 @@ export interface Settings {
   /** Day the week starts on in the calendar: 1 = Monday, 0 = Sunday. */
   weekStart: 0 | 1;
   turnSpeed: TurnSpeed;
+  /** Desktop app: new versions install by themselves (while the diary is hidden). */
+  autoUpdate: boolean;
 }
 
 const DEFAULT_SETTINGS: Settings = {
   language: DEFAULT_LANGUAGE,
   weekStart: 1,
   turnSpeed: 'normal',
+  autoUpdate: true,
 };
 
 export const THEME_KEY = 'diaryo:theme';
@@ -61,6 +64,7 @@ function loadSettings(): Settings {
   if (saved.turnSpeed === 'normal' || saved.turnSpeed === 'fast' || saved.turnSpeed === 'off') {
     settings.turnSpeed = saved.turnSpeed;
   }
+  if (typeof saved.autoUpdate === 'boolean') settings.autoUpdate = saved.autoUpdate;
   return settings;
 }
 

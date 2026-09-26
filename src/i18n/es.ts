@@ -231,6 +231,11 @@ export const es = {
       'Lo que hay en la mesa, sobre el fondo del escritorio. El atajo la enseña o la esconde.',
     autostart: 'Arrancar con Windows',
     autostartHint: 'Escondido, listo para el atajo.',
+    autoUpdate: 'Actualizar automáticamente',
+    autoUpdateHint: (version: string) =>
+      `Versión ${version}. Las nuevas se descargan solas y se instalan mientras diaryo está escondido.`,
+    updateAvailable: (version: string) => `Hay una versión nueva de diaryo (${version})`,
+    updateNow: 'Actualizar',
     backups: 'Copias automáticas',
     dailyBackup: 'Una copia cada día',
     dailyBackupHint:

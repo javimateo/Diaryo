@@ -5,6 +5,7 @@ import type { PageMeta } from '../diary/pages';
 import { followLink } from './diaryActions';
 import { DesktopBridge } from '../desktop/bridge';
 import { isDesktop, notifyDeskSaved } from '../desktop/tauri';
+import { Updater } from '../desktop/updates';
 import { Engine } from '../engine/engine';
 import { getDB } from '../storage/db';
 import { useUI } from '../store/ui';
@@ -67,11 +68,28 @@ export function CanvasView() {
     // In the desktop app, as soon as today's page is there it connects with it.
     const bridge = desktop ? new DesktopBridge(instance, diary) : null;
     useUI.getState().setDesktopBridge(bridge);
+    // New versions, from the GitHub releases.
+    const updater = desktop
+      ? new Updater({
+          auto: () => useUI.getState().settings.autoUpdate,
+          onAvailable: (version, install) =>
+            useUI.getState().showToast(t().desktop.updateAvailable(version), {
+              label: t().desktop.updateNow,
+              run: install,
+            }),
+          beforeInstall: async () => {
+            await diary.flush();
+            await bridge?.backup();
+          },
+        })
+      : null;
+    updater?.start();
     if (bridge) void diary.start().then(() => bridge.start());
     else void diary.start();
     // Development only: access from the console for debugging and measuring.
     if (import.meta.env.DEV) Object.assign(window, { diaryo: instance });
     return () => {
+      updater?.stop();
       bridge?.stop();
       useUI.getState().setDesktopBridge(null);
       unsubscribeCamera();

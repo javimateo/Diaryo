@@ -219,6 +219,11 @@ export const en: Messages = {
     deskLayerHint:
       "What's on the desk, over the desktop wallpaper. The shortcut shows or hides it.",
     autostart: 'Start with Windows',
+    autoUpdate: 'Update automatically',
+    autoUpdateHint: (version: string) =>
+      `Version ${version}. New ones download by themselves and install while diaryo is hidden.`,
+    updateAvailable: (version: string) => `A new version of diaryo is available (${version})`,
+    updateNow: 'Update',
     autostartHint: 'Hidden, ready for the shortcut.',
     backups: 'Automatic backups',
     dailyBackup: 'One backup a day',

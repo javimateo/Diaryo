@@ -297,9 +297,12 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           en el escritorio, pasar la página, rodear y unir ideas, tareas y días, buscar con
           Ctrl+K y tapas, papel y mesa). Solo se animan a la vista; con «reducir
           movimiento», quietas en su estado final. Servirán para el punto I.
-    - [ ] **H5. Descarga**: los instaladores en las Releases de GitHub; la web enlaza a la
-          última (versión, tamaño y novedades) y explica el aviso de SmartScreen mientras
-          el instalador no esté firmado.
+    - [x] **H5. Descarga y versiones**: al subir una etiqueta `vX.Y.Z`, GitHub Actions
+          (`.github/workflows/release.yml`) compila el instalador, lo firma para el
+          actualizador y deja un borrador de Release con `latest.json` y notas automáticas;
+          al publicarlo llega a las apps instaladas. La web lee la última Release al
+          compilarse (versión, tamaño y enlace directo) y explica el aviso de SmartScreen.
+          Primera versión pública: 0.2.0.
     - [ ] **H6. App web completa** en un subdominio (`app.`): la versión de navegador de
           siempre, guardando en el propio navegador.
     - [ ] **H7. Coolify**: dos recursos desde el repositorio (la web, con carpeta base
@@ -311,10 +314,12 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
     - **Pendiente de decidir** antes de publicar:
       - [x] **Nombre**: diaryo (ver G).
       - [ ] **Dominio**: cuál, y si la web va en el principal o en un subdominio.
-      - [ ] **Repositorio público** en GitHub (lo necesitan las descargas de las Releases).
-      - [ ] **Actualizaciones automáticas**: que la app avise y se actualice sola (plugin
-            de Tauri con actualizaciones firmadas, desde las Releases). Sin ellas, cada
-            versión nueva se baja a mano desde la web.
+      - [x] **Repositorio público** en GitHub.
+      - [x] **Actualizaciones automáticas**: plugin de Tauri con actualizaciones firmadas
+            (clave en `~/.tauri/diaryo.key`, secreto `TAURI_SIGNING_PRIVATE_KEY` en
+            GitHub). Ajuste «Actualizar automáticamente» (activado por defecto): se
+            descargan solas y se instalan mientras el diario está escondido; si no, un
+            aviso con «Actualizar».
       - [ ] **Firma del instalador**: firmarlo (Azure Trusted Signing, unos 10 €/mes) o
             explicar en la web cómo pasar el aviso de SmartScreen.
   - [ ] **I. Enseñar a usarla**: recorrido la primera vez que se abre (pasos cortos con

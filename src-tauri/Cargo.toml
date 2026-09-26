@@ -1,6 +1,6 @@
 [package]
 name = "diaryo"
-version = "0.1.0"
+version = "0.2.0"
 description = "Diario infinito: cada página es un lienzo sin límites para dibujar, escribir y conectar ideas."
 authors = ["diaryo"]
 license = "MIT"
@@ -22,7 +22,9 @@ tauri-plugin-autostart = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-opener = "2"
+tauri-plugin-process = "2"
 tauri-plugin-single-instance = "2"
+tauri-plugin-updater = "2"
 
 # Saber si la ventana que está delante es de otra app (para apartar el diario flotante) y
 # la mesa en el escritorio (detrás de las ventanas, dejando pasar los clics).

@@ -1,5 +1,6 @@
 ---
 import { fill, formatSize, texts, type Lang } from '../i18n';
+import { latestDownload } from '../release';
 import { SITE } from '../site';
 import DemoIsland from '../demo/DemoIsland';
 import Book from './Book.astro';
@@ -13,7 +14,8 @@ interface Props {
 /** The home page: hero, features, download, privacy and questions. */
 const { lang } = Astro.props;
 const t = texts(lang);
-const size = formatSize(SITE.download.sizeMB, lang);
+const download = await latestDownload();
+const size = formatSize(download.sizeMB, lang);
 const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
 ---
 
@@ -27,7 +29,7 @@ const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
     <div class="actions">
       <a class="button primary" href="#download">
         <span>{t.hero.download}</span>
-        <small>{fill(t.hero.downloadInfo, { version: SITE.download.version, size })}</small>
+        <small>{fill(t.hero.downloadInfo, { version: download.version, size })}</small>
       </a>
       {
         SITE.app && (

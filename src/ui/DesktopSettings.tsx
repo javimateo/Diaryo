@@ -11,6 +11,7 @@ import {
   setDesktopShortcut,
 } from '../desktop/settings';
 import { shortcutFromEvent, shortcutKeys } from '../desktop/shortcuts';
+import { appVersion } from '../desktop/tauri';
 import { useUI } from '../store/ui';
 import { SettingsRow } from './SettingsRow';
 import { Switch } from './Switch';
@@ -21,6 +22,11 @@ import { useT } from './useT';
 export function DesktopSettings() {
   const t = useT();
   const desktop = useUI((s) => s.desktop);
+  const autoUpdate = useUI((s) => s.settings.autoUpdate);
+  const [version, setVersion] = useState('');
+  useEffect(() => {
+    void appVersion().then(setVersion);
+  }, []);
   if (!desktop) return null;
 
   return (
@@ -59,6 +65,13 @@ export function DesktopSettings() {
             checked={desktop.autostart}
             label={t.desktop.autostart}
             onChange={(enabled) => void setAutostart(enabled)}
+          />
+        </SettingsRow>
+        <SettingsRow label={t.desktop.autoUpdate} hint={t.desktop.autoUpdateHint(version)}>
+          <Switch
+            checked={autoUpdate}
+            label={t.desktop.autoUpdate}
+            onChange={(enabled) => useUI.getState().setSettings({ autoUpdate: enabled })}
           />
         </SettingsRow>
       </section>

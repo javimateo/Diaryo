@@ -24,6 +24,12 @@ export async function emit(event: string, payload?: unknown) {
   await emit(event, payload);
 }
 
+/** The installed version (e.g. "0.2.0"). */
+export async function appVersion() {
+  const { getVersion } = await import('@tauri-apps/api/app');
+  return getVersion();
+}
+
 /** This window (to move it, maximize it…). */
 export async function currentWindow() {
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
