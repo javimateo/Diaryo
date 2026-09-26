@@ -292,7 +292,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           página); debajo del texto no se puede dibujar.
     - [x] **Tema de la web**: claro por defecto; botón en la cabecera para pasar a
           oscuro (se recuerda en el navegador) y la demo lo sigue.
-    - [ ] **H4. Funciones**: cada una con una animación corta (las mismas del punto I).
+    - [x] **H4. Funciones**: cada una con una animación corta en bucle, solo con CSS, sobre
+          el escritorio de Windows o la mesa del diario (atajo y diario flotante, post-its
+          en el escritorio, pasar la página, rodear y unir ideas, tareas y días, buscar con
+          Ctrl+K y tapas, papel y mesa). Solo se animan a la vista; con «reducir
+          movimiento», quietas en su estado final. Servirán para el punto I.
     - [ ] **H5. Descarga**: los instaladores en las Releases de GitHub; la web enlaza a la
           última (versión, tamaño y novedades) y explica el aviso de SmartScreen mientras
           el instalador no esté firmado.

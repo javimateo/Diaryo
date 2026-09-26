@@ -69,7 +69,37 @@ export const en: WebMessages = {
     desk: {
       title: 'Sticky notes on your desktop',
       text: 'Whatever you leave on the diary’s desk stays on the Windows background, behind your windows: your tasks in sight and today’s page in small.',
-      notes: ['call Ana', 'water plants', 'meeting at 5'],
+      notes: ['call Ana', 'water the plants', 'meeting at 5'],
+    },
+    scenes: {
+      today: 'today',
+      day: 'Saturday 26',
+      turn: {
+        left: ['Saturday 26', '· beach', '· movies'],
+        front: ['· call Ana', '· water plants'],
+        back: ['Sunday 27', '· walk'],
+        under: ['· museum', '· dinner'],
+      },
+      draw: {
+        heading: 'Weekend plan',
+        question: 'beach or mountains?',
+        tasks: ['call Ana', 'book a hotel'],
+        note: 'Hotel Mar · €80',
+        link: '↪ Friday 2',
+      },
+      search: {
+        query: 'beach',
+        results: [
+          ['Saturday 26', 'beach or mountains?'],
+          ['Tuesday Jul 8', 'beach photos'],
+          ['task', 'buy sunscreen'],
+        ],
+      },
+      styles: [
+        ['Terracotta leather', 'Lined', 'Wood'],
+        ['Blue cloth', 'Grid', 'Cork'],
+        ['Cardboard', 'Dots', 'Linen'],
+      ],
     },
     small: [
       {
@@ -80,7 +110,7 @@ export const en: WebMessages = {
       {
         id: 'draw',
         title: 'Draw and connect',
-        text: 'Pencil, marker, shapes, arrows that follow what they join and tasks with checkboxes.',
+        text: 'Circle, underline and link ideas, tasks and sticky notes with arrows; and link to other days.',
       },
       {
         id: 'map',

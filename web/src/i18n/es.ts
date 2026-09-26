@@ -3,7 +3,7 @@ export const es = {
   meta: {
     title: 'diaryo — un diario infinito para tu PC',
     description:
-      'Cada día, una doble página sin límites para escribir, dibujar, pegar pósits y unir ideas. Libre, gratuito y de código abierto.',
+      'Cada día, una doble página sin límites para escribir, dibujar, pegar post-its y unir ideas. Libre, gratuito y de código abierto.',
   },
   nav: {
     features: 'Funciones',
@@ -19,7 +19,7 @@ export const es = {
     tagline: 'tu diario, sin márgenes',
     title: 'Cada día, una doble página infinita.',
     subtitle:
-      'Escribe, dibuja, pega pósits y une ideas con flechas en un diario de verdad. Y cuando lo necesites, aparece sobre tu escritorio con un atajo.',
+      'Escribe, dibuja, pega post-its y une ideas con flechas en un diario de verdad. Y cuando lo necesites, aparece sobre tu escritorio con un atajo.',
     download: 'Descargar para Windows',
     /** `{version}` and `{size}` are filled in. */
     downloadInfo: 'v{version} · {size} · gratis',
@@ -36,7 +36,7 @@ export const es = {
     pageNote: '↙ tira de la esquina para ver ayer',
     deskNote: 'Por hacer: terminar la web',
     shortcutNote: 'Ctrl+Alt+D y aparece',
-    alt: 'Un diario abierto sobre una mesa de madera, con tareas, flechas y pósits.',
+    alt: 'Un diario abierto sobre una mesa de madera, con tareas, flechas y post-its.',
   },
   /** The live demo of the hero (the same texts on its pages as `book`). */
   demo: {
@@ -65,9 +65,41 @@ export const es = {
       text: 'Desde cualquier programa, Ctrl+Alt+D abre el diario sobre tu escritorio. Apuntas algo y el mismo atajo lo esconde. Sin buscar ventanas.',
     },
     desk: {
-      title: 'Pósits en tu escritorio',
+      title: 'Post-its en tu escritorio',
       text: 'Lo que dejas en la mesa del diario se queda en el fondo de Windows, detrás de las ventanas: tus tareas a la vista y la página de hoy en pequeño.',
-      notes: ['llamar a Ana', 'regar', 'reunión a las 5'],
+      notes: ['llamar a Ana', 'regar las plantas', 'reunión a las 5'],
+    },
+    /** What is written in the animated scenes. */
+    scenes: {
+      today: 'hoy',
+      day: 'sábado 26',
+      turn: {
+        // One double page per day: Saturday's two pages, then Sunday's.
+        left: ['sábado 26', '· playa', '· cine'],
+        front: ['· llamar a Ana', '· regar'],
+        back: ['domingo 27', '· paseo'],
+        under: ['· museo', '· cena'],
+      },
+      draw: {
+        heading: 'Plan del finde',
+        question: '¿playa o monte?',
+        tasks: ['llamar a Ana', 'reservar hotel'],
+        note: 'Hotel Mar · 80 €',
+        link: '↪ viernes 2',
+      },
+      search: {
+        query: 'playa',
+        results: [
+          ['sábado 26', '¿playa o monte?'],
+          ['martes 8 jul', 'fotos de la playa'],
+          ['tarea', 'comprar crema de sol'],
+        ],
+      },
+      styles: [
+        ['Cuero teja', 'Rayas', 'Madera'],
+        ['Tela azul', 'Cuadrícula', 'Corcho'],
+        ['Cartón', 'Puntos', 'Lino'],
+      ],
     },
     small: [
       {
@@ -78,7 +110,7 @@ export const es = {
       {
         id: 'draw',
         title: 'Dibujar y conectar',
-        text: 'Lápiz, rotulador, figuras, flechas que siguen a lo que unen y tareas con casilla.',
+        text: 'Rodea, subraya y une con flechas ideas, tareas y post-its; y enlaza con otros días.',
       },
       {
         id: 'map',

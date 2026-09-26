@@ -6,13 +6,27 @@ interface Props {
 }
 
 /**
- * The features: two large ones on the Windows desktop and four small ones. Each picture
- * is a still scene (`data-scene`); H4 brings them to life.
+ * The features: two large ones on the Windows desktop and four small ones, each with a
+ * short looping animation of what the app does (only CSS). They play only while in view
+ * (`data-playing`, see the script) and stay still with reduced motion, showing their
+ * final state: that is why every element's own style is how it ends.
  */
 const { lang } = Astro.props;
 const f = texts(lang).features;
+const sc = f.scenes;
 const [call, water, meeting] = f.desk.notes;
-const covers = ['#b8573f', '#c9677e', '#46699c', '#4f7d5c', '#c99a2e', '#2f2d2a'];
+const letters = [...sc.search.query];
+const covers = ['var(--cover)', '#46699c', '#a07850'];
+
+/** Each letter of the search appears at its moment (one keyframe per letter). */
+const typing = letters
+  .map((_, i) => `@keyframes f-type-${i}{0%,${14 + i * 5}%{opacity:0}${15 + i * 5}%,100%{opacity:1}}`)
+  .join('');
+
+const cursor =
+  '<svg class="cursor-shape" viewBox="0 0 14 18" aria-hidden="true"><path d="M1 1 L1 15 L5 11 L8 17 L10 16 L7 10 L12 10 Z"></path></svg>';
+const taskbar =
+  '<div class="taskbar"><i></i><i></i><i class="diary"></i><i></i><b>10:24</b></div><div class="icons"><i></i><i></i><i></i></div>';
 ---
 
 <section id="features" class="features wrap">
@@ -21,11 +35,19 @@ const covers = ['#b8573f', '#c9677e', '#46699c', '#4f7d5c', '#c99a2e', '#2f2d2a'
 
   <div class="big">
     <article class="card">
-      <div class="scene windows" data-scene="floating" aria-hidden="true">
-        <div class="icons"><i></i><i></i><i></i></div>
+      <div class="scene windows" data-scene aria-hidden="true">
+        <Fragment set:html={taskbar} />
         <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>D</kbd></div>
-        <div class="mini-book floating"><i></i><i></i></div>
-        <div class="taskbar"></div>
+        <div class="fl-veil"></div>
+        <div class="book fl-book">
+          <div class="page left">
+            <span class="hand">{sc.day}</span>
+            <svg class="ink" viewBox="0 0 80 14">
+              <path d="M2 9 C10 2,16 13,24 6 S36 3,44 8 S60 4,70 7"></path>
+            </svg>
+          </div>
+          <div class="page right"></div>
+        </div>
       </div>
       <div class="body">
         <h3>{f.floating.title}</h3>
@@ -34,14 +56,18 @@ const covers = ['#b8573f', '#c9677e', '#46699c', '#4f7d5c', '#c99a2e', '#2f2d2a'
     </article>
 
     <article class="card">
-      <div class="scene windows" data-scene="desk" aria-hidden="true">
-        <div class="icons"><i></i><i></i><i></i></div>
-        <div class="today-card"><i></i><i></i></div>
-        <div class="note yellow-note" style="--tilt: -4deg">
-          <span class="box"></span>{call}<br /><s><span class="box checked"></span>{water}</s>
+      <div class="scene windows" data-scene aria-hidden="true">
+        <Fragment set:html={taskbar} />
+        <div class="book today-card">
+          <div class="page left"><span class="hand tiny">{sc.today}</span></div>
+          <div class="page right"></div>
         </div>
-        <div class="note pink meeting-note" style="--tilt: 3deg">{meeting}</div>
-        <div class="taskbar"></div>
+        <div class="note d-note" style="--tilt: -3deg">
+          <span class="box"></span>{call}<br />
+          <span class="d-done"><span class="box d-tick"></span>{water}</span>
+        </div>
+        <div class="note pink d-drop" style="--tilt: 4deg">{meeting}</div>
+        <div class="cursor d-cursor"><Fragment set:html={cursor} /></div>
       </div>
       <div class="body">
         <h3>{f.desk.title}</h3>
@@ -54,44 +80,116 @@ const covers = ['#b8573f', '#c9677e', '#46699c', '#4f7d5c', '#c99a2e', '#2f2d2a'
     {
       f.small.map((item) => (
         <article class="card">
-          <div class="scene soft" data-scene={item.id} aria-hidden="true">
+          <div class="scene desk" data-scene aria-hidden="true">
             {item.id === 'turn' && (
-              <div class="mini-book turning">
-                <i />
-                <i />
-              </div>
+              <>
+                <div class="t-book">
+                  <div class="book t-base">
+                    <div class="page left hand">
+                      {sc.turn.left.map((line) => (
+                        <span>{line}</span>
+                      ))}
+                    </div>
+                    <div class="page right hand">
+                      {sc.turn.under.map((line) => (
+                        <span>{line}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div class="t-sheet">
+                    <div class="page right hand t-front">
+                      {sc.turn.front.map((line) => (
+                        <span>{line}</span>
+                      ))}
+                    </div>
+                    <div class="page left hand t-back">
+                      {sc.turn.back.map((line) => (
+                        <span>{line}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div class="cursor t-cursor">
+                  <Fragment set:html={cursor} />
+                </div>
+              </>
             )}
             {item.id === 'draw' && (
-              <div class="connect">
-                <span class="square" />
-                <svg viewBox="0 0 60 20">
-                  <path d="M2 10 H54 M46 3 L55 10 L46 17" />
+              <div class="stage">
+                <div class="book fill">
+                  <div class="page left" />
+                  <div class="page right" />
+                </div>
+                <span class="hand at" style="left: 14px; top: 10px; font-size: 13px">
+                  {sc.draw.heading}
+                </span>
+                <span class="hand at" style="left: 14px; top: 32px">
+                  {sc.draw.question}
+                </span>
+                <span class="hand at" style="left: 14px; top: 58px">
+                  <span class="box" />
+                  {sc.draw.tasks[0]}
+                </span>
+                <span class="hand at" style="left: 14px; top: 78px">
+                  <span class="box" />
+                  {sc.draw.tasks[1]}
+                </span>
+                <svg class="marks" viewBox="0 0 240 150">
+                  <ellipse class="dr-ring" cx="52" cy="40" rx="44" ry="11" transform="rotate(-3 52 40)" />
+                  <path class="dr-arrow" d="M100 86 C122 104, 132 74, 150 76" />
+                  <path class="dr-arrow" d="M143 71 L151 76 L143 82" />
                 </svg>
-                <span class="circle" />
+                <div class="note green dr-note" style="--tilt: 3deg">
+                  {sc.draw.note}
+                </div>
+                <span class="link-chip">{sc.draw.link}</span>
               </div>
             )}
             {item.id === 'map' && (
-              <div class="map">
-                {Array.from({ length: 8 }, (_, i) => (
-                  <i class={i === 2 ? 'here' : undefined} />
-                ))}
-                <span class="search">Ctrl K</span>
-              </div>
-            )}
-            {item.id === 'style' && (
-              <div class="swatches">
-                <div class="covers">
-                  {covers.map((color) => (
-                    <i style={`background: ${color}`} />
+              <>
+                <div class="book s-book">
+                  <div class="page left" />
+                  <div class="page right" />
+                </div>
+                <div class="palette">
+                  <div class="input">
+                    <svg viewBox="0 0 12 12">
+                      <circle cx="5" cy="5" r="3.6" />
+                      <path d="M8 8 L11 11" />
+                    </svg>
+                    <span>
+                      {letters.map((letter, i) => (
+                        <span class="letter" style={`animation-name: f-type-${i}`}>
+                          {letter}
+                        </span>
+                      ))}
+                    </span>
+                    <span class="caret" />
+                    <kbd>Ctrl K</kbd>
+                  </div>
+                  {sc.search.results.map(([where, what], i) => (
+                    <div class={i === 0 ? 'result first' : 'result'}>
+                      <span>{where}</span>
+                      <em>{what}</em>
+                    </div>
                   ))}
                 </div>
-                <div class="desks">
-                  <i class="wood" />
-                  <i class="cork" />
-                  <i class="linen" />
-                </div>
-              </div>
+              </>
             )}
+            {item.id === 'style' &&
+              sc.styles.map((look, i) => (
+                <div class={`look look-${i}`}>
+                  <div class="book st-book" style={`background: ${covers[i]}`}>
+                    <div class="page left" />
+                    <div class="page right" />
+                  </div>
+                  <div class="chips">
+                    {look.map((name) => (
+                      <span>{name}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
           </div>
           <div class="body">
             <h3>{item.title}</h3>
@@ -102,6 +200,19 @@ const covers = ['#b8573f', '#c9677e', '#46699c', '#4f7d5c', '#c99a2e', '#2f2d2a'
     }
   </div>
 </section>
+
+<style is:inline set:html={typing}></style>
+
+<script>
+  // The scenes only play while they are in view.
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) entry.target.toggleAttribute('data-playing', entry.isIntersecting);
+    },
+    { threshold: 0.3 },
+  );
+  document.querySelectorAll('[data-scene]').forEach((scene) => observer.observe(scene));
+</script>
 
 <style>
   .features {
@@ -166,47 +277,146 @@ const covers = ['#b8573f', '#c9677e', '#46699c', '#4f7d5c', '#c99a2e', '#2f2d2a'
     color: var(--muted);
   }
 
+  /* ─── Shared pieces ─── */
+
   .scene {
     position: relative;
     overflow: hidden;
   }
 
-  /* ─── Windows desktop ─── */
+  /* Paused out of view; nothing moves with reduced motion. */
+  .scene:not([data-playing]) :global(*) {
+    animation-play-state: paused !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scene :global(*) {
+      animation: none !important;
+    }
+  }
+
+  .hand {
+    font-family: var(--font-hand);
+    color: var(--paper-ink);
+    line-height: 1.2;
+  }
+
+  .book {
+    position: absolute;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 5px;
+    border-radius: 7px;
+    background: var(--cover);
+    box-shadow: var(--shadow);
+  }
+
+  .page {
+    position: relative;
+    overflow: hidden;
+    background: repeating-linear-gradient(180deg, transparent 0 9px, var(--paper-line) 9px 10px)
+      var(--paper);
+  }
+
+  /* The spine is a soft shadow between the pages, not a gap. */
+  .page.left {
+    border-radius: 2px 0 0 2px;
+    box-shadow: inset -7px 0 7px -5px rgba(0, 0, 0, 0.22);
+  }
+
+  .page.right {
+    border-radius: 0 2px 2px 0;
+    box-shadow: inset 7px 0 7px -5px rgba(0, 0, 0, 0.22);
+  }
+
+  .box {
+    display: inline-block;
+    width: 0.62em;
+    height: 0.62em;
+    margin-right: 0.3em;
+    border: 1.5px solid currentColor;
+    border-radius: 2px;
+  }
+
+  .cursor {
+    position: absolute;
+    z-index: 5;
+    width: 14px;
+    height: 18px;
+  }
+
+  .scene :global(.cursor-shape) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .scene :global(.cursor-shape path) {
+    fill: #ffffff;
+    stroke: #111111;
+    stroke-width: 1;
+  }
+
+  /* ─── The Windows desktop ─── */
 
   .windows {
     height: 320px;
     background: var(--windows);
   }
 
-  .taskbar {
+  .windows :global(.taskbar) {
     position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
-    height: 28px;
-    background: rgba(20, 24, 32, 0.55);
-  }
-
-  .icons {
-    position: absolute;
-    left: 22px;
-    top: 22px;
     display: flex;
-    flex-direction: column;
-    gap: 14px;
+    align-items: center;
+    gap: 8px;
+    height: 30px;
+    padding: 0 12px;
+    background: rgba(18, 22, 30, 0.78);
   }
 
-  .icons i {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
+  .windows :global(.taskbar i) {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
     background: rgba(255, 255, 255, 0.55);
   }
 
+  .windows :global(.taskbar i.diary) {
+    background: var(--cover);
+  }
+
+  .windows :global(.taskbar b) {
+    margin-left: auto;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .windows :global(.icons) {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .windows :global(.icons i) {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  /* The floating diary: Ctrl+Alt+D, it appears, something is written, it hides. */
   .keys {
     position: absolute;
-    right: 20px;
-    top: 20px;
+    right: 18px;
+    top: 16px;
+    z-index: 3;
     display: flex;
     gap: 6px;
   }
@@ -219,201 +429,674 @@ const covers = ['#b8573f', '#c9677e', '#46699c', '#4f7d5c', '#c99a2e', '#2f2d2a'
     font-family: var(--font-body);
     font-size: 13px;
     font-weight: 700;
+    animation: f-key 6s infinite;
   }
 
-  .mini-book {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3px;
-    padding: 6px;
-    border-radius: 8px;
-    background: var(--cover);
-    box-shadow: var(--shadow);
+  kbd:nth-child(2) {
+    animation-delay: 0.12s;
   }
 
-  .mini-book i,
-  .today-card i {
-    border-radius: 2px;
-    background: repeating-linear-gradient(180deg, transparent 0 9px, var(--paper-line) 9px 10px)
-      var(--paper);
+  kbd:nth-child(3) {
+    animation-delay: 0.24s;
   }
 
-  .floating {
+  @keyframes f-key {
+    0%,
+    5%,
+    17%,
+    64%,
+    76%,
+    100% {
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }
+    8%,
+    14%,
+    67%,
+    73% {
+      background: #ffffff;
+      color: var(--windows);
+    }
+  }
+
+  .fl-veil {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 12, 18, 0.28);
+    opacity: 0;
+    animation: f-veil 6s infinite;
+  }
+
+  @keyframes f-veil {
+    0%,
+    12%,
+    78%,
+    100% {
+      opacity: 0;
+    }
+    22%,
+    68% {
+      opacity: 1;
+    }
+  }
+
+  .fl-book {
+    left: 50%;
+    top: 46%;
+    width: min(64%, 400px);
+    aspect-ratio: 400 / 250;
+    transform: translate(-50%, -50%);
+    animation: f-float 6s infinite;
+  }
+
+  @keyframes f-float {
+    0%,
+    12% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.84);
+    }
+    22%,
+    68% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    78%,
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.92);
+    }
+  }
+
+  .fl-book .page.left {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+
+  .ink {
+    width: 80%;
+  }
+
+  .ink path {
+    fill: none;
+    stroke: var(--paper-ink);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-dasharray: 90;
+    animation: f-write 6s infinite;
+  }
+
+  @keyframes f-write {
+    0%,
+    30% {
+      stroke-dashoffset: 90;
+    }
+    52%,
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* Post-its on the desktop: a task is ticked and a new note drops. */
+  .today-card {
+    right: 22px;
+    top: 20px;
+    width: 150px;
+    aspect-ratio: 400 / 260;
+    padding: 4px;
+  }
+
+  .today-card .page {
+    padding: 4px 6px;
+  }
+
+  .tiny {
+    font-size: 11px;
+  }
+
+  .d-note {
+    left: 22%;
+    top: 30%;
+    width: 170px;
+    height: 128px;
+    font-size: 19px;
+  }
+
+  .d-tick {
+    background: currentColor;
+    animation: f-tick 6s infinite;
+  }
+
+  @keyframes f-tick {
+    0%,
+    33% {
+      background: transparent;
+    }
+    36%,
+    100% {
+      background: currentColor;
+    }
+  }
+
+  .d-done {
+    text-decoration: line-through;
+    opacity: 0.55;
+    animation: f-done 6s infinite;
+  }
+
+  @keyframes f-done {
+    0%,
+    33% {
+      text-decoration: none;
+      opacity: 1;
+    }
+    36%,
+    100% {
+      text-decoration: line-through;
+      opacity: 0.55;
+    }
+  }
+
+  .d-drop {
+    left: 52%;
+    top: 48%;
+    width: 126px;
+    height: 110px;
+    font-size: 19px;
+    animation: f-drop 6s infinite;
+  }
+
+  @keyframes f-drop {
+    0%,
+    50% {
+      opacity: 0;
+      transform: translateY(-24px) rotate(var(--tilt));
+    }
+    62%,
+    100% {
+      opacity: 1;
+      transform: translateY(0) rotate(var(--tilt));
+    }
+  }
+
+  /* The cursor goes to the second task's box and clicks it. */
+  .d-cursor {
+    left: calc(22% + 14px);
+    top: calc(30% + 52px);
+    animation: f-click 6s infinite;
+  }
+
+  @keyframes f-click {
+    0% {
+      left: 80%;
+      top: 82%;
+    }
+    28%,
+    100% {
+      left: calc(22% + 14px);
+      top: calc(30% + 52px);
+    }
+    31% {
+      transform: scale(0.8);
+    }
+    34% {
+      transform: scale(1);
+    }
+  }
+
+  /* ─── The small scenes, on the diary's desk ─── */
+
+  .desk {
+    height: 190px;
+    background: var(--wood);
+  }
+
+  /* Turning the page: the corner is pulled and Saturday's sheet turns to Sunday. */
+  .t-book {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: min(62%, 380px);
-    aspect-ratio: 400 / 240;
-    transform: translate(-50%, -54%);
+    width: 220px;
+    height: 136px;
+    transform: translate(-50%, -50%);
+    perspective: 700px;
   }
 
-  .today-card {
+  .t-base {
+    inset: 0;
+  }
+
+  .t-book .page {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .t-sheet {
     position: absolute;
-    right: 22px;
-    top: 22px;
-    width: 170px;
-    aspect-ratio: 400 / 260;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px;
-    padding: 5px;
-    border-radius: 7px;
-    background: var(--cover);
-    box-shadow: var(--shadow);
+    top: 5px;
+    right: 5px;
+    bottom: 5px;
+    width: calc(50% - 5px);
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    animation: f-turn 5s infinite;
   }
 
-  .scene .note {
-    font-size: 22px;
+  .t-sheet .page {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
   }
 
-  .yellow-note {
-    left: 26%;
-    top: 40%;
-    width: 150px;
-    height: 128px;
+  .t-back {
+    transform: rotateY(180deg);
   }
 
-  .meeting-note {
-    left: 58%;
-    top: 48%;
-    width: 128px;
-    height: 116px;
+  @keyframes f-turn {
+    0%,
+    22% {
+      transform: rotateY(0);
+    }
+    62%,
+    95% {
+      transform: rotateY(-180deg);
+    }
+    96%,
+    100% {
+      transform: rotateY(0);
+    }
   }
 
-  .box {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    margin-right: 6px;
-    border: 2px solid currentColor;
-    border-radius: 3px;
+  /* The sheet fades before going back (on its faces: an opacity on the sheet itself
+     would flatten it, and its back would show through). */
+  .t-sheet .page {
+    animation: f-sheet-fade 5s infinite;
   }
 
-  .box.checked {
-    background: currentColor;
+  @keyframes f-sheet-fade {
+    0%,
+    90% {
+      opacity: 1;
+    }
+    95%,
+    96% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
   }
 
-  /* ─── Small scenes ─── */
-
-  .soft {
-    height: 170px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--card-soft);
+  .t-cursor {
+    left: calc(50% - 110px + 30px);
+    top: calc(50% + 40px);
+    animation: f-pull 5s infinite;
   }
 
-  .turning {
-    width: 150px;
-    height: 100px;
-    padding: 5px;
-    gap: 2px;
-    box-shadow: none;
-    transform: perspective(400px) rotateY(-12deg);
+  @keyframes f-pull {
+    0% {
+      left: calc(50% + 120px);
+      top: calc(50% + 70px);
+      opacity: 1;
+    }
+    18% {
+      left: calc(50% + 100px);
+      top: calc(50% + 58px);
+    }
+    58% {
+      left: calc(50% - 90px);
+      top: calc(50% + 48px);
+      opacity: 1;
+    }
+    64%,
+    100% {
+      left: calc(50% - 90px);
+      top: calc(50% + 48px);
+      opacity: 0;
+    }
   }
 
-  .connect {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .square {
-    width: 44px;
-    height: 44px;
-    border-radius: 6px;
-    background: var(--note-yellow);
-  }
-
-  .connect svg {
-    width: 60px;
-    fill: none;
-    stroke: var(--pen-blue);
-    stroke-width: 2.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .circle {
-    width: 44px;
-    height: 44px;
-    border: 2.5px solid var(--text);
-    border-radius: 50%;
-  }
-
-  .map {
-    display: grid;
-    grid-template-columns: repeat(4, 34px);
-    gap: 8px;
-    position: relative;
-  }
-
-  .map i {
-    height: 24px;
-    border-radius: 4px;
-    background: var(--line);
-  }
-
-  .map .here {
-    background: var(--cover);
-  }
-
-  .search {
+  /* Drawing and connecting: circle an idea, join a task to a post-it, link a day. */
+  .stage {
     position: absolute;
     left: 50%;
-    top: -34px;
-    transform: translateX(-50%);
-    padding: 2px 10px;
-    border-radius: 999px;
-    background: var(--card);
-    color: var(--muted);
+    top: 50%;
+    width: 240px;
+    height: 150px;
+    transform: translate(-50%, -50%);
+  }
+
+  .fill {
+    inset: 0;
+  }
+
+  .at {
+    position: absolute;
+    z-index: 1;
     font-size: 12px;
-    font-weight: 700;
     white-space: nowrap;
   }
 
-  .swatches {
+  .marks {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    overflow: visible;
+  }
+
+  .dr-ring {
+    fill: none;
+    stroke: #e03131;
+    stroke-width: 1.6;
+    stroke-dasharray: 190;
+    animation: f-ring 7s infinite;
+  }
+
+  @keyframes f-ring {
+    0%,
+    8% {
+      stroke-dashoffset: 190;
+    }
+    25%,
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .dr-arrow {
+    fill: none;
+    stroke: var(--pen-blue);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 90;
+    animation: f-arrow 7s infinite;
+  }
+
+  @keyframes f-arrow {
+    0%,
+    32% {
+      stroke-dashoffset: 90;
+    }
+    52%,
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .dr-note {
+    left: 150px;
+    top: 56px;
+    z-index: 1;
+    width: 72px;
+    height: 56px;
+    padding: 6px;
+    font-size: 12px;
+    animation: f-pop 7s infinite;
+  }
+
+  @keyframes f-pop {
+    0%,
+    28% {
+      opacity: 0;
+      transform: scale(0.6) rotate(var(--tilt));
+    }
+    34%,
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(var(--tilt));
+    }
+  }
+
+  .link-chip {
+    position: absolute;
+    left: 150px;
+    top: 118px;
+    z-index: 2;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+    animation: f-chip 7s infinite;
+  }
+
+  @keyframes f-chip {
+    0%,
+    62% {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    70%,
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Search: Ctrl+K, a word is typed and the results appear. */
+  .s-book {
+    left: 50%;
+    top: 58%;
+    width: 200px;
+    height: 116px;
+    transform: translate(-50%, -50%);
+    opacity: 0.6;
+  }
+
+  .palette {
+    position: absolute;
+    left: 50%;
+    top: 14px;
+    width: min(86%, 250px);
+    overflow: hidden;
+    border-radius: 9px;
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    transform: translateX(-50%);
+    animation: f-palette 7s infinite;
+  }
+
+  @keyframes f-palette {
+    0%,
+    6% {
+      opacity: 0;
+      transform: translate(-50%, -6px);
+    }
+    12%,
+    86% {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    94%,
+    100% {
+      opacity: 0;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  .input {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 14px;
+    gap: 6px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 13px;
   }
 
-  .covers {
+  .input svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.4;
+  }
+
+  .letter {
+    animation-duration: 7s;
+    animation-iteration-count: infinite;
+  }
+
+  .caret {
+    width: 1px;
+    height: 14px;
+    background: var(--accent);
+    animation: f-blink 0.8s steps(1) infinite;
+  }
+
+  @keyframes f-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  .input kbd {
+    margin-left: auto;
+    padding: 1px 6px;
+    background: var(--chip);
+    color: var(--muted);
+    font-size: 10px;
+    animation: none;
+  }
+
+  .result {
     display: flex;
     gap: 8px;
+    max-height: 26px;
+    padding: 5px 10px;
+    overflow: hidden;
+    font-size: 11px;
+    color: var(--text-soft);
+    animation: f-results 7s infinite;
   }
 
-  .covers i {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
+  .result em {
+    margin-left: auto;
+    color: var(--muted);
+    font-style: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .desks {
-    display: flex;
-    gap: 8px;
+  .result.first {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    animation:
+      f-results 7s infinite,
+      f-pick 7s infinite;
   }
 
-  .desks i {
-    width: 52px;
-    height: 40px;
-    border-radius: 8px;
+  /* The rows grow as they appear: no empty box while typing. */
+  @keyframes f-results {
+    0%,
+    40% {
+      opacity: 0;
+      max-height: 0;
+      padding-block: 0;
+    }
+    48%,
+    100% {
+      opacity: 1;
+      max-height: 26px;
+      padding-block: 5px;
+    }
   }
 
-  /* The app's three desks, in the light palette (textures in miniature). */
-  .wood {
-    background: repeating-linear-gradient(0deg, rgb(202, 168, 126) 0 9px, rgb(156, 116, 78) 9px 10px);
+  @keyframes f-pick {
+    0%,
+    58% {
+      background: transparent;
+    }
+    62%,
+    100% {
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+    }
   }
 
-  .cork {
-    background: radial-gradient(rgb(150, 104, 64) 1px, rgb(212, 170, 122) 1.5px) 0 0 / 5px 5px;
+  /* Your way: the same diary with three looks (cover, paper and desk). */
+  .look {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    animation: f-look 9s infinite;
   }
 
-  .linen {
+  .look-0 {
+    opacity: 1;
+    background: var(--wood);
+  }
+
+  .look-1 {
+    animation-delay: 3s;
+    background: radial-gradient(rgb(150, 104, 64) 1px, rgb(212, 170, 122) 1.6px) 0 0 / 6px 6px;
+  }
+
+  .look-2 {
+    animation-delay: 6s;
     background:
       repeating-linear-gradient(90deg, rgba(206, 199, 185, 0.8) 0 1px, transparent 1px 3px),
       repeating-linear-gradient(0deg, rgba(206, 199, 185, 0.8) 0 1px, transparent 1px 3px),
       rgb(232, 227, 217);
+  }
+
+  @keyframes f-look {
+    0% {
+      opacity: 0;
+    }
+    5%,
+    30% {
+      opacity: 1;
+    }
+    36%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .st-book {
+    left: 50%;
+    top: 44%;
+    width: 200px;
+    height: 118px;
+    transform: translate(-50%, -50%);
+  }
+
+  .look-1 .page {
+    background:
+      linear-gradient(var(--paper-line) 1px, transparent 1px) 0 0 / 9px 9px,
+      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px) 0 0 / 9px 9px,
+      var(--paper);
+  }
+
+  .look-2 .page {
+    background: radial-gradient(var(--paper-line) 1.1px, transparent 1.4px) 0 0 / 9px 9px
+      var(--paper);
+  }
+
+  .chips {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    display: flex;
+    gap: 4px;
+    transform: translateX(-50%);
+  }
+
+  .chips span {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #23211d;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
   }
 </style>
