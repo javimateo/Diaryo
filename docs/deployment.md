@@ -28,15 +28,14 @@ For each resource: **New resource → Public repository** →
 - **Domain**: the address above, with **port 80** (also in _Ports Exposes_)
 - Automatic deployment on push
 
-The website's image takes two build arguments, with these defaults:
+The website's image takes these build arguments, with these defaults:
 
-| Argument   | Default                              | What for                                                              |
-| ---------- | ------------------------------------ | --------------------------------------------------------------------- |
-| `SITE_URL` | `https://diaryo.javiermateo.dev`     | Canonical and alternate-language links                                |
-| `APP_URL`  | `https://app.diaryo.javiermateo.dev` | Links to the web app (without it, the site doesn't offer the web app) |
-
-| `UMAMI_SRC` | (empty) | Umami's script, e.g. `https://stats.javiermateo.dev/script.js` |
-| `UMAMI_ID` | (empty) | The website's id in Umami (without both, nothing is counted) |
+| Argument    | Default                              | What for                                                              |
+| ----------- | ------------------------------------ | --------------------------------------------------------------------- |
+| `SITE_URL`  | `https://diaryo.javiermateo.dev`     | Canonical and alternate-language links                                |
+| `APP_URL`   | `https://app.diaryo.javiermateo.dev` | Links to the web app (without it, the site doesn't offer the web app) |
+| `UMAMI_SRC` | (empty)                              | Umami's script, e.g. `https://stats.javiermateo.dev/script.js`        |
+| `UMAMI_ID`  | (empty)                              | The website's id in Umami (without both, nothing is counted)          |
 
 When built, the website asks the GitHub API for the latest release (version, installer
 size and link), so it has to be **redeployed after publishing a version**. Without an
