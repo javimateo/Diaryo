@@ -340,6 +340,45 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
   - [ ] **I. Enseñar a usarla**: recorrido la primera vez que se abre (pasos cortos con
         animaciones) y vídeos de cada función para la web, hechos con el mismo código.
 
+- [ ] **12. Hacia la versión 1.0.0**. Primero los arreglos y lo que no cambia el modelo
+      de datos; lo grande (nube, macOS, recordatorios) con su propuesta antes.
+  - [ ] **A. Arreglos**
+    - [ ] **Contenedores dibujados a mano**: si a un trazo cerrado se le pone relleno y
+          luego se dibuja dentro, el dibujo nuevo pasa a contar como su fondo. Investigar
+          (probablemente la detección de «dentro de un contenedor» al crear o al
+          seleccionar) y cubrirlo con tests.
+    - [ ] **Límite de zoom**: ahora se puede alejar hasta el 2 % (`MIN_ZOOM`) y el libro
+          se pierde. Un mínimo que siempre deje ver algo útil (por ejemplo, que el libro
+          ocupe al menos una fracción de la pantalla), igual con rueda, botones y dedos.
+  - [ ] **B. Privacidad del diario**
+    - [ ] **Contraseña opcional** para abrir el diario (en el escritorio y en la web).
+          Si se quiere de verdad, que cifre el contenido guardado (la contraseña no se
+          guarda en ningún sitio; si se olvida, no hay forma de recuperarlo).
+    - [ ] **Qué se ve en el escritorio**: elegir si la mesa, el mini diario o solo
+          ciertos post-its se muestran en el escritorio de Windows, o que pidan la
+          contraseña para mostrarse. Post-its marcados como «privados».
+  - [ ] **C. Instalador**
+    - [ ] **Licencia en el instalador**: mostrar la licencia (PolyForm Noncommercial) al
+          instalar (`bundle.licenseFile` de Tauri / NSIS).
+    - [ ] **Firma de código** para quitar el aviso de SmartScreen: SignPath Foundation
+          (gratis para proyectos con código público, a revisar si admiten licencias no
+          comerciales) o Azure Trusted Signing (~10 €/mes).
+  - [ ] **D. Nube (inicio de sesión)**: sincronizar el diario entre dispositivos
+        (escritorio, web, móvil). Decidir: servidor propio en el VPS (control total,
+        más trabajo) o un servicio (Supabase…); cifrado de extremo a extremo; qué pasa
+        con los conflictos al editar en dos sitios. Seguiría funcionando sin conexión y
+        sin cuenta. Es lo más grande: después de A–C.
+  - [ ] **E. macOS**: Tauri compila para macOS casi sin cambios; lo que es solo de
+        Windows (la mesa en el escritorio, `windows-sys`) necesita su versión o quedarse
+        fuera al principio. Para distribuirlo hace falta la cuenta de desarrollador de
+        Apple (99 $/año) para firmar y notarizar; si no, macOS lo bloquea. Compilar en
+        GitHub Actions (`macos-latest`) y un segundo `latest.json` para las
+        actualizaciones.
+  - [ ] **F. Para después de la 1.0.0: tareas y citas**: tareas con fecha y hora, citas
+        (médico…), vista de calendario, recordatorios (notificación del sistema en el
+        escritorio; por correo necesitaría la nube de D) e importar/exportar calendarios
+        (.ics, Google Calendar).
+
 Tras la fase 5 ya es una app usable para tomar notas.
 
 ## Riesgos

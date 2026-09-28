@@ -17,8 +17,9 @@ The version lives in three files, which must match:
 
 ## Publishing a version
 
-1. Update the version in the three files, commit and push.
-2. Tag the commit and push the tag:
+1. From `develop`, create `release/X.Y.Z`, update the version in the three files and
+   commit. Merge it into `main` (and back into `develop`) and push both.
+2. Tag the merge commit on `main` and push the tag:
 
    ```bash
    git tag v0.2.1

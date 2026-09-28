@@ -44,6 +44,20 @@ npm --prefix web run check
 npm --prefix web run build
 ```
 
+## Branches
+
+A simple Git Flow:
+
+| Branch           | What for                                                                                                                                                 |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main`           | Released versions only; each one tagged `vX.Y.Z`. Deploys the website and the web app.                                                                   |
+| `develop`        | Finished work waiting for the next version.                                                                                                              |
+| `feature/<name>` | One piece of work, from `develop` and back into it.                                                                                                      |
+| `release/X.Y.Z`  | Preparing a version (bump the number, last touches), from `develop`; merged into `main` and `develop`, then tagged (see [releasing](docs/releasing.md)). |
+| `hotfix/<name>`  | An urgent fix to what is released, from `main`; merged into `main` and `develop`.                                                                        |
+
+Pull requests go to `develop` (hotfixes, to `main`).
+
 ## Conventions
 
 - **Code and comments in English**, written as plain sentences that explain the why.
