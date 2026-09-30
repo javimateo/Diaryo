@@ -2,6 +2,7 @@ import {
   cameraAt,
   cameraCenter,
   clampZoom,
+  minZoomFor,
   fitCamera,
   panBy,
   screenToWorld,
@@ -172,6 +173,8 @@ export class Engine {
   /** Fingers on the screen (touch): where each one is, in canvas pixels. */
   private readonly touches = new Map<number, Vec>();
   private longPress: { timer: ReturnType<typeof setTimeout>; start: Vec } | null = null;
+  /** How far out one may zoom, worked out at most every few moments (see `minZoom`). */
+  private zoomFloor = { value: 0, at: -Infinity };
   /** Last touch: the browser's own long-press menu is ignored after it (ours opens). */
   private lastTouch = -Infinity;
   /** What the camera does by itself: smooth zoom and panning, inertia and flights. */
@@ -359,6 +362,23 @@ export class Engine {
     if (!this.book) return;
     this.stopMotion();
     this.setCamera(fitCamera(bookBounds(this.book), this.viewport, this.fitPadding()));
+  }
+
+  /**
+   * How far out the user may zoom: until the book and everything there is take a quarter
+   * of what they take fitted (further out the book gets lost). It is recalculated at most
+   * every half second: the wheel sends many events and the content hardly changes
+   * meanwhile. Never above the current zoom, so it doesn't push the view in by itself.
+   */
+  private minZoom(): number {
+    const now = performance.now();
+    if (now - this.zoomFloor.at > 500) {
+      const content = this.scene.contentBounds();
+      const book = this.book ? bookBounds(this.book) : null;
+      const bounds = content && book ? unionBounds(content, book) : (content ?? book);
+      this.zoomFloor = { value: minZoomFor(bounds, this.viewport), at: now };
+    }
+    return Math.min(this.zoomFloor.value, this.camera.zoom);
   }
 
   /** The margin when framing: less on a small screen (a phone), where every pixel counts. */
@@ -1058,7 +1078,7 @@ export class Engine {
     const zoomed = zoomAt(
       this.camera,
       gesture.center,
-      this.camera.zoom * (distance / gesture.distance),
+      Math.max(this.camera.zoom * (distance / gesture.distance), this.minZoom()),
     );
     this.setCamera(panBy(zoomed, center.x - gesture.center.x, center.y - gesture.center.y));
     gesture.center = center;
@@ -1550,7 +1570,10 @@ export class Engine {
     if (zooming) {
       const smooth = Math.abs(dy) >= WHEEL_SMOOTH_THRESHOLD;
       const factor = Math.exp(-dy * (smooth ? WHEEL_ZOOM_SPEED : PINCH_ZOOM_SPEED));
-      const zoom = clampZoom(this.motion.zoomTarget(this.camera.zoom) * factor);
+      const zoom = Math.max(
+        clampZoom(this.motion.zoomTarget(this.camera.zoom) * factor),
+        this.minZoom(),
+      );
       if (smooth) {
         this.motion.zoomTo(zoom, p);
         this.requestFrame();
@@ -1596,7 +1619,11 @@ export class Engine {
 
   private zoomBy(factor: number) {
     const center = { x: this.viewport.width / 2, y: this.viewport.height / 2 };
-    this.motion.zoomTo(clampZoom(this.motion.zoomTarget(this.camera.zoom) * factor), center);
+    const zoom = Math.max(
+      clampZoom(this.motion.zoomTarget(this.camera.zoom) * factor),
+      this.minZoom(),
+    );
+    this.motion.zoomTo(zoom, center);
     this.requestFrame();
   }
 
