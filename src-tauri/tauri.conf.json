@@ -39,6 +39,8 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": true,
+    "license": "PolyForm-Noncommercial-1.0.0",
+    "licenseFile": "../LICENSE",
     "targets": ["nsis"],
     "category": "Productivity",
     "shortDescription": "Un diario infinito para dibujar, escribir y conectar ideas.",
