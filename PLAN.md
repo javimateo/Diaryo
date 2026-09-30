@@ -347,9 +347,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           luego se dibuja dentro, el dibujo nuevo pasa a contar como su fondo. Investigar
           (probablemente la detección de «dentro de un contenedor» al crear o al
           seleccionar) y cubrirlo con tests.
-    - [ ] **Límite de zoom**: ahora se puede alejar hasta el 2 % (`MIN_ZOOM`) y el libro
-          se pierde. Un mínimo que siempre deje ver algo útil (por ejemplo, que el libro
-          ocupe al menos una fracción de la pantalla), igual con rueda, botones y dedos.
+    - [x] **Límite de zoom**: alejarse se para cuando el libro y todo lo que hay en la
+          mesa ocupan una cuarta parte de lo que ocupan encuadrados (`minZoomFor`), sin
+          impedir nunca bajar al 25 %; igual con la rueda, los botones y el pellizco.
     - [ ] **La mesa salta al frente un momento**: al moverse por el explorador de archivos
           (sobre todo cuando tarda, como al cambiar de disco), los post-its del escritorio
           aparecen un segundo por encima de las ventanas. Causa probable:
