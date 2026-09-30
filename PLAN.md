@@ -350,14 +350,12 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
     - [x] **Límite de zoom**: alejarse se para cuando el libro y todo lo que hay en la
           mesa ocupan una cuarta parte de lo que ocupan encuadrados (`minZoomFor`), sin
           impedir nunca bajar al 25 %; igual con la rueda, los botones y el pellizco.
-    - [ ] **La mesa salta al frente un momento**: al moverse por el explorador de archivos
-          (sobre todo cuando tarda, como al cambiar de disco), los post-its del escritorio
-          aparecen un segundo por encima de las ventanas. Causa probable:
-          `desk_layer::follow_show_desktop` da por hecho que se ha pulsado `Win+D` en
-          cuanto la ventana del escritorio (`Progman`/`WorkerW`) queda por encima de la
-          mesa, y la pone siempre visible; el explorador reordena esas ventanas un instante
-          al recargar. Solución: reconocer `Win+D` con más cuidado (que el escritorio sea
-          la ventana activa y que dure unos cientos de milisegundos) antes de subir la mesa.
+    - [x] **La mesa salta al frente un momento**: al moverse por el explorador de
+          archivos (sobre todo cuando tarda, como al cambiar de disco), los post-its del
+          escritorio aparecían un segundo por encima de las ventanas. El explorador
+          reordena un instante las ventanas del escritorio al recargar y
+          `follow_show_desktop` lo tomaba por `Win+D`. Ahora solo sube la mesa si el
+          escritorio además es la ventana activa y dura dos comprobaciones (~200 ms).
   - [ ] **B. Privacidad del diario**
     - [ ] **Contraseña opcional** para abrir el diario (en el escritorio y en la web).
           Si se quiere de verdad, que cifre el contenido guardado (la contraseña no se

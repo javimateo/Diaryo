@@ -1,0 +1,8 @@
+# Text files always with LF line endings (Prettier expects them; Windows checkouts too).
+* text=auto eol=lf
+
+# Binaries stay as they are.
+*.png binary
+*.ico binary
+*.icns binary
+*.woff2 binary
