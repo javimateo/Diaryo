@@ -10,7 +10,14 @@ import {
   zoomAt,
   type Camera,
 } from './camera';
-import { arrange, elementsToPng, flip, renderElements, type ArrangeMode } from './arrange';
+import {
+  arrange,
+  elementsToPng,
+  fillBehind,
+  flip,
+  renderElements,
+  type ArrangeMode,
+} from './arrange';
 import {
   bookBounds,
   drawBinding,
@@ -762,8 +769,17 @@ export class Engine {
    */
   restyleSelection(patch: StylePatch) {
     const changes: Changes = new Map();
+    const newlyFilled: SceneElement[] = [];
     for (const el of this.selectedElements()) {
-      changes.set(el.id, applyStyle(el, patch, this.camera.zoom));
+      const styled = applyStyle(el, patch, this.camera.zoom);
+      changes.set(el.id, styled);
+      const hadFill = 'fill' in el && el.fill;
+      if ('fill' in styled && styled.fill && !hadFill) newlyFilled.push(styled);
+    }
+    // A fill would cover what the container holds: it goes behind it (same undo step).
+    for (const [id, z] of fillBehind(this.scene.all(), newlyFilled)) {
+      const el = changes.get(id);
+      if (el) changes.set(id, { ...el, z });
     }
     this.history.commit(changes, patchMergeKey(patch));
   }

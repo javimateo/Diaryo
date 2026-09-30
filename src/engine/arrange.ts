@@ -45,6 +45,35 @@ export function arrange(all: SceneElement[], selected: Set<string>, mode: Arrang
   return changes;
 }
 
+/** Is `inner` entirely within `outer`'s box? */
+const within = (inner: SceneElement, outer: SceneElement) => {
+  const a = elementBounds(inner);
+  const b = elementBounds(outer);
+  return a.minX >= b.minX && a.minY >= b.minY && a.maxX <= b.maxX && a.maxY <= b.maxY;
+};
+
+/**
+ * A shape or closed stroke that has just got a fill goes behind what lies inside it:
+ * drawn later, it was on top, and its new fill would cover what it holds. It only goes
+ * down as far as needed, above whatever was already behind all of that. Returns the new
+ * stacking order of those that move.
+ */
+export function fillBehind(all: SceneElement[], filled: SceneElement[]): Map<string, number> {
+  const result = new Map<string, number>();
+  for (const container of filled) {
+    const inside = all.filter(
+      (el) => el.id !== container.id && el.z < container.z && within(el, container),
+    );
+    if (inside.length === 0) continue;
+    const lowest = Math.min(...inside.map((el) => el.z));
+    const below = all
+      .filter((el) => el.id !== container.id && el.z < lowest)
+      .reduce((max, el) => Math.max(max, el.z), -Infinity);
+    result.set(container.id, below === -Infinity ? lowest - 1 : (below + lowest) / 2);
+  }
+  return result;
+}
+
 /**
  * Mirrors around the center of the selection. Strokes are really mirrored; texts, notes
  * and images change places but don't read backwards.
