@@ -343,10 +343,10 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
 - [ ] **12. Hacia la versión 1.0.0**. Primero los arreglos y lo que no cambia el modelo
       de datos; lo grande (nube, macOS, recordatorios) con su propuesta antes.
   - [ ] **A. Arreglos**
-    - [ ] **Contenedores dibujados a mano**: si a un trazo cerrado se le pone relleno y
-          luego se dibuja dentro, el dibujo nuevo pasa a contar como su fondo. Investigar
-          (probablemente la detección de «dentro de un contenedor» al crear o al
-          seleccionar) y cubrirlo con tests.
+    - [x] **Contenedores dibujados a mano**: no era un fallo: el contenedor, dibujado
+          después, quedaba encima de lo que rodea y su relleno lo tapaba. Ahora, al
+          ponerle relleno a una figura o trazo cerrado, pasa detrás de lo que tiene dentro
+          (`fillBehind`), en el mismo paso de deshacer.
     - [x] **Límite de zoom**: alejarse se para cuando el libro y todo lo que hay en la
           mesa ocupan una cuarta parte de lo que ocupan encuadrados (`minZoomFor`), sin
           impedir nunca bajar al 25 %; igual con la rueda, los botones y el pellizco.
