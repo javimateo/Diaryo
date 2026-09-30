@@ -7,6 +7,7 @@ import { HelpDialog } from './ui/HelpDialog';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { useDeskBackground } from './ui/useDeskBackground';
 import { LinkDialog } from './ui/LinkDialog';
+import { OpenCopyDialog } from './ui/OpenCopyDialog';
 import { MapView } from './ui/MapView';
 import { PageNav } from './ui/PageNav';
 import { PropertiesPanel } from './ui/properties/PropertiesPanel';
@@ -68,6 +69,7 @@ export function App() {
       <HelpDialog />
       <MapView />
       <LinkDialog />
+      <OpenCopyDialog />
       <SettingsDialog />
       <CommandPalette />
     </div>

@@ -104,6 +104,21 @@ pub async fn write_backup(app: AppHandle, day: String, contents: String) -> Resu
     backup::write(&dir, &day, &contents).map(|path| path.display().to_string())
 }
 
+/// Before opening another diary in place of this one, a copy of this one in the backups
+/// folder (even with the daily backups off). Returns where.
+#[tauri::command]
+pub async fn write_copy_before_opening(
+    app: AppHandle,
+    moment: String,
+    contents: String,
+) -> Result<String, String> {
+    let settings = app.state::<Desktop>().settings();
+    let dir = backup::dir(&app, &settings)?;
+    let label = lang(&app).before_opening();
+    backup::write_before_opening(&dir, label, &moment, &contents)
+        .map(|path| path.display().to_string())
+}
+
 /// The page already looks as it should: the window can be shown.
 #[tauri::command]
 pub fn frontend_ready(app: AppHandle) {

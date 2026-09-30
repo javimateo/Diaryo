@@ -15,6 +15,7 @@ import {
   loadPage,
   mergeDiary,
   pruneEmptyPages,
+  replaceDiary,
   restorePage,
   updatePage,
   type DiaryDump,
@@ -418,6 +419,28 @@ export class Diary {
         await this.open(this.pages.find((p) => p.id === current.id) ?? current, 0);
       } else this.emit();
       return { pages: merged.length - (desk ? 1 : 0), desk };
+    });
+  }
+
+  /**
+   * Replaces the whole diary with a backup (pages and desk). Whatever was pending here is
+   * saved first, so the caller can keep a copy of it; the open page is then dropped
+   * without saving it back, and today's page opens. Returns how many pages came in.
+   */
+  replace(dump: DiaryDump): Promise<number> {
+    return this.run(async () => {
+      await this.autosave?.stop();
+      this.autosave = null;
+      this.current = null;
+      this.blankToday = null;
+      await replaceDiary(this.db, dump);
+      await this.loadDesk();
+      this.hooks.onDeskSaved?.();
+      this.loaded.clear();
+      this.pages = (await listPages(this.db)).map(toMeta);
+      const today = todayKey();
+      await this.open(this.lastOfDay(today) ?? newPage(today), 0);
+      return this.pages.length;
     });
   }
 

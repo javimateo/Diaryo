@@ -6,6 +6,24 @@ export const en: Messages = {
     close: 'Close',
   },
 
+  openCopy: {
+    title: 'Open a diary copy',
+    text: 'What do you want to do with the diary you have now?',
+    fileUntouched:
+      "The copy's file isn't modified: whatever you change afterwards is saved in diaryo, not in it.",
+    replace: 'Replace my diary with this copy',
+    replaceHint:
+      "Your diary becomes the copy's. A copy of the current one is saved first, just in case.",
+    merge: 'Merge with my diary',
+    mergeHint:
+      'Adds whatever is missing and keeps the most recent version of each page. To recover something from an old copy.',
+    cancel: 'Cancel',
+    fileLabel: 'before-opening',
+    downloads: 'your downloads',
+    replaced: (where: string) => `Diary replaced · the previous one is in ${where}`,
+    beforeFailed: "The current diary couldn't be backed up: nothing was replaced",
+  },
+
   dates: {
     today: 'Today',
     yesterday: 'Yesterday',

@@ -1,7 +1,9 @@
+import { call, isDesktop } from '../desktop/tauri';
 import type { Diary } from '../diary/diary';
 import type { Engine } from '../engine/engine';
 import { fonts } from '../engine/fonts';
 import { useUI } from '../store/ui';
+import type { DiaryDump } from '../storage/db';
 import {
   datedName,
   downloadBlob,
@@ -21,11 +23,10 @@ export async function saveCopy(diary: Diary) {
 }
 
 /**
- * Opens a backup. A whole-diary one is merged with what is here (each page that is
- * missing or newer goes in, so nothing recent is lost). A single-page one replaces the
- * open page and can be undone.
+ * Opens a backup. A single-page one replaces the open page and can be undone. For a
+ * whole-diary one the user chooses: replace this diary with it, or merge the two.
  */
-export async function openCopy(engine: Engine, diary: Diary, file: File) {
+export async function openCopy(engine: Engine, file: File) {
   const { showToast } = useUI.getState();
   const backup = parseBackup(await file.text());
   if (!backup) {
@@ -42,8 +43,47 @@ export async function openCopy(engine: Engine, diary: Diary, file: File) {
     showToast(t().toasts.copyOpened);
     return;
   }
-  const { pages, desk } = await diary.merge(backup.diary);
-  showToast(t().toasts.merged(pages, desk));
+  // A whole diary: ask whether it replaces this one or merges with it (OpenCopyDialog).
+  useUI.getState().setPendingCopy(backup.diary);
+}
+
+/** Now, for file names: YYYY-MM-DD-HHMMSS (local time). */
+function moment(date = new Date()): string {
+  const two = (n: number) => String(n).padStart(2, '0');
+  const day = `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}`;
+  return `${day}-${two(date.getHours())}${two(date.getMinutes())}${two(date.getSeconds())}`;
+}
+
+/**
+ * Replaces the diary with a backup. First the current one is kept: in the backups folder
+ * (desktop) or downloaded (web). If that can't be done, nothing is replaced.
+ */
+export async function replaceWithCopy(diary: Diary, copy: DiaryDump) {
+  const { showToast } = useUI.getState();
+  const texts = t().openCopy;
+  const contents = serializeDiary(await diary.dump());
+  let where: string;
+  try {
+    if (isDesktop()) {
+      where = await call<string>('write_copy_before_opening', { moment: moment(), contents });
+    } else {
+      const name = `diaryo-${texts.fileLabel}-${moment()}${FILE_EXTENSION}`;
+      downloadBlob(new Blob([contents], { type: 'application/json' }), name);
+      where = texts.downloads;
+    }
+  } catch (error) {
+    console.error("Couldn't back up the diary before replacing it", error);
+    showToast(texts.beforeFailed);
+    return;
+  }
+  await diary.replace(copy);
+  showToast(texts.replaced(where));
+}
+
+/** Merges a backup with the diary: whatever is missing, and the most recent of each page. */
+export async function mergeWithCopy(diary: Diary, copy: DiaryDump) {
+  const { pages, desk } = await diary.merge(copy);
+  useUI.getState().showToast(t().toasts.merged(pages, desk));
 }
 
 export async function exportPng(engine: Engine) {

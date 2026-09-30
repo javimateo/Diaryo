@@ -291,6 +291,25 @@ export async function mergeDiary(db: DiaryoDB, dump: DiaryDump): Promise<string[
   });
 }
 
+/**
+ * Replaces the whole diary with a backup: pages, desk and images become the backup's.
+ * The custom fonts stay (the backup's are added): they are harmless and other copies may
+ * use them.
+ */
+export async function replaceDiary(db: DiaryoDB, dump: DiaryDump): Promise<void> {
+  await db.transaction('rw', [db.pages, db.elements, db.assets, db.fonts], async () => {
+    await Promise.all([db.pages.clear(), db.elements.clear(), db.assets.clear()]);
+    await db.pages.bulkPut(dump.pages.map(({ page }) => page));
+    await db.elements.bulkPut(
+      dump.pages.flatMap(({ page, elements }) =>
+        elements.map((row) => ({ ...row, pageId: page.id })),
+      ),
+    );
+    if (dump.assets.length > 0) await db.assets.bulkPut(dump.assets);
+    if (dump.fonts.length > 0) await db.fonts.bulkPut(dump.fonts);
+  });
+}
+
 /** A link from one page to another (to draw the diary map). */
 export interface PageLink {
   from: string;

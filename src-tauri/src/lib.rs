@@ -95,6 +95,7 @@ pub fn run() {
             commands::choose_backup_dir,
             commands::open_backup_dir,
             commands::write_backup,
+            commands::write_copy_before_opening,
             commands::frontend_ready,
             commands::show_mode,
             commands::hide_window,

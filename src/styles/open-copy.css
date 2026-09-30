@@ -1,0 +1,73 @@
+/* ─── Opening a whole-diary copy: replace or merge ────────────── */
+
+.open-copy-dialog {
+  width: min(460px, calc(100vw - 32px));
+  padding-bottom: 16px;
+}
+
+.open-copy-text {
+  margin: 0 20px 12px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.open-copy-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: calc(100% - 40px);
+  margin: 0 20px 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms var(--ease);
+}
+
+.open-copy-option:hover {
+  background: var(--hover);
+}
+
+.open-copy-option[data-primary] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.open-copy-option svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--accent-text);
+}
+
+.open-copy-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.open-copy-option strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.open-copy-option small {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.open-copy-note {
+  margin: 4px 20px 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.open-copy-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin: 8px 20px 0;
+}
