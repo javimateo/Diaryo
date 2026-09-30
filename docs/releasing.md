@@ -71,5 +71,14 @@ Updates are signed: the app only installs files signed with the project's privat
 
 The installer is not code-signed yet, so Windows SmartScreen warns the first time it is
 run ("More info" → "Run anyway"); the website explains this. Updates don't show it.
-Signing the installer (for example with a free open-source signing program or Azure
-Trusted Signing) would remove it.
+
+Signing options, as reviewed in September 2026:
+
+- **SignPath Foundation** (free): requires an OSI-approved license, so not with PolyForm
+  Noncommercial.
+- **Azure Artifact Signing** (~10 €/month): individual developers only in the USA and
+  Canada; in the EU, organizations only.
+- **A certificate from a CA** (Certum, Sectigo…, ~100–300 €/year, on a hardware token or
+  a cloud HSM): available to individuals.
+
+None removes the warning at once: SmartScreen reputation still builds with downloads.

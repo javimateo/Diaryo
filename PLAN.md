@@ -341,8 +341,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         animaciones) y vídeos de cada función para la web, hechos con el mismo código.
 
 - [ ] **12. Hacia la versión 1.0.0**. Primero los arreglos y lo que no cambia el modelo
-      de datos; lo grande (nube, macOS, recordatorios) con su propuesta antes.
-  - [ ] **A. Arreglos**
+      de datos; lo grande (nube, macOS, recordatorios) con su propuesta antes. Orden:
+      A, B (instalador), C (nube), D (privacidad, sobre la nube), E (macOS).
+  - [x] **A. Arreglos**
     - [x] **Contenedores dibujados a mano**: no era un fallo: el contenedor, dibujado
           después, quedaba encima de lo que rodea y su relleno lo tapaba. Ahora, al
           ponerle relleno a una figura o trazo cerrado, pasa detrás de lo que tiene dentro
@@ -361,24 +362,32 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           «Reemplazar mi diario por esta copia» (antes guarda una copia del actual: en la
           carpeta de copias en el escritorio, descargada en la web) o «Combinar con mi
           diario» (lo de antes). Test del viaje de la mesa por el archivo `.diaryo`.
-  - [ ] **B. Privacidad del diario**
+  - [ ] **B. Instalador**
+    - [x] **Licencia en el instalador**: el instalador muestra la licencia (PolyForm
+          Noncommercial) y hay que aceptarla (`bundle.licenseFile`).
+    - [ ] **Firma de código** (aplazada): quitaría el aviso de SmartScreen solo con el
+          tiempo (la reputación se gana con descargas, también firmando). Opciones
+          revisadas (septiembre de 2026):
+      - SignPath Foundation: no, exige una licencia aprobada por la OSI.
+      - Azure Artifact Signing (~10 €/mes): particulares solo de EE. UU. y Canadá; en la
+        UE, solo organizaciones (serviría si hubiera una empresa o autónomo).
+      - Un certificado de una autoridad (Certum, Sectigo…, ~100–300 €/año, con token o
+        HSM en la nube): posible para particulares, sin reputación inmediata.
+      - Mientras tanto, la web explica cómo pasar el aviso.
+  - [ ] **C. Nube (inicio de sesión)**: sincronizar el diario entre dispositivos
+        (escritorio, web, móvil). Decidir: servidor propio en el VPS (control total,
+        más trabajo) o un servicio (Supabase…); cifrado de extremo a extremo; qué pasa
+        con los conflictos al editar en dos sitios. Seguiría funcionando sin conexión y
+        sin cuenta. Es lo más grande. El cifrado de extremo a extremo y la contraseña
+        se diseñan aquí (ver D).
+  - [ ] **D. Privacidad del diario**, después de la nube: el cifrado y la contraseña
+        dependen de cómo se sincronice.
     - [ ] **Contraseña opcional** para abrir el diario (en el escritorio y en la web).
           Si se quiere de verdad, que cifre el contenido guardado (la contraseña no se
           guarda en ningún sitio; si se olvida, no hay forma de recuperarlo).
     - [ ] **Qué se ve en el escritorio**: elegir si la mesa, el mini diario o solo
           ciertos post-its se muestran en el escritorio de Windows, o que pidan la
           contraseña para mostrarse. Post-its marcados como «privados».
-  - [ ] **C. Instalador**
-    - [ ] **Licencia en el instalador**: mostrar la licencia (PolyForm Noncommercial) al
-          instalar (`bundle.licenseFile` de Tauri / NSIS).
-    - [ ] **Firma de código** para quitar el aviso de SmartScreen: SignPath Foundation
-          (gratis para proyectos con código público, a revisar si admiten licencias no
-          comerciales) o Azure Trusted Signing (~10 €/mes).
-  - [ ] **D. Nube (inicio de sesión)**: sincronizar el diario entre dispositivos
-        (escritorio, web, móvil). Decidir: servidor propio en el VPS (control total,
-        más trabajo) o un servicio (Supabase…); cifrado de extremo a extremo; qué pasa
-        con los conflictos al editar en dos sitios. Seguiría funcionando sin conexión y
-        sin cuenta. Es lo más grande: después de A–C.
   - [ ] **E. macOS**: Tauri compila para macOS casi sin cambios; lo que es solo de
         Windows (la mesa en el escritorio, `windows-sys`) necesita su versión o quedarse
         fuera al principio. Para distribuirlo hace falta la cuenta de desarrollador de
