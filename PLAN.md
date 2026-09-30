@@ -356,6 +356,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           reordena un instante las ventanas del escritorio al recargar y
           `follow_show_desktop` lo tomaba por `Win+D`. Ahora solo sube la mesa si el
           escritorio además es la ventana activa y dura dos comprobaciones (~200 ms).
+    - [x] **Abrir una copia mezclaba los diarios**: abrir una copia del diario entero la
+          combinaba siempre con el actual (páginas y mesa sumadas). Ahora pregunta:
+          «Reemplazar mi diario por esta copia» (antes guarda una copia del actual: en la
+          carpeta de copias en el escritorio, descargada en la web) o «Combinar con mi
+          diario» (lo de antes). Test del viaje de la mesa por el archivo `.diaryo`.
   - [ ] **B. Privacidad del diario**
     - [ ] **Contraseña opcional** para abrir el diario (en el escritorio y en la web).
           Si se quiere de verdad, que cifre el contenido guardado (la contraseña no se

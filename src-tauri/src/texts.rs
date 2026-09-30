@@ -45,6 +45,14 @@ impl Lang {
         }
     }
 
+    /// Name of the copy saved before opening another diary in place of this one.
+    pub fn before_opening(self) -> &'static str {
+        match self {
+            Lang::Es => "antes-de-abrir",
+            Lang::En => "before-opening",
+        }
+    }
+
     pub fn backups_off(self) -> &'static str {
         match self {
             Lang::Es => "Las copias automáticas están apagadas",

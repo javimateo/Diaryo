@@ -13,6 +13,25 @@ export const es = {
     close: 'Cerrar',
   },
 
+  openCopy: {
+    title: 'Abrir una copia del diario',
+    text: '¿Qué quieres hacer con el diario que tienes ahora?',
+    fileUntouched:
+      'El archivo de la copia no se modifica: lo que cambies después se guarda en diaryo, no en él.',
+    replace: 'Reemplazar mi diario por esta copia',
+    replaceHint:
+      'Tu diario pasa a ser el de la copia. Antes se guarda una copia del actual, por si acaso.',
+    merge: 'Combinar con mi diario',
+    mergeHint:
+      'Añade lo que falte y deja lo más reciente de cada página. Para recuperar algo de una copia antigua.',
+    cancel: 'Cancelar',
+    /** Part of the name of the copy saved before replacing. */
+    fileLabel: 'antes-de-abrir',
+    downloads: 'tus descargas',
+    replaced: (where: string) => `Diario reemplazado · el anterior está en ${where}`,
+    beforeFailed: 'No se ha podido guardar una copia del diario actual: no se ha reemplazado',
+  },
+
   dates: {
     today: 'Hoy',
     yesterday: 'Ayer',

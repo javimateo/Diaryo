@@ -212,7 +212,7 @@ function FileMenu() {
         hidden
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file && engine && diary) void openCopy(engine, diary, file);
+          if (file && engine) void openCopy(engine, file);
           e.target.value = '';
         }}
       />

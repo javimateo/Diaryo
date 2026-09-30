@@ -10,6 +10,7 @@ import type { DesktopBridge } from '../desktop/bridge';
 import type { DesktopInfo } from '../desktop/settings';
 import type { Diary, DiaryState, TurnSpeed } from '../diary/diary';
 import type { SaveStatus } from '../storage/autosave';
+import type { DiaryDump } from '../storage/db';
 import { mergeToolStyle, parseRecentColors, parseStyles, RECENT_COLORS_LIMIT } from './styles';
 import { asRecord, readJSON, readText, writeJSON, writeText } from '../lib/saved';
 import { DEFAULT_LANGUAGE, isLanguage, setLanguage, type Language } from '../i18n';
@@ -141,6 +142,8 @@ interface UIState {
   bookStyle: BookStyle;
   /** Dialog to choose the page to link the selection to. */
   linkDialogOpen: boolean;
+  /** A whole-diary backup being opened: it asks whether to replace or merge. */
+  pendingCopy: DiaryDump | null;
   /** Map view: all the pages at a glance. */
   mapOpen: boolean;
   /** Command palette and search (Ctrl+K). */
@@ -174,6 +177,7 @@ interface UIState {
   setDiaryOpen: (open: boolean) => void;
   setBookStyle: (patch: Partial<BookStyle>) => void;
   setLinkDialogOpen: (open: boolean) => void;
+  setPendingCopy: (copy: DiaryDump | null) => void;
   setMapOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
   setDesktop: (patch: Partial<DesktopInfo>) => void;
@@ -215,6 +219,7 @@ export const useUI = create<UIState>()((set, get) => ({
   diaryOpen: false,
   bookStyle: loadBookStyle(),
   linkDialogOpen: false,
+  pendingCopy: null,
   mapOpen: false,
   mapOrigin: null,
   paletteOpen: false,
@@ -267,6 +272,7 @@ export const useUI = create<UIState>()((set, get) => ({
   setDiary: (diary) => set({ diary }),
   setDiaryState: (diaryState) => set({ diaryState }),
   setLinkDialogOpen: (linkDialogOpen) => set({ linkDialogOpen }),
+  setPendingCopy: (pendingCopy) => set({ pendingCopy }),
   setMapOpen: (mapOpen) => {
     if (mapOpen === get().mapOpen) return;
     const { diary, engine } = get();

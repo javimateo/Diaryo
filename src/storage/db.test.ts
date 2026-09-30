@@ -13,6 +13,7 @@ import {
   loadPage,
   mergeDiary,
   pruneEmptyPages,
+  replaceDiary,
   restorePage,
   saveChanges,
   updatePage,
@@ -58,6 +59,10 @@ const image: ImageElement = {
 };
 
 let db: DiaryoDB;
+
+const never = (): never => {
+  throw new Error('unreachable');
+};
 afterEach(async () => {
   await db?.delete();
 });
@@ -243,6 +248,63 @@ describe('diary backups', () => {
     expect(await mergeDiary(db, dump)).toEqual(['q']);
     expect((await loadPage(db, 'p')).elements).toHaveLength(2);
     expect((await loadPage(db, 'q')).elements).toHaveLength(1);
+  });
+
+  it('the desk travels in the backup file and comes back when opening it', async () => {
+    const note = {
+      id: 'note',
+      type: 'note' as const,
+      z: 3,
+      x: 900,
+      y: 100,
+      rotation: 0,
+      opacity: 1,
+      groupId: null,
+      locked: false,
+      variant: 'plain' as const,
+      text: 'on the desk',
+      fontSize: 20,
+      color: 'yellow' as const,
+      textColor: null,
+      font: 'inter',
+      align: 'left' as const,
+      valign: 'top' as const,
+      width: 220,
+      height: 220,
+    };
+    const home = new DiaryoDB('test-17');
+    await saveChanges(home, DESK_INFO, { ...empty, upserts: [note, stroke('s')] });
+    const file = serializeDiary(await dumpDiary(home));
+    home.close();
+    await Dexie.delete('test-17');
+
+    const backup = parseBackup(file);
+    expect(backup?.kind).toBe('diary');
+    db = new DiaryoDB('test-18');
+    expect(await mergeDiary(db, backup!.kind === 'diary' ? backup!.diary : never())).toEqual([
+      DESK_INFO.id,
+    ]);
+    const desk = (await loadPage(db, DESK_INFO.id)).elements;
+    expect(desk.map((el) => el.id).sort()).toEqual(['note', 's']);
+  });
+
+  it('replacing leaves only the backup: its pages and its desk', async () => {
+    const other = new DiaryoDB('test-19');
+    await saveChanges(other, info('theirs'), { ...empty, upserts: [stroke('t')] });
+    await saveChanges(other, DESK_INFO, { ...empty, upserts: [stroke('their-note')] });
+    const copy = await dumpDiary(other);
+    other.close();
+    await Dexie.delete('test-19');
+
+    db = new DiaryoDB('test-20');
+    await saveChanges(db, info('mine'), { ...empty, upserts: [stroke('m')] });
+    await saveChanges(db, DESK_INFO, { ...empty, upserts: [stroke('my-note')] });
+    await replaceDiary(db, copy);
+
+    expect((await listPages(db)).map((p) => p.id)).toEqual(['theirs']);
+    expect((await loadPage(db, 'mine')).elements).toHaveLength(0);
+    const desk = (await loadPage(db, DESK_INFO.id)).elements;
+    expect(desk.map((el) => el.id)).toEqual(['their-note']);
   });
 
   it('the desk merges with the one here: no note from either is lost', async () => {

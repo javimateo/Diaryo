@@ -95,8 +95,8 @@ function pickBackup() {
   input.accept = `${FILE_EXTENSION},application/json`;
   input.onchange = () => {
     const file = input.files?.[0];
-    const { engine, diary } = useUI.getState();
-    if (file && engine && diary) void openCopy(engine, diary, file);
+    const { engine } = useUI.getState();
+    if (file && engine) void openCopy(engine, file);
   };
   input.click();
 }
