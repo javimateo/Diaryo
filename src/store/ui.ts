@@ -16,6 +16,17 @@ import { asRecord, readJSON, readText, writeJSON, writeText } from '../lib/saved
 import { DEFAULT_LANGUAGE, isLanguage, setLanguage, type Language } from '../i18n';
 
 export type Theme = 'light' | 'dark';
+
+/** What the account dialog shows: sign in, sign up, ask for a reset link or set the new password. */
+export type AccountView = 'signIn' | 'signUp' | 'forgot' | 'reset';
+
+export interface AccountDialogRequest {
+  view: AccountView;
+  /** The token of the email's link (to set the new password). */
+  token?: string;
+  /** Opened from the settings: closing it goes back to them. */
+  fromSettings?: boolean;
+}
 /** The chosen theme: light, dark or the system one (and it follows it). */
 export type ThemePreference = Theme | 'system';
 
@@ -144,6 +155,8 @@ interface UIState {
   linkDialogOpen: boolean;
   /** A whole-diary backup being opened: it asks whether to replace or merge. */
   pendingCopy: DiaryDump | null;
+  /** Signing in or creating the cloud account. */
+  accountDialog: AccountDialogRequest | null;
   /** Map view: all the pages at a glance. */
   mapOpen: boolean;
   /** Command palette and search (Ctrl+K). */
@@ -178,6 +191,7 @@ interface UIState {
   setBookStyle: (patch: Partial<BookStyle>) => void;
   setLinkDialogOpen: (open: boolean) => void;
   setPendingCopy: (copy: DiaryDump | null) => void;
+  setAccountDialog: (request: AccountDialogRequest | null) => void;
   setMapOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
   setDesktop: (patch: Partial<DesktopInfo>) => void;
@@ -220,6 +234,7 @@ export const useUI = create<UIState>()((set, get) => ({
   bookStyle: loadBookStyle(),
   linkDialogOpen: false,
   pendingCopy: null,
+  accountDialog: null,
   mapOpen: false,
   mapOrigin: null,
   paletteOpen: false,
@@ -273,6 +288,14 @@ export const useUI = create<UIState>()((set, get) => ({
   setDiaryState: (diaryState) => set({ diaryState }),
   setLinkDialogOpen: (linkDialogOpen) => set({ linkDialogOpen }),
   setPendingCopy: (pendingCopy) => set({ pendingCopy }),
+  setAccountDialog: (accountDialog) =>
+    set((state) => ({
+      accountDialog,
+      // The settings make room for it, and come back when it closes.
+      settingsOpen: accountDialog
+        ? false
+        : state.settingsOpen || Boolean(state.accountDialog?.fromSettings),
+    })),
   setMapOpen: (mapOpen) => {
     if (mapOpen === get().mapOpen) return;
     const { diary, engine } = get();

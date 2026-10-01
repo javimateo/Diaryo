@@ -1,6 +1,7 @@
 /**
  * Checks the cloud server's rules against a running PocketBase (see docs/cloud.md):
- * quotas, who reaches what, last write wins, tombstones. It creates two throwaway users.
+ * quotas, who reaches what, last write wins, tombstones. It creates two throwaway users
+ * and deletes them at the end.
  *
  *   PB_URL=http://127.0.0.1:8090 PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
  */
@@ -173,6 +174,12 @@ const shrink = await call(
   a.token,
 );
 check('shrinking is always allowed', shrink.status === 200, shrink.status);
+
+// Clean up: deleting the users takes their vaults and items with them (cascade).
+for (const u of [a, b]) {
+  const gone = await call('DELETE', `/collections/users/records/${u.id}`, null, su.body.token);
+  check('throwaway user deleted', gone.status === 204, gone.status);
+}
 
 console.log(results.join('\n'));
 if (results.some((line) => line.startsWith('FAIL'))) process.exit(1);

@@ -5,6 +5,8 @@
   inset: 0;
   z-index: 100;
   display: grid;
+  /* One column as wide as the screen allows: a dialog never grows past it. */
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   padding: 16px;
   background: var(--backdrop);

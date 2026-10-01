@@ -399,10 +399,13 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             de sincronización); PocketBase (`cloud/`: migraciones y ganchos;
             `deploy/cloud.Dockerfile`) con colecciones `vaults` e `items`, reglas (cada
             uno solo ve lo suyo), cuota de 100 MB y «gana el cambio más reciente».
-            `cloud/check.mjs` comprueba todo eso contra un servidor (17 controles).
-            Falta montarlo en Coolify (docs/deployment.md).
-      - [ ] **C2. Cuenta**: crear, entrar (email y Google), salir, verificar email y
-            recuperar contraseña; en Ajustes.
+            `cloud/check.mjs` comprueba todo eso contra un servidor. Montado en
+            Coolify (`cloud.diaryo.javiermateo.dev`, correo por Resend).
+      - [x] **C2. Cuenta**: «Cuenta y nube» en Ajustes y el diálogo para entrar o
+            crear la cuenta (email y contraseña, o Google: ventana en la web, navegador
+            en el escritorio); salir; confirmar el email y recuperar la contraseña con
+            enlaces que abren la web app; la sesión dura 30 días desde el último uso.
+            Google está en modo de prueba hasta la C7 (política de privacidad).
       - [ ] **C3. Cifrado**: contraseña del diario, clave de recuperación y
             desbloqueo en cada dispositivo; con tests.
       - [ ] **C4. Sincronización**: subir y bajar cambios, marcas de borrado,

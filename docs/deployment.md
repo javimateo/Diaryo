@@ -87,12 +87,18 @@ The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules 
    `smtp.resend.com`, **port 587** with TLS "Auto (StartTLS)", user `resend`, password
    an API key. The VPS blocks outgoing port 465, so not that one.
 5. **Application URL** (Settings → Application): `https://app.diaryo.javiermateo.dev`,
-   used in the links of those emails.
+   used in the links of those emails. Their texts (Spanish and English) come from the
+   migration `1790900001_account.js`: the links open the web app (`?verify=…`,
+   `?reset=…`), which confirms the email or asks for the new password.
 6. **Google sign-in** (Collections → users → Options → OAuth2): enable it and add Google
    with a client id and secret from the Google Cloud console (APIs & Services →
    Credentials → OAuth client ID, type "Web application"), with the authorized redirect
-   URI `https://cloud.diaryo.javiermateo.dev/api/oauth2-redirect`.
-7. Check the rules against it (it creates two throwaway users):
+   URI `https://cloud.diaryo.javiermateo.dev/api/oauth2-redirect`. On the consent screen
+   (Google Auth Platform → Branding): app name `diaryo`, authorized domain
+   `javiermateo.dev`, scopes `openid`, `userinfo.email` and `userinfo.profile`. While it
+   is in **Testing**, only the test users added there can sign in; publishing it needs
+   the privacy policy and terms pages (phase C7).
+7. Check the rules against it (it creates two throwaway users and deletes them):
 
    ```bash
    PB_URL=https://cloud.diaryo.javiermateo.dev PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
