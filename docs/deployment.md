@@ -60,6 +60,42 @@ The events are `download` (with `place`: `hero`, `header` or `download`),
    (`https://stats.javiermateo.dev/script.js`) and `UMAMI_ID`, marked as available at
    build time, and redeploy.
 
+## Cloud server (PocketBase)
+
+The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules in
+`cloud/`, at <https://cloud.diaryo.javiermateo.dev>.
+
+1. DNS: an `A` record `cloud.diaryo` pointing to the VPS.
+2. Coolify: a third resource from the same repository, **Dockerfile**
+   `/deploy/cloud.Dockerfile`, domain `https://cloud.diaryo.javiermateo.dev` with
+   **port 8090**, and a **persistent storage** mounted at `/pb/pb_data` (without it,
+   every deployment would start with an empty database).
+3. First start: create the administrator from the resource's terminal in Coolify:
+
+   ```bash
+   /pb/pocketbase superuser upsert you@example.com 'a-long-password' --dir=/pb/pb_data
+   ```
+
+   The dashboard is at `https://cloud.diaryo.javiermateo.dev/_/`.
+
+4. **Mail** (Settings → Mail settings): an SMTP server, so the accounts can be verified
+   and passwords reset. Sender: something like `diaryo <no-reply@javiermateo.dev>`.
+5. **Application URL** (Settings → Application): `https://app.diaryo.javiermateo.dev`,
+   used in the links of those emails.
+6. **Google sign-in** (Collections → users → Options → OAuth2): enable it and add Google
+   with a client id and secret from the Google Cloud console (APIs & Services →
+   Credentials → OAuth client ID, type "Web application"), with the authorized redirect
+   URI `https://cloud.diaryo.javiermateo.dev/api/oauth2-redirect`.
+7. Check the rules against it (it creates two throwaway users):
+
+   ```bash
+   PB_URL=https://cloud.diaryo.javiermateo.dev PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
+   ```
+
+Backups: the whole server state is `/pb/pb_data` (PocketBase can also make scheduled
+backups in Settings → Backups). The diaries in it are encrypted on the devices: a backup
+can't be read without the users' keys.
+
 ## Caching
 
 - Website: the hashed files in `/_astro/` are cached for a year; pages are served as is.

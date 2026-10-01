@@ -375,11 +375,43 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         HSM en la nube): posible para particulares, sin reputación inmediata.
       - Mientras tanto, la web explica cómo pasar el aviso.
   - [ ] **C. Nube (inicio de sesión)**: sincronizar el diario entre dispositivos
-        (escritorio, web, móvil). Decidir: servidor propio en el VPS (control total,
-        más trabajo) o un servicio (Supabase…); cifrado de extremo a extremo; qué pasa
-        con los conflictos al editar en dos sitios. Seguiría funcionando sin conexión y
-        sin cuenta. Es lo más grande. El cifrado de extremo a extremo y la contraseña
-        se diseñan aquí (ver D).
+        (escritorio, web, móvil vía web). La nube es opcional: sin cuenta y sin conexión
+        todo sigue funcionando; el diario local sigue siendo el que se usa y la nube es
+        su copia sincronizada. Decidido (octubre de 2026):
+    - **Servidor**: PocketBase en el VPS (Coolify), con sus migraciones y ganchos en el
+      repositorio (imagen propia), para que el esquema y las reglas sean reproducibles.
+    - **Acceso**: email y contraseña (con verificación y recuperación) y Google.
+    - **Cifrado de extremo a extremo**: todo se cifra en el dispositivo (AES-GCM) con
+      una clave del diario; esa clave va envuelta con una **contraseña del diario**
+      (distinta de la de la cuenta: con Google no hay contraseña) y con una **clave de
+      recuperación** que se imprime o se guarda. El servidor solo ve datos ilegibles.
+      Sin contraseña ni clave de recuperación, la nube no se recupera.
+    - **Sincronización por elemento**: cada elemento, página e imagen es un registro
+      cifrado con su fecha de cambio; gana el cambio más reciente del mismo elemento; lo
+      borrado deja una marca. Identificadores opacos (no dejan ver qué es cada cosa).
+    - **Espacio**: 100 MB gratis por cuenta; un plan de pago con más espacio, más
+      adelante (necesita alta como autónomo y un servicio de pagos que gestione el IVA,
+      como Paddle o Lemon Squeezy).
+    - **Primer inicio de sesión** con diario local y diario en la nube: el diálogo de
+      reemplazar o combinar.
+    - Fases (cada una en su rama):
+      - [x] **C1. Diseño y servidor**: `docs/cloud.md` (cifrado, esquema y protocolo
+            de sincronización); PocketBase (`cloud/`: migraciones y ganchos;
+            `deploy/cloud.Dockerfile`) con colecciones `vaults` e `items`, reglas (cada
+            uno solo ve lo suyo), cuota de 100 MB y «gana el cambio más reciente».
+            `cloud/check.mjs` comprueba todo eso contra un servidor (17 controles).
+            Falta montarlo en Coolify (docs/deployment.md).
+      - [ ] **C2. Cuenta**: crear, entrar (email y Google), salir, verificar email y
+            recuperar contraseña; en Ajustes.
+      - [ ] **C3. Cifrado**: contraseña del diario, clave de recuperación y
+            desbloqueo en cada dispositivo; con tests.
+      - [ ] **C4. Sincronización**: subir y bajar cambios, marcas de borrado,
+            conflictos, sin conexión; con tests.
+      - [ ] **C5. Imágenes** cifradas.
+      - [ ] **C6. Espacio**: uso, aviso al acercarse al límite y qué pasa al llenarlo.
+      - [ ] **C7. RGPD y web**: borrar la cuenta, exportar los datos, política de
+            privacidad y condiciones; la web explica la nube (opcional, cifrada).
+      - [ ] **C8. Pagos** (más adelante).
   - [ ] **D. Privacidad del diario**, después de la nube: el cifrado y la contraseña
         dependen de cómo se sincronice.
     - [ ] **Contraseña opcional** para abrir el diario (en el escritorio y en la web).
