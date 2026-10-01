@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useUI } from './store/ui';
 import { AccountDialog } from './ui/AccountDialog';
+import { VaultDialog } from './ui/VaultDialog';
 import { startAccount } from './ui/accountActions';
 import { CanvasView } from './ui/CanvasView';
 import { CommandPalette } from './ui/CommandPalette';
@@ -76,6 +77,7 @@ export function App() {
       <OpenCopyDialog />
       <SettingsDialog />
       <AccountDialog />
+      <VaultDialog />
       <CommandPalette />
     </div>
   );

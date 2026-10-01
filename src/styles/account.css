@@ -330,3 +330,70 @@
     font-size: 16px;
   }
 }
+
+/* The cloud diary's password and recovery code */
+
+.vault-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vault-title svg {
+  color: var(--accent-text);
+}
+
+.vault-code-input {
+  font-family: 'JetBrains Mono Variable', ui-monospace, monospace !important;
+  letter-spacing: 0.04em;
+}
+
+.vault-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  user-select: all;
+}
+
+.vault-code-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.vault-code-actions .settings-btn {
+  justify-content: center;
+}
+
+.vault-saved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.vault-saved input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 400px) {
+  .vault-code {
+    font-size: 13px;
+  }
+}

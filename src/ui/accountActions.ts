@@ -6,6 +6,7 @@ import {
   useAccount,
 } from '../cloud/account';
 import { readAccountLink } from '../cloud/links';
+import { checkVault } from '../cloud/vault';
 import { call, isDesktop } from '../desktop/tauri';
 import { t } from '../i18n';
 import { useUI } from '../store/ui';
@@ -25,10 +26,22 @@ export async function continueWithGoogle() {
   } catch {
     return;
   }
-  const { setAccountDialog, showToast } = useUI.getState();
+  await afterSignIn();
+}
+
+/**
+ * Just signed in: once it is known how the cloud diary is, the account dialog makes way
+ * for setting it up (the first device) or unlocking it (the others).
+ */
+export async function afterSignIn() {
+  await checkVault();
+  const { accountDialog, setAccountDialog, setVaultDialog, showToast } = useUI.getState();
+  const fromSettings = accountDialog?.fromSettings;
   setAccountDialog(null);
-  const email = useAccount.getState().account?.email;
-  if (email) showToast(t().account.signedIn(email));
+  const { account, vault } = useAccount.getState();
+  if (account) showToast(t().account.signedIn(account.email));
+  if (vault === 'none') setVaultDialog({ view: 'create', fromSettings });
+  if (vault === 'locked') setVaultDialog({ view: 'unlock', fromSettings });
 }
 
 /**
@@ -52,10 +65,11 @@ async function openAccountLink() {
   }
 }
 
-/** When the app starts: the email's links, and the session renewed now and then. */
+/** When the app starts: the email's links, the cloud diary, and the session renewed now and then. */
 export function startAccount() {
   void openAccountLink();
   void refreshAccount();
+  void checkVault();
   const timer = window.setInterval(() => void refreshAccount(), REFRESH_EVERY);
   return () => window.clearInterval(timer);
 }
