@@ -27,8 +27,15 @@ const toAccount = (record: RecordModel | null): Account | null =>
       }
     : null;
 
+/**
+ * The cloud diary on this device: not known yet (or without a connection), no vault yet
+ * (the first device sets it up), locked (the password is needed here) or unlocked.
+ */
+export type VaultState = 'unknown' | 'none' | 'locked' | 'unlocked';
+
 interface AccountState {
   account: Account | null;
+  vault: VaultState;
   /** Waiting for Google (in a popup on the web, in the browser on the desktop). */
   googlePending: boolean;
   /** Why the last attempt with Google failed (not when it was cancelled). */
@@ -37,6 +44,7 @@ interface AccountState {
 
 export const useAccount = create<AccountState>(() => ({
   account: toAccount(pb.authStore.record),
+  vault: 'unknown',
   googlePending: false,
   googleError: null,
 }));

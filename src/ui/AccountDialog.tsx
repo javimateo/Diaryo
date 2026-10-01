@@ -1,9 +1,8 @@
-import { Eye, EyeOff, Loader2, MailCheck, X } from 'lucide-react';
+import { Loader2, MailCheck, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import {
   accountError,
   cancelGoogle,
-  PASSWORD_MAX,
   PASSWORD_MIN,
   requestPasswordReset,
   resetPassword,
@@ -13,8 +12,9 @@ import {
 } from '../cloud/account';
 import { isDesktop } from '../desktop/tauri';
 import { useUI, type AccountDialogRequest, type AccountView } from '../store/ui';
-import { continueWithGoogle } from './accountActions';
+import { afterSignIn, continueWithGoogle } from './accountActions';
 import { GoogleButton } from './GoogleButton';
+import { PasswordField } from './PasswordField';
 import { useT } from './useT';
 
 /** What the dialog shows: the forms, and the "check your email" that follows some. */
@@ -34,7 +34,6 @@ function Dialog({ request }: { request: AccountDialogRequest }) {
   const t = useT();
   const a = t.account;
   const setAccountDialog = useUI((s) => s.setAccountDialog);
-  const showToast = useUI((s) => s.showToast);
   const googlePending = useAccount((s) => s.googlePending);
   const googleError = useAccount((s) => s.googleError);
   const [view, setView] = useState<View>(request.view);
@@ -79,11 +78,11 @@ function Dialog({ request }: { request: AccountDialogRequest }) {
     }
     if (view === 'signIn') {
       void run(
-        () => signIn(email, password),
-        () => {
-          setAccountDialog(null);
-          showToast(a.signedIn(email.trim()));
+        async () => {
+          await signIn(email, password);
+          await afterSignIn();
         },
+        () => undefined,
       );
     } else if (view === 'signUp') {
       void run(
@@ -191,7 +190,7 @@ function Dialog({ request }: { request: AccountDialogRequest }) {
           type="button"
           className="account-primary"
           autoFocus
-          onClick={view === 'verifySent' ? close : () => go('signIn')}
+          onClick={view === 'verifySent' ? () => void afterSignIn() : () => go('signIn')}
         >
           {view === 'verifySent' ? a.done : a.back}
         </button>
@@ -256,50 +255,5 @@ function Dialog({ request }: { request: AccountDialogRequest }) {
         <div className="account-body">{body}</div>
       </div>
     </div>
-  );
-}
-
-function PasswordField({
-  label,
-  hint,
-  autoFocus,
-  autoComplete,
-  value,
-  onChange,
-}: {
-  label: string;
-  hint?: string;
-  autoFocus?: boolean;
-  autoComplete: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const t = useT();
-  const [shown, setShown] = useState(false);
-  return (
-    <label className="account-field">
-      <span>{label}</span>
-      <span className="account-password">
-        <input
-          type={shown ? 'text' : 'password'}
-          required
-          autoFocus={autoFocus}
-          autoComplete={autoComplete}
-          maxLength={PASSWORD_MAX}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label={shown ? t.account.hidePassword : t.account.showPassword}
-          aria-pressed={shown}
-          onClick={() => setShown(!shown)}
-        >
-          {shown ? <EyeOff size={16} strokeWidth={1.75} /> : <Eye size={16} strokeWidth={1.75} />}
-        </button>
-      </span>
-      {hint && <small>{hint}</small>}
-    </label>
   );
 }

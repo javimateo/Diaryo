@@ -27,6 +27,17 @@ export interface AccountDialogRequest {
   /** Opened from the settings: closing it goes back to them. */
   fromSettings?: boolean;
 }
+
+/**
+ * What the cloud diary's dialog does: set up the diary password, unlock this device,
+ * recover with the recovery code, change the password or make a new recovery code.
+ */
+export type VaultView = 'create' | 'unlock' | 'recover' | 'change' | 'newCode';
+
+export interface VaultDialogRequest {
+  view: VaultView;
+  fromSettings?: boolean;
+}
 /** The chosen theme: light, dark or the system one (and it follows it). */
 export type ThemePreference = Theme | 'system';
 
@@ -157,6 +168,8 @@ interface UIState {
   pendingCopy: DiaryDump | null;
   /** Signing in or creating the cloud account. */
   accountDialog: AccountDialogRequest | null;
+  /** The diary password and the recovery code of the cloud diary. */
+  vaultDialog: VaultDialogRequest | null;
   /** Map view: all the pages at a glance. */
   mapOpen: boolean;
   /** Command palette and search (Ctrl+K). */
@@ -192,6 +205,7 @@ interface UIState {
   setLinkDialogOpen: (open: boolean) => void;
   setPendingCopy: (copy: DiaryDump | null) => void;
   setAccountDialog: (request: AccountDialogRequest | null) => void;
+  setVaultDialog: (request: VaultDialogRequest | null) => void;
   setMapOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
   setDesktop: (patch: Partial<DesktopInfo>) => void;
@@ -235,6 +249,7 @@ export const useUI = create<UIState>()((set, get) => ({
   linkDialogOpen: false,
   pendingCopy: null,
   accountDialog: null,
+  vaultDialog: null,
   mapOpen: false,
   mapOrigin: null,
   paletteOpen: false,
@@ -295,6 +310,13 @@ export const useUI = create<UIState>()((set, get) => ({
       settingsOpen: accountDialog
         ? false
         : state.settingsOpen || Boolean(state.accountDialog?.fromSettings),
+    })),
+  setVaultDialog: (vaultDialog) =>
+    set((state) => ({
+      vaultDialog,
+      settingsOpen: vaultDialog
+        ? false
+        : state.settingsOpen || Boolean(state.vaultDialog?.fromSettings),
     })),
   setMapOpen: (mapOpen) => {
     if (mapOpen === get().mapOpen) return;

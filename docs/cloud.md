@@ -38,20 +38,38 @@ In the app (`src/cloud/account.ts`, Settings → Account and cloud):
 Everything leaves the device encrypted; the server only stores ciphertext and opaque
 ids. Nobody without the keys, the server's administrator included, can read a diary.
 
-- **Diary key**: a random 256-bit AES-GCM key, created on the first device. It encrypts
-  every record.
+All of it is in `src/cloud/crypto.ts` (Web Crypto, with tests); `src/cloud/vault.ts`
+keeps the vault and the device's keys.
+
+- **Diary secret**: 32 random bytes, created on the first device. Two keys come from
+  it with HKDF-SHA-256: the **diary key** (AES-GCM 256), which encrypts every item, and
+  the **naming key** (HMAC-SHA-256), which makes the items' opaque keys.
 - **Diary password**: chosen by the user, separate from the account's (a Google account
   has no password). PBKDF2-SHA-256 (600 000 iterations, random salt) turns it into a
-  key that **wraps** the diary key.
-- **Recovery key**: 24 random words (or an equivalent code) shown once, to print or save.
-  It wraps the diary key too, so a forgotten password can be replaced.
-- The `vaults` record keeps the salt, the wrapped keys and an encrypted check value (to
-  tell a wrong password at once). Never the password or the diary key.
-- Each device unlocks once and keeps the diary key in the system's secure storage
-  (desktop) or, on the web, in IndexedDB as a non-extractable `CryptoKey`.
+  key that **wraps** the secret.
+- **Recovery code**: 240 random bits written as 12 groups of 4 characters (Crockford's
+  base 32: no I, L, O or U; typing is forgiving about case, spaces and look-alikes).
+  Shown once, to download, print or copy; the dialog doesn't close until the user says
+  it is saved. It wraps the secret too (HKDF, as it is random already), so a forgotten
+  password can be replaced.
+- The `vaults` record keeps `kdf` (algorithm, iterations and both salts), the two
+  wrapped copies of the secret and `check` (a known text encrypted with the diary key,
+  to tell a wrong secret at once). Never the password, the code or the secret.
+- **Changing the password** or **making a new recovery code** only wraps the secret
+  again (it asks for the current password); the items aren't encrypted again. A new
+  code makes the old one useless.
+- Each device unlocks once and keeps the two derived keys in IndexedDB
+  (`diaryo-keys`), as non-extractable `CryptoKey`s: the app can use them, not read
+  them. The desktop app does the same in its webview (the local diary on that computer
+  isn't encrypted either, so the system's keychain would add little). Signing out
+  forgets them. When the app starts, the kept keys are checked against the vault.
 
-Losing both the password and the recovery key means losing the cloud copy: the local
+Losing both the password and the recovery code means losing the cloud copy: the local
 diaries and `.diaryo` files stay readable on the devices that have them.
+
+**Later**: unlocking with the device's biometrics (Windows Hello, Touch ID, the phone's
+fingerprint) instead of typing the password on each new device, through WebAuthn's PRF
+extension (a passkey that also gives a key to wrap the secret with).
 
 ## What is synced
 

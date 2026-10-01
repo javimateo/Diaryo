@@ -1,4 +1,4 @@
-import { LogOut, Mail } from 'lucide-react';
+import { KeyRound, LockKeyhole, LockKeyholeOpen, LogOut, Mail, PenLine } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   accountError,
@@ -7,7 +7,8 @@ import {
   signOut,
   useAccount,
 } from '../cloud/account';
-import { useUI } from '../store/ui';
+import { isDesktop } from '../desktop/tauri';
+import { useUI, type VaultView } from '../store/ui';
 import { continueWithGoogle } from './accountActions';
 import { formatBytes } from './formatBytes';
 import { GoogleButton } from './GoogleButton';
@@ -96,7 +97,59 @@ export function AccountSection() {
           </button>
         </SettingsRow>
       )}
+      <VaultRows />
       <p className="settings-note">{t.account.syncSoon}</p>
     </section>
   );
+}
+
+/** The cloud diary's encryption on this device: set it up, unlock it, or manage it. */
+function VaultRows() {
+  const t = useT();
+  const v = t.vault;
+  const vault = useAccount((s) => s.vault);
+  const setVaultDialog = useUI((s) => s.setVaultDialog);
+  const open = (view: VaultView) => setVaultDialog({ view, fromSettings: true });
+
+  if (vault === 'unlocked') {
+    return (
+      <>
+        <SettingsRow label={v.section}>
+          <span className="settings-ok">
+            <LockKeyhole size={15} strokeWidth={2} /> {v.stateUnlocked(isDesktop())}
+          </span>
+        </SettingsRow>
+        <SettingsRow label={v.passwordRow}>
+          <button type="button" className="settings-btn" onClick={() => open('change')}>
+            <PenLine size={15} strokeWidth={1.75} /> {v.change}
+          </button>
+        </SettingsRow>
+        <SettingsRow label={v.codeRow}>
+          <button type="button" className="settings-btn" onClick={() => open('newCode')}>
+            <KeyRound size={15} strokeWidth={1.75} /> {v.newCode}
+          </button>
+        </SettingsRow>
+      </>
+    );
+  }
+  if (vault === 'none' || vault === 'locked') {
+    const none = vault === 'none';
+    return (
+      <SettingsRow label={v.section} hint={none ? v.stateNone : v.stateLocked}>
+        <button
+          type="button"
+          className="settings-btn"
+          onClick={() => open(none ? 'create' : 'unlock')}
+        >
+          {none ? (
+            <LockKeyhole size={15} strokeWidth={1.75} />
+          ) : (
+            <LockKeyholeOpen size={15} strokeWidth={1.75} />
+          )}
+          {none ? v.setUp : v.unlock}
+        </button>
+      </SettingsRow>
+    );
+  }
+  return <p className="settings-note">{v.stateUnknown}</p>;
 }

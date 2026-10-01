@@ -406,8 +406,14 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             en el escritorio); salir; confirmar el email y recuperar la contraseña con
             enlaces que abren la web app; la sesión dura 30 días desde el último uso.
             Google está en modo de prueba hasta la C7 (política de privacidad).
-      - [ ] **C3. Cifrado**: contraseña del diario, clave de recuperación y
-            desbloqueo en cada dispositivo; con tests.
+      - [x] **C3. Cifrado**: contraseña del diario (distinta de la de la cuenta), clave
+            de recuperación de 12 bloques (descargar, imprimir o copiar; se muestra una
+            vez), desbloqueo en cada dispositivo (las llaves quedan en IndexedDB, no
+            exportables), recuperar con la clave, cambiar la contraseña y crear otra
+            clave; en Ajustes y al entrar en la cuenta. `src/cloud/crypto.ts`, con tests.
+      - [ ] **Más adelante: desbloquear con biometría** (Windows Hello, Touch ID, huella
+            del móvil) en vez de escribir la contraseña en cada dispositivo nuevo, con
+            WebAuthn PRF (una passkey que además da una llave para envolver el secreto).
       - [ ] **C4. Sincronización**: subir y bajar cambios, marcas de borrado,
             conflictos, sin conexión; con tests.
       - [ ] **C5. Imágenes** cifradas.
