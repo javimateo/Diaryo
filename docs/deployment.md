@@ -66,7 +66,9 @@ The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules 
 `cloud/`, at <https://cloud.diaryo.javiermateo.dev>.
 
 1. DNS: an `A` record `cloud.diaryo` pointing to the VPS.
-2. Coolify: a third resource from the same repository, **Dockerfile**
+2. Coolify: a third resource from the same repository (branch `develop` while the cloud
+   is being built; **`main` from the first release that uses it**, so only released
+   schema changes reach real users' data), **Dockerfile**
    `/deploy/cloud.Dockerfile`, domain `https://cloud.diaryo.javiermateo.dev` with
    **port 8090**, and a **persistent storage** mounted at `/pb/pb_data` (without it,
    every deployment would start with an empty database).
@@ -78,8 +80,12 @@ The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules 
 
    The dashboard is at `https://cloud.diaryo.javiermateo.dev/_/`.
 
-4. **Mail** (Settings → Mail settings): an SMTP server, so the accounts can be verified
-   and passwords reset. Sender: something like `diaryo <no-reply@javiermateo.dev>`.
+4. **Mail** (Settings → Mail settings), so the accounts can be verified and passwords
+   reset. It goes through [Resend](https://resend.com) (free up to 3 000 emails a month),
+   with the domain `javiermateo.dev` verified there (its DKIM, SPF and DMARC records are
+   in Cloudflare). Sender `diaryo <no-reply@javiermateo.dev>`; SMTP host
+   `smtp.resend.com`, **port 587** with TLS "Auto (StartTLS)", user `resend`, password
+   an API key. The VPS blocks outgoing port 465, so not that one.
 5. **Application URL** (Settings → Application): `https://app.diaryo.javiermateo.dev`,
    used in the links of those emails.
 6. **Google sign-in** (Collections → users → Options → OAuth2): enable it and add Google
