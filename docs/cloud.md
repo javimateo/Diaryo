@@ -20,6 +20,19 @@ PocketBase's `users` collection: email and password (with email verification and
 reset) and Google (OAuth2). Each user has a storage quota (`quotaBytes`, 100 MB on the
 free plan) that only the server can change.
 
+In the app (`src/cloud/account.ts`, Settings → Account and cloud):
+
+- The session is kept in the device's local storage (`diaryo:cloud-session`). A token
+  lasts 30 days; the app renews it when it starts and every 12 hours, so it only expires
+  after a month without opening the app.
+- **Google** on the web opens a popup; on the desktop, the system browser (the
+  `open_sign_in` command, which only opens `accounts.google.com`). Either way the server
+  tells the app through its realtime connection when Google is done.
+- The **emails' links** open the web app: `?verify=<token>` confirms the email and
+  `?reset=<token>` asks for the new password. The token leaves the address at once.
+- `VITE_CLOUD_URL` points the app to another server (a local PocketBase while
+  developing, in `.env.local`).
+
 ## Encryption
 
 Everything leaves the device encrypted; the server only stores ciphertext and opaque

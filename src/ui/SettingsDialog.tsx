@@ -8,19 +8,14 @@ import { BookStyleSection } from './BookStyleSection';
 import { DesktopSettings } from './DesktopSettings';
 import { SettingsRow } from './SettingsRow';
 import { useT } from './useT';
-import { LANGUAGES, locale, type Language } from '../i18n';
+import { LANGUAGES, type Language } from '../i18n';
+import { AccountSection } from './AccountSection';
+import { formatBytes } from './formatBytes';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 const TURN_SPEEDS: TurnSpeed[] = ['normal', 'fast', 'off'];
 
-function formatBytes(value: number): string {
-  const bytes = new Intl.NumberFormat(locale(), { maximumFractionDigits: 1 });
-  if (value < 1024 * 1024) return `${bytes.format(value / 1024)} KB`;
-  if (value < 1024 ** 3) return `${bytes.format(value / 1024 ** 2)} MB`;
-  return `${bytes.format(value / 1024 ** 3)} GB`;
-}
-
-/** Settings: appearance, diary look, behaviour and storage. */
+/** Settings: account, appearance, diary look, behaviour and storage. */
 export function SettingsDialog() {
   const open = useUI((s) => s.settingsOpen);
   if (!open) return null;
@@ -67,6 +62,8 @@ function Settings() {
           </button>
         </header>
         <div className="settings-body" data-scrollable>
+          <AccountSection />
+
           <section className="settings-section">
             <h3>{t.settings.appearance}</h3>
             <SettingsRow label={t.settings.language}>

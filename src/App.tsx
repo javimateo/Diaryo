@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import { useUI } from './store/ui';
+import { AccountDialog } from './ui/AccountDialog';
+import { startAccount } from './ui/accountActions';
 import { CanvasView } from './ui/CanvasView';
 import { CommandPalette } from './ui/CommandPalette';
 import { ContextMenu } from './ui/ContextMenu';
@@ -25,6 +28,7 @@ export function App() {
   const t = useT();
   useShortcuts();
   useDeskBackground();
+  useEffect(startAccount, []);
   const isEmpty = useUI((s) => s.doc.isEmpty);
   const loaded = useUI((s) => s.saveStatus !== 'loading');
 
@@ -71,6 +75,7 @@ export function App() {
       <LinkDialog />
       <OpenCopyDialog />
       <SettingsDialog />
+      <AccountDialog />
       <CommandPalette />
     </div>
   );

@@ -146,3 +146,15 @@ pub fn set_language(app: AppHandle, language: String) {
 pub fn quit_app(app: AppHandle) {
     app.exit(0);
 }
+
+/// Opens Google's sign-in page in the browser (the page only asks for that page: any
+/// other address is refused).
+#[tauri::command]
+pub fn open_sign_in(app: AppHandle, url: String) -> Result<(), String> {
+    if !url.starts_with("https://accounts.google.com/") {
+        return Err("not a sign-in page".into());
+    }
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| e.to_string())
+}
