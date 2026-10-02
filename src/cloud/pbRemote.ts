@@ -1,4 +1,5 @@
 import { ClientResponseError } from 'pocketbase';
+import { noteServerTime } from '../lib/clock';
 import { pb } from './client';
 import {
   DuplicateError,
@@ -37,6 +38,19 @@ const guard = async <T>(request: Promise<T>): Promise<T> => {
 
 const FIELDS = 'id,key,kind,data,modified,deleted,updated';
 
+/** PocketBase's times ("2026-10-02 09:48:54.999Z") in ms. */
+const parseTime = (time: string) => Date.parse(time.replace(' ', 'T'));
+const formatTime = (ms: number) => new Date(ms).toISOString().replace('T', ' ');
+
+/** How far back each pull reads again (see `Remote.rewind`). */
+const OVERLAP = 10_000;
+
+/** A write came back with the server's time: this device's clock follows it. */
+function written(item: RemoteItem): RemoteItem {
+  noteServerTime(parseTime(item.updated));
+  return item;
+}
+
 /** The `items` collection of the signed-in account (see cloud/pb_migrations). */
 export function pocketbaseRemote(userId: string): Remote {
   const items = () => pb.collection('items');
@@ -59,13 +73,17 @@ export function pocketbaseRemote(userId: string): Remote {
       );
       return page.items;
     },
-    create: (draft: ItemDraft) =>
-      guard(items().create<RemoteItem>({ ...draft, user: userId }, options)),
+    create: async (draft: ItemDraft) =>
+      written(await guard(items().create<RemoteItem>({ ...draft, user: userId }, options))),
     update: (id: string, draft: ItemDraft) => {
       // The owner and the key never change (the server refuses it).
       const { key: _key, ...change } = draft;
       void _key;
-      return guard(items().update<RemoteItem>(id, change, options));
+      return guard(items().update<RemoteItem>(id, change, options)).then(written);
+    },
+    rewind: (cursor: PullCursor) => {
+      const time = parseTime(cursor.updated);
+      return Number.isFinite(time) ? { updated: formatTime(time - OVERLAP), id: '' } : cursor;
     },
     findByKey: async (key: string) => {
       const page = await guard(

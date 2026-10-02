@@ -1,3 +1,5 @@
+import Dexie from 'dexie';
+import { now as clockNow } from '../lib/clock';
 import type { SceneElement } from '../engine/elements';
 import type { AssetRow, DiaryoDB, FontRow, PageRow } from './db';
 
@@ -42,10 +44,30 @@ export function parsePath(path: string): { kind: PathKind; id: string; pageId?: 
 }
 
 /**
+ * Who is told about the changes made here, once they are written (the cloud sync, to push
+ * them and tell the other tabs). Changes from the cloud aren't told.
+ */
+let listener: ((paths: string[]) => void) | null = null;
+
+export function onLocalChanges(next: ((paths: string[]) => void) | null) {
+  listener = next;
+}
+
+/** Tells the listener when the transaction that wrote them ends (not before: it may fail). */
+function tell(paths: string[]) {
+  if (!listener) return;
+  const notify = listener;
+  let tx = Dexie.currentTransaction;
+  while (tx?.parent) tx = tx.parent;
+  if (tx) tx.on('complete', () => notify(paths));
+  else notify(paths);
+}
+
+/**
  * Notes changes made now (inside the write's transaction). A change is always later than
  * the one it replaces, even if this device's clock is behind the one that made it.
  */
-export async function touch(db: DiaryoDB, paths: string[], now = Date.now()) {
+export async function touch(db: DiaryoDB, paths: string[], now = clockNow()) {
   if (paths.length === 0) return;
   const unique = [...new Set(paths)];
   const known = await db.tracked.bulkGet(unique);
@@ -57,6 +79,7 @@ export async function touch(db: DiaryoDB, paths: string[], now = Date.now()) {
       remote: known[i]?.remote,
     })),
   );
+  tell(unique);
 }
 
 /** Every path the diary has now. */

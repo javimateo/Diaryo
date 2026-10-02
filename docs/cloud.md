@@ -131,6 +131,31 @@ pulling, with tests against a fake server and two devices), `src/cloud/pbRemote.
 - Signing in with another account forgets the records of the previous one: the first
   sync runs again.
 
+### Edge cases
+
+- **Writes saved late**: a write that started before the last one a pull saw can be
+  saved after it, with an earlier time. Each pull starts 10 s before where the last one
+  ended, so those are never missed (the ones read again change nothing).
+- **Clocks**: the times that decide which change wins are this device's clock corrected
+  with the server's (from the time of each write it answers), so a clock that is off
+  doesn't win or lose every conflict (`src/lib/clock.ts`).
+- **The user is drawing or writing** when changes come: they are fetched once they
+  finish (a reload would cut the stroke or the text), and what is here goes up meanwhile.
+  A pull writes batch by batch and the diary shows them once, at the end.
+- **A page deleted on one device while another one writes on it**: what was written
+  before the deletion is cleaned up when it arrives (no element is left hidden on a page
+  that is gone); what was written after brings the page back with it.
+- **Several tabs** of the web app: only one syncs at a time (a Web Lock); every change
+  written here (not the view) is told to the other tabs (a BroadcastChannel), which show
+  it once the user isn't drawing or writing.
+- **A session that ends** (expired, the password changed, the account gone): the app
+  says so and signs out; what is pending stays on the device and goes up when the user
+  signs in again with the same account.
+- **Signing out with changes not pushed**: the settings say how many, and offer to sync
+  first.
+- **Changing the diary password or the recovery code** on one device: the others keep
+  working (their keys come from the diary secret, which doesn't change).
+
 ## Quota
 
 The server computes each item's size (`size`) and, before saving, checks that the

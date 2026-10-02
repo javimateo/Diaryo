@@ -184,6 +184,13 @@ export const en: Messages = {
     lowSpace: (free: string) =>
       `You're running out of cloud space: ${free} free. Delete pages or images you don't need.`,
     rejected: (n: number) => (n === 1 ? "1 change couldn't go up" : `${n} changes couldn't go up`),
+    sessionEnded: 'Your session expired: sign in again to sync. What is pending is kept here.',
+    signOutPending: (n: number) =>
+      n === 1
+        ? "There is 1 change that hasn't gone up to the cloud. It stays on this device and goes up when you sign in again."
+        : `There are ${n} changes that haven't gone up to the cloud. They stay on this device and go up when you sign in again.`,
+    syncAndSignOut: 'Sync and sign out',
+    signOutAnyway: 'Sign out anyway',
     passwordMode: 'The password is asked for when syncing',
     firstTitle: 'There is already a diary in the cloud',
     firstText: 'This device has one too. What should we do?',

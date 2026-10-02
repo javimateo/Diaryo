@@ -249,6 +249,46 @@ export async function restorePage(db: DiaryoDB, stored: StoredPage) {
 }
 
 /**
+ * Deletes the elements left on a page that was deleted on another device (they were
+ * written there before the page was deleted, and arrived after). An element changed after
+ * the deletion stays: its page comes back with it.
+ */
+export async function dropOrphanElements(db: DiaryoDB): Promise<number> {
+  return db.transaction('rw', [db.pages, db.elements, db.tracked], async () => {
+    const pages = new Set(await db.pages.toCollection().primaryKeys());
+    const keys = (await db.elements.toCollection().primaryKeys()).filter(
+      ([pageId]) => pageId !== DESK_ID && !pages.has(pageId),
+    );
+    if (keys.length === 0) return 0;
+    const deletions = await db.tracked.bulkGet([
+      ...new Set(keys.map(([pageId]) => pagePath(pageId))),
+    ]);
+    const deletedAt = new Map(
+      deletions.flatMap((row) => (row ? [[row.path.slice(5), row.modified] as const] : [])),
+    );
+    const times = await db.tracked.bulkGet(keys.map(([pageId, id]) => elementPath(pageId, id)));
+    // Only pages known to be deleted (one not heard of yet may still arrive).
+    const orphans = keys.filter(([pageId], i) => {
+      const deleted = deletedAt.get(pageId);
+      return deleted !== undefined && (times[i]?.modified ?? 0) <= deleted;
+    });
+    if (orphans.length === 0) return 0;
+    await db.elements.bulkDelete(orphans);
+    await touch(
+      db,
+      orphans.map(([pageId, id]) => elementPath(pageId, id)),
+    );
+    return orphans.length;
+  });
+}
+
+/** Tidies up what nothing uses (see the two functions above and below). */
+export async function cleanUpDiary(db: DiaryoDB) {
+  await dropOrphanElements(db);
+  await dropUnusedAssets(db);
+}
+
+/**
  * Deletes the images no element shows any more (a deleted image keeps its file, so undo
  * can bring it back; the file goes when cleaning up). Returns how many went.
  */

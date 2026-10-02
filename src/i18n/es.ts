@@ -193,6 +193,14 @@ export const es = {
       `Te queda poco espacio en la nube: ${free} libres. Borra páginas o imágenes que no necesites.`,
     rejected: (n: number) =>
       n === 1 ? '1 cambio no se ha podido subir' : `${n} cambios no se han podido subir`,
+    sessionEnded:
+      'Tu sesión ha caducado: vuelve a entrar para sincronizar. Lo pendiente se guarda aquí.',
+    signOutPending: (n: number) =>
+      n === 1
+        ? 'Hay 1 cambio sin subir a la nube. Se queda en este dispositivo y subirá cuando vuelvas a entrar.'
+        : `Hay ${n} cambios sin subir a la nube. Se quedan en este dispositivo y subirán cuando vuelvas a entrar.`,
+    syncAndSignOut: 'Sincronizar y salir',
+    signOutAnyway: 'Salir igualmente',
     passwordMode: 'Se pide la contraseña al sincronizar',
     firstTitle: 'Ya hay un diario en la nube',
     firstText: 'Este dispositivo también tiene uno. ¿Qué hacemos?',

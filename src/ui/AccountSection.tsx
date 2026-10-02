@@ -35,9 +35,19 @@ export function AccountSection() {
   const setAccountDialog = useUI((s) => s.setAccountDialog);
   const showToast = useUI((s) => s.showToast);
   const [sending, setSending] = useState(false);
+  /** Signing out with changes that haven't gone up: it asks first. */
+  const [leaving, setLeaving] = useState(false);
+  const pending = useSync((state) => state.pending);
+  const syncStatus = useSync((state) => state.status);
 
   // The email may have been confirmed somewhere else meanwhile.
   useEffect(() => void refreshAccount(), []);
+
+  const leave = () => {
+    setLeaving(false);
+    signOut();
+    showToast(t.account.signedOut);
+  };
 
   const signInDialog = () => setAccountDialog({ view: 'signIn', fromSettings: true });
 
@@ -90,14 +100,37 @@ export function AccountSection() {
         <button
           type="button"
           className="settings-btn"
-          onClick={() => {
-            signOut();
-            showToast(t.account.signedOut);
-          }}
+          onClick={() => (pending > 0 && syncStatus !== 'off' ? setLeaving(true) : leave())}
         >
           <LogOut size={15} strokeWidth={1.75} /> {t.account.signOut}
         </button>
       </div>
+      {leaving && (
+        <div className="sync-full" data-tone="low" role="alert">
+          <TriangleAlert size={16} strokeWidth={1.75} aria-hidden />
+          <div className="sign-out-confirm">
+            <p>{t.sync.signOutPending(pending)}</p>
+            <div>
+              <button
+                type="button"
+                className="settings-btn"
+                onClick={async () => {
+                  await syncNow();
+                  if (useSync.getState().pending === 0) leave();
+                }}
+              >
+                <RefreshCw size={15} strokeWidth={1.75} /> {t.sync.syncAndSignOut}
+              </button>
+              <button type="button" className="settings-btn" onClick={leave}>
+                {t.sync.signOutAnyway}
+              </button>
+              <button type="button" className="settings-btn" onClick={() => setLeaving(false)}>
+                {t.vault.back}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {!account.verified && (
         <SettingsRow label={t.account.unverified} hint={t.account.unverifiedHint}>
           <button

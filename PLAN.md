@@ -432,6 +432,13 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       - [x] **C6. Espacio**: aviso al 80 % y al 95 % (una vez cada uno) y, en Ajustes,
             cuánto queda, con la barra en ámbar.
       - [ ] **Revisión de la nube** antes de abrirla: casos límite y pulido.
+        - [x] Revisión del código y pruebas (octubre de 2026): cambios guardados tarde
+              que se perdían al bajar, bucle entre pestañas, cortar a quien escribe,
+              elementos huérfanos de páginas borradas, relojes desajustados, sesión
+              caducada, cerrar sesión con cambios pendientes, varias pestañas y diario
+              grande. Todo en docs/cloud.md («Edge cases»), con tests.
+        - [ ] Pruebas en la app de escritorio, con dos dispositivos reales y con los
+              correos reales.
       - [ ] **C7. RGPD y web**: borrar la cuenta, exportar los datos, política de
             privacidad y condiciones; la web explica la nube (opcional, cifrada).
       - [ ] **C8. Pagos** (más adelante).
