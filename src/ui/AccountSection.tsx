@@ -1,4 +1,13 @@
-import { KeyRound, LockKeyhole, LockKeyholeOpen, LogOut, Mail, PenLine } from 'lucide-react';
+import {
+  KeyRound,
+  LockKeyhole,
+  LockKeyholeOpen,
+  LogOut,
+  Mail,
+  PenLine,
+  RefreshCw,
+  TriangleAlert,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   accountError,
@@ -7,9 +16,13 @@ import {
   signOut,
   useAccount,
 } from '../cloud/account';
+import { forgetDevice } from '../cloud/vault';
 import { isDesktop } from '../desktop/tauri';
-import { useUI, type VaultView } from '../store/ui';
+import { useUI, type SyncMode, type VaultView } from '../store/ui';
 import { continueWithGoogle } from './accountActions';
+import { Choice } from './Choice';
+import { syncNow, useSync } from './cloudSync';
+import { relativeTime } from './relativeTime';
 import { formatBytes } from './formatBytes';
 import { GoogleButton } from './GoogleButton';
 import { SettingsRow } from './SettingsRow';
@@ -98,7 +111,7 @@ export function AccountSection() {
         </SettingsRow>
       )}
       <VaultRows />
-      <p className="settings-note">{t.account.syncSoon}</p>
+      <SyncRows />
     </section>
   );
 }
@@ -108,16 +121,23 @@ function VaultRows() {
   const t = useT();
   const v = t.vault;
   const vault = useAccount((s) => s.vault);
+  const asksEachTime = useUI((s) => s.settings.syncMode === 'password') && vault === 'locked';
   const setVaultDialog = useUI((s) => s.setVaultDialog);
   const open = (view: VaultView) => setVaultDialog({ view, fromSettings: true });
 
-  if (vault === 'unlocked') {
+  if (vault === 'unlocked' || asksEachTime) {
     return (
       <>
         <SettingsRow label={v.section}>
-          <span className="settings-ok">
-            <LockKeyhole size={15} strokeWidth={2} /> {v.stateUnlocked(isDesktop())}
-          </span>
+          {asksEachTime ? (
+            <span className="settings-label">
+              <small>{t.sync.passwordMode}</small>
+            </span>
+          ) : (
+            <span className="settings-ok">
+              <LockKeyhole size={15} strokeWidth={2} /> {v.stateUnlocked(isDesktop())}
+            </span>
+          )}
         </SettingsRow>
         <SettingsRow label={v.passwordRow}>
           <button type="button" className="settings-btn" onClick={() => open('change')}>
@@ -152,4 +172,96 @@ function VaultRows() {
     );
   }
   return <p className="settings-note">{v.stateUnknown}</p>;
+}
+
+const MODES: SyncMode[] = ['auto', 'manual', 'password'];
+
+/** How the cloud diary syncs here, how it is going, and the space it takes. */
+function SyncRows() {
+  const t = useT();
+  const s = t.sync;
+  const vault = useAccount((state) => state.vault);
+  const mode = useUI((state) => state.settings.syncMode);
+  const setSettings = useUI((state) => state.setSettings);
+  const setVaultDialog = useUI((state) => state.setVaultDialog);
+  const { status, lastSync, progress, pending, usage } = useSync();
+  if (vault !== 'unlocked' && !(mode === 'password' && vault === 'locked')) return null;
+
+  const changeMode = (next: SyncMode) => {
+    if (next === mode) return;
+    setSettings({ syncMode: next });
+    // With the password each time, this device stops keeping the keys…
+    if (next === 'password') void forgetDevice();
+    // …and leaving that mode needs them again.
+    else if (useAccount.getState().vault !== 'unlocked') {
+      setVaultDialog({ view: 'unlock', fromSettings: true });
+    }
+  };
+
+  const syncing = status === 'syncing';
+  let line: string;
+  if (syncing) line = progress ? s.progress(progress.done, progress.total) : s.status.syncing;
+  else if (status === 'idle') line = lastSync ? s.last(relativeTime(lastSync)) : s.never;
+  else line = s.status[status];
+  const share = usage && usage.quota > 0 ? Math.min(1, usage.used / usage.quota) : 0;
+
+  return (
+    <>
+      <SettingsRow label={s.row} hint={s.modeHints[mode]}>
+        <Choice options={MODES.map((id) => [id, s.modes[id]])} value={mode} onChange={changeMode} />
+      </SettingsRow>
+      <div className="sync-line">
+        <span className="settings-label">
+          <small>
+            {line}
+            {pending > 0 && !syncing && status !== 'full' && ` · ${s.pending(pending)}`}
+          </small>
+        </span>
+        <button
+          type="button"
+          className="settings-btn"
+          disabled={syncing}
+          onClick={() => void syncNow()}
+        >
+          <RefreshCw
+            size={15}
+            strokeWidth={1.75}
+            className={syncing ? 'account-spin' : undefined}
+          />
+          {s.now}
+        </button>
+      </div>
+      {progress && (
+        <div className="sync-bar" aria-hidden>
+          <i
+            style={{ width: `${Math.round((progress.done / Math.max(1, progress.total)) * 100)}%` }}
+          />
+        </div>
+      )}
+      {status === 'full' && (
+        <div className="sync-full" role="alert">
+          <TriangleAlert size={16} strokeWidth={1.75} aria-hidden />
+          <p>
+            <strong>{s.fullTitle}</strong> {s.fullText}
+            {pending > 0 && <> {s.pending(pending)}.</>}
+          </p>
+        </div>
+      )}
+      {usage && (
+        <div className="sync-space">
+          <span className="settings-label">
+            <span>{s.space}</span>
+          </span>
+          <small>{s.spaceOf(formatBytes(usage.used), formatBytes(usage.quota))}</small>
+          <div
+            className="sync-bar"
+            data-full={share >= 1 || status === 'full' || undefined}
+            aria-hidden
+          >
+            <i style={{ width: `${Math.max(share * 100, usage.used > 0 ? 1 : 0)}%` }} />
+          </div>
+        </div>
+      )}
+    </>
+  );
 }

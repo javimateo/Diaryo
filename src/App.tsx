@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useUI } from './store/ui';
 import { AccountDialog } from './ui/AccountDialog';
 import { VaultDialog } from './ui/VaultDialog';
+import { FirstSyncDialog } from './ui/FirstSyncDialog';
+import { startSync } from './ui/cloudSync';
 import { startAccount } from './ui/accountActions';
 import { CanvasView } from './ui/CanvasView';
 import { CommandPalette } from './ui/CommandPalette';
@@ -30,6 +32,7 @@ export function App() {
   useShortcuts();
   useDeskBackground();
   useEffect(startAccount, []);
+  useEffect(startSync, []);
   const isEmpty = useUI((s) => s.doc.isEmpty);
   const loaded = useUI((s) => s.saveStatus !== 'loading');
 
@@ -78,6 +81,7 @@ export function App() {
       <SettingsDialog />
       <AccountDialog />
       <VaultDialog />
+      <FirstSyncDialog />
       <CommandPalette />
     </div>
   );

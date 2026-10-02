@@ -26,6 +26,7 @@ import {
   type PageRow,
   type StoredPage,
 } from '../storage/db';
+import type { AppliedChanges } from '../storage/tracking';
 import { todayKey, type DayKey } from '../lib/dates';
 import { formatDay, formatDayMonth } from '../i18n/dates';
 import { comparePages, neighbor, newPage, pagesOfDay, sortPages, type PageMeta } from './pages';
@@ -423,17 +424,47 @@ export class Diary {
   }
 
   /**
+   * Applies changes from the cloud (`apply` writes them). Whatever is pending here is
+   * saved first, so a newer change here wins over an older one from there; then the index
+   * catches up and, if the open page or the desk changed, they are loaded again.
+   */
+  applyRemote(apply: () => Promise<AppliedChanges>): Promise<AppliedChanges> {
+    return this.run(async () => {
+      await this.flush();
+      const applied = await apply();
+      if (applied.pages.size === 0 && !applied.assets) return applied;
+      if (applied.pages.has(DESK_ID) || applied.assets) {
+        await this.loadDesk();
+        this.hooks.onDeskSaved?.();
+      }
+      this.loaded.clear();
+      this.pages = (await listPages(this.db)).map(toMeta);
+      const current = this.current;
+      const stillThere = current && this.pages.find((p) => p.id === current.id);
+      if (current && (applied.pages.has(current.id) || applied.assets)) {
+        await this.autosave?.stop();
+        this.autosave = null;
+        // Deleted on another device: today's page opens instead.
+        const today = todayKey();
+        await this.open(stillThere ?? this.lastOfDay(today) ?? newPage(today), 0);
+      } else this.emit();
+      void this.refreshOldThumbnails();
+      return applied;
+    });
+  }
+
+  /**
    * Replaces the whole diary with a backup (pages and desk). Whatever was pending here is
    * saved first, so the caller can keep a copy of it; the open page is then dropped
    * without saving it back, and today's page opens. Returns how many pages came in.
    */
-  replace(dump: DiaryDump): Promise<number> {
+  replace(dump: DiaryDump, track = true): Promise<number> {
     return this.run(async () => {
       await this.autosave?.stop();
       this.autosave = null;
       this.current = null;
       this.blankToday = null;
-      await replaceDiary(this.db, dump);
+      await replaceDiary(this.db, dump, track);
       await this.loadDesk();
       this.hooks.onDeskSaved?.();
       this.loaded.clear();

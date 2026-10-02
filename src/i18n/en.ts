@@ -76,7 +76,6 @@ export const en: Messages = {
     unverifiedHint: 'We sent you a link when you created the account.',
     resend: 'Send again',
     resent: 'Email sent',
-    syncSoon: 'Syncing the diary will come in a future version.',
     verified: 'Email confirmed',
     errors: {
       offline: "Couldn't connect. Check your connection.",
@@ -111,6 +110,8 @@ export const en: Messages = {
     done: 'Done',
     unlockTitle: 'Unlock your diary',
     unlockText: 'Type the diary password. It only takes once on this device.',
+    onceText: "Type the diary password to sync. This device doesn't keep it.",
+    onceSubmit: 'Sync',
     unlock: 'Unlock',
     forgot: 'I forgot it: use the recovery code',
     recoverTitle: 'Use the recovery code',
@@ -147,6 +148,54 @@ export const en: Messages = {
       wrongPassword: "That isn't the diary password.",
       wrongCode: "That recovery code isn't right.",
       exists: 'This account already has a diary in the cloud: unlock it with its password.',
+    },
+  },
+
+  sync: {
+    row: 'Sync',
+    modes: { auto: 'Automatic', manual: 'Manual', password: 'With password' },
+    modeHints: {
+      auto: 'Syncs by itself after each change and when another device changes something.',
+      manual: 'Only when you press "Sync now".',
+      password:
+        'Only when you press "Sync now", asking for the diary password each time: this device doesn\'t keep the key.',
+    },
+    now: 'Sync now',
+    status: {
+      off: '',
+      idle: 'Up to date',
+      syncing: 'Syncing…',
+      offline: "Offline · it'll sync when you're back",
+      full: 'Space full',
+      error: "Couldn't sync",
+    },
+    last: (when: string) => `Last time: ${when}`,
+    never: "Hasn't synced yet",
+    progress: (done: number, total: number) => `Uploading ${done} of ${total}`,
+    pending: (n: number) =>
+      n === 1 ? '1 change waiting to go up' : `${n} changes waiting to go up`,
+    space: 'Space',
+    spaceOf: (used: string, quota: string) => `${used} of ${quota}`,
+    fullTitle: 'Your cloud space is full.',
+    fullText:
+      "Your diary keeps saving on this device, but new things don't go up. Delete pages or images you don't need to free some space.",
+    passwordMode: 'The password is asked for when syncing',
+    firstTitle: 'There is already a diary in the cloud',
+    firstText: 'This device has one too. What should we do?',
+    merge: 'Merge both',
+    mergeHint: 'All the pages come together; if something changed on both, the most recent wins.',
+    useCloud: "Use the cloud's and keep mine",
+    useCloudHint:
+      "This device's diary is saved in a .diaryo file (you can open it whenever you like) and the cloud's one stays here.",
+    later: 'Not now',
+    keptCopy: (where: string) => `Your previous diary is in ${where} · the cloud's one is coming`,
+    tips: {
+      idle: (when: string) => `Cloud up to date · ${when}`,
+      syncing: 'Syncing with the cloud…',
+      offline: "Offline: changes will go up when you're back",
+      full: "Cloud space full: new things don't go up",
+      error: "Couldn't sync",
+      manual: (n: number) => (n === 0 ? 'Cloud up to date' : `${n} changes not synced`),
     },
   },
 

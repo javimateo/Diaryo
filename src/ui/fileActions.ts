@@ -55,22 +55,30 @@ function moment(date = new Date()): string {
 }
 
 /**
+ * Keeps a copy of the whole diary before it is replaced: in the backups folder (desktop)
+ * or downloaded (web). Returns where, to tell the user; throws if it couldn't be kept.
+ */
+export async function keepCopyOfDiary(diary: Diary): Promise<string> {
+  const texts = t().openCopy;
+  const contents = serializeDiary(await diary.dump());
+  if (isDesktop()) {
+    return call<string>('write_copy_before_opening', { moment: moment(), contents });
+  }
+  const name = `diaryo-${texts.fileLabel}-${moment()}${FILE_EXTENSION}`;
+  downloadBlob(new Blob([contents], { type: 'application/json' }), name);
+  return texts.downloads;
+}
+
+/**
  * Replaces the diary with a backup. First the current one is kept: in the backups folder
  * (desktop) or downloaded (web). If that can't be done, nothing is replaced.
  */
 export async function replaceWithCopy(diary: Diary, copy: DiaryDump) {
   const { showToast } = useUI.getState();
   const texts = t().openCopy;
-  const contents = serializeDiary(await diary.dump());
   let where: string;
   try {
-    if (isDesktop()) {
-      where = await call<string>('write_copy_before_opening', { moment: moment(), contents });
-    } else {
-      const name = `diaryo-${texts.fileLabel}-${moment()}${FILE_EXTENSION}`;
-      downloadBlob(new Blob([contents], { type: 'application/json' }), name);
-      where = texts.downloads;
-    }
+    where = await keepCopyOfDiary(diary);
   } catch (error) {
     console.error("Couldn't back up the diary before replacing it", error);
     showToast(texts.beforeFailed);

@@ -4,6 +4,15 @@ import { parseElement } from '../engine/clipboard';
 import type { PaperStyle } from '../engine/book';
 import type { SceneElement } from '../engine/elements';
 import { dayKey } from '../lib/dates';
+import {
+  assetPath,
+  elementPath,
+  fontPath,
+  pagePath,
+  touch,
+  untouched,
+  type TrackedRow,
+} from './tracking';
 
 export interface PageRow {
   id: string;
@@ -53,6 +62,8 @@ export class DiaryoDB extends Dexie {
   elements!: Table<ElementRow, [string, string]>;
   assets!: EntityTable<AssetRow, 'id'>;
   fonts!: EntityTable<FontRow, 'id'>;
+  /** What changed and when, for the cloud sync (see tracking.ts). */
+  tracked!: EntityTable<TrackedRow, 'path'>;
 
   constructor(name = 'diaryo') {
     super(name);
@@ -77,6 +88,8 @@ export class DiaryoDB extends Dexie {
             page.thumbnail ??= null;
           }),
       );
+    // Phase 12-C: the cloud sync knows what changed.
+    this.version(3).stores({ tracked: 'path, dirty, remote' });
   }
 }
 
@@ -129,6 +142,9 @@ export interface PendingSave {
   camera?: Camera;
 }
 
+/** The tables with the diary itself. */
+const all = (db: DiaryoDB) => [db.pages, db.elements, db.assets, db.fonts];
+
 /** New row for a page that wasn't saved yet. */
 function newRow(info: PageInfo, now: number): PageRow {
   return {
@@ -148,8 +164,9 @@ function newRow(info: PageInfo, now: number): PageRow {
 export async function saveChanges(db: DiaryoDB, info: PageInfo, save: PendingSave) {
   const now = Date.now();
   const pageId = info.id;
-  await db.transaction('rw', [db.pages, db.elements, db.assets, db.fonts], async () => {
-    const page = (await db.pages.get(pageId)) ?? newRow(info, now);
+  await db.transaction('rw', [...all(db), db.tracked], async () => {
+    const existing = await db.pages.get(pageId);
+    const page = existing ?? newRow(info, now);
     await db.pages.put({ ...page, updatedAt: now, camera: save.camera ?? page.camera });
     if (save.upserts.length > 0) {
       await db.elements.bulkPut(save.upserts.map((data) => ({ pageId, id: data.id, data })));
@@ -159,6 +176,15 @@ export async function saveChanges(db: DiaryoDB, info: PageInfo, save: PendingSav
     }
     if (save.assets.length > 0) await db.assets.bulkPut(save.assets);
     if (save.fonts.length > 0) await db.fonts.bulkPut(save.fonts);
+    // Only the camera moving isn't a change for the other devices (the view is each one's).
+    const content = save.upserts.length + save.deletes.length > 0;
+    await touch(db, [
+      ...(content || !existing ? [pagePath(pageId)] : []),
+      ...save.upserts.map((el) => elementPath(pageId, el.id)),
+      ...save.deletes.map((id) => elementPath(pageId, id)),
+      ...save.assets.map((asset) => assetPath(asset.id)),
+      ...save.fonts.map((font) => fontPath(font.id)),
+    ]);
   });
 }
 
@@ -173,9 +199,13 @@ export async function updatePage(
   info: PageInfo,
   patch: Partial<Pick<PageRow, 'title' | 'thumbnail' | 'thumbnailSpread' | 'bookmark' | 'paper'>>,
 ) {
-  await db.transaction('rw', db.pages, async () => {
-    const page = (await db.pages.get(info.id)) ?? newRow(info, Date.now());
+  await db.transaction('rw', [db.pages, db.tracked], async () => {
+    const existing = await db.pages.get(info.id);
+    const page = existing ?? newRow(info, Date.now());
     await db.pages.put({ ...page, ...patch });
+    // The thumbnail is each device's own; the rest goes to the others.
+    const shared = 'title' in patch || 'bookmark' in patch || 'paper' in patch;
+    if (shared || !existing) await touch(db, [pagePath(info.id)]);
   });
 }
 
@@ -186,26 +216,31 @@ export interface StoredPage {
 }
 
 export async function deletePage(db: DiaryoDB, pageId: string): Promise<StoredPage | null> {
-  return db.transaction('rw', [db.pages, db.elements], async () => {
+  return db.transaction('rw', [db.pages, db.elements, db.tracked], async () => {
     const page = await db.pages.get(pageId);
     if (!page) return null;
     const elements = await db.elements.where('pageId').equals(pageId).toArray();
     await db.elements.where('pageId').equals(pageId).delete();
     await db.pages.delete(pageId);
+    await touch(db, [pagePath(pageId), ...elements.map((row) => elementPath(pageId, row.id))]);
     return { page, elements };
   });
 }
 
 export async function restorePage(db: DiaryoDB, stored: StoredPage) {
-  await db.transaction('rw', [db.pages, db.elements], async () => {
+  await db.transaction('rw', [db.pages, db.elements, db.tracked], async () => {
     await db.pages.put(stored.page);
     await db.elements.bulkPut(stored.elements);
+    await touch(db, [
+      pagePath(stored.page.id),
+      ...stored.elements.map((row) => elementPath(row.pageId, row.id)),
+    ]);
   });
 }
 
 /** Deletes empty untitled pages (e.g. if the app was closed before doing it). */
 export async function pruneEmptyPages(db: DiaryoDB, keep?: string): Promise<string[]> {
-  return db.transaction('rw', [db.pages, db.elements], async () => {
+  return db.transaction('rw', [db.pages, db.elements, db.tracked], async () => {
     const pages = await db.pages.toArray();
     const removed: string[] = [];
     for (const page of pages) {
@@ -218,6 +253,7 @@ export async function pruneEmptyPages(db: DiaryoDB, keep?: string): Promise<stri
         removed.push(page.id);
       }
     }
+    await touch(db, removed.map(pagePath));
     return removed;
   });
 }
@@ -262,8 +298,9 @@ export async function dumpDiary(db: DiaryoDB): Promise<DiaryDump> {
  * the desk).
  */
 export async function mergeDiary(db: DiaryoDB, dump: DiaryDump): Promise<string[]> {
-  return db.transaction('rw', [db.pages, db.elements, db.assets, db.fonts], async () => {
+  return db.transaction('rw', [...all(db), db.tracked], async () => {
     const merged: string[] = [];
+    const changed: string[] = [];
     for (const { page, elements } of dump.pages) {
       const local = await db.pages.get(page.id);
       if (page.id === DESK_ID) {
@@ -273,6 +310,7 @@ export async function mergeDiary(db: DiaryoDB, dump: DiaryDump): Promise<string[
         const incoming = elements.filter((row) => copyIsNewer || !ids.has(row.id));
         if (incoming.length === 0) continue;
         await db.elements.bulkPut(incoming.map((row) => ({ ...row, pageId: DESK_ID })));
+        changed.push(pagePath(DESK_ID), ...incoming.map((row) => elementPath(DESK_ID, row.id)));
         await db.pages.put(
           local ? { ...local, updatedAt: Math.max(local.updatedAt, page.updatedAt) } : page,
         );
@@ -280,6 +318,12 @@ export async function mergeDiary(db: DiaryoDB, dump: DiaryDump): Promise<string[
         continue;
       }
       if (local && local.updatedAt >= page.updatedAt) continue;
+      const before = await db.elements.where('pageId').equals(page.id).primaryKeys();
+      changed.push(
+        pagePath(page.id),
+        ...before.map(([pageId, id]) => elementPath(pageId, id)),
+        ...elements.map((row) => elementPath(page.id, row.id)),
+      );
       await db.elements.where('pageId').equals(page.id).delete();
       await db.pages.put(page);
       await db.elements.bulkPut(elements.map((row) => ({ ...row, pageId: page.id })));
@@ -287,6 +331,11 @@ export async function mergeDiary(db: DiaryoDB, dump: DiaryDump): Promise<string[
     }
     if (dump.assets.length > 0) await db.assets.bulkPut(dump.assets);
     if (dump.fonts.length > 0) await db.fonts.bulkPut(dump.fonts);
+    await touch(db, [
+      ...new Set(changed),
+      ...dump.assets.map((asset) => assetPath(asset.id)),
+      ...dump.fonts.map((font) => fontPath(font.id)),
+    ]);
     return merged;
   });
 }
@@ -296,8 +345,17 @@ export async function mergeDiary(db: DiaryoDB, dump: DiaryDump): Promise<string[
  * The custom fonts stay (the backup's are added): they are harmless and other copies may
  * use them.
  */
-export async function replaceDiary(db: DiaryoDB, dump: DiaryDump): Promise<void> {
-  await db.transaction('rw', [db.pages, db.elements, db.assets, db.fonts], async () => {
+export async function replaceDiary(
+  db: DiaryoDB,
+  dump: DiaryDump,
+  /**
+   * Whether the other devices follow (what disappears is deleted there too). Not when the
+   * diary is being replaced by the cloud's one.
+   */
+  track = true,
+): Promise<void> {
+  await db.transaction('rw', [...all(db), db.tracked], async () => {
+    const before = track ? await untouched(db) : [];
     await Promise.all([db.pages.clear(), db.elements.clear(), db.assets.clear()]);
     await db.pages.bulkPut(dump.pages.map(({ page }) => page));
     await db.elements.bulkPut(
@@ -307,6 +365,16 @@ export async function replaceDiary(db: DiaryoDB, dump: DiaryDump): Promise<void>
     );
     if (dump.assets.length > 0) await db.assets.bulkPut(dump.assets);
     if (dump.fonts.length > 0) await db.fonts.bulkPut(dump.fonts);
+    if (!track) return db.tracked.clear();
+    await touch(db, [
+      ...before,
+      ...dump.pages.flatMap(({ page, elements }) => [
+        pagePath(page.id),
+        ...elements.map((row) => elementPath(page.id, row.id)),
+      ]),
+      ...dump.assets.map((asset) => assetPath(asset.id)),
+      ...dump.fonts.map((font) => fontPath(font.id)),
+    ]);
   });
 }
 

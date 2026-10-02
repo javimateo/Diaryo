@@ -414,10 +414,20 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       - [ ] **Más adelante: desbloquear con biometría** (Windows Hello, Touch ID, huella
             del móvil) en vez de escribir la contraseña en cada dispositivo nuevo, con
             WebAuthn PRF (una passkey que además da una llave para envolver el secreto).
-      - [ ] **C4. Sincronización**: subir y bajar cambios, marcas de borrado,
-            conflictos, sin conexión; con tests.
-      - [ ] **C5. Imágenes** cifradas.
-      - [ ] **C6. Espacio**: uso, aviso al acercarse al límite y qué pasa al llenarlo.
+      - [x] **C4. Sincronización** (con las imágenes y las fuentes): cada página,
+            elemento, imagen y fuente es un registro cifrado; la base local anota cada
+            cambio en la misma operación; subir y bajar, marcas de borrado, gana el más
+            reciente, sin conexión, aviso en tiempo real entre dispositivos y recarga de
+            la página abierta. Modo automático (por defecto), manual o manual con
+            contraseña (no guarda la llave). Primera vez con diario en los dos lados:
+            combinar o usar el de la nube guardando el local en un archivo. Espacio
+            lleno: se para la subida, el diario sigue y lo pendiente sube al haber
+            sitio. La vista y las miniaturas no se suben. Con tests (servidor falso y
+            dos dispositivos).
+      - [ ] **C5. Imágenes grandes**: comprimirlas al insertarlas y un límite de tamaño
+            (ya se sincronizan en la C4).
+      - [ ] **C6. Espacio**: aviso al acercarse al límite (el uso y el «lleno» ya están
+            en la C4).
       - [ ] **C7. RGPD y web**: borrar la cuenta, exportar los datos, política de
             privacidad y condiciones; la web explica la nube (opcional, cifrada).
       - [ ] **C8. Pagos** (más adelante).

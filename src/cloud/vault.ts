@@ -156,3 +156,18 @@ useAccount.subscribe((state, previous) => {
   }
   void checkVault();
 });
+
+/**
+ * Opens the vault for one sync without keeping the keys on this device (the "manual with
+ * password" mode). The caller drops them afterwards.
+ */
+export async function unlockOnce(password: string): Promise<DiaryKeys> {
+  return unlockWithPassword(await existingVault(), password);
+}
+
+/** This device stops keeping the keys (they will be asked for again). */
+export async function forgetDevice() {
+  keys = null;
+  await forgetKeys().catch(() => undefined);
+  if (useAccount.getState().vault === 'unlocked') setVault('locked');
+}
