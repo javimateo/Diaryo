@@ -37,9 +37,17 @@ export type VaultView = 'create' | 'unlock' | 'recover' | 'change' | 'newCode';
 export interface VaultDialogRequest {
   view: VaultView;
   fromSettings?: boolean;
+  /** Unlock for one sync only, without keeping the keys (the "with password" mode). */
+  once?: boolean;
 }
 /** The chosen theme: light, dark or the system one (and it follows it). */
 export type ThemePreference = Theme | 'system';
+
+/**
+ * How the cloud diary syncs on this device: by itself, only when asked, or only when
+ * asked and with the diary password each time (the keys aren't kept here).
+ */
+export type SyncMode = 'auto' | 'manual' | 'password';
 
 /** App settings (the diary look is separate, in `bookStyle`). */
 export interface Settings {
@@ -50,6 +58,7 @@ export interface Settings {
   turnSpeed: TurnSpeed;
   /** Desktop app: new versions install by themselves (while the diary is hidden). */
   autoUpdate: boolean;
+  syncMode: SyncMode;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -57,6 +66,7 @@ const DEFAULT_SETTINGS: Settings = {
   weekStart: 1,
   turnSpeed: 'normal',
   autoUpdate: true,
+  syncMode: 'auto',
 };
 
 export const THEME_KEY = 'diaryo:theme';
@@ -88,6 +98,9 @@ function loadSettings(): Settings {
     settings.turnSpeed = saved.turnSpeed;
   }
   if (typeof saved.autoUpdate === 'boolean') settings.autoUpdate = saved.autoUpdate;
+  if (saved.syncMode === 'manual' || saved.syncMode === 'password') {
+    settings.syncMode = saved.syncMode;
+  }
   return settings;
 }
 

@@ -6,6 +6,7 @@ import { useUI, type ThemePreference } from '../store/ui';
 import { isDesktop } from '../desktop/tauri';
 import { BookStyleSection } from './BookStyleSection';
 import { DesktopSettings } from './DesktopSettings';
+import { Choice } from './Choice';
 import { SettingsRow } from './SettingsRow';
 import { useT } from './useT';
 import { LANGUAGES, type Language } from '../i18n';
@@ -187,32 +188,5 @@ function Storage() {
         </button>
       </SettingsRow>
     </section>
-  );
-}
-
-function Choice<T extends string | number>({
-  options,
-  value,
-  onChange,
-}: {
-  options: [T, string][];
-  value: T;
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div className="segmented-group" role="group">
-      {options.map(([id, label]) => (
-        <button
-          key={String(id)}
-          type="button"
-          className="icon-btn text-option"
-          data-active={value === id || undefined}
-          aria-pressed={value === id}
-          onClick={() => onChange(id)}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
   );
 }

@@ -1,6 +1,9 @@
 import {
   Check,
   CloudAlert,
+  CloudCheck,
+  CloudOff,
+  CloudUpload,
   Download,
   FolderOpen,
   Image as ImageIcon,
@@ -17,6 +20,8 @@ import { exportPng, openCopy, saveCopy } from './fileActions';
 import { FILE_EXTENSION } from '../storage/files';
 import { WindowControls } from './desktop/WindowControls';
 import { useUI } from '../store/ui';
+import { useSync } from './cloudSync';
+import { relativeTime } from './relativeTime';
 import { useT } from './useT';
 
 export function Brand() {
@@ -31,12 +36,48 @@ export function Brand() {
         <Icon size={13} strokeWidth={2} />
         {t.status[status]}
       </span>
+      <SyncIndicator />
       {widget && (
         <span className="widget-hint">
           <kbd>Esc</kbd> {t.brand.widgetHint}
         </span>
       )}
     </div>
+  );
+}
+
+/** The cloud, next to "Saved": up to date, syncing, offline or full. Opens the settings. */
+function SyncIndicator() {
+  const t = useT();
+  const { status, lastSync, pending } = useSync();
+  const manual = useUI((s) => s.settings.syncMode !== 'auto');
+  const setSettingsOpen = useUI((s) => s.setSettingsOpen);
+  if (status === 'off') return null;
+  const tips = t.sync.tips;
+  let tip: string;
+  if (status === 'idle') {
+    tip = manual ? tips.manual(pending) : tips.idle(lastSync ? relativeTime(lastSync) : '—');
+  } else tip = tips[status];
+  const waiting = status === 'idle' && manual && pending > 0;
+  const Icon =
+    status === 'syncing' || waiting
+      ? CloudUpload
+      : status === 'offline'
+        ? CloudOff
+        : status === 'idle'
+          ? CloudCheck
+          : CloudAlert;
+  return (
+    <button
+      type="button"
+      className="sync-indicator icon-btn"
+      data-status={waiting ? 'waiting' : status}
+      data-tip={tip}
+      aria-label={tip}
+      onClick={() => setSettingsOpen(true)}
+    >
+      <Icon size={14} strokeWidth={2} />
+    </button>
   );
 }
 

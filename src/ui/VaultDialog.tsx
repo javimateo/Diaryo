@@ -17,11 +17,13 @@ import {
   replaceRecoveryCode,
   setUpVault,
   unlock,
+  unlockOnce,
   VaultExistsError,
 } from '../cloud/vault';
 import { locale } from '../i18n';
 import { downloadBlob } from '../storage/files';
 import { useUI, type VaultDialogRequest, type VaultView } from '../store/ui';
+import { syncNow } from './cloudSync';
 import { PasswordField } from './PasswordField';
 import { useT } from './useT';
 
@@ -105,6 +107,12 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
       void run(async () => setShownCode(await setUpVault(password)));
     } else if (view === 'unlock') {
       void run(async () => {
+        if (request.once) {
+          const keys = await unlockOnce(password);
+          setVaultDialog(null);
+          await syncNow(keys);
+          return;
+        }
         await unlock(password);
         finish(v.unlocked);
       });
@@ -189,7 +197,7 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
   } else {
     body = (
       <>
-        {intros[view] && <p className="account-text">{intros[view]}</p>}
+        {intros[view] && <p className="account-text">{request.once ? v.onceText : intros[view]}</p>}
         <form className="account-form" onSubmit={submit}>
           {view === 'recover' && (
             <label className="account-field">
@@ -235,11 +243,11 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
           )}
           <button type="submit" className="account-primary" disabled={busy}>
             {busy && <Loader2 size={15} strokeWidth={2} className="account-spin" aria-hidden />}
-            {submits[view]}
+            {request.once ? v.onceSubmit : submits[view]}
           </button>
         </form>
         <div className="account-links">
-          {view === 'unlock' && (
+          {view === 'unlock' && !request.once && (
             <button type="button" className="account-link" onClick={() => go('recover')}>
               {v.forgot}
             </button>

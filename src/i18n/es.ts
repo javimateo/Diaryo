@@ -84,7 +84,6 @@ export const es = {
     unverifiedHint: 'Te enviamos un enlace al crear la cuenta.',
     resend: 'Reenviar correo',
     resent: 'Correo enviado',
-    syncSoon: 'La sincronización del diario llegará en una próxima versión.',
     verified: 'Email confirmado',
     errors: {
       offline: 'No se ha podido conectar. Comprueba tu conexión.',
@@ -119,6 +118,8 @@ export const es = {
     done: 'Hecho',
     unlockTitle: 'Desbloquea tu diario',
     unlockText: 'Escribe la contraseña del diario. Solo hace falta una vez en este dispositivo.',
+    onceText: 'Escribe la contraseña del diario para sincronizar. Este dispositivo no la guarda.',
+    onceSubmit: 'Sincronizar',
     unlock: 'Desbloquear',
     forgot: 'La he olvidado: usar la clave de recuperación',
     recoverTitle: 'Usar la clave de recuperación',
@@ -155,6 +156,54 @@ export const es = {
       wrongPassword: 'Esa no es la contraseña del diario.',
       wrongCode: 'Esa clave de recuperación no es correcta.',
       exists: 'Ya hay un diario en la nube de esta cuenta: desbloquéalo con su contraseña.',
+    },
+  },
+
+  sync: {
+    row: 'Sincronización',
+    modes: { auto: 'Automática', manual: 'Manual', password: 'Con contraseña' },
+    modeHints: {
+      auto: 'Se sincroniza sola tras cada cambio y cuando otro dispositivo cambia algo.',
+      manual: 'Solo cuando pulsas «Sincronizar ahora».',
+      password:
+        'Solo cuando pulsas «Sincronizar ahora», y pide la contraseña del diario cada vez: este dispositivo no guarda la llave.',
+    },
+    now: 'Sincronizar ahora',
+    status: {
+      off: '',
+      idle: 'Al día',
+      syncing: 'Sincronizando…',
+      offline: 'Sin conexión · se hará al volver',
+      full: 'Espacio lleno',
+      error: 'No se ha podido sincronizar',
+    },
+    last: (when: string) => `Última vez: ${when}`,
+    never: 'Aún no se ha sincronizado',
+    progress: (done: number, total: number) => `Subiendo ${done} de ${total}`,
+    pending: (n: number) =>
+      n === 1 ? '1 cambio esperando a subir' : `${n} cambios esperando a subir`,
+    space: 'Espacio',
+    spaceOf: (used: string, quota: string) => `${used} de ${quota}`,
+    fullTitle: 'Tu espacio en la nube está lleno.',
+    fullText:
+      'Tu diario sigue guardándose en este dispositivo, pero lo nuevo no se sube. Borra páginas o imágenes que no necesites para liberar espacio.',
+    passwordMode: 'Se pide la contraseña al sincronizar',
+    firstTitle: 'Ya hay un diario en la nube',
+    firstText: 'Este dispositivo también tiene uno. ¿Qué hacemos?',
+    merge: 'Combinar los dos',
+    mergeHint: 'Se juntan todas las páginas; si algo cambió en los dos, gana lo más reciente.',
+    useCloud: 'Usar el de la nube y guardar el mío',
+    useCloudHint:
+      'El diario de este dispositivo se guarda en un archivo .diaryo (puedes abrirlo cuando quieras) y aquí queda el de la nube.',
+    later: 'Ahora no',
+    keptCopy: (where: string) => `Tu diario anterior está en ${where} · llega el de la nube`,
+    tips: {
+      idle: (when: string) => `Nube al día · ${when}`,
+      syncing: 'Sincronizando con la nube…',
+      offline: 'Sin conexión: los cambios se subirán al volver',
+      full: 'Espacio en la nube lleno: lo nuevo no se sube',
+      error: 'No se ha podido sincronizar',
+      manual: (n: number) => (n === 0 ? 'Nube al día' : `${n} cambios sin sincronizar`),
     },
   },
 

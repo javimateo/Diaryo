@@ -75,14 +75,19 @@ extension (a passkey that also gives a key to wrap the secret with).
 
 One **item** per thing that can change on its own:
 
-| Kind      | Content (encrypted)                     | Item key                          |
-| --------- | --------------------------------------- | --------------------------------- |
-| `page`    | The page row (date, title, tab, paper…) | HMAC(diary key, `page/<id>`)      |
-| `element` | One element of a page or of the desk    | HMAC(diary key, `el/<page>/<id>`) |
-| `asset`   | An image                                | HMAC(diary key, `asset/<id>`)     |
+| Kind      | Content (encrypted)                             | Item key                           |
+| --------- | ----------------------------------------------- | ---------------------------------- |
+| `page`    | The page (date, order, title, tab, paper)       | HMAC(naming key, `page/<id>`)      |
+| `element` | One element of a page or of the desk            | HMAC(naming key, `el/<page>/<id>`) |
+| `asset`   | An image (`asset/<id>`) or a font (`font/<id>`) | HMAC(naming key, the path)         |
 
-The HMAC keys are deterministic (every device computes the same one) and opaque (the
-server can't tell which page anything belongs to, nor how pages relate).
+The keys are deterministic (every device computes the same one) and opaque (the server
+can't tell which page anything belongs to, nor how pages relate). The encrypted content
+carries its path, so a device knows what an item is.
+
+**Not synced**: each page's view (zoom and position) and its thumbnail. The view is each
+device's own; thumbnails are drawn again on each device (a page that changed there gets
+a new one in the background).
 
 Each item carries `modified` (the device's time of the change, in ms) and `deleted`
 (a tombstone, with its content emptied, so a deletion reaches the other devices
@@ -90,24 +95,53 @@ instead of the item coming back from them).
 
 ## Protocol
 
-- **Push**: what changed locally since the last push (the local database records it) is
-  sent as item upserts. The server rejects an update whose `modified` is older than
-  the stored one (`409`): that device then pulls first.
-- **Pull**: items whose server `updated` is at or after the last pull, oldest first.
-  Applying one is idempotent: an item older than the local copy is ignored.
+The pieces: `src/storage/tracking.ts` (what changed), `src/cloud/sync.ts` (pushing and
+pulling, with tests against a fake server and two devices), `src/cloud/pbRemote.ts`
+(PocketBase) and `src/ui/cloudSync.ts` (when, and the state the app shows).
+
+- **Tracking**: every write to the local database notes, in the same transaction, the
+  paths it touched in the `tracked` table: the time of the change and whether it is
+  still to push. Nothing is lost if the app is closed at once. A change is always later
+  than the one it replaces, even with a clock behind. Only moving the view isn't a change.
+- **Push**: the pending paths, pages first, then images and fonts, then elements (four
+  at a time). Each one is read, encrypted and written (created, or updated if its
+  record is known). The server refuses an older change (`409`): the newer one there
+  wins and comes with the next pull. Another device created the same key first: it is
+  found and updated.
+- **Pull**: items written after the last one seen (by the server's `updated`, then id),
+  200 at a time. Applying is idempotent: an item older than (or as old as) the local
+  copy is skipped, so this device's own changes coming back change nothing. Before
+  applying, whatever is pending in the open page is saved, so a newer change here wins;
+  if the open page or the desk changed, they are loaded again — after the user finishes
+  the stroke or text in progress.
 - **Conflicts**: last write wins, per item. Different elements edited on two devices
   never conflict; the same element edited on both keeps the most recent change.
-- **When**: on start, every few seconds after local changes, when the connection comes
-  back, and on a realtime notice from the server (another device pushed).
-- **First sign-in** with a local diary and a cloud diary: replace one with the other, or
-  merge them (the dialog used for opening backups).
+- **When** (mode **Automatic**, the default): on start, a few seconds after each change,
+  when the connection comes back, when the app is shown again, on a realtime notice from
+  the server (another device pushed) and every five minutes. **Manual**: only with "Sync
+  now". **With password**: only with "Sync now", which asks for the diary password each
+  time; this device doesn't keep the keys (switching to this mode forgets them).
+- **First sync** of a device with the account: with nothing here, the cloud's diary
+  comes; with nothing there, all of this one goes up; with a diary on both sides, the
+  user chooses: **merge** them (everything is pushed and pulled; the most recent wins) or
+  **use the cloud's one**, keeping this device's diary in a `.diaryo` file first (the
+  backups folder, or a download on the web), to open it whenever they like. Replacing
+  the diary this way deletes nothing in the cloud; replacing it with a backup ("Open a
+  copy") does: the other devices follow.
+- Signing in with another account forgets the records of the previous one: the first
+  sync runs again.
 
 ## Quota
 
 The server computes each item's size (`size`) and, before saving, checks that the
-user's total stays within `quotaBytes`; otherwise it answers `403 quota_exceeded`. The
-app shows the usage and warns before the limit. Text and strokes are tiny; images are
-what fill it.
+user's total stays within `quotaBytes`; otherwise it answers `403 quota_exceeded`.
+`GET /api/diaryo/usage` (pb_hooks/main.pb.js) gives the signed-in user their usage.
+
+When the space is full, pushing stops: the diary keeps working and saving on the device,
+and the changes stay pending. The cloud next to "Saved" turns orange and the settings
+say so, with the usage and how many changes wait. Deleting always goes through (it frees
+space), and pulling too. With room again (deleting things, or a bigger plan), the
+pending changes go up by themselves. Text and strokes are tiny; images are what fill it.
 
 ## Privacy
 
