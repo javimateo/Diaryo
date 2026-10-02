@@ -15,7 +15,7 @@ import {
   loadPage,
   mergeDiary,
   pruneEmptyPages,
-  dropUnusedAssets,
+  cleanUpDiary,
   replaceDiary,
   restorePage,
   updatePage,
@@ -139,7 +139,7 @@ export class Diary {
       this.hooks.onStatus('loading');
       try {
         await pruneEmptyPages(this.db);
-        await dropUnusedAssets(this.db);
+        await cleanUpDiary(this.db);
         this.pages = (await listPages(this.db)).map(toMeta);
         // The desk is set once and stays when turning pages.
         await this.loadDesk();
@@ -341,6 +341,19 @@ export class Diary {
    * they look in the map and when flying to the book.
    */
   async refreshOldThumbnails() {
+    // Once at a time (the cloud can ask again while it is still drawing them).
+    if (this.drawingThumbnails) return;
+    this.drawingThumbnails = true;
+    try {
+      await this.drawOldThumbnails();
+    } finally {
+      this.drawingThumbnails = false;
+    }
+  }
+
+  private drawingThumbnails = false;
+
+  private async drawOldThumbnails() {
     const old = this.pages.filter((p) => !p.thumbnailSpread && p.id !== this.current?.id);
     for (const page of old) {
       if (this.stopped) return;
@@ -427,32 +440,42 @@ export class Diary {
 
   /**
    * Applies changes from the cloud (`apply` writes them). Whatever is pending here is
-   * saved first, so a newer change here wins over an older one from there; then the index
-   * catches up and, if the open page or the desk changed, they are loaded again.
+   * saved first, so a newer change here wins over an older one from there; then (unless
+   * `show` is false: more batches come, see `showRemote`) the index catches up and, if
+   * the open page or the desk changed, they are loaded again.
    */
-  applyRemote(apply: () => Promise<AppliedChanges>): Promise<AppliedChanges> {
+  applyRemote(apply: () => Promise<AppliedChanges>, show = true): Promise<AppliedChanges> {
     return this.run(async () => {
       await this.flush();
       const applied = await apply();
-      if (applied.pages.size === 0 && !applied.assets) return applied;
-      if (applied.pages.has(DESK_ID) || applied.assets) {
-        await this.loadDesk();
-        this.hooks.onDeskSaved?.();
-      }
-      this.loaded.clear();
-      this.pages = (await listPages(this.db)).map(toMeta);
-      const current = this.current;
-      const stillThere = current && this.pages.find((p) => p.id === current.id);
-      if (current && (applied.pages.has(current.id) || applied.assets)) {
-        await this.autosave?.stop();
-        this.autosave = null;
-        // Deleted on another device: today's page opens instead.
-        const today = todayKey();
-        await this.open(stillThere ?? this.lastOfDay(today) ?? newPage(today), 0);
-      } else this.emit();
-      void this.refreshOldThumbnails();
+      if (show) await this.showChanges(applied);
       return applied;
     });
+  }
+
+  /** Shows changes already written (by the cloud, or by another tab). */
+  showRemote(applied: AppliedChanges): Promise<void> {
+    return this.run(() => this.showChanges(applied));
+  }
+
+  private async showChanges(applied: AppliedChanges) {
+    if (applied.pages.size === 0 && !applied.assets) return;
+    if (applied.pages.has(DESK_ID) || applied.assets) {
+      await this.loadDesk();
+      this.hooks.onDeskSaved?.();
+    }
+    this.loaded.clear();
+    this.pages = (await listPages(this.db)).map(toMeta);
+    const current = this.current;
+    const stillThere = current && this.pages.find((p) => p.id === current.id);
+    if (current && (applied.pages.has(current.id) || applied.assets)) {
+      await this.autosave?.stop();
+      this.autosave = null;
+      // Deleted on another device: today's page opens instead.
+      const today = todayKey();
+      await this.open(stillThere ?? this.lastOfDay(today) ?? newPage(today), 0);
+    } else this.emit();
+    void this.refreshOldThumbnails();
   }
 
   /**

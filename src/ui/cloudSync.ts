@@ -1,6 +1,6 @@
 import { ClientResponseError } from 'pocketbase';
 import { create } from 'zustand';
-import { useAccount } from '../cloud/account';
+import { refreshAccount, useAccount } from '../cloud/account';
 import { pb } from '../cloud/client';
 import type { DiaryKeys } from '../cloud/crypto';
 import { fetchUsage, pocketbaseRemote } from '../cloud/pbRemote';
@@ -9,11 +9,14 @@ import { currentKeys } from '../cloud/vault';
 import { isDesktop, onDeskChangedElsewhere } from '../desktop/tauri';
 import { t } from '../i18n';
 import { asRecord, readJSON, readText, writeJSON, writeText } from '../lib/saved';
-import { dropUnusedAssets, getDB, type DiaryoDB } from '../storage/db';
+import { cleanUpDiary, getDB, type DiaryoDB } from '../storage/db';
 import {
   applyIncoming,
+  type AppliedChanges,
   hasContent,
   largePendingAssets,
+  onLocalChanges,
+  parsePath,
   replaceAssetSrc,
   trackEverything,
 } from '../storage/tracking';
@@ -114,12 +117,59 @@ const isOffline = (error: unknown) =>
   !navigator.onLine ||
   (error instanceof ClientResponseError && error.status === 0 && !error.isAbort);
 
-/** Waits for the user to finish what they are drawing or writing (a reload would cut it). */
-async function whenIdle() {
+const busy = () => pointerDown || !!useUI.getState().editing;
+
+/**
+ * Waits for the user to finish what they are drawing or writing (a reload would cut it).
+ * False if they are still at it: then nothing is reloaded this time.
+ */
+async function whenIdle(): Promise<boolean> {
   const until = Date.now() + IDLE_WAIT;
-  while ((pointerDown || useUI.getState().editing) && Date.now() < until) {
+  while (busy() && Date.now() < until) {
     await new Promise((resolve) => setTimeout(resolve, 400));
   }
+  return !busy();
+}
+
+// ─── Other tabs ─────────────────────────────────────────────────
+
+/**
+ * Tabs of the web app with the same diary: only one syncs at a time (a lock), and they
+ * tell each other what changed, so each one shows it.
+ */
+const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('diaryo');
+
+interface ChangedMessage {
+  pages: string[];
+  assets: boolean;
+}
+
+function tellOtherTabs(applied: AppliedChanges) {
+  if (applied.pages.size === 0 && !applied.assets) return;
+  channel?.postMessage({ pages: [...applied.pages], assets: applied.assets } as ChangedMessage);
+}
+
+/** What another tab changed, waiting for the user to finish here. */
+let fromOtherTabs: AppliedChanges | null = null;
+
+async function showFromOtherTabs() {
+  const diary = useUI.getState().diary;
+  if (!fromOtherTabs || !diary) return;
+  if (busy()) {
+    window.setTimeout(() => void showFromOtherTabs(), 1000);
+    return;
+  }
+  const applied = fromOtherTabs;
+  fromOtherTabs = null;
+  await diary.showRemote(applied);
+}
+
+/** Runs it unless another tab is syncing (then that one does it). */
+async function alone(action: () => Promise<void>) {
+  if (!navigator.locks) return action();
+  await navigator.locks.request('diaryo-sync', { ifAvailable: true }, async (lock) => {
+    if (lock) await action();
+  });
 }
 
 /**
@@ -154,14 +204,22 @@ async function syncOnce(keys: DiaryKeys) {
       saved.cursor = START;
       store(account.id, saved);
     }
+    // Each batch is written as it comes; the diary shows them all at the end.
     const sync = new Sync(db, remote, keys, (changes) =>
-      diary.applyRemote(() => applyIncoming(db, changes)),
+      diary.applyRemote(() => applyIncoming(db, changes), false),
     );
-    await whenIdle();
-    saved.cursor = (await sync.pull(saved.cursor)).cursor;
-    store(account.id, saved);
-    // Images nothing shows any more free their space (here and there).
-    await dropUnusedAssets(db);
+    if (await whenIdle()) {
+      const pulled = await sync.pull(saved.cursor);
+      saved.cursor = pulled.cursor;
+      store(account.id, saved);
+      await diary.showRemote(pulled.applied);
+      tellOtherTabs(pulled.applied);
+    } else {
+      // Still drawing or writing: what came is fetched next time.
+      again = true;
+    }
+    // What nothing uses any more (elements of deleted pages, images) frees its space.
+    await cleanUpDiary(db);
     await shrinkPendingImages(db);
     const result = await sync.push((done, total) =>
       useSync.setState({ progress: total > 20 ? { done, total } : null }),
@@ -177,8 +235,13 @@ async function syncOnce(keys: DiaryKeys) {
   } catch (error) {
     console.error("Couldn't sync", error);
     useSync.setState({ status: isOffline(error) ? 'offline' : 'error', progress: null });
+    // The session ended (expired, or the account is gone): the user signs in again; what
+    // is pending stays here and goes up then.
+    if (error instanceof ClientResponseError && error.status === 401) {
+      if (await refreshAccount()) useUI.getState().showToast(t().sync.sessionEnded);
+    }
   } finally {
-    await refreshInfo();
+    await refreshInfo(true);
   }
 }
 
@@ -189,18 +252,28 @@ function run(keys: DiaryKeys): Promise<void> {
     return running;
   }
   running = (async () => {
+    let rounds = 0;
     do {
       again = false;
-      await syncOnce(keys);
-    } while (again);
+      await alone(() => syncOnce(keys));
+      // Waiting for the user to finish: a little later.
+      if (again && busy()) {
+        again = false;
+        schedule(5000);
+      }
+    } while (again && ++rounds < 5);
   })().finally(() => {
     running = null;
   });
   return running;
 }
 
+/** The space used is asked for at most this often (it is asked after each sync anyway). */
+const USAGE_EVERY = 30_000;
+let usageAt = 0;
+
 /** How many changes are waiting, and how much space is used. */
-async function refreshInfo() {
+async function refreshInfo(force = false) {
   const pending = await getDB()
     .tracked.where('dirty')
     .equals(1)
@@ -208,6 +281,8 @@ async function refreshInfo() {
     .catch(() => 0);
   useSync.setState({ pending });
   if (!navigator.onLine || !useAccount.getState().account) return;
+  if (!force && Date.now() - usageAt < USAGE_EVERY) return;
+  usageAt = Date.now();
   try {
     const usage = await fetchUsage();
     useSync.setState({ usage });
@@ -368,10 +443,19 @@ export function startSync() {
   const unsubscribeUI = useUI.subscribe((state, previous) => {
     if (state.settings.syncMode !== previous.settings.syncMode) update();
     if (state.diary !== previous.diary) update();
-    if (state.saveStatus === 'saved' && previous.saveStatus === 'saving') {
-      schedule(AFTER_CHANGE);
-      if (active()) void refreshInfo();
+  });
+  // Something changed here (not only the view): it goes up soon, and the other tabs show it.
+  onLocalChanges((paths) => {
+    const applied: AppliedChanges = { pages: new Set(), assets: false };
+    for (const path of paths) {
+      const target = parsePath(path);
+      if (target?.kind === 'page') applied.pages.add(target.id);
+      else if (target?.kind === 'el') applied.pages.add(target.pageId!);
+      else if (target) applied.assets = true;
     }
+    tellOtherTabs(applied);
+    schedule(AFTER_CHANGE);
+    if (active()) void refreshInfo();
   });
   const onOnline = () => schedule(500);
   const onOffline = () => active() && useSync.setState({ status: 'offline' });
@@ -384,6 +468,14 @@ export function startSync() {
   window.addEventListener('pointerdown', onPointerDown, true);
   window.addEventListener('pointerup', onPointerUp, true);
   window.addEventListener('pointercancel', onPointerUp, true);
+  const onMessage = (event: MessageEvent<ChangedMessage>) => {
+    const { pages, assets } = event.data;
+    fromOtherTabs ??= { pages: new Set(), assets: false };
+    pages.forEach((id) => fromOtherTabs!.pages.add(id));
+    fromOtherTabs.assets ||= assets;
+    void showFromOtherTabs();
+  };
+  channel?.addEventListener('message', onMessage);
   const interval = window.setInterval(() => schedule(0), EVERY);
   // The desk changed on the Windows desktop (another window wrote it).
   const deskListener = isDesktop() ? onDeskChangedElsewhere(() => schedule(AFTER_CHANGE)) : null;
@@ -399,6 +491,8 @@ export function startSync() {
     window.removeEventListener('pointerdown', onPointerDown, true);
     window.removeEventListener('pointerup', onPointerUp, true);
     window.removeEventListener('pointercancel', onPointerUp, true);
+    channel?.removeEventListener('message', onMessage);
+    onLocalChanges(null);
     window.clearInterval(interval);
     window.clearTimeout(timer);
     void deskListener?.then((stop) => stop());

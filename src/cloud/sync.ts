@@ -49,6 +49,12 @@ export interface Remote {
   create(draft: ItemDraft): Promise<RemoteItem>;
   update(id: string, draft: ItemDraft): Promise<RemoteItem>;
   findByKey(key: string): Promise<RemoteItem | null>;
+  /**
+   * Where the next pull starts, from where this one ended: a little earlier, because a
+   * write that started before the last one seen may be saved after it (with an earlier
+   * time). Reading them again is harmless: the same change twice changes nothing.
+   */
+  rewind?(cursor: PullCursor): PullCursor;
 }
 
 /** The server has a newer version of the item. */
@@ -63,7 +69,7 @@ export class MissingError extends Error {}
 export class RejectedError extends Error {}
 
 const PULL_PAGE = 200;
-const PUSH_AT_ONCE = 4;
+const PUSH_AT_ONCE = 6;
 
 /** Pages first (so the others list them), then images and fonts, then elements. */
 const ORDER: Record<string, number> = { page: 0, asset: 1, font: 2, el: 3 };
@@ -121,8 +127,13 @@ export interface PushResult {
   rejected: number;
 }
 
+/** Each path's opaque key, per naming key (computing them takes time; they never change). */
+const nameCache = new WeakMap<CryptoKey, Map<string, Promise<string>>>();
+
 export class Sync {
-  private readonly names = new Map<string, Promise<string>>();
+  private readonly names: Map<string, Promise<string>>;
+  /** Opaque key → path, for the tombstones of items not known by their record. */
+  private paths: Map<string, string> | null = null;
 
   constructor(
     private readonly db: DiaryoDB,
@@ -131,7 +142,11 @@ export class Sync {
     /** Applies pulled changes (the diary wraps it to show them). */
     private readonly apply: (changes: IncomingChange[]) => Promise<AppliedChanges> = (changes) =>
       applyIncoming(db, changes),
-  ) {}
+  ) {
+    let names = nameCache.get(keys.mac);
+    if (!names) nameCache.set(keys.mac, (names = new Map()));
+    this.names = names;
+  }
 
   /** The opaque key of a path (the same on every device). */
   private name(path: string) {
@@ -241,7 +256,7 @@ export class Sync {
       cursor = { updated: last.updated, id: last.id };
       if (items.length < PULL_PAGE) break;
     }
-    return { cursor, applied };
+    return { cursor: this.remote.rewind?.(cursor) ?? cursor, applied };
   }
 
   /** Decrypts an item. A tombstone tells its path by its key (known if it was here). */
@@ -266,8 +281,12 @@ export class Sync {
 
   /** The path of an opaque key, if this device has (or had) it. */
   private async pathOfKey(key: string): Promise<string | null> {
-    const rows = await this.db.tracked.toArray();
-    for (const row of rows) if ((await this.name(row.path)) === key) return row.path;
-    return null;
+    if (!this.paths) {
+      this.paths = new Map();
+      for (const path of await this.db.tracked.toCollection().primaryKeys()) {
+        this.paths.set(await this.name(path), path);
+      }
+    }
+    return this.paths.get(key) ?? null;
   }
 }

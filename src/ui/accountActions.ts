@@ -68,8 +68,12 @@ async function openAccountLink() {
 /** When the app starts: the email's links, the cloud diary, and the session renewed now and then. */
 export function startAccount() {
   void openAccountLink();
-  void refreshAccount();
   void checkVault();
-  const timer = window.setInterval(() => void refreshAccount(), REFRESH_EVERY);
+  // An ended session is said (what is pending stays here until signing in again).
+  const refresh = async () => {
+    if (await refreshAccount()) useUI.getState().showToast(t().sync.sessionEnded);
+  };
+  void refresh();
+  const timer = window.setInterval(() => void refresh(), REFRESH_EVERY);
   return () => window.clearInterval(timer);
 }

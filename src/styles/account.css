@@ -510,3 +510,15 @@
   vertical-align: -6px;
   pointer-events: auto;
 }
+
+.sign-out-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sign-out-confirm > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

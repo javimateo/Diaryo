@@ -4,6 +4,7 @@ import type { ImageElement, StrokeElement, TextElement } from '../engine/element
 import {
   deletePage,
   DiaryoDB,
+  cleanUpDiary,
   dropUnusedAssets,
   dumpDiary,
   listPages,
@@ -83,6 +84,11 @@ class FakeServer {
         Object.assign(item, { ...draft, data, updated: this.stamp() });
         return { ...item };
       },
+      // As the real one: the next pull reads the last few writes again.
+      rewind: (cursor: PullCursor) =>
+        cursor.updated
+          ? { updated: String(Math.max(0, Number(cursor.updated) - 5)).padStart(12, '0'), id: '' }
+          : cursor,
       findByKey: async (key: string) => {
         const item = this.items.find((i) => i.key === key);
         return item ? { ...item } : null;
@@ -481,5 +487,63 @@ describe('sync', () => {
     const element = { path: 'el/p/e', value: { id: 'e', type: 'stroke' } };
     expect(unseal(seal(element))).toEqual(element);
     expect(unseal(new TextEncoder().encode(JSON.stringify(sealed)))).toEqual(sealed);
+  });
+
+  it("doesn't miss a write the server saved late, with an earlier time", async () => {
+    const { server, a, b } = setUp();
+    await save(a.db, 'p1', [stroke('s1')]);
+    await a.push();
+    await b.pull();
+    await save(a.db, 'p1', [stroke('s2')]);
+    await a.push();
+    // s2's write started before the last one B saw, and was saved after B pulled.
+    const late = server.items.filter((i) => i.kind === 'element').pop()!;
+    late.updated = '000000000001';
+    await b.pull();
+    expect((await b.elements('p1')).map((r) => r.id).sort()).toEqual(['s1', 's2']);
+  });
+
+  describe('a page deleted on one device while another one writes on it', () => {
+    it('loses what was written before the deletion (nothing is left hidden)', async () => {
+      const { a, b } = setUp();
+      await save(a.db, 'p1', [stroke('s1')]);
+      await a.both();
+      await b.pull();
+      // B writes on the page without having heard of the deletion…
+      await save(b.db, 'p1', [stroke('from-b')]);
+      // …which A did later.
+      await new Promise((r) => setTimeout(r, 5));
+      await deletePage(a.db, 'p1');
+      await a.push();
+      await b.push();
+      await b.pull();
+      await a.pull();
+      await cleanUpDiary(a.db);
+      await cleanUpDiary(b.db);
+      await a.both();
+      await b.both();
+      for (const device of [a, b]) {
+        expect(await listPages(device.db)).toEqual([]);
+        expect(await device.elements('p1')).toEqual([]);
+      }
+    });
+
+    it('brings the page back when the writing is more recent than the deletion', async () => {
+      const { a, b } = setUp();
+      await save(a.db, 'p1', [stroke('s1')]);
+      await a.both();
+      await b.pull();
+      await deletePage(a.db, 'p1');
+      await new Promise((r) => setTimeout(r, 5));
+      await save(b.db, 'p1', [stroke('from-b')]);
+      await a.push();
+      await b.both();
+      await a.pull();
+      for (const device of [a, b]) {
+        await cleanUpDiary(device.db);
+        expect((await listPages(device.db)).map((p) => p.id)).toEqual(['p1']);
+        expect((await device.elements('p1')).map((r) => r.id)).toEqual(['from-b']);
+      }
+    });
   });
 });

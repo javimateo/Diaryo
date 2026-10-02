@@ -118,18 +118,25 @@ export async function confirmVerification(token: string) {
 
 /**
  * Renews the session and brings the account up to date (the email confirmed on another
- * device, the plan…). If the server no longer accepts it, the session ends; without a
- * connection, it stays as it was.
+ * have been made again), the session ends; without a
+ * connection, it stays as it was. Returns true if a session ended.
  */
-export async function refreshAccount() {
-  if (!pb.authStore.token) return;
-  if (!pb.authStore.isValid) return pb.authStore.clear();
+export async function refreshAccount(): Promise<boolean> {
+  if (!pb.authStore.token) return false;
+  if (!pb.authStore.isValid) {
+    pb.authStore.clear();
+    return true;
+  }
   try {
     await users().authRefresh({ requestKey: null });
   } catch (error) {
     const status = error instanceof ClientResponseError ? error.status : 0;
-    if (status === 401 || status === 403 || status === 404) pb.authStore.clear();
+    if (status === 401 || status === 403 || status === 404) {
+      pb.authStore.clear();
+      return true;
+    }
   }
+  return false;
 }
 
 /** What went wrong, for the message the user sees. */
