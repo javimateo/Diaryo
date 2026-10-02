@@ -424,10 +424,14 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             lleno: se para la subida, el diario sigue y lo pendiente sube al haber
             sitio. La vista y las miniaturas no se suben. Con tests (servidor falso y
             dos dispositivos).
-      - [ ] **C5. Imágenes grandes**: comprimirlas al insertarlas y un límite de tamaño
-            (ya se sincronizan en la C4).
-      - [ ] **C6. Espacio**: aviso al acercarse al límite (el uso y el «lleno» ya están
-            en la C4).
+      - [x] **C5. Imágenes grandes**: al insertarlas, 2048 px como mucho y WebP (salvo
+            las ligeras, los GIF y los SVG); las ya guardadas se reducen una vez antes de
+            subirlas. Un registro que el servidor rechaza no frena el resto. Las
+            imágenes que ya no usa nada se limpian (aquí y en la nube; deshacer las
+            recupera) y los archivos se cifran como bytes (un 25 % menos de espacio).
+      - [x] **C6. Espacio**: aviso al 80 % y al 95 % (una vez cada uno) y, en Ajustes,
+            cuánto queda, con la barra en ámbar.
+      - [ ] **Revisión de la nube** antes de abrirla: casos límite y pulido.
       - [ ] **C7. RGPD y web**: borrar la cuenta, exportar los datos, política de
             privacidad y condiciones; la web explica la nube (opcional, cifrada).
       - [ ] **C8. Pagos** (más adelante).

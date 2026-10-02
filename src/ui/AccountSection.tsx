@@ -184,7 +184,7 @@ function SyncRows() {
   const mode = useUI((state) => state.settings.syncMode);
   const setSettings = useUI((state) => state.setSettings);
   const setVaultDialog = useUI((state) => state.setVaultDialog);
-  const { status, lastSync, progress, pending, usage } = useSync();
+  const { status, lastSync, progress, pending, usage, rejected } = useSync();
   if (vault !== 'unlocked' && !(mode === 'password' && vault === 'locked')) return null;
 
   const changeMode = (next: SyncMode) => {
@@ -202,6 +202,7 @@ function SyncRows() {
   let line: string;
   if (syncing) line = progress ? s.progress(progress.done, progress.total) : s.status.syncing;
   else if (status === 'idle') line = lastSync ? s.last(relativeTime(lastSync)) : s.never;
+  else if (status === 'error' && rejected > 0) line = s.rejected(rejected);
   else line = s.status[status];
   const share = usage && usage.quota > 0 ? Math.min(1, usage.used / usage.quota) : 0;
 
@@ -238,6 +239,12 @@ function SyncRows() {
           />
         </div>
       )}
+      {status !== 'full' && usage && share >= 0.8 && (
+        <div className="sync-full" data-tone="low" role="status">
+          <TriangleAlert size={16} strokeWidth={1.75} aria-hidden />
+          <p>{s.lowSpace(formatBytes(Math.max(0, usage.quota - usage.used)))}</p>
+        </div>
+      )}
       {status === 'full' && (
         <div className="sync-full" role="alert">
           <TriangleAlert size={16} strokeWidth={1.75} aria-hidden />
@@ -255,7 +262,8 @@ function SyncRows() {
           <small>{s.spaceOf(formatBytes(usage.used), formatBytes(usage.quota))}</small>
           <div
             className="sync-bar"
-            data-full={share >= 1 || status === 'full' || undefined}
+            data-full={share >= 0.95 || status === 'full' || undefined}
+            data-low={share >= 0.8 || undefined}
             aria-hidden
           >
             <i style={{ width: `${Math.max(share * 100, usage.used > 0 ? 1 : 0)}%` }} />

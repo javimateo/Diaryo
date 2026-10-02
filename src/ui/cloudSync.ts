@@ -9,8 +9,15 @@ import { currentKeys } from '../cloud/vault';
 import { isDesktop, onDeskChangedElsewhere } from '../desktop/tauri';
 import { t } from '../i18n';
 import { asRecord, readJSON, readText, writeJSON, writeText } from '../lib/saved';
-import { getDB, type DiaryoDB } from '../storage/db';
-import { applyIncoming, hasContent, trackEverything } from '../storage/tracking';
+import { dropUnusedAssets, getDB, type DiaryoDB } from '../storage/db';
+import {
+  applyIncoming,
+  hasContent,
+  largePendingAssets,
+  replaceAssetSrc,
+  trackEverything,
+} from '../storage/tracking';
+import { shrinkImage } from '../engine/assets';
 import { useUI } from '../store/ui';
 import { keepCopyOfDiary } from './fileActions';
 
@@ -40,6 +47,8 @@ interface SyncState {
   usage: { used: number; quota: number } | null;
   /** The first time, with a diary here and one in the cloud: what to do with them. */
   choosing: boolean;
+  /** Changes the server refused in the last sync (they stay pending). */
+  rejected: number;
 }
 
 export const useSync = create<SyncState>(() => ({
@@ -47,6 +56,7 @@ export const useSync = create<SyncState>(() => ({
   lastSync: null,
   progress: null,
   pending: 0,
+  rejected: 0,
   usage: null,
   choosing: false,
 }));
@@ -150,15 +160,19 @@ async function syncOnce(keys: DiaryKeys) {
     await whenIdle();
     saved.cursor = (await sync.pull(saved.cursor)).cursor;
     store(account.id, saved);
+    // Images nothing shows any more free their space (here and there).
+    await dropUnusedAssets(db);
+    await shrinkPendingImages(db);
     const result = await sync.push((done, total) =>
       useSync.setState({ progress: total > 20 ? { done, total } : null }),
     );
     saved.lastSync = Date.now();
     store(account.id, saved);
     useSync.setState({
-      status: result.full ? 'full' : 'idle',
+      status: result.full ? 'full' : result.rejected > 0 ? 'error' : 'idle',
       lastSync: saved.lastSync,
       progress: null,
+      rejected: result.rejected,
     });
   } catch (error) {
     console.error("Couldn't sync", error);
@@ -195,10 +209,49 @@ async function refreshInfo() {
   useSync.setState({ pending });
   if (!navigator.onLine || !useAccount.getState().account) return;
   try {
-    useSync.setState({ usage: await fetchUsage() });
+    const usage = await fetchUsage();
+    useSync.setState({ usage });
+    warnAboutSpace(usage);
   } catch {
     // It will be asked again next time.
   }
+}
+
+/** Images bigger than this (as text) are made smaller before they go up. */
+const LARGE_IMAGE = 1_500_000;
+
+/**
+ * Images saved before they were compressed on insertion: a smaller version replaces them
+ * (here too) before they go up. Each one only once: the smaller one isn't large any more.
+ */
+async function shrinkPendingImages(db: DiaryoDB) {
+  for (const asset of await largePendingAssets(db, LARGE_IMAGE)) {
+    const smaller = await shrinkImage(asset.src).catch(() => null);
+    if (smaller) await replaceAssetSrc(db, asset.id, smaller);
+  }
+}
+
+/** Shares of the space that are warned about, once each (until it goes down again). */
+const WARN_AT = [0.8, 0.95];
+const warnedKey = (account: string) => `diaryo:space-warned:${account}`;
+
+/** Warns once when the space goes past 80 % and past 95 %. */
+function warnAboutSpace({ used, quota }: { used: number; quota: number }) {
+  const account = useAccount.getState().account;
+  if (!account || quota <= 0) return;
+  const share = used / quota;
+  const reached = WARN_AT.filter((level) => share >= level).pop() ?? 0;
+  const warned = Number(readText(warnedKey(account.id)) ?? 0);
+  // Below the first level again: it will warn again next time.
+  if (reached === 0 && warned > 0 && share < WARN_AT[0] - 0.1) {
+    return writeText(warnedKey(account.id), '0');
+  }
+  if (reached <= warned || share >= 1) return;
+  writeText(warnedKey(account.id), String(reached));
+  useUI.getState().showToast(t().sync.spaceWarning(Math.round(share * 100)), {
+    label: t().sync.seeSpace,
+    run: () => useUI.getState().setSettingsOpen(true),
+  });
 }
 
 /**

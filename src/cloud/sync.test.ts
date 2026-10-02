@@ -1,9 +1,10 @@
 import 'fake-indexeddb/auto';
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { StrokeElement, TextElement } from '../engine/elements';
+import type { ImageElement, StrokeElement, TextElement } from '../engine/elements';
 import {
   deletePage,
   DiaryoDB,
+  dropUnusedAssets,
   dumpDiary,
   listPages,
   replaceDiary,
@@ -17,9 +18,12 @@ import {
   DuplicateError,
   MissingError,
   QuotaError,
+  RejectedError,
   StaleError,
   START,
+  seal,
   Sync,
+  unseal,
   type ItemDraft,
   type PullCursor,
   type Remote,
@@ -30,6 +34,8 @@ import {
 class FakeServer {
   items: RemoteItem[] = [];
   quota = Infinity;
+  /** Bigger items are refused (as the server's `data` field limit). */
+  maxData = Infinity;
   private clock = 0;
   private ids = 0;
 
@@ -53,6 +59,7 @@ class FakeServer {
           .map((i) => ({ ...i })),
       create: async (draft: ItemDraft) => {
         if (this.items.some((i) => i.key === draft.key)) throw new DuplicateError();
+        if (draft.data.length > this.maxData) throw new RejectedError();
         const data = draft.deleted ? '' : draft.data;
         if (this.used() + data.length > this.quota) throw new QuotaError();
         const item = {
@@ -68,6 +75,7 @@ class FakeServer {
         const item = this.items.find((i) => i.id === id);
         if (!item) throw new MissingError();
         if (draft.modified < item.modified) throw new StaleError();
+        if (draft.data.length > this.maxData) throw new RejectedError();
         const data = draft.deleted ? '' : draft.data;
         if (data.length > item.data.length && this.used(id) + data.length > this.quota) {
           throw new QuotaError();
@@ -148,7 +156,7 @@ const text = (id: string, value: string): TextElement =>
 const save = (
   db: DiaryoDB,
   page: string,
-  upserts: StrokeElement[] | TextElement[],
+  upserts: (StrokeElement | TextElement | ImageElement)[],
   deletes: string[] = [],
 ) => saveChanges(db, info(page), { upserts, deletes, assets: [], fonts: [] });
 
@@ -179,12 +187,12 @@ describe('sync', () => {
 
   it('keeps everything encrypted and opaque on the server', async () => {
     const { server, a } = setUp();
-    await save(a.db, 'p1', [text('t1', 'mi secreto')]);
+    await save(a.db, 'page-name-here', [text('element-name-here', 'mi secreto')]);
     await a.push();
     const all = JSON.stringify(server.items);
     expect(all).not.toContain('mi secreto');
-    expect(all).not.toContain('p1');
-    expect(all).not.toContain('t1');
+    expect(all).not.toContain('page-name-here');
+    expect(all).not.toContain('element-name-here');
   });
 
   it("doesn't share the view nor the thumbnail", async () => {
@@ -359,5 +367,119 @@ describe('sync', () => {
     await b.both();
     expect((await listPages(b.db)).map((p) => p.id)).toEqual(['shared']);
     expect(server.items.every((i) => !i.deleted)).toBe(true);
+  });
+
+  it('goes on with the rest when the server refuses one item, which stays pending', async () => {
+    const { server, a, b } = setUp();
+    await save(a.db, 'p1', [stroke('small')]);
+    await a.push();
+    server.maxData = (server.items.find((i) => i.kind === 'element')?.data.length ?? 0) + 50;
+    await save(a.db, 'p1', [text('big', 'x'.repeat(2000)), stroke('also-small', 5)]);
+    const result = await a.push();
+    expect(result.rejected).toBe(1);
+    expect((await dirtyPaths(a.db)).map((r) => r.path)).toEqual(['el/p1/big']);
+    await b.pull();
+    expect((await b.elements('p1')).map((r) => r.id).sort()).toEqual(['also-small', 'small']);
+  });
+
+  describe('images nothing shows any more', () => {
+    const image = (id: string, assetId: string) =>
+      ({
+        id,
+        type: 'image',
+        z: 1,
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 10,
+        rotation: 0,
+        opacity: 1,
+        groupId: null,
+        locked: false,
+        assetId,
+      }) as ImageElement;
+    const photo = { id: 'a1', src: 'data:image/webp;base64,' + 'A'.repeat(5000) };
+    const used = (server: FakeServer) => server.items.reduce((n, i) => n + i.data.length, 0);
+
+    it('free their space here and in the cloud', async () => {
+      const { server, a, b } = setUp();
+      await saveChanges(a.db, info('p1'), {
+        upserts: [image('img', 'a1')],
+        deletes: [],
+        assets: [photo],
+        fonts: [],
+      });
+      await a.both();
+      const before = used(server);
+      await b.pull();
+      expect(await b.db.assets.count()).toBe(1);
+
+      await save(a.db, 'p1', [], ['img']);
+      expect(await dropUnusedAssets(a.db)).toBe(1);
+      await a.both();
+      expect(used(server)).toBeLessThan(before - 5000);
+      await b.pull();
+      expect(await b.db.assets.count()).toBe(0);
+    });
+
+    it('come back with undo (the element brings its file)', async () => {
+      const { a } = setUp();
+      await saveChanges(a.db, info('p1'), {
+        upserts: [image('img', 'a1')],
+        deletes: [],
+        assets: [photo],
+        fonts: [],
+      });
+      await save(a.db, 'p1', [], ['img']);
+      await dropUnusedAssets(a.db);
+      expect(await a.db.assets.count()).toBe(0);
+      // Undo: the element is saved again, with the file the engine still has.
+      await saveChanges(a.db, info('p1'), {
+        upserts: [image('img', 'a1')],
+        deletes: [],
+        assets: [],
+        fonts: [],
+        restore: [photo],
+      });
+      expect((await a.db.assets.get('a1'))?.src).toBe(photo.src);
+      expect((await dirtyPaths(a.db)).some((r) => r.path === 'asset/a1')).toBe(true);
+    });
+
+    it('stay on a device that still shows them, and go up again', async () => {
+      const { server, a, b } = setUp();
+      await saveChanges(a.db, info('p1'), {
+        upserts: [image('img', 'a1')],
+        deletes: [],
+        assets: [photo],
+        fonts: [],
+      });
+      await a.both();
+      await b.pull();
+      // B copies the image to another page before hearing that A deleted it.
+      await save(b.db, 'p2', [image('copy', 'a1')]);
+      await save(a.db, 'p1', [], ['img']);
+      await dropUnusedAssets(a.db);
+      await a.both();
+      await b.both();
+      expect(await b.db.assets.get('a1')).toBeTruthy();
+      // It goes up again with B's next push.
+      await b.push();
+      expect(server.items.find((i) => i.kind === 'asset')?.deleted).toBe(false);
+      await a.pull();
+      expect(await a.db.assets.get('a1')).toBeTruthy();
+    });
+  });
+
+  it('keeps files as bytes (not base 64 twice), and still reads the plain JSON ones', () => {
+    const src = 'data:image/webp;base64,' + btoa('fake image bytes, quite a few of them');
+    const sealed = { path: 'asset/a1', value: { id: 'a1', src } };
+    const packed = seal(sealed);
+    expect(packed[0]).toBe(1);
+    expect(packed.length).toBeLessThan(JSON.stringify(sealed).length);
+    expect(unseal(packed)).toEqual(sealed);
+    // Elements stay JSON; items saved before this format are read the same way.
+    const element = { path: 'el/p/e', value: { id: 'e', type: 'stroke' } };
+    expect(unseal(seal(element))).toEqual(element);
+    expect(unseal(new TextEncoder().encode(JSON.stringify(sealed)))).toEqual(sealed);
   });
 });

@@ -141,7 +141,27 @@ When the space is full, pushing stops: the diary keeps working and saving on the
 and the changes stay pending. The cloud next to "Saved" turns orange and the settings
 say so, with the usage and how many changes wait. Deleting always goes through (it frees
 space), and pulling too. With room again (deleting things, or a bigger plan), the
-pending changes go up by themselves. Text and strokes are tiny; images are what fill it.
+pending changes go up by themselves. Before that, a notice warns once at 80 % and once
+at 95 % (again only after going back below), and the settings say how much is left.
+
+Text and strokes are tiny; images are what fill it, so they are kept small: on
+insertion they are scaled to at most 2048 px and saved as WebP (quality 0.85), unless
+they are light already (under 200 KB and small enough), animated GIFs or SVGs. Images
+saved before that and still pending are made smaller once, before they go up.
+
+A deleted image keeps its file for a while, so undo can bring it back. The files no
+element shows any more are cleaned up when the app starts and before each sync, here and
+in the cloud (their space is freed). If undo brings the element back afterwards, the
+element carries its file (the app still has it) and it goes up again. A device that still
+shows an image another device cleaned up keeps it and pushes it again; deleted images go
+up after the elements, so that only happens when it is really still in use.
+
+Files (images and fonts) are encrypted as their raw bytes after a small JSON header,
+instead of as base 64 text inside JSON: they take about a quarter less. Items in the
+older form are still read.
+
+If the server refuses one item (for example, too big for its `data` field), the rest
+still go up; that one stays pending and the settings say how many couldn't go up.
 
 ## Privacy
 

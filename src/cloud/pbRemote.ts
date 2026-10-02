@@ -4,6 +4,7 @@ import {
   DuplicateError,
   MissingError,
   QuotaError,
+  RejectedError,
   StaleError,
   type ItemDraft,
   type PullCursor,
@@ -22,6 +23,7 @@ function translate(error: unknown): unknown {
   if (error.status === 404) return new MissingError();
   const key = (error.response?.data as Record<string, { code?: string }> | undefined)?.key;
   if (error.status === 400 && key?.code === 'validation_not_unique') return new DuplicateError();
+  if (error.status === 400) return new RejectedError(error.message);
   return error;
 }
 

@@ -179,6 +179,11 @@ export const en: Messages = {
     fullTitle: 'Your cloud space is full.',
     fullText:
       "Your diary keeps saving on this device, but new things don't go up. Delete pages or images you don't need to free some space.",
+    spaceWarning: (percent: number) => `You've used ${percent} % of your cloud space`,
+    seeSpace: 'See',
+    lowSpace: (free: string) =>
+      `You're running out of cloud space: ${free} free. Delete pages or images you don't need.`,
+    rejected: (n: number) => (n === 1 ? "1 change couldn't go up" : `${n} changes couldn't go up`),
     passwordMode: 'The password is asked for when syncing',
     firstTitle: 'There is already a diary in the cloud',
     firstText: 'This device has one too. What should we do?',

@@ -187,6 +187,12 @@ export const es = {
     fullTitle: 'Tu espacio en la nube está lleno.',
     fullText:
       'Tu diario sigue guardándose en este dispositivo, pero lo nuevo no se sube. Borra páginas o imágenes que no necesites para liberar espacio.',
+    spaceWarning: (percent: number) => `Has usado el ${percent} % de tu espacio en la nube`,
+    seeSpace: 'Ver',
+    lowSpace: (free: string) =>
+      `Te queda poco espacio en la nube: ${free} libres. Borra páginas o imágenes que no necesites.`,
+    rejected: (n: number) =>
+      n === 1 ? '1 cambio no se ha podido subir' : `${n} cambios no se han podido subir`,
     passwordMode: 'Se pide la contraseña al sincronizar',
     firstTitle: 'Ya hay un diario en la nube',
     firstText: 'Este dispositivo también tiene uno. ¿Qué hacemos?',
