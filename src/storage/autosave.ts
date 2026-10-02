@@ -108,6 +108,8 @@ export class Autosave {
   /** Saves what is pending right now (when closing or hiding the window). */
   flush(): Promise<void> {
     clearTimeout(this.timer);
+    // No save is waiting any more: when this one ends, the status can say "Saved".
+    this.timer = undefined;
     const upserts = [];
     const deletes = [];
     const deskUpserts = [];

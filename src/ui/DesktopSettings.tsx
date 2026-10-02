@@ -11,7 +11,7 @@ import {
   setDesktopShortcut,
 } from '../desktop/settings';
 import { shortcutFromEvent, shortcutKeys } from '../desktop/shortcuts';
-import { appVersion } from '../desktop/tauri';
+import { appVersion, isDesktop } from '../desktop/tauri';
 import { useUI } from '../store/ui';
 import { SettingsRow } from './SettingsRow';
 import { Switch } from './Switch';
@@ -25,7 +25,7 @@ export function DesktopSettings() {
   const autoUpdate = useUI((s) => s.settings.autoUpdate);
   const [version, setVersion] = useState('');
   useEffect(() => {
-    void appVersion().then(setVersion);
+    if (isDesktop()) void appVersion().then(setVersion);
   }, []);
   if (!desktop) return null;
 
