@@ -254,6 +254,10 @@ export class Engine {
     this.listen(overlay, 'pointermove', this.onPointerMove);
     this.listen(overlay, 'pointerup', this.onPointerUp);
     this.listen(overlay, 'pointercancel', this.onPointerUp);
+    // A finger lifted somewhere else (on the menu its long press opened, on a button…)
+    // is lifted for the canvas too; otherwise it would think it is still down.
+    this.listen(window, 'pointerup', this.onFingerLiftedElsewhere, { capture: true });
+    this.listen(window, 'pointercancel', this.onFingerLiftedElsewhere, { capture: true });
     // Prevents Windows autoscroll with the middle button.
     this.listen(overlay, 'mousedown', (e: MouseEvent) => {
       if (e.button === 1) e.preventDefault();
@@ -1112,6 +1116,19 @@ export class Engine {
     if (e.pointerId === gesture.pointerId || e.pointerId === gesture.other) this.gesture = null;
     return true;
   }
+
+  private onFingerLiftedElsewhere = (e: PointerEvent) => {
+    if (e.pointerType !== 'touch' || e.target === this.overlayCanvas) return;
+    if (!this.touches.delete(e.pointerId)) return;
+    this.clearLongPress();
+    const gesture = this.gesture;
+    if (
+      gesture?.type === 'pinch' &&
+      (e.pointerId === gesture.pointerId || e.pointerId === gesture.other)
+    ) {
+      this.gesture = null;
+    }
+  };
 
   private fireLongPress(pointerId: number, clientX: number, clientY: number) {
     this.longPress = null;
