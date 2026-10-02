@@ -197,7 +197,17 @@ export async function applyIncoming(
   if (changes.length === 0) return applied;
   await db.transaction('rw', [db.pages, db.elements, db.assets, db.fonts, db.tracked], async () => {
     const known = await db.tracked.bulkGet(changes.map((c) => c.path));
-    for (const [i, change] of changes.entries()) {
+    let used: Set<string> | undefined;
+    // Images that went are applied last: the elements that showed them may go in this
+    // same batch.
+    const order = changes
+      .map((change, i) => ({ change, i }))
+      .sort(
+        (x, y) =>
+          Number(x.change.deleted && x.change.path.startsWith('asset/')) -
+          Number(y.change.deleted && y.change.path.startsWith('asset/')),
+      );
+    for (const { change, i } of order) {
       const local = known[i];
       if (local && local.modified >= change.modified) {
         // Ours is newer (or the same): only its record is remembered.
@@ -232,8 +242,21 @@ export async function applyIncoming(
         }
         applied.pages.add(key[0]);
       } else if (target.kind === 'asset') {
-        if (!value) await db.assets.delete(target.id);
-        else if (isRecord(value))
+        if (!value) {
+          // Cleaned up on another device, but something here still shows it: it stays
+          // and goes up again.
+          used ??= await usedAssets(db);
+          if (used.has(target.id)) {
+            await db.tracked.put({
+              path: change.path,
+              modified: change.modified + 1,
+              dirty: 1,
+              remote: change.remote,
+            });
+            continue;
+          }
+          await db.assets.delete(target.id);
+        } else if (isRecord(value))
           await db.assets.put({ ...(value as unknown as AssetRow), id: target.id });
         applied.assets = true;
       } else {
@@ -261,4 +284,32 @@ export async function applyIncoming(
 /** Whether there is anything in the diary (pages or something on the desk). */
 export async function hasContent(db: DiaryoDB): Promise<boolean> {
   return (await db.elements.count()) > 0 || (await db.pages.count()) > 1;
+}
+
+/** Images waiting to go up that are bigger than `length` (as data URLs). */
+export async function largePendingAssets(db: DiaryoDB, length: number): Promise<AssetRow[]> {
+  const rows = await db.tracked
+    .where('dirty')
+    .equals(1)
+    .filter((row) => row.path.startsWith('asset/'))
+    .toArray();
+  const assets = await db.assets.bulkGet(rows.map((row) => parsePath(row.path)!.id));
+  return assets.filter((asset): asset is AssetRow => !!asset && asset.src.length > length);
+}
+
+/** Saves a smaller version of an image (same id: the elements that show it don't change). */
+export async function replaceAssetSrc(db: DiaryoDB, id: string, src: string) {
+  await db.transaction('rw', [db.assets, db.tracked], async () => {
+    await db.assets.put({ id, src });
+    await touch(db, [assetPath(id)]);
+  });
+}
+
+/** The images some element shows. */
+async function usedAssets(db: DiaryoDB): Promise<Set<string>> {
+  const used = new Set<string>();
+  await db.elements.each((row) => {
+    if (row.data?.type === 'image') used.add(row.data.assetId);
+  });
+  return used;
 }

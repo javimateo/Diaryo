@@ -425,6 +425,10 @@
   transition: width 240ms var(--ease);
 }
 
+.sync-bar[data-low] i {
+  background: #d9a441;
+}
+
 .sync-bar[data-full] i {
   background: #c27a1a;
 }

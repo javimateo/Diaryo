@@ -1,6 +1,6 @@
 import type { Camera } from '../engine/camera';
 import { isOnPage } from '../engine/book';
-import { elementBounds } from '../engine/elements';
+import { elementBounds, type SceneElement } from '../engine/elements';
 import type { Engine } from '../engine/engine';
 import { fonts } from '../engine/fonts';
 import {
@@ -135,7 +135,13 @@ export class Autosave {
     }
     const deskSave =
       deskUpserts.length || deskDeletes.length
-        ? { upserts: deskUpserts, deletes: deskDeletes, assets: [], fonts: [] }
+        ? {
+            upserts: deskUpserts,
+            deletes: deskDeletes,
+            assets: [],
+            fonts: [],
+            restore: this.imagesOf(deskUpserts),
+          }
         : null;
     const fontsToSave: FontRow[] = fonts
       .customFonts()
@@ -146,6 +152,7 @@ export class Autosave {
       assets: this.assets.splice(0),
       fonts: fontsToSave,
       camera: this.camera,
+      restore: this.imagesOf(upserts),
     };
     this.dirty.clear();
     this.camera = undefined;
@@ -176,6 +183,14 @@ export class Autosave {
         this.onStatus('error');
       });
     return this.saving;
+  }
+
+  /** The files of the images among these elements (as the engine has them). */
+  private imagesOf(elements: SceneElement[]): AssetRow[] {
+    return elements.flatMap((el) => {
+      const src = el.type === 'image' ? this.engine.assets.src(el.assetId) : undefined;
+      return el.type === 'image' && src ? [{ id: el.assetId, src }] : [];
+    });
   }
 
   /** Stops listening and saves what is pending (the promise ends when it is written). */

@@ -140,6 +140,11 @@ export interface PendingSave {
   assets: AssetRow[];
   fonts: FontRow[];
   camera?: Camera;
+  /**
+   * The images of the saved image elements: put back only if they are missing (an image
+   * deleted and then undone, after its unused file was cleaned up).
+   */
+  restore?: AssetRow[];
 }
 
 /** The tables with the diary itself. */
@@ -176,9 +181,14 @@ export async function saveChanges(db: DiaryoDB, info: PageInfo, save: PendingSav
     }
     if (save.assets.length > 0) await db.assets.bulkPut(save.assets);
     if (save.fonts.length > 0) await db.fonts.bulkPut(save.fonts);
+    const restore = save.restore ?? [];
+    const present = await db.assets.bulkGet(restore.map((asset) => asset.id));
+    const restored = restore.filter((_, i) => !present[i]);
+    if (restored.length > 0) await db.assets.bulkPut(restored);
     // Only the camera moving isn't a change for the other devices (the view is each one's).
     const content = save.upserts.length + save.deletes.length > 0;
     await touch(db, [
+      ...restored.map((asset) => assetPath(asset.id)),
       ...(content || !existing ? [pagePath(pageId)] : []),
       ...save.upserts.map((el) => elementPath(pageId, el.id)),
       ...save.deletes.map((id) => elementPath(pageId, id)),
@@ -235,6 +245,24 @@ export async function restorePage(db: DiaryoDB, stored: StoredPage) {
       pagePath(stored.page.id),
       ...stored.elements.map((row) => elementPath(row.pageId, row.id)),
     ]);
+  });
+}
+
+/**
+ * Deletes the images no element shows any more (a deleted image keeps its file, so undo
+ * can bring it back; the file goes when cleaning up). Returns how many went.
+ */
+export async function dropUnusedAssets(db: DiaryoDB): Promise<number> {
+  return db.transaction('rw', [db.elements, db.assets, db.tracked], async () => {
+    const used = new Set<string>();
+    await db.elements.each((row) => {
+      if (row.data?.type === 'image') used.add(row.data.assetId);
+    });
+    const unused = (await db.assets.toCollection().primaryKeys()).filter((id) => !used.has(id));
+    if (unused.length === 0) return 0;
+    await db.assets.bulkDelete(unused);
+    await touch(db, unused.map(assetPath));
+    return unused.length;
   });
 }
 

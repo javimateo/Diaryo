@@ -10,7 +10,7 @@ import {
   type IncomingChange,
   type TrackedRow,
 } from '../storage/tracking';
-import { decrypt, encrypt, itemName, type DiaryKeys } from './crypto';
+import { decrypt, encrypt, fromBase64, itemName, toBase64, type DiaryKeys } from './crypto';
 
 /**
  * The cloud sync (docs/cloud.md): pushes what changed here and pulls what changed on the
@@ -59,6 +59,8 @@ export class QuotaError extends Error {}
 export class DuplicateError extends Error {}
 /** The item isn't on the server (any more). */
 export class MissingError extends Error {}
+/** The server refused this item (too big, or not valid): it stays pending, the rest go on. */
+export class RejectedError extends Error {}
 
 const PULL_PAGE = 200;
 const PUSH_AT_ONCE = 4;
@@ -76,10 +78,47 @@ interface Sealed {
   value: unknown;
 }
 
+/**
+ * What goes inside the encryption. Usually JSON; a file (an image or a font, kept as a
+ * base 64 data URL) goes as its raw bytes after a small JSON header, so it isn't base 64
+ * twice: `1`, the header's length (4 bytes), the header, the bytes.
+ */
+const FILE_FORMAT = 1;
+const DATA_URL = /^data:([^;,]+);base64,/;
+
+export function seal(sealed: Sealed): Uint8Array<ArrayBuffer> {
+  const value = sealed.value as { src?: unknown } | null;
+  const match = typeof value?.src === 'string' ? DATA_URL.exec(value.src) : null;
+  if (!value || !match) return new TextEncoder().encode(JSON.stringify(sealed));
+  const src = value.src as string;
+  const bytes = fromBase64(src.slice(match[0].length));
+  const header = new TextEncoder().encode(
+    JSON.stringify({ path: sealed.path, value: { ...value, src: undefined }, mime: match[1] }),
+  );
+  const out = new Uint8Array(5 + header.length + bytes.length);
+  out[0] = FILE_FORMAT;
+  new DataView(out.buffer).setUint32(1, header.length);
+  out.set(header, 5);
+  out.set(bytes, 5 + header.length);
+  return out;
+}
+
+export function unseal(plain: Uint8Array): Sealed {
+  if (plain[0] !== FILE_FORMAT) return JSON.parse(new TextDecoder().decode(plain)) as Sealed;
+  const length = new DataView(plain.buffer, plain.byteOffset).getUint32(1);
+  const header = JSON.parse(new TextDecoder().decode(plain.subarray(5, 5 + length))) as Sealed & {
+    mime: string;
+  };
+  const src = `data:${header.mime};base64,${toBase64(plain.subarray(5 + length))}`;
+  return { path: header.path, value: { ...(header.value as object), src } };
+}
+
 export interface PushResult {
   pushed: number;
   /** The space ran out: what is left stays pending. */
   full: boolean;
+  /** Items the server refused (they stay pending). */
+  rejected: number;
 }
 
 export class Sync {
@@ -108,9 +147,7 @@ export class Sync {
     return {
       key: await this.name(row.path),
       kind: kindOf(row.path),
-      data: deleted
-        ? ''
-        : await encrypt(this.keys.enc, new TextEncoder().encode(JSON.stringify(sealed))),
+      data: deleted ? '' : await encrypt(this.keys.enc, seal(sealed)),
       modified: row.modified,
       deleted,
     };
@@ -142,11 +179,19 @@ export class Sync {
 
   /** Pushes everything pending. `onProgress` says how it goes. */
   async push(onProgress?: (done: number, total: number) => void): Promise<PushResult> {
-    const pending = (await dirtyPaths(this.db)).sort(
-      (a, b) => (ORDER[a.path.split('/')[0]] ?? 9) - (ORDER[b.path.split('/')[0]] ?? 9),
-    );
+    const dirty = await dirtyPaths(this.db);
+    // Images that went go up last: after the elements that stopped showing them, so no
+    // device hears of the image going while it still shows it.
+    const assetIds = dirty
+      .filter((row) => row.path.startsWith('asset/'))
+      .map((row) => row.path.slice(6));
+    const present = await this.db.assets.bulkGet(assetIds);
+    const gone = new Set(assetIds.filter((_, i) => !present[i]).map((id) => `asset/${id}`));
+    const rank = (path: string) => (gone.has(path) ? 9 : (ORDER[path.split('/')[0]] ?? 8));
+    const pending = dirty.sort((a, b) => rank(a.path) - rank(b.path));
     let done = 0;
     let full = false;
+    let rejected = 0;
     onProgress?.(0, pending.length);
     const next = pending.values();
     const worker = async () => {
@@ -162,6 +207,9 @@ export class Sync {
           else if (error instanceof QuotaError) {
             full = true;
             return;
+          } else if (error instanceof RejectedError) {
+            console.error('The server refused an item; it stays pending', row.path, error);
+            rejected++;
           } else throw error;
         }
         done++;
@@ -169,7 +217,7 @@ export class Sync {
       }
     };
     await Promise.all(Array.from({ length: PUSH_AT_ONCE }, worker));
-    return { pushed: done, full };
+    return { pushed: done, full, rejected };
   }
 
   /**
@@ -206,7 +254,7 @@ export class Sync {
     }
     try {
       const plain = await decrypt(this.keys.enc, item.data);
-      const sealed = JSON.parse(new TextDecoder().decode(plain)) as Sealed;
+      const sealed = unseal(plain);
       if (typeof sealed.path !== 'string' || (await this.name(sealed.path)) !== item.key)
         return null;
       return { ...base, path: sealed.path, value: sealed.value };

@@ -15,6 +15,7 @@ import {
   loadPage,
   mergeDiary,
   pruneEmptyPages,
+  dropUnusedAssets,
   replaceDiary,
   restorePage,
   updatePage,
@@ -138,6 +139,7 @@ export class Diary {
       this.hooks.onStatus('loading');
       try {
         await pruneEmptyPages(this.db);
+        await dropUnusedAssets(this.db);
         this.pages = (await listPages(this.db)).map(toMeta);
         // The desk is set once and stays when turning pages.
         await this.loadDesk();
