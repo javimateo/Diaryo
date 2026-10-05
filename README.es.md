@@ -30,8 +30,10 @@ aparece sobre el escritorio con un atajo y tus notas no salen de él.
 - **En español o en inglés** (Ajustes → Apariencia).
 - **También en el móvil**: la app web funciona con el dedo (dos dedos para hacer zoom y
   moverse, mantener pulsado para abrir el menú).
-- **Privado**: sin cuentas ni servidores. Todo se guarda en tu equipo (o en el navegador,
-  en la app web). Se pueden guardar copias en un archivo y abrirlas en otro sitio.
+- **Privado**: todo se guarda en tu equipo (o en el navegador, en la app web), sin
+  necesidad de cuenta. Se pueden guardar copias en un archivo y abrirlas en otro sitio.
+- **Nube opcional**: con una cuenta, el diario se sincroniza entre dispositivos, cifrado de
+  extremo a extremo: el servidor no puede leerlo.
 
 Pulsa `?` dentro de la app para ver todos los atajos.
 

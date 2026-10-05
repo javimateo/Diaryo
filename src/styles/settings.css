@@ -86,6 +86,11 @@
   transition: background-color 120ms var(--ease);
 }
 
+.settings-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 .settings-btn:hover:not(:disabled) {
   background: var(--hover);
 }

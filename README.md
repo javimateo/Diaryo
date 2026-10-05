@@ -29,8 +29,10 @@ up over the desktop with a shortcut and keeps your notes to yourself.
 - **English or Spanish** (Settings → Appearance).
 - **Phones too**: the web app works with a finger (two fingers to zoom and move, hold to
   open the menu).
-- **Private**: no accounts and no servers. Everything is saved on your computer (or in
-  the browser, for the web app). Copies can be saved to a file and opened elsewhere.
+- **Private**: everything is saved on your computer (or in the browser, for the web app),
+  with no account needed. Copies can be saved to a file and opened elsewhere.
+- **Optional cloud**: with an account, the diary syncs between devices, end-to-end
+  encrypted: the server can't read it.
 
 Press `?` inside the app to see every shortcut.
 

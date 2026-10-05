@@ -158,3 +158,15 @@ pub fn open_sign_in(app: AppHandle, url: String) -> Result<(), String> {
         .open_url(url, None::<&str>)
         .map_err(|e| e.to_string())
 }
+
+/// Opens a page of diaryo's website in the browser (the privacy policy, the terms); any
+/// other address is refused.
+#[tauri::command]
+pub fn open_website(app: AppHandle, url: String) -> Result<(), String> {
+    if !url.starts_with("https://diaryo.javiermateo.dev/") {
+        return Err("not diaryo's website".into());
+    }
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| e.to_string())
+}

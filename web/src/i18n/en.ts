@@ -25,7 +25,7 @@ export const en: WebMessages = {
     download: 'Download for Windows',
     downloadInfo: 'v{version} · {size} · free',
     tryWeb: 'Use it in the browser',
-    points: ['Code in the open', 'No accounts', 'Your notes never leave your PC'],
+    points: ['Code in the open', "No account if you don't want one", 'Optional encrypted cloud'],
   },
   book: {
     today: 'today',
@@ -54,8 +54,8 @@ export const en: WebMessages = {
     { title: 'Handmade', text: 'Its own drawing engine, smooth with thousands of strokes.' },
     { title: 'Code in the open', text: 'Read it, change it and share it, for non-commercial use.' },
     {
-      title: 'No accounts, no cloud',
-      text: 'Everything is saved on your computer, with daily backups.',
+      title: 'Truly yours',
+      text: 'On your computer, with daily backups. The cloud is optional and encrypted.',
     },
     { title: 'English and Spanish', text: 'Pick the language in Settings.' },
   ],
@@ -124,6 +124,22 @@ export const en: WebMessages = {
       },
     ],
   },
+  cloud: {
+    eyebrow: 'Cloud',
+    title: 'On all your devices, and only you can read it',
+    text: 'If you like, create an account and your diary syncs between your PC, the browser and your phone. Before it leaves your device it is encrypted with your diary password: the server only keeps unreadable data.',
+    points: [
+      {
+        title: 'Optional',
+        text: 'Without an account nothing changes: the diary lives on your computer.',
+      },
+      { title: 'End-to-end encrypted', text: "Not even the server's administrator can read it." },
+      { title: '100 MB free', text: 'Years of text and drawings; images are compressed.' },
+      { title: 'Offline too', text: 'You write as usual and it syncs when you are back.' },
+    ],
+    server: 'Server',
+    caption: 'the same page, on both',
+  },
   download: {
     eyebrow: 'Download',
     title: 'diaryo for Windows',
@@ -145,28 +161,41 @@ export const en: WebMessages = {
   privacy: {
     eyebrow: 'Privacy',
     title: 'Your notes are yours',
-    text: 'No accounts, no servers and no ads. The diary is saved on your computer and leaves a copy in Documents every day. You can take the whole thing with you in one file whenever you want. This website only counts visits and downloads, anonymously and without cookies; the app sends nothing.',
+    text: 'No ads and no tracking. The diary is saved on your computer and leaves a copy in Documents every day; you can take the whole thing with you in one file whenever you want. If you use the cloud, your diary travels encrypted: without your diary password nobody can read it, us included. This website only counts visits and downloads, anonymously and without cookies.',
     source: 'See the code on GitHub',
+    policy: 'Privacy policy',
+    terms: 'Terms',
   },
   faq: {
     title: 'Questions',
     items: [
       {
         q: 'Is it free?',
-        a: 'Completely: no ads and no paid versions. And its code is public (for non-commercial use).',
+        a: 'Yes: the app is completely free, with no ads, and the cloud comes with 100 MB free. And its code is public (for non-commercial use).',
       },
       {
         q: 'Where are my notes saved?',
         a: 'On your computer. The desktop app also leaves a copy every day in Documents\\diaryo (you can pick another folder).',
       },
-      { q: 'Does it work offline?', a: "Yes. diaryo doesn't need a connection for anything." },
+      {
+        q: 'Does it work offline?',
+        a: 'Yes. Only the cloud, if you use it, needs a connection to sync; meanwhile you write as usual.',
+      },
       {
         q: 'Can I move my diary to another computer?',
-        a: 'Save a copy (a .diaryo file) from the menu and open it on the other one.',
+        a: 'With the cloud (optional) it syncs by itself. Without it, save a copy (a .diaryo file) from the menu and open it on the other one.',
+      },
+      {
+        q: 'Who can read my diary in the cloud?',
+        a: 'Only you. It is encrypted on your device with your diary password before it leaves, and the server keeps unreadable data. Not even we can open it.',
+      },
+      {
+        q: 'What if I forget my diary password?',
+        a: "When you turn on the cloud you get a recovery code to keep. Without the password or the code, the cloud's diary can't be recovered; the one on your devices is still there.",
       },
       {
         q: 'What about the web version?',
-        a: "It's the same app. It saves the diary in your browser: nothing leaves it.",
+        a: "It's the same app. It saves the diary in your browser; with the cloud, you also have it on your PC and your phone.",
         web: true,
       },
     ],
@@ -179,5 +208,12 @@ export const en: WebMessages = {
   footer: {
     made: 'Made with care · Source available for non-commercial use',
     language: 'Español',
+    privacy: 'Privacy',
+    terms: 'Terms',
+  },
+  legal: {
+    back: 'Back to diaryo',
+    updated: 'Last updated: {date}',
+    summary: 'In short',
   },
 };

@@ -24,7 +24,7 @@ export const es = {
     /** `{version}` and `{size}` are filled in. */
     downloadInfo: 'v{version} · {size} · gratis',
     tryWeb: 'Usar en el navegador',
-    points: ['Código a la vista', 'Sin cuentas', 'Tus notas no salen de tu PC'],
+    points: ['Código a la vista', 'Sin cuenta, si no quieres', 'Nube opcional y cifrada'],
   },
   /** What is written in the diary of the hero. */
   book: {
@@ -54,7 +54,10 @@ export const es = {
   strip: [
     { title: 'Hecho a mano', text: 'Motor de dibujo propio, fluido con miles de trazos.' },
     { title: 'Código a la vista', text: 'Léelo, cámbialo y compártelo, sin fines comerciales.' },
-    { title: 'Sin cuentas ni nube', text: 'Todo se guarda en tu ordenador, con copias diarias.' },
+    {
+      title: 'Tuyo de verdad',
+      text: 'En tu ordenador, con copias diarias. La nube es opcional y cifrada.',
+    },
     { title: 'Español e inglés', text: 'Eliges el idioma en Ajustes.' },
   ],
   features: {
@@ -124,6 +127,25 @@ export const es = {
       },
     ],
   },
+  cloud: {
+    eyebrow: 'Nube',
+    title: 'En todos tus dispositivos, y solo tú lo lees',
+    text: 'Si quieres, crea una cuenta y tu diario se sincroniza entre el PC, el navegador y el móvil. Antes de salir de tu dispositivo se cifra con tu contraseña del diario: el servidor solo guarda datos ilegibles.',
+    points: [
+      { title: 'Opcional', text: 'Sin cuenta, todo sigue igual: el diario vive en tu ordenador.' },
+      {
+        title: 'Cifrado de extremo a extremo',
+        text: 'Ni el administrador del servidor puede leerlo.',
+      },
+      {
+        title: '100 MB gratis',
+        text: 'Para años de texto y dibujos; las imágenes se comprimen.',
+      },
+      { title: 'Sin conexión, también', text: 'Escribes igual y se sincroniza al volver.' },
+    ],
+    server: 'Servidor',
+    caption: 'la misma página, en los dos',
+  },
   download: {
     eyebrow: 'Descargar',
     title: 'diaryo para Windows',
@@ -145,28 +167,41 @@ export const es = {
   privacy: {
     eyebrow: 'Privacidad',
     title: 'Tus notas son tuyas',
-    text: 'Sin cuentas, sin servidores y sin anuncios. El diario se guarda en tu ordenador y cada día deja una copia en Documentos. Puedes llevártelo entero en un archivo cuando quieras. Esta web solo cuenta visitas y descargas, de forma anónima y sin cookies; la app no envía nada.',
+    text: 'Sin anuncios ni rastreo. El diario se guarda en tu ordenador y cada día deja una copia en Documentos; puedes llevártelo entero en un archivo cuando quieras. Si usas la nube, tu diario viaja cifrado: sin tu contraseña del diario nadie puede leerlo, tampoco nosotros. Esta web solo cuenta visitas y descargas, de forma anónima y sin cookies.',
     source: 'Ver el código en GitHub',
+    policy: 'Política de privacidad',
+    terms: 'Condiciones',
   },
   faq: {
     title: 'Preguntas frecuentes',
     items: [
       {
         q: '¿Es gratis?',
-        a: 'Sí, del todo: sin anuncios ni versiones de pago. Y su código es público (para uso no comercial).',
+        a: 'Sí: la app es gratis del todo, sin anuncios, y la nube trae 100 MB gratis. Y su código es público (para uso no comercial).',
       },
       {
         q: '¿Dónde se guardan mis notas?',
         a: 'En tu ordenador. La app de escritorio deja además una copia cada día en Documentos\\diaryo (puedes elegir otra carpeta).',
       },
-      { q: '¿Funciona sin internet?', a: 'Sí. diaryo no necesita conexión para nada.' },
+      {
+        q: '¿Funciona sin internet?',
+        a: 'Sí. Solo la nube, si la usas, necesita conexión para sincronizar; mientras tanto escribes igual.',
+      },
       {
         q: '¿Paso mi diario de un ordenador a otro?',
-        a: 'Guarda una copia (un archivo .diaryo) desde el menú y ábrela en el otro.',
+        a: 'Con la nube (opcional) se sincroniza solo. Sin ella, guarda una copia (un archivo .diaryo) desde el menú y ábrela en el otro.',
+      },
+      {
+        q: '¿Quién puede leer mi diario en la nube?',
+        a: 'Solo tú. Se cifra en tu dispositivo con tu contraseña del diario antes de salir, y el servidor guarda datos ilegibles. Ni siquiera nosotros podemos abrirlo.',
+      },
+      {
+        q: '¿Qué pasa si olvido la contraseña del diario?',
+        a: 'Al activar la nube te damos una clave de recuperación para guardarla. Sin la contraseña ni la clave, el diario de la nube no se puede recuperar; el de tus dispositivos sigue ahí.',
       },
       {
         q: '¿Y la versión web?',
-        a: 'Es la misma app. Guarda el diario en tu navegador: nada sale de él.',
+        a: 'Es la misma app. Guarda el diario en tu navegador; con la nube, lo tienes también en el PC y en el móvil.',
         web: true,
       },
     ],
@@ -179,6 +214,14 @@ export const es = {
   footer: {
     made: 'Hecho con cariño · Código disponible para uso no comercial',
     language: 'English',
+    privacy: 'Privacidad',
+    terms: 'Condiciones',
+  },
+  legal: {
+    back: 'Volver a diaryo',
+    /** `{date}` is filled in. */
+    updated: 'Última actualización: {date}',
+    summary: 'En resumen',
   },
 };
 
