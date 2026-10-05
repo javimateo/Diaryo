@@ -90,6 +90,8 @@ export function TopActions() {
 
   return (
     <div className="top-actions floating" onMouseDown={(e) => e.preventDefault()}>
+      {/* On a phone the brand (and its cloud) is hidden, so the cloud lives here. */}
+      <SyncIndicator />
       <button
         type="button"
         className="icon-btn"

@@ -511,6 +511,17 @@
   pointer-events: auto;
 }
 
+.top-actions .sync-indicator {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .top-actions .sync-indicator {
+    display: inline-grid;
+    margin-left: 0;
+  }
+}
+
 .sign-out-confirm {
   display: flex;
   flex-direction: column;
