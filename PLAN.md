@@ -480,6 +480,8 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           se puede hacer (dibujo, post-its, conexiones, páginas, la mesa…), fácil de
           borrar o de empezar en blanco.
     - [ ] **Mejorar la web**: qué es diaryo, capturas o vídeo, descargas, la nube.
+    - [ ] **Ventana de ajustes**: ha crecido demasiado y es densa; reorganizarla
+          (secciones o pestañas, lo avanzado aparte) para que se encuentre todo.
     - [ ] **Explicar mejor las funciones**: ayuda dentro de la app y en la web (atajos,
           gestos, para qué sirve cada herramienta).
 
