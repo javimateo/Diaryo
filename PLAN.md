@@ -342,7 +342,8 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
 
 - [ ] **12. Hacia la versión 1.0.0**. Primero los arreglos y lo que no cambia el modelo
       de datos; lo grande (nube, macOS, recordatorios) con su propuesta antes. Orden:
-      A, B (instalador), C (nube), D (privacidad, sobre la nube), E (macOS).
+      A, B (instalador), C (nube), D (privacidad, sobre la nube), E (macOS), F (tareas
+      y citas), G (marca y diseño).
   - [x] **A. Arreglos**
     - [x] **Contenedores dibujados a mano**: no era un fallo: el contenedor, dibujado
           después, quedaba encima de lo que rodea y su relleno lo tapaba. Ahora, al
@@ -468,10 +469,19 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         Apple (99 $/año) para firmar y notarizar; si no, macOS lo bloquea. Compilar en
         GitHub Actions (`macos-latest`) y un segundo `latest.json` para las
         actualizaciones.
-  - [ ] **F. Para después de la 1.0.0: tareas y citas**: tareas con fecha y hora, citas
-        (médico…), vista de calendario, recordatorios (notificación del sistema en el
-        escritorio; por correo necesitaría la nube de D) e importar/exportar calendarios
-        (.ics, Google Calendar).
+  - [ ] **F. Tareas y citas**: tareas con fecha y hora, citas (médico…), vista de
+        calendario, recordatorios (notificación del sistema en el escritorio; por correo
+        necesitaría la nube de C) e importar/exportar calendarios (.ics, Google Calendar).
+  - [ ] **G. Marca y diseño**, lo último antes de publicar la 1.0.0 (con maqueta antes de
+        cada cambio):
+    - [ ] **Marca**: logo, icono, colores y tipografía coherentes en la app, la web y el
+          instalador.
+    - [ ] **Diario de demostración**: al empezar, una plantilla o demo que enseñe lo que
+          se puede hacer (dibujo, post-its, conexiones, páginas, la mesa…), fácil de
+          borrar o de empezar en blanco.
+    - [ ] **Mejorar la web**: qué es diaryo, capturas o vídeo, descargas, la nube.
+    - [ ] **Explicar mejor las funciones**: ayuda dentro de la app y en la web (atajos,
+          gestos, para qué sirve cada herramienta).
 
 Tras la fase 5 ya es una app usable para tomar notas.
 
