@@ -533,3 +533,74 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+
+/* Deleting the account */
+
+.settings-btn[data-danger] {
+  color: #c92a2a;
+}
+
+.settings-btn[data-danger-fill] {
+  border-color: #c92a2a;
+  background: #c92a2a;
+  color: #ffffff;
+}
+
+.settings-btn[data-danger-fill]:hover:not(:disabled) {
+  background: #b02525;
+}
+
+:root[data-theme='dark'] .settings-btn[data-danger] {
+  color: #ff8787;
+}
+
+.account-delete {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 8px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(200, 60, 50, 0.08);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+:root[data-theme='dark'] .account-delete {
+  background: rgba(240, 110, 100, 0.12);
+}
+
+.account-delete p {
+  margin: 0;
+}
+
+.account-delete strong {
+  font-weight: 600;
+  color: #b2382e;
+}
+
+:root[data-theme='dark'] .account-delete strong {
+  color: #f2a29b;
+}
+
+.account-delete > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* The privacy policy and the terms */
+
+.account-legal a,
+.account-legal-links a {
+  color: inherit;
+}
+
+.account-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}

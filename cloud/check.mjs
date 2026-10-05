@@ -1,7 +1,7 @@
 /**
  * Checks the cloud server's rules against a running PocketBase (see docs/cloud.md):
- * quotas, who reaches what, last write wins, tombstones. It creates two throwaway users
- * and deletes them at the end.
+ * quotas, who reaches what, last write wins, tombstones, deleting an account. It creates
+ * two throwaway users, who delete their own accounts at the end.
  *
  *   PB_URL=http://127.0.0.1:8090 PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
  */
@@ -175,11 +175,35 @@ const shrink = await call(
 );
 check('shrinking is always allowed', shrink.status === 200, shrink.status);
 
-// Clean up: deleting the users takes their vaults and items with them (cascade).
+check(
+  'an account keeps no name or picture',
+  !('name' in a.record) && !('avatar' in a.record),
+  JSON.stringify(a.record),
+);
+
+// Each user deletes their own account (as the app does), and their vault and items go
+// with it (cascade).
+const foreignDelete = await call('DELETE', `/collections/users/records/${a.id}`, null, b.token);
+check('nobody deletes someone else', foreignDelete.status === 404, foreignDelete.status);
 for (const u of [a, b]) {
-  const gone = await call('DELETE', `/collections/users/records/${u.id}`, null, su.body.token);
-  check('throwaway user deleted', gone.status === 204, gone.status);
+  const gone = await call('DELETE', `/collections/users/records/${u.id}`, null, u.token);
+  check('a user deletes their own account', gone.status === 204, gone.status);
 }
+const left = async (collection) =>
+  (
+    await call(
+      'GET',
+      `/collections/${collection}/records?filter=${encodeURIComponent(`user = "${a.id}"`)}`,
+      null,
+      su.body.token,
+    )
+  ).body.totalItems;
+const [vaultsLeft, itemsLeft] = [await left('vaults'), await left('items')];
+check(
+  'its vault and items go with it',
+  vaultsLeft === 0 && itemsLeft === 0,
+  `${vaultsLeft} ${itemsLeft}`,
+);
 
 console.log(results.join('\n'));
 if (results.some((line) => line.startsWith('FAIL'))) process.exit(1);

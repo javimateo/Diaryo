@@ -14,6 +14,7 @@ import { isDesktop } from '../desktop/tauri';
 import { useUI, type AccountDialogRequest, type AccountView } from '../store/ui';
 import { afterSignIn, continueWithGoogle } from './accountActions';
 import { GoogleButton } from './GoogleButton';
+import { LegalNote } from './LegalLinks';
 import { PasswordField } from './PasswordField';
 import { useT } from './useT';
 
@@ -229,6 +230,7 @@ function Dialog({ request }: { request: AccountDialogRequest }) {
           {view === 'forgot' && link(a.back, 'signIn')}
           {view === 'reset' && link(a.newLink, 'forgot')}
         </div>
+        {(view === 'signIn' || view === 'signUp') && <LegalNote />}
       </>
     );
   }

@@ -1,6 +1,7 @@
 import { ClientResponseError, type RecordModel } from 'pocketbase';
 import { create } from 'zustand';
 import { pb } from './client';
+import { fetchUsage } from './pbRemote';
 
 /** The signed-in account, as the app shows it. */
 export interface Account {
@@ -95,6 +96,50 @@ export async function signInWithGoogle(openUrl?: (url: string) => Promise<void> 
 export const cancelGoogle = () => pb.cancelRequest(GOOGLE);
 
 export const signOut = () => pb.authStore.clear();
+
+/**
+ * Deletes the account for good: the server deletes its vault and its items with it, and
+ * the session ends here (the other devices find out when they renew theirs). The diary on
+ * each device stays.
+ */
+export async function deleteAccount() {
+  const id = useAccount.getState().account?.id;
+  if (id) await users().delete(id, { requestKey: null });
+}
+
+/**
+ * What the server keeps about the account, to download it (the right of access). The
+ * diary itself is there only encrypted: its readable copy is the usual backup.
+ */
+export async function accountData(note: string) {
+  const user = await users().authRefresh({ requestKey: null });
+  const record = user.record;
+  const [auths, items, vaults, usage] = await Promise.all([
+    pb.collection('_externalAuths').getFullList({ requestKey: null }),
+    pb.collection('items').getList(1, 1, { requestKey: null, fields: 'id' }),
+    pb.collection('vaults').getFullList({ requestKey: null, fields: 'created,updated' }),
+    fetchUsage(),
+  ]);
+  return {
+    exportedAt: new Date().toISOString(),
+    note,
+    account: {
+      id: record.id,
+      email: record.email,
+      verified: record.verified,
+      created: record.created,
+      updated: record.updated,
+      plan: record.plan,
+      quotaBytes: record.quotaBytes,
+    },
+    signInWith: auths.map((auth) => ({ provider: auth.provider, since: auth.created })),
+    cloud: {
+      usedBytes: usage.used,
+      items: items.totalItems,
+      vault: vaults[0] ?? null,
+    },
+  };
+}
 
 export async function requestPasswordReset(email: string) {
   await users().requestPasswordReset(email.trim(), { requestKey: null });

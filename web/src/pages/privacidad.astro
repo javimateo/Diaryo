@@ -1,0 +1,181 @@
+---
+import Legal from '../components/Legal.astro';
+import { legalHref } from '../i18n';
+import { SITE } from '../site';
+
+// When this text changes in what it says (not a typo), update the date too, and the
+// English one (/en/privacy).
+---
+
+<Legal lang="es" page="privacy" title="Política de privacidad" updated="2026-10-05">
+  <div class="summary">
+    <h2>En resumen</h2>
+    <ul>
+      <li>Sin cuenta, tu diario no sale de tu dispositivo: diaryo no lo envía a ningún sitio.</li>
+      <li>
+        Con cuenta, guardamos tu email y tu diario <strong>cifrado en tu dispositivo</strong>: no
+        podemos leerlo.
+      </li>
+      <li>Sin anuncios ni rastreo, y no vendemos ni cedemos tus datos a nadie.</li>
+      <li>Puedes descargar tus datos y borrar la cuenta desde Ajustes, cuando quieras.</li>
+    </ul>
+  </div>
+
+  <h2>Quién es el responsable</h2>
+  <p>
+    {SITE.name} lo desarrolla y lo mantiene {SITE.owner}, como particular. Para cualquier cosa sobre
+    tus datos, escribe a <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>.
+  </p>
+
+  <h2>Si usas diaryo sin cuenta</h2>
+  <p>
+    La app guarda el diario en tu dispositivo: en la app de escritorio, en tu ordenador (y sus
+    copias diarias, en la carpeta que elijas); en la app web, en el almacenamiento de tu navegador.
+    No se envía a ningún servidor. La app no tiene publicidad ni analítica.
+  </p>
+  <p>
+    La app de escritorio comprueba de vez en cuando si hay una versión nueva, pidiéndola a GitHub,
+    que ve tu dirección IP como en cualquier descarga.
+  </p>
+
+  <h2>Si creas una cuenta (la nube)</h2>
+  <p>
+    La nube es opcional y sirve para sincronizar tu diario entre tus dispositivos. Para eso
+    guardamos:
+  </p>
+  <table style="--how-long: 'Cuánto tiempo'">
+      <thead>
+        <tr><th>Qué</th><th>Para qué</th><th>Cuánto tiempo</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tu email</td>
+          <td>
+            Identificar tu cuenta, que entres, y enviarte los correos para confirmar el email o
+            elegir una contraseña nueva. No te enviamos publicidad.
+          </td>
+          <td>Hasta que borres la cuenta</td>
+        </tr>
+        <tr>
+          <td>La contraseña de la cuenta</td>
+          <td>Que solo tú entres. Se guarda transformada (un hash), nunca legible.</td>
+          <td>Hasta que borres la cuenta</td>
+        </tr>
+        <tr>
+          <td>Tu diario, cifrado</td>
+          <td>
+            Sincronizarlo. Cada página, elemento, imagen y fuente se cifra en tu dispositivo antes de
+            salir, con una clave que solo tú tienes (sale de tu contraseña del diario). El servidor
+            guarda datos ilegibles, con identificadores que no dicen qué son, la fecha de cada cambio
+            y su tamaño.
+          </td>
+          <td>Hasta que lo borres o borres la cuenta</td>
+        </tr>
+        <tr>
+          <td>Datos de la cuenta</td>
+          <td>Prestar el servicio: el plan, el espacio que usas y las fechas de alta y de cambios.</td>
+          <td>Hasta que borres la cuenta</td>
+        </tr>
+        <tr>
+          <td>Registros del servidor</td>
+          <td>
+            Seguridad y resolver fallos: cada petición al servidor, con la dirección IP, la fecha y lo
+            que se pidió (no su contenido).
+          </td>
+          <td>5 días</td>
+        </tr>
+      </tbody>
+  </table>
+  <p>
+    <strong>No conocemos tu contraseña del diario ni tu clave de recuperación</strong>, así que no
+    podemos leer tu diario ni recuperarlo si pierdes las dos. Lo que hay en tus dispositivos sigue
+    ahí.
+  </p>
+  <h3>Si entras con Google</h3>
+  <p>
+    Google nos confirma tu email y un identificador de tu cuenta de Google, y nada más: no guardamos
+    tu nombre ni tu foto ni pedimos acceso a ningún otro dato. El uso que hace diaryo de la
+    información recibida de las API de Google cumple la
+    <a href="https://developers.google.com/terms/api-services-user-data-policy"
+      >Política de datos de usuario de los servicios de las API de Google</a
+    >, incluidos los requisitos de uso limitado.
+  </p>
+  <h3>Por qué podemos tratarlos</h3>
+  <p>
+    Para prestarte el servicio que pides al crear la cuenta (artículo 6.1.b del RGPD). Los
+    registros del servidor, por el interés legítimo en mantenerlo seguro (artículo 6.1.f).
+  </p>
+
+  <h2>Quién más interviene</h2>
+  <p>Solo los proveedores necesarios, que tratan los datos por nuestra cuenta y con contrato:</p>
+  <ul>
+    <li>
+      <strong>Hetzner Online GmbH</strong> (Alemania): el servidor donde se guardan la cuenta y el
+      diario cifrado, en Núremberg.
+    </li>
+    <li>
+      <strong>Resend</strong> (Estados Unidos): envía los correos de confirmación y de contraseña,
+      así que recibe tu email y el contenido de esos correos. La transferencia fuera de la UE se
+      hace con las garantías que exige el RGPD (cláusulas contractuales tipo de la Comisión
+      Europea).
+    </li>
+    <li>
+      <strong>Google</strong>, solo si eliges entrar con Google: comprueba que eres tú, según su
+      propia política de privacidad.
+    </li>
+  </ul>
+  <p>No vendemos ni cedemos tus datos a nadie más, salvo que una ley nos obligue.</p>
+
+  <h2>Esta web</h2>
+  <p>
+    Esta web cuenta visitas y descargas con Umami, alojado en nuestro propio servidor, sin cookies
+    y sin guardar datos que te identifiquen: solo cifras agregadas (qué páginas se ven, desde qué
+    país, navegador o web se llega). Las descargas del instalador vienen de GitHub.
+  </p>
+  <p>
+    Ni la web ni la app usan cookies. La app guarda en tu dispositivo la sesión de la cuenta y tus
+    ajustes, porque sin eso no funcionaría.
+  </p>
+
+  <h2>Tus derechos</h2>
+  <p>
+    Puedes acceder a tus datos, corregirlos, borrarlos, llevártelos, limitar su uso u oponerte a él.
+    Lo más habitual lo tienes en la app, en <strong>Ajustes → Cuenta y nube</strong>:
+  </p>
+  <ul>
+    <li><strong>Descargar tus datos</strong>: lo que el servidor guarda de tu cuenta.</li>
+    <li>
+      <strong>Guardar una copia</strong> (en el menú): tu diario entero y legible, en un archivo.
+    </li>
+    <li>
+      <strong>Borrar la cuenta</strong>: se borran al momento la cuenta y todo tu diario de la nube.
+      No hacemos copias de seguridad del servidor, así que no queda nada.
+    </li>
+  </ul>
+  <p>
+    Para lo demás, escribe a <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>; te contestamos
+    en menos de un mes. Si crees que no tratamos bien tus datos, puedes reclamar ante la
+    <a href="https://www.aepd.es">Agencia Española de Protección de Datos</a>.
+  </p>
+
+  <h2>Seguridad</h2>
+  <p>
+    Todo viaja por HTTPS, y tu diario se cifra de extremo a extremo (AES-256-GCM, con la clave
+    derivada de tu contraseña del diario con PBKDF2). El código de diaryo es público: cualquiera
+    puede comprobar cómo funciona.
+  </p>
+
+  <h2>Menores</h2>
+  <p>
+    Para crear una cuenta necesitas tener al menos 14 años (o la edad que pida la ley de tu país,
+    si es mayor).
+  </p>
+
+  <h2>Cambios</h2>
+  <p>
+    Si cambia algo de esta política, lo verás aquí con su fecha; si es importante y tienes cuenta,
+    te avisaremos antes por correo. Mira también las <a href={legalHref('es', 'terms')}
+      >condiciones</a
+    >.
+  </p>
+</Legal>

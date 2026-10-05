@@ -1,9 +1,10 @@
 ---
-import { fill, formatSize, texts, type Lang } from '../i18n';
+import { fill, formatSize, legalHref, texts, type Lang } from '../i18n';
 import { latestDownload } from '../release';
 import { SITE } from '../site';
 import DemoIsland from '../demo/DemoIsland';
 import Book from './Book.astro';
+import Cloud from './Cloud.astro';
 import Download from './Download.astro';
 import Features from './Features.astro';
 
@@ -11,7 +12,7 @@ interface Props {
   lang: Lang;
 }
 
-/** The home page: hero, features, download, privacy and questions. */
+/** The home page: hero, features, the cloud, download, privacy and questions. */
 const { lang } = Astro.props;
 const t = texts(lang);
 const download = await latestDownload();
@@ -69,6 +70,8 @@ const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
 
 <Features lang={lang} />
 
+<Cloud lang={lang} />
+
 <Download lang={lang} />
 
 <section id="privacy" class="privacy wrap">
@@ -76,7 +79,11 @@ const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
     <span class="eyebrow">{t.privacy.eyebrow}</span>
     <h2 class="section-title">{t.privacy.title}</h2>
     <p>{t.privacy.text}</p>
-    <a class="source" href={SITE.repo}>{t.privacy.source}</a>
+    <p class="privacy-links">
+      <a href={SITE.repo}>{t.privacy.source}</a>
+      <a href={legalHref(lang, 'privacy')}>{t.privacy.policy}</a>
+      <a href={legalHref(lang, 'terms')}>{t.privacy.terms}</a>
+    </p>
   </div>
   <div class="faq">
     <h2 class="sr-only">{t.faq.title}</h2>
@@ -254,7 +261,10 @@ const faq = t.faq.items.filter((item) => !('web' in item) || SITE.app);
     color: var(--text-soft);
   }
 
-  .source {
+  .privacy-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
     font-weight: 700;
   }
 

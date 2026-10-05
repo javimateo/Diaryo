@@ -194,7 +194,22 @@ still go up; that one stays pending and the settings say how many couldn't go up
 
 ## Privacy
 
-- Deleting the account deletes all its items and its vault (cascade).
-- The user can export the diary at any time (the usual `.diaryo` backup).
-- The server keeps the account's email and the encrypted items; the website's privacy
-  policy says so.
+The website's privacy policy and terms (`web/src/pages/privacidad.astro`,
+`condiciones.astro`, and `en/privacy.astro`, `en/terms.astro`) say what follows; the app
+links to them when signing in and in the settings. If what the server keeps changes, they
+change with it (and their date).
+
+- **What the server keeps**: the account's email (and its password's hash), plan and
+  quota; the vault; the encrypted items. With Google, only the email and Google's id for
+  the account: its name and picture aren't copied (`1790900002_privacy.js`). PocketBase's
+  request logs (with the IP) last 5 days.
+- **Downloading the data** (Settings → Account and cloud → Your data): a JSON with what the
+  server knows about the account (`accountData` in `src/cloud/account.ts`): email, dates,
+  plan, space used, how it signs in, how many items and when the vault was made. Not the
+  items: they are only the diary encrypted, and its readable copy is the usual `.diaryo`
+  backup ("Save a copy").
+- **Deleting the account** (Settings → Account and cloud, typing the email to confirm):
+  the user deletes their own record, and its vault and items go with it (cascade). This
+  device signs out and forgets the keys; the local diary stays, and so does each other
+  device's (they find out on their next session renewal, like any ended session). There
+  are no server backups, so nothing is left.

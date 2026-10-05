@@ -1,0 +1,157 @@
+---
+import { fill, homeHref, texts, type Lang, type LegalPage } from '../i18n';
+import Layout from '../layouts/Layout.astro';
+
+interface Props {
+  lang: Lang;
+  page: LegalPage;
+  title: string;
+  /** When the text last changed (YYYY-MM-DD). */
+  updated: string;
+}
+
+/** A legal page (the privacy policy, the terms): a plain, readable column of text. */
+const { lang, page, title, updated } = Astro.props;
+const t = texts(lang).legal;
+const date = new Intl.DateTimeFormat(lang, { dateStyle: 'long', timeZone: 'UTC' }).format(
+  new Date(updated),
+);
+---
+
+<Layout lang={lang} page={page} title={title}>
+  <article class="legal wrap">
+    <a class="back" href={homeHref(lang)}>← {t.back}</a>
+    <h1>{title}</h1>
+    <p class="updated">{fill(t.updated, { date })}</p>
+    <slot />
+  </article>
+</Layout>
+
+<style>
+  .legal {
+    max-width: 780px;
+    padding-top: 32px;
+  }
+
+  .back {
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  h1 {
+    margin: 18px 0 6px;
+    font-size: clamp(34px, 5vw, 48px);
+    letter-spacing: -0.02em;
+  }
+
+  .updated {
+    margin: 0 0 32px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .legal :global(.summary) {
+    margin-bottom: 36px;
+    padding: 22px 26px;
+    border-radius: 18px;
+    background: var(--card);
+  }
+
+  .legal :global(.summary h2) {
+    margin: 0 0 8px;
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .legal :global(.summary ul) {
+    margin: 0;
+  }
+
+  .legal :global(h2) {
+    margin: 40px 0 10px;
+    font-size: 26px;
+  }
+
+  .legal :global(h3) {
+    margin: 24px 0 6px;
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .legal :global(p),
+  .legal :global(li) {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-soft);
+  }
+
+  .legal :global(ul) {
+    padding-left: 22px;
+  }
+
+  .legal :global(li + li) {
+    margin-top: 4px;
+  }
+
+  .legal :global(strong) {
+    color: var(--text);
+  }
+
+  .legal :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+
+  .legal :global(th),
+  .legal :global(td) {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+    color: var(--text-soft);
+  }
+
+  .legal :global(th) {
+    color: var(--text);
+  }
+
+  /* On a phone each row is a block: what, what for, and (labelled) how long. */
+  @media (max-width: 640px) {
+    .legal :global(thead) {
+      display: none;
+    }
+
+    .legal :global(tr),
+    .legal :global(td) {
+      display: block;
+    }
+
+    .legal :global(tr) {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .legal :global(td) {
+      padding: 2px 0;
+      border: 0;
+    }
+
+    .legal :global(td:first-child) {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .legal :global(td:last-child) {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .legal :global(td:last-child::before) {
+      content: var(--how-long) ': ';
+    }
+  }
+</style>

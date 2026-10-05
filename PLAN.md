@@ -442,6 +442,19 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
               correos reales.
       - [ ] **C7. RGPD y web**: borrar la cuenta, exportar los datos, política de
             privacidad y condiciones; la web explica la nube (opcional, cifrada).
+        - [x] En Ajustes → Cuenta y nube: «Tus datos» (un JSON con lo que el servidor
+              sabe de la cuenta; el diario legible es «Guardar una copia») y «Borrar la
+              cuenta» (escribiendo el email; se borran la cuenta, la bóveda y los
+              elementos; el diario local se queda). Con Google ya no se guardan el nombre
+              ni la foto (migración `1790900002_privacy.js`).
+        - [x] Política de privacidad y condiciones en la web (`/privacidad`,
+              `/condiciones`, `/en/privacy`, `/en/terms`), enlazadas al entrar en la
+              cuenta y en Ajustes. Contacto: `privacidad@javiermateo.dev`.
+        - [x] La web explica la nube: sección «Nube», textos que decían «sin nube» y
+              preguntas nuevas.
+        - [ ] Tras publicar: el reenvío de `privacidad@javiermateo.dev` (Cloudflare
+              Email Routing) y publicar la app de Google (`docs/deployment.md`). Que
+              alguien con conocimientos legales revise los textos.
       - [ ] **C8. Pagos** (más adelante).
   - [ ] **D. Privacidad del diario**, después de la nube: el cifrado y la contraseña
         dependen de cómo se sincronice.

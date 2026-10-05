@@ -3,18 +3,22 @@ import '@fontsource-variable/caveat';
 import '@fontsource-variable/lora';
 import '@fontsource-variable/nunito-sans';
 import '../styles/global.css';
-import { homeHref, otherLang, texts, type Lang } from '../i18n';
+import { homeHref, legalHref, otherLang, texts, type Lang, type LegalPage } from '../i18n';
 import { latestDownload } from '../release';
 import { SITE } from '../site';
 
 interface Props {
   lang: Lang;
+  /** A legal page (the home page if not given), with its title. */
+  page?: LegalPage;
+  title?: string;
 }
 
-const { lang } = Astro.props;
+const { lang, page, title } = Astro.props;
 const t = texts(lang);
-const other = otherLang(lang);
+const other = otherLang(lang, page);
 const home = homeHref(lang);
+const hrefIn = (code: Lang) => (page ? legalHref(code, page) : homeHref(code));
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const langs: Lang[] = ['es', 'en'];
 const installer = (await latestDownload()).url;
@@ -25,13 +29,13 @@ const installer = (await latestDownload()).url;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{t.meta.title}</title>
+    <title>{title ? `${title} — ${SITE.name}` : t.meta.title}</title>
     <meta name="description" content={t.meta.description} />
     <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang="es" href={new URL('/', Astro.site)} />
-    <link rel="alternate" hreflang="en" href={new URL('/en/', Astro.site)} />
+    <link rel="alternate" hreflang="es" href={new URL(hrefIn('es'), Astro.site)} />
+    <link rel="alternate" hreflang="en" href={new URL(hrefIn('en'), Astro.site)} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta property="og:title" content={t.meta.title} />
+    <meta property="og:title" content={title ?? t.meta.title} />
     <meta property="og:description" content={t.meta.description} />
     <meta property="og:type" content="website" />
     {
@@ -58,9 +62,9 @@ const installer = (await latestDownload()).url;
     <header class="site-header wrap">
       <a class="brand" href={home}><span class="dot" aria-hidden="true"></span>{SITE.name}</a>
       <nav class="links">
-        <a href="#features">{t.nav.features}</a>
-        <a href="#download">{t.nav.download}</a>
-        <a href="#privacy">{t.nav.privacy}</a>
+        <a href={`${home}#features`}>{t.nav.features}</a>
+        <a href={`${home}#download`}>{t.nav.download}</a>
+        <a href={`${home}#privacy`}>{t.nav.privacy}</a>
         <a href={SITE.repo}>{t.nav.source}</a>
       </nav>
       <div class="langs">
@@ -71,7 +75,7 @@ const installer = (await latestDownload()).url;
                 {code.toUpperCase()}
               </span>
             ) : (
-              <a href={homeHref(code)} hreflang={code} lang={code}>
+              <a href={hrefIn(code)} hreflang={code} lang={code}>
                 {code.toUpperCase()}
               </a>
             ),
@@ -98,6 +102,7 @@ const installer = (await latestDownload()).url;
         class="button primary header-download"
         href={installer}
         data-installer
+        data-home={home}
         data-umami-event="download"
         data-umami-event-place="header"
       >
@@ -112,7 +117,9 @@ const installer = (await latestDownload()).url;
       <span class="name">{SITE.name}</span>
       <span class="made">{t.footer.made}</span>
       <a href={SITE.repo}>GitHub</a>
-      <a href="#download">{t.nav.download}</a>
+      <a href={`${home}#download`}>{t.nav.download}</a>
+      <a href={legalHref(lang, 'privacy')}>{t.footer.privacy}</a>
+      <a href={legalHref(lang, 'terms')}>{t.footer.terms}</a>
       <a href={other.href} hreflang={other.lang} lang={other.lang}>{t.footer.language}</a>
     </footer>
   </body>
@@ -121,11 +128,12 @@ const installer = (await latestDownload()).url;
 <script>
   // The download buttons get the installer straight away and show, below, what to do if
   // Windows warns. On a phone (no use for a Windows installer) they lead to that section,
-  // which offers to copy the link for the PC instead.
+  // which offers to copy the link for the PC instead (on the home page: the header's goes
+  // there from the other pages too).
   const phone = matchMedia('(pointer: coarse) and (max-width: 900px)').matches;
   for (const link of document.querySelectorAll<HTMLAnchorElement>('a[data-installer]')) {
     if (phone) {
-      link.href = '#download';
+      link.href = `${link.dataset.home ?? ''}#download`;
       continue;
     }
     link.addEventListener('click', () => {

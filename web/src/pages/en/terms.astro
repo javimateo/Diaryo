@@ -1,0 +1,96 @@
+---
+import Legal from '../../components/Legal.astro';
+import { legalHref } from '../../i18n';
+import { SITE } from '../../site';
+
+// The English version of /condiciones: keep both saying the same.
+---
+
+<Legal lang="en" page="terms" title="Terms" updated="2026-10-05">
+  <div class="summary">
+    <h2>In short</h2>
+    <ul>
+      <li>diaryo is free. The account and the cloud are optional, with 100 MB free.</li>
+      <li>What you write is yours; as it is encrypted, we don't even see it.</li>
+      <li>If you lose your diary password and your recovery code, the cloud can't be recovered.</li>
+      <li>One person runs it, without guarantees; if it ever closes, we'll tell you in time.</li>
+    </ul>
+  </div>
+
+  <h2>What diaryo is</h2>
+  <p>
+    diaryo is a diary for your computer and your browser. The app is used under its license,
+    <a href={SITE.licenseUrl}>{SITE.license}</a>: you can use it, read its code and change it, for
+    non-commercial purposes. These terms are for the <strong>account and the cloud</strong>, the
+    optional service that syncs the diary between your devices. By creating an account, you accept
+    them.
+  </p>
+
+  <h2>Your account</h2>
+  <ul>
+    <li>You must be at least 14 (or the age your country's law asks, if higher).</li>
+    <li>Use your own email and look after your password: what is done with your account is yours.</li>
+    <li>An account belongs to one person.</li>
+  </ul>
+
+  <h2>Your diary</h2>
+  <p>
+    What you write, draw or paste is yours, and we acquire no rights over it. It is encrypted on
+    your device, so we can't see it.
+  </p>
+  <p>
+    Only you have your diary password and your recovery code. <strong
+      >If you lose both, the cloud's diary can't be recovered</strong
+    >; the one on your devices is still there. The cloud doesn't replace your backups: you can save
+    a whole copy of the diary whenever you like, from the menu.
+  </p>
+
+  <h2>Space</h2>
+  <p>
+    Each account has 100 MB free. When it is full, syncing stops and the diary keeps working on your
+    devices. There may be paid plans with more space later; we'll never charge you anything you
+    didn't ask for, and we won't reduce your account's free space without telling you first.
+  </p>
+
+  <h2>Acceptable use</h2>
+  <p>Don't use the service to:</p>
+  <ul>
+    <li>store or share illegal content;</li>
+    <li>attack, overload or try to get around the server's security;</li>
+    <li>create accounts in bulk or use it in an abusive automated way.</li>
+  </ul>
+  <p>If someone does, we may suspend or close their account, telling them first when possible.</p>
+
+  <h2>Availability and changes</h2>
+  <p>
+    The service is free and run by one person. We try to keep it always working, but it may have
+    outages or problems. If it ever stops, we'll give at least 30 days' notice so you can take your
+    data (the copies on your devices don't depend on it). If these terms change in an important way,
+    we'll tell you by email first.
+  </p>
+
+  <h2>Deleting the account</h2>
+  <p>
+    You can delete it whenever you like, in Settings → Account and cloud. The account and all your
+    diary in the cloud are deleted at once; the one on your devices stays.
+  </p>
+
+  <h2>Liability</h2>
+  <p>
+    diaryo is provided as is, without warranties, and we aren't liable for data loss or damage from
+    using it, to the extent the law allows. None of this limits the rights the law gives you as a
+    consumer.
+  </p>
+
+  <h2>Governing law</h2>
+  <p>
+    These terms are governed by Spanish law. If you are a consumer, you can go to the courts where
+    you live.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    {SITE.owner}: <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>. What we do with your data
+    is in the <a href={legalHref('en', 'privacy')}>privacy policy</a>.
+  </p>
+</Legal>

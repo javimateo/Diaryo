@@ -1,4 +1,5 @@
 import {
+  Download,
   KeyRound,
   LockKeyhole,
   LockKeyholeOpen,
@@ -6,17 +7,21 @@ import {
   Mail,
   PenLine,
   RefreshCw,
+  Trash2,
   TriangleAlert,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
+  accountData,
   accountError,
+  deleteAccount,
   refreshAccount,
   resendVerification,
   signOut,
   useAccount,
 } from '../cloud/account';
 import { forgetDevice } from '../cloud/vault';
+import { datedName, downloadBlob } from '../storage/files';
 import { isDesktop } from '../desktop/tauri';
 import { useUI, type SyncMode, type VaultView } from '../store/ui';
 import { continueWithGoogle } from './accountActions';
@@ -25,6 +30,7 @@ import { syncNow, useSync } from './cloudSync';
 import { relativeTime } from './relativeTime';
 import { formatBytes } from './formatBytes';
 import { GoogleButton } from './GoogleButton';
+import { LegalLinks } from './LegalLinks';
 import { SettingsRow } from './SettingsRow';
 import { useT } from './useT';
 
@@ -145,7 +151,120 @@ export function AccountSection() {
       )}
       <VaultRows />
       <SyncRows />
+      <DataRows />
     </section>
+  );
+}
+
+/** The account's data: downloading it, and deleting the account (after typing the email). */
+function DataRows() {
+  const t = useT();
+  const a = t.account;
+  const email = useAccount((s) => s.account?.email ?? '');
+  const showToast = useUI((s) => s.showToast);
+  const [deleting, setDeleting] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  const fail = (error: unknown) => showToast(a.errors[accountError(error)] || a.errors.unknown);
+
+  const download = async () => {
+    setBusy(true);
+    try {
+      const data = await accountData(a.dataNote);
+      const json = JSON.stringify(data, null, 2);
+      downloadBlob(
+        new Blob([json], { type: 'application/json' }),
+        `${datedName('diaryo-account')}.json`,
+      );
+    } catch (error) {
+      fail(error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await deleteAccount();
+      showToast(a.deleted);
+    } catch (error) {
+      fail(error);
+      setBusy(false);
+    }
+  };
+
+  const confirmed = typed.trim().toLowerCase() === email.toLowerCase();
+  return (
+    <>
+      <SettingsRow label={a.dataRow} hint={a.dataHint}>
+        <button
+          type="button"
+          className="settings-btn"
+          disabled={busy}
+          onClick={() => void download()}
+        >
+          <Download size={15} strokeWidth={1.75} /> {a.download}
+        </button>
+      </SettingsRow>
+      <SettingsRow label={a.deleteRow} hint={a.deleteHint}>
+        <button
+          type="button"
+          className="settings-btn"
+          data-danger
+          disabled={deleting}
+          onClick={() => setDeleting(true)}
+        >
+          <Trash2 size={15} strokeWidth={1.75} /> {a.deleteStart}
+        </button>
+      </SettingsRow>
+      {deleting && (
+        <form
+          className="account-delete"
+          role="alert"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (confirmed) void remove();
+          }}
+        >
+          <p>
+            <strong>{a.deleteWarning}</strong> {a.deleteDetail}
+          </p>
+          <label className="account-field">
+            <span>{a.deleteType}</span>
+            <input
+              type="email"
+              autoFocus
+              autoComplete="off"
+              placeholder={email}
+              value={typed}
+              onChange={(event) => setTyped(event.target.value)}
+            />
+          </label>
+          <div>
+            <button
+              type="submit"
+              className="settings-btn"
+              data-danger-fill
+              disabled={!confirmed || busy}
+            >
+              {a.deleteConfirm}
+            </button>
+            <button
+              type="button"
+              className="settings-btn"
+              onClick={() => {
+                setDeleting(false);
+                setTyped('');
+              }}
+            >
+              {t.vault.back}
+            </button>
+          </div>
+        </form>
+      )}
+      <LegalLinks />
+    </>
   );
 }
 

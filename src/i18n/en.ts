@@ -77,6 +77,30 @@ export const en: Messages = {
     resend: 'Send again',
     resent: 'Email sent',
     verified: 'Email confirmed',
+    dataRow: 'Your data',
+    dataHint:
+      'What the server keeps about your account. Your diary, readable, is in "Save a copy".',
+    download: 'Download',
+    dataNote:
+      'This is what diaryo\'s server keeps about your account. Your diary is there only encrypted (nobody can read it without your diary password); its readable copy is saved from the menu, with "Save a copy".',
+    deleteRow: 'Delete the account',
+    deleteHint: "Deletes the account and the cloud's diary. The one on your devices stays.",
+    deleteStart: 'Delete…',
+    deleteWarning: "The account and the cloud's diary will be deleted for good.",
+    deleteDetail:
+      "It can't be undone. The diary on this device and on the others stays as it is, without the cloud.",
+    deleteType: 'Type your email to confirm:',
+    deleteConfirm: 'Delete the account',
+    deleted: 'Account deleted. Your diary is still here.',
+    legal: {
+      note: 'By continuing you accept the {terms} and the {privacy}.',
+      terms: 'terms',
+      privacy: 'privacy policy',
+      termsPage: 'Terms',
+      privacyPage: 'Privacy policy',
+      termsUrl: 'https://diaryo.javiermateo.dev/en/terms/',
+      privacyUrl: 'https://diaryo.javiermateo.dev/en/privacy/',
+    },
     errors: {
       offline: "Couldn't connect. Check your connection.",
       cancelled: '',

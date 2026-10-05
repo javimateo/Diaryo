@@ -85,6 +85,32 @@ export const es = {
     resend: 'Reenviar correo',
     resent: 'Correo enviado',
     verified: 'Email confirmado',
+    dataRow: 'Tus datos',
+    dataHint:
+      'Lo que el servidor guarda de tu cuenta. Tu diario, legible, está en «Guardar una copia».',
+    download: 'Descargar',
+    /** Written inside the downloaded file. */
+    dataNote:
+      'Esto es lo que el servidor de diaryo guarda de tu cuenta. Tu diario está allí solo cifrado (nadie puede leerlo sin tu contraseña del diario); su copia legible se guarda desde el menú, con «Guardar una copia».',
+    deleteRow: 'Borrar la cuenta',
+    deleteHint: 'Borra la cuenta y el diario de la nube. El de tus dispositivos se queda.',
+    deleteStart: 'Borrar…',
+    deleteWarning: 'Se borrarán para siempre la cuenta y el diario de la nube.',
+    deleteDetail:
+      'No se puede deshacer. El diario de este dispositivo y de los demás se queda tal cual, sin la nube.',
+    deleteType: 'Escribe tu email para confirmar:',
+    deleteConfirm: 'Borrar la cuenta',
+    deleted: 'Cuenta borrada. Tu diario sigue aquí.',
+    legal: {
+      /** `{terms}` and `{privacy}` become the links. */
+      note: 'Al continuar aceptas las {terms} y la {privacy}.',
+      terms: 'condiciones',
+      privacy: 'política de privacidad',
+      termsPage: 'Condiciones',
+      privacyPage: 'Política de privacidad',
+      termsUrl: 'https://diaryo.javiermateo.dev/condiciones/',
+      privacyUrl: 'https://diaryo.javiermateo.dev/privacidad/',
+    },
     errors: {
       offline: 'No se ha podido conectar. Comprueba tu conexión.',
       cancelled: '',

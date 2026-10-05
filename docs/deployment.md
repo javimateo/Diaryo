@@ -95,18 +95,28 @@ The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules 
    Credentials → OAuth client ID, type "Web application"), with the authorized redirect
    URI `https://cloud.diaryo.javiermateo.dev/api/oauth2-redirect`. On the consent screen
    (Google Auth Platform → Branding): app name `diaryo`, authorized domain
-   `javiermateo.dev`, scopes `openid`, `userinfo.email` and `userinfo.profile`. While it
-   is in **Testing**, only the test users added there can sign in; publishing it needs
-   the privacy policy and terms pages (phase C7).
+   `javiermateo.dev`, scopes `openid`, `userinfo.email` and `userinfo.profile`, home page
+   `https://diaryo.javiermateo.dev`, privacy policy
+   `https://diaryo.javiermateo.dev/privacidad/` and terms
+   `https://diaryo.javiermateo.dev/condiciones/`. While it is in **Testing**, only the
+   test users added there can sign in: **Publish app** (Audience) opens it to everyone.
+   With these basic scopes Google usually doesn't ask for a review, only to verify the
+   domain in Google Search Console.
 7. Check the rules against it (it creates two throwaway users and deletes them):
 
    ```bash
    PB_URL=https://cloud.diaryo.javiermateo.dev PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
    ```
 
+Privacy: the privacy policy promises no server backups and request logs kept 5 days
+(Settings → Logs, PocketBase's default). Changing either means updating the policy. Its
+contact address, `privacidad@javiermateo.dev` (`web/src/site.ts`), forwards to a real
+inbox with Cloudflare Email Routing (Email → Email Routing → Routing rules).
+
 Backups: the whole server state is `/pb/pb_data` (PocketBase can also make scheduled
 backups in Settings → Backups). The diaries in it are encrypted on the devices: a backup
-can't be read without the users' keys.
+can't be read without the users' keys. A deleted account stays in a backup until the
+backup is deleted, so turning them on means saying for how long in the privacy policy.
 
 ## Caching
 

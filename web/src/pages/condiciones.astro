@@ -1,0 +1,99 @@
+---
+import Legal from '../components/Legal.astro';
+import { legalHref } from '../i18n';
+import { SITE } from '../site';
+
+// When this text changes in what it says (not a typo), update the date too, and the
+// English one (/en/terms).
+---
+
+<Legal lang="es" page="terms" title="Condiciones" updated="2026-10-05">
+  <div class="summary">
+    <h2>En resumen</h2>
+    <ul>
+      <li>diaryo es gratis. La cuenta y la nube son opcionales, con 100 MB gratis.</li>
+      <li>Lo que escribes es tuyo; como está cifrado, ni siquiera lo vemos.</li>
+      <li>Si pierdes la contraseña del diario y la clave de recuperación, la nube no se recupera.</li>
+      <li>Lo mantiene una persona, sin garantías; si algún día cierra, avisaremos con tiempo.</li>
+    </ul>
+  </div>
+
+  <h2>Qué es diaryo</h2>
+  <p>
+    diaryo es un diario para el ordenador y el navegador. La app se usa según su licencia,
+    <a href={SITE.licenseUrl}>{SITE.license}</a>: puedes usarla, leer su código y cambiarlo, sin
+    fines comerciales. Estas condiciones son para la <strong>cuenta y la nube</strong>, el servicio
+    opcional que sincroniza el diario entre tus dispositivos. Al crear una cuenta, las aceptas.
+  </p>
+
+  <h2>Tu cuenta</h2>
+  <ul>
+    <li>Necesitas tener al menos 14 años (o la edad que pida la ley de tu país, si es mayor).</li>
+    <li>Usa un email tuyo y cuida tu contraseña: lo que se haga con tu cuenta es cosa tuya.</li>
+    <li>Una cuenta es de una persona.</li>
+  </ul>
+
+  <h2>Tu diario</h2>
+  <p>
+    Lo que escribes, dibujas o pegas es tuyo, y no adquirimos ningún derecho sobre ello. Se cifra
+    en tu dispositivo, así que no podemos verlo.
+  </p>
+  <p>
+    Tu contraseña del diario y tu clave de recuperación solo las tienes tú. <strong
+      >Si pierdes las dos, el diario de la nube no se puede recuperar</strong
+    >; el de tus dispositivos sigue ahí. La nube no sustituye a tus copias: puedes guardar una
+    copia entera del diario cuando quieras, desde el menú.
+  </p>
+
+  <h2>Espacio</h2>
+  <p>
+    Cada cuenta tiene 100 MB gratis. Si se llena, la sincronización se para y el diario sigue
+    funcionando en tus dispositivos. Puede que más adelante haya planes de pago con más espacio;
+    nunca te cobraremos nada sin que lo pidas, y no reduciremos el espacio gratis de tu cuenta sin
+    avisarte antes.
+  </p>
+
+  <h2>Uso aceptable</h2>
+  <p>No uses el servicio para:</p>
+  <ul>
+    <li>guardar o compartir contenido ilegal;</li>
+    <li>atacar, sobrecargar o intentar saltarse la seguridad del servidor;</li>
+    <li>crear cuentas en masa o usarlo de forma automatizada abusiva.</li>
+  </ul>
+  <p>
+    Si alguien lo hace, podemos suspender o cerrar su cuenta, avisando antes cuando sea posible.
+  </p>
+
+  <h2>Disponibilidad y cambios</h2>
+  <p>
+    El servicio es gratuito y lo mantiene una persona. Intentamos que funcione siempre, pero puede
+    tener cortes o fallos. Si algún día deja de prestarse, avisaremos con al menos 30 días para
+    que te lleves tus datos (las copias de tus dispositivos no dependen de él). Si cambian estas
+    condiciones de forma importante, te avisaremos antes por correo.
+  </p>
+
+  <h2>Borrar la cuenta</h2>
+  <p>
+    Puedes borrarla cuando quieras, en Ajustes → Cuenta y nube. Se borran al momento la cuenta y
+    todo tu diario de la nube; el de tus dispositivos se queda.
+  </p>
+
+  <h2>Responsabilidad</h2>
+  <p>
+    diaryo se ofrece tal cual, sin garantías, y no respondemos de pérdidas de datos o daños por
+    usarlo, en la medida en que la ley lo permita. Nada de esto limita los derechos que te da la
+    ley como consumidor.
+  </p>
+
+  <h2>Ley aplicable</h2>
+  <p>
+    Estas condiciones se rigen por la ley española. Si eres consumidor, puedes acudir a los
+    tribunales de tu domicilio.
+  </p>
+
+  <h2>Contacto</h2>
+  <p>
+    {SITE.owner}: <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>. Lo que hacemos con tus
+    datos está en la <a href={legalHref('es', 'privacy')}>política de privacidad</a>.
+  </p>
+</Legal>
