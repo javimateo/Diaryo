@@ -130,6 +130,10 @@ pulling, with tests against a fake server and two devices), `src/cloud/pbRemote.
   copy") does: the other devices follow.
 - Signing in with another account forgets the records of the previous one: the first
   sync runs again.
+- **Signing in again** (not opening the app already signed in) with changes here that
+  aren't in the cloud (made while signed out, or left pending): nothing goes up until the
+  user chooses: upload them (merged, the most recent wins) or use the cloud's diary,
+  keeping this one in a file first. Until then (even across restarts) nothing syncs.
 
 ### Edge cases
 

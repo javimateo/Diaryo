@@ -209,6 +209,16 @@ export const es = {
     useCloud: 'Usar el de la nube y guardar el mío',
     useCloudHint:
       'El diario de este dispositivo se guarda en un archivo .diaryo (puedes abrirlo cuando quieras) y aquí queda el de la nube.',
+    returnTitle: 'Hay cambios sin subir',
+    returnText: (n: number) =>
+      n === 1
+        ? 'Este dispositivo tiene 1 cambio que no está en la nube (hecho sin la sesión iniciada o que quedó pendiente). ¿Qué hacemos con él?'
+        : `Este dispositivo tiene ${n} cambios que no están en la nube (hechos sin la sesión iniciada o que quedaron pendientes). ¿Qué hacemos con ellos?`,
+    keepMine: 'Subir mis cambios',
+    keepMineHint:
+      'Se juntan con el diario de la nube; si algo cambió en los dos, gana lo más reciente.',
+    useCloudReturnHint:
+      'Tus cambios no se suben: el diario de este dispositivo se guarda en un archivo .diaryo (puedes abrirlo cuando quieras) y aquí queda el de la nube.',
     later: 'Ahora no',
     keptCopy: (where: string) => `Tu diario anterior está en ${where} · llega el de la nube`,
     tips: {

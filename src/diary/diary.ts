@@ -501,6 +501,26 @@ export class Diary {
   }
 
   /**
+   * After the cloud's diary arrived in place of this one: if the open page is a blank one
+   * and the cloud brought a page for that same day, that one opens (and the blank one goes).
+   */
+  openArrivedPage(): Promise<void> {
+    return this.run(async () => {
+      const current = this.current;
+      if (!current || !this.isEmpty || current.title) return;
+      const arrived = pagesOfDay(this.pages, current.date)
+        .filter((page) => page.id !== current.id)
+        .at(-1);
+      if (!arrived) return;
+      await this.autosave?.stop();
+      this.autosave = null;
+      await deletePage(this.db, current.id);
+      this.pages = this.pages.filter((page) => page.id !== current.id);
+      await this.open(arrived, 0);
+    });
+  }
+
+  /**
    * Puts the saved desk back (without counting it as a change to save): the desktop layer
    * changed it.
    */
