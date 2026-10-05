@@ -3,14 +3,17 @@ import { chooseFirstSync, useSync } from './cloudSync';
 import { useT } from './useT';
 
 /**
- * The first sync, with a diary on this device and another one in the cloud: merge them,
- * or use the cloud's one and keep this one in a file.
+ * The first sync, with a diary on this device and another one in the cloud, or signing in
+ * again with changes here that aren't in the cloud: merge them, or use the cloud's diary
+ * and keep this one in a file.
  */
 export function FirstSyncDialog() {
   const t = useT();
   const s = t.sync;
   const choosing = useSync((state) => state.choosing);
+  const pending = useSync((state) => state.pending);
   if (!choosing) return null;
+  const back = choosing === 'return';
   const choose = (choice: 'merge' | 'cloud' | 'later') => () => void chooseFirstSync(choice);
 
   return (
@@ -27,7 +30,7 @@ export function FirstSyncDialog() {
         }}
       >
         <header className="dialog-header">
-          <h2 id="first-sync-title">{s.firstTitle}</h2>
+          <h2 id="first-sync-title">{back ? s.returnTitle : s.firstTitle}</h2>
           <button
             type="button"
             className="icon-btn"
@@ -37,7 +40,7 @@ export function FirstSyncDialog() {
             <X size={18} strokeWidth={1.75} />
           </button>
         </header>
-        <p className="open-copy-text">{s.firstText}</p>
+        <p className="open-copy-text">{back ? s.returnText(pending) : s.firstText}</p>
         <button
           type="button"
           className="open-copy-option"
@@ -47,15 +50,15 @@ export function FirstSyncDialog() {
         >
           <Combine size={20} strokeWidth={1.75} aria-hidden />
           <span>
-            <strong>{s.merge}</strong>
-            <small>{s.mergeHint}</small>
+            <strong>{back ? s.keepMine : s.merge}</strong>
+            <small>{back ? s.keepMineHint : s.mergeHint}</small>
           </span>
         </button>
         <button type="button" className="open-copy-option" onClick={choose('cloud')}>
           <Replace size={20} strokeWidth={1.75} aria-hidden />
           <span>
             <strong>{s.useCloud}</strong>
-            <small>{s.useCloudHint}</small>
+            <small>{back ? s.useCloudReturnHint : s.useCloudHint}</small>
           </span>
         </button>
         <div className="open-copy-footer">

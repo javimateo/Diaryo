@@ -49,7 +49,11 @@ interface SyncState {
   pending: number;
   usage: { used: number; quota: number } | null;
   /** The first time, with a diary here and one in the cloud: what to do with them. */
-  choosing: boolean;
+  /**
+   * The user decides before syncing: the first time with a diary here and one in the cloud,
+   * or on signing in again with changes here that aren't in the cloud.
+   */
+  choosing: 'first' | 'return' | null;
   /** Changes the server refused in the last sync (they stay pending). */
   rejected: number;
 }
@@ -61,7 +65,7 @@ export const useSync = create<SyncState>(() => ({
   pending: 0,
   rejected: 0,
   usage: null,
-  choosing: false,
+  choosing: null,
 }));
 
 /** After a change, the wait before syncing (more changes usually follow). */
@@ -97,6 +101,13 @@ function loadSaved(account: string): Saved {
     lastSync: typeof saved.lastSync === 'number' ? saved.lastSync : null,
   };
 }
+
+/**
+ * Signed in again with changes made here that aren't in the cloud (while signed out, or
+ * left pending): they don't go up until the user says so. Kept until then, even if the
+ * app is closed.
+ */
+const askKey = (account: string) => `diaryo:sync-ask:${account}`;
 
 function store(account: string, saved: Saved) {
   writeJSON(savedKey(account), saved);
@@ -197,12 +208,21 @@ async function syncOnce(keys: DiaryKeys) {
   try {
     if (!saved.began) {
       if (!(await begin(db, remote))) {
-        useSync.setState({ status: 'idle', choosing: !postponed });
+        useSync.setState({ status: 'idle', choosing: postponed ? null : 'first' });
         return;
       }
+      writeText(askKey(account.id), '');
       saved.began = true;
       saved.cursor = START;
       store(account.id, saved);
+    }
+    if (readText(askKey(account.id))) {
+      const pending = await db.tracked.where('dirty').equals(1).count();
+      if (pending > 0) {
+        useSync.setState({ status: 'idle', choosing: postponed ? null : 'return', pending });
+        return;
+      }
+      writeText(askKey(account.id), '');
     }
     // Each batch is written as it comes; the diary shows them all at the end.
     const sync = new Sync(db, remote, keys, (changes) =>
@@ -361,11 +381,13 @@ function schedule(delay: number) {
 // ─── The first time: both diaries ───────────────────────────────
 
 /**
- * The user chose: merge both diaries (each change keeps the most recent version), or use
- * the cloud's one, keeping this device's diary in a file first.
+ * The user chose: merge this diary (or the changes made here) with the cloud's (each change
+ * keeps the most recent version), or use the cloud's one, keeping this device's diary in a
+ * file first.
  */
 export async function chooseFirstSync(choice: 'merge' | 'cloud' | 'later') {
-  useSync.setState({ choosing: false });
+  const asked = useSync.getState().choosing;
+  useSync.setState({ choosing: null });
   if (choice === 'later') {
     postponed = true;
     return;
@@ -385,11 +407,19 @@ export async function chooseFirstSync(choice: 'merge' | 'cloud' | 'later') {
     }
     await diary.replace({ pages: [], assets: [], fonts: [] }, false);
     showToast(t().sync.keptCopy(where));
-  } else {
+  } else if (asked === 'first') {
     await trackEverything(db);
   }
-  store(account.id, { ...loadSaved(account.id), began: true, cursor: START });
+  writeText(askKey(account.id), '');
+  // Taking the cloud's diary reads all of it again; merging goes on from where it was.
+  const saved = loadSaved(account.id);
+  store(account.id, {
+    ...saved,
+    began: true,
+    cursor: choice === 'cloud' || asked === 'first' ? START : saved.cursor,
+  });
   await syncNow();
+  if (choice === 'cloud') await diary.openArrivedPage();
 }
 
 // ─── Starting ───────────────────────────────────────────────────
@@ -424,7 +454,7 @@ export function startSync() {
   const update = () => {
     const account = useAccount.getState().account;
     if (!active() || !account) {
-      useSync.setState({ status: 'off', progress: null, choosing: false });
+      useSync.setState({ status: 'off', progress: null, choosing: null });
     } else {
       const saved = loadSaved(account.id);
       useSync.setState((s) => ({
@@ -438,6 +468,9 @@ export function startSync() {
   };
 
   const unsubscribeAccount = useAccount.subscribe((state, previous) => {
+    // Signing in (not opening the app already signed in): what changed here meanwhile
+    // waits for the user's say.
+    if (state.account && !previous.account) writeText(askKey(state.account.id), '1');
     if (state.account?.id !== previous.account?.id || state.vault !== previous.vault) update();
   });
   const unsubscribeUI = useUI.subscribe((state, previous) => {

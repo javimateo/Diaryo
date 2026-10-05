@@ -199,6 +199,15 @@ export const en: Messages = {
     useCloud: "Use the cloud's and keep mine",
     useCloudHint:
       "This device's diary is saved in a .diaryo file (you can open it whenever you like) and the cloud's one stays here.",
+    returnTitle: "There are changes that haven't gone up",
+    returnText: (n: number) =>
+      n === 1
+        ? "This device has 1 change that isn't in the cloud (made while signed out, or left pending). What should we do with it?"
+        : `This device has ${n} changes that aren't in the cloud (made while signed out, or left pending). What should we do with them?`,
+    keepMine: 'Upload my changes',
+    keepMineHint: 'They join the cloud diary; if something changed on both, the most recent wins.',
+    useCloudReturnHint:
+      "Your changes don't go up: this device's diary is saved in a .diaryo file (you can open it whenever you like) and the cloud's one stays here.",
     later: 'Not now',
     keptCopy: (where: string) => `Your previous diary is in ${where} · the cloud's one is coming`,
     tips: {
