@@ -7,6 +7,7 @@ import {
 } from '../cloud/account';
 import { readAccountLink } from '../cloud/links';
 import { checkVault } from '../cloud/vault';
+import { showDesktopMode } from '../desktop/bridge';
 import { call, isDesktop } from '../desktop/tauri';
 import { t } from '../i18n';
 import { useUI } from '../store/ui';
@@ -26,6 +27,8 @@ export async function continueWithGoogle() {
   } catch {
     return;
   }
+  // On the desktop the browser took the focus (and the floating diary hid): it comes back.
+  if (isDesktop()) void showDesktopMode(useUI.getState().desktop?.mode ?? 'window');
   await afterSignIn();
 }
 
