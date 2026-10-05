@@ -450,6 +450,18 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
     - [ ] **Qué se ve en el escritorio**: elegir si la mesa, el mini diario o solo
           ciertos post-its se muestran en el escritorio de Windows, o que pidan la
           contraseña para mostrarse. Post-its marcados como «privados».
+    - [ ] **Privacidad en la web** (sobre todo en ordenadores compartidos). Hoy, al
+          cerrar sesión, el diario se queda en el navegador (IndexedDB) sin cifrar: el
+          cifrado solo protege lo que se sube a la nube. Por decidir:
+      - Al cerrar sesión, ¿qué pasa con la copia local? (dejarla, borrarla tras
+        avisar si hay cambios sin subir, o dejarla cifrada y bloqueada).
+      - ¿Cada cuánto se pide la contraseña del diario? (al abrir la app, tras X
+        minutos sin uso, al volver a la pestaña…; configurable).
+      - ¿Caduca la sesión? Hoy dura 30 días y se renueva sola: en la web quizá una
+        opción «no mantener la sesión» o una duración más corta.
+    - [ ] **Cifrar solo ciertos contenidos**: post-its o páginas marcados como
+          privados, que piden la contraseña para verse (en la mesa, el mini diario y
+          la web), aunque el resto del diario esté abierto.
   - [ ] **E. macOS**: Tauri compila para macOS casi sin cambios; lo que es solo de
         Windows (la mesa en el escritorio, `windows-sys`) necesita su versión o quedarse
         fuera al principio. Para distribuirlo hace falta la cuenta de desarrollador de
