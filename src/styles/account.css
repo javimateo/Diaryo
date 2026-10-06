@@ -522,16 +522,42 @@
   }
 }
 
-.sign-out-confirm {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.sign-out-choice {
+  margin: 4px 0 8px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--hover);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
-.sign-out-confirm > div {
+.sign-out-choice p {
+  margin: 0 0 10px;
+}
+
+.sign-out-choice .open-copy-option {
+  width: 100%;
+  margin: 0 0 8px;
+}
+
+.sign-out-choice .open-copy-option:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.sign-out-pending {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(194, 122, 26, 0.12);
+  color: #7a4a0c;
+}
+
+:root[data-theme='dark'] .sign-out-pending {
+  background: rgba(239, 159, 39, 0.14);
+  color: #f3c987;
 }
 
 /* Deleting the account */

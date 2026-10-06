@@ -221,12 +221,20 @@ export const es = {
       n === 1 ? '1 cambio no se ha podido subir' : `${n} cambios no se han podido subir`,
     sessionEnded:
       'Tu sesión ha caducado: vuelve a entrar para sincronizar. Lo pendiente se guarda aquí.',
-    signOutPending: (n: number) =>
-      n === 1
-        ? 'Hay 1 cambio sin subir a la nube. Se queda en este dispositivo y subirá cuando vuelvas a entrar.'
-        : `Hay ${n} cambios sin subir a la nube. Se quedan en este dispositivo y subirán cuando vuelvas a entrar.`,
-    syncAndSignOut: 'Sincronizar y salir',
-    signOutAnyway: 'Salir igualmente',
+    leaveTitle: '¿Qué hacemos con el diario de este dispositivo?',
+    leavePending: (n: number) =>
+      n === 1 ? 'Hay 1 cambio sin subir a la nube.' : `Hay ${n} cambios sin subir a la nube.`,
+    leaveKeep: 'Dejarlo aquí',
+    leaveKeepHint: 'Sigues escribiendo sin cuenta; no se sincroniza.',
+    leaveKeepPendingHint: 'Los cambios se quedan aquí y suben cuando vuelvas a entrar.',
+    leaveRemove: 'Quitarlo de aquí',
+    leaveSyncRemove: 'Sincronizar y quitarlo de aquí',
+    leaveRemoveHint: (desktop: boolean) =>
+      'Se abre un diario en blanco. El tuyo sigue en la nube y vuelve al entrar.' +
+      (desktop ? ' Las copias diarias de Documentos se quedan.' : ''),
+    leaveSyncRemoveHint: 'Primero se suben los cambios; si no se puede, no se borra nada.',
+    leaveFailed: 'No se han podido subir los cambios: el diario sigue aquí.',
+    leftRemoved: 'Sesión cerrada · el diario ya no está en este dispositivo',
     passwordMode: 'Se pide la contraseña al sincronizar',
     firstTitle: 'Ya hay un diario en la nube',
     firstText: 'Este dispositivo también tiene uno. ¿Qué hacemos?',
@@ -245,8 +253,16 @@ export const es = {
       'Se juntan con el diario de la nube; si algo cambió en los dos, gana lo más reciente.',
     useCloudReturnHint:
       'Tus cambios no se suben: el diario de este dispositivo se guarda en un archivo .diaryo (puedes abrirlo cuando quieras) y aquí queda el de la nube.',
+    emptyTitle: 'Esta cuenta aún no tiene diario',
+    emptyText: 'En este dispositivo hay un diario. ¿Qué hacemos con él?',
+    upload: 'Subir este diario',
+    uploadHint: 'Pasa a ser el diario de esta cuenta y se sincroniza con tus otros dispositivos.',
+    startNew: 'Empezar uno nuevo y guardar este',
+    startNewHint:
+      'Este diario se guarda en un archivo .diaryo (puedes abrirlo cuando quieras) y la cuenta empieza en blanco.',
     later: 'Ahora no',
     keptCopy: (where: string) => `Tu diario anterior está en ${where} · llega el de la nube`,
+    keptCopyNew: (where: string) => `Tu diario anterior está en ${where} · empiezas en blanco`,
     tips: {
       idle: (when: string) => `Nube al día · ${when}`,
       syncing: 'Sincronizando con la nube…',

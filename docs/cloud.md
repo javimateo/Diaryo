@@ -90,8 +90,14 @@ device's own; thumbnails are drawn again on each device (a page that changed the
 a new one in the background).
 
 Each item carries `modified` (the device's time of the change, in ms) and `deleted`
-(a tombstone, with its content emptied, so a deletion reaches the other devices
-instead of the item coming back from them).
+(a tombstone, whose content only says it was deleted, so a deletion reaches the other
+devices instead of the item coming back from them).
+
+Both are sealed inside the encryption too, and a device only believes them from there:
+neither the server nor someone with the session but not the keys can delete things or
+bring an old version back (`open` in `src/cloud/sync.ts`). The server may lower the time
+(see Clocks), never raise it. Tombstones from before they were sealed are ignored; items
+from before then are still read, as content only.
 
 ## Protocol
 
@@ -103,7 +109,7 @@ pulling, with tests against a fake server and two devices), `src/cloud/pbRemote.
   paths it touched in the `tracked` table: the time of the change and whether it is
   still to push. Nothing is lost if the app is closed at once. A change is always later
   than the one it replaces, even with a clock behind. Only moving the view isn't a change.
-- **Push**: the pending paths, pages first, then images and fonts, then elements (four
+- **Push**: the pending paths, pages first, then images and fonts, then elements (six
   at a time). Each one is read, encrypted and written (created, or updated if its
   record is known). The server refuses an older change (`409`): the newer one there
   wins and comes with the next pull. Another device created the same key first: it is
@@ -122,12 +128,14 @@ pulling, with tests against a fake server and two devices), `src/cloud/pbRemote.
   now". **With password**: only with "Sync now", which asks for the diary password each
   time; this device doesn't keep the keys (switching to this mode forgets them).
 - **First sync** of a device with the account: with nothing here, the cloud's diary
-  comes; with nothing there, all of this one goes up; with a diary on both sides, the
-  user chooses: **merge** them (everything is pushed and pulled; the most recent wins) or
-  **use the cloud's one**, keeping this device's diary in a `.diaryo` file first (the
-  backups folder, or a download on the web), to open it whenever they like. Replacing
-  the diary this way deletes nothing in the cloud; replacing it with a backup ("Open a
-  copy") does: the other devices follow.
+  comes. With a diary here, the user always chooses (it may be another account's, left
+  on the device after signing out). With a diary in the cloud too: **merge** them
+  (everything is pushed and pulled; the most recent wins) or **use the cloud's one**.
+  With an empty cloud: **upload this one**, or **start a new one**. Using the cloud's or
+  starting anew keeps this device's diary in a `.diaryo` file first (the backups folder,
+  or a download on the web), to open it whenever they like. Replacing the diary this way
+  deletes nothing in the cloud; replacing it with a backup ("Open a copy") does: the
+  other devices follow.
 - Signing in with another account forgets the records of the previous one: the first
   sync runs again.
 - **Signing in again** (not opening the app already signed in) with changes here that
@@ -142,7 +150,9 @@ pulling, with tests against a fake server and two devices), `src/cloud/pbRemote.
   ended, so those are never missed (the ones read again change nothing).
 - **Clocks**: the times that decide which change wins are this device's clock corrected
   with the server's (from the time of each write it answers), so a clock that is off
-  doesn't win or lose every conflict (`src/lib/clock.ts`).
+  doesn't win or lose every conflict (`src/lib/clock.ts`). The server stamps a change
+  more than a minute in the future with its own time (it would win every conflict, and
+  nothing could change the item afterwards), and the device keeps the stamped time.
 - **The user is drawing or writing** when changes come: they are fetched once they
   finish (a reload would cut the stroke or the text), and what is here goes up meanwhile.
   A pull writes batch by batch and the diary shows them once, at the end.
@@ -155,8 +165,12 @@ pulling, with tests against a fake server and two devices), `src/cloud/pbRemote.
 - **A session that ends** (expired, the password changed, the account gone): the app
   says so and signs out; what is pending stays on the device and goes up when the user
   signs in again with the same account.
-- **Signing out with changes not pushed**: the settings say how many, and offer to sync
-  first.
+- **Signing out** asks what happens to this device's diary (`signOutOfDevice` in
+  `src/ui/cloudSync.ts`): **keep it here** (what is pending goes up when the same account
+  signs in again), or **remove it from here**: what is pending goes up first (if it can't,
+  nothing is removed), and a blank diary opens; this device forgets it synced that
+  account, so signing in again brings it all back. On the desktop, the daily backups
+  stay. Without the cloud on here (no vault, or locked), it just signs out.
 - **Changing the diary password or the recovery code** on one device: the others keep
   working (their keys come from the diary secret, which doesn't change).
 

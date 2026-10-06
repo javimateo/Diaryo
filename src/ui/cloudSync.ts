@@ -1,6 +1,6 @@
 import { ClientResponseError } from 'pocketbase';
 import { create } from 'zustand';
-import { refreshAccount, useAccount } from '../cloud/account';
+import { refreshAccount, signOut, useAccount } from '../cloud/account';
 import { pb } from '../cloud/client';
 import type { DiaryKeys } from '../cloud/crypto';
 import { fetchUsage, pocketbaseRemote } from '../cloud/pbRemote';
@@ -48,12 +48,12 @@ interface SyncState {
   /** Changes waiting to go up. */
   pending: number;
   usage: { used: number; quota: number } | null;
-  /** The first time, with a diary here and one in the cloud: what to do with them. */
   /**
-   * The user decides before syncing: the first time with a diary here and one in the cloud,
-   * or on signing in again with changes here that aren't in the cloud.
+   * The user decides before syncing: the first time with a diary here and one in the cloud
+   * (`first`) or none there (`empty`), or on signing in again with changes here that aren't
+   * in the cloud (`return`).
    */
-  choosing: 'first' | 'return' | null;
+  choosing: 'first' | 'empty' | 'return' | null;
   /** Changes the server refused in the last sync (they stay pending). */
   rejected: number;
 }
@@ -184,16 +184,16 @@ async function alone(action: () => Promise<void>) {
 }
 
 /**
- * The first sync with this account: with nothing here, the cloud's diary comes; with
- * nothing there, all of this one goes up; with both, the user chooses (returns false).
+ * The first sync with this account: with nothing here, the cloud's diary comes. With a
+ * diary here, the user chooses what to do with it (returns which question): it may be
+ * another account's, or one they don't want in this account.
  */
-async function begin(db: DiaryoDB, remote: Remote): Promise<boolean> {
-  const here = await hasContent(db);
-  const there = (await remote.listAfter(START, 1)).length > 0;
-  if (here && there) return false;
-  if (here) await trackEverything(db);
-  else await db.tracked.clear();
-  return true;
+async function begin(db: DiaryoDB, remote: Remote): Promise<'first' | 'empty' | null> {
+  if (await hasContent(db)) {
+    return (await remote.listAfter(START, 1)).length > 0 ? 'first' : 'empty';
+  }
+  await db.tracked.clear();
+  return null;
 }
 
 async function syncOnce(keys: DiaryKeys) {
@@ -207,8 +207,9 @@ async function syncOnce(keys: DiaryKeys) {
   const saved = loadSaved(account.id);
   try {
     if (!saved.began) {
-      if (!(await begin(db, remote))) {
-        useSync.setState({ status: 'idle', choosing: postponed ? null : 'first' });
+      const question = await begin(db, remote);
+      if (question) {
+        useSync.setState({ status: 'idle', choosing: postponed ? null : question });
         return;
       }
       writeText(askKey(account.id), '');
@@ -382,8 +383,8 @@ function schedule(delay: number) {
 
 /**
  * The user chose: merge this diary (or the changes made here) with the cloud's (each change
- * keeps the most recent version), or use the cloud's one, keeping this device's diary in a
- * file first.
+ * keeps the most recent version; with an empty cloud, it goes up), or use the cloud's one
+ * (or start a blank one), keeping this device's diary in a file first.
  */
 export async function chooseFirstSync(choice: 'merge' | 'cloud' | 'later') {
   const asked = useSync.getState().choosing;
@@ -406,8 +407,8 @@ export async function chooseFirstSync(choice: 'merge' | 'cloud' | 'later') {
       return;
     }
     await diary.replace({ pages: [], assets: [], fonts: [] }, false);
-    showToast(t().sync.keptCopy(where));
-  } else if (asked === 'first') {
+    showToast((asked === 'empty' ? t().sync.keptCopyNew : t().sync.keptCopy)(where));
+  } else if (asked !== 'return') {
     await trackEverything(db);
   }
   writeText(askKey(account.id), '');
@@ -416,10 +417,35 @@ export async function chooseFirstSync(choice: 'merge' | 'cloud' | 'later') {
   store(account.id, {
     ...saved,
     began: true,
-    cursor: choice === 'cloud' || asked === 'first' ? START : saved.cursor,
+    cursor: choice === 'cloud' || asked !== 'return' ? START : saved.cursor,
   });
   await syncNow();
   if (choice === 'cloud') await diary.openArrivedPage();
+}
+
+// ─── Signing out ────────────────────────────────────────────────
+
+/**
+ * Signs out, and with `removeDiary` the diary leaves this device too (a blank one opens):
+ * first what is pending goes up, and if it can't, nothing is removed (returns false). It is
+ * still in the cloud, and comes back the next time this account signs in here.
+ */
+export async function signOutOfDevice(removeDiary: boolean): Promise<boolean> {
+  const account = useAccount.getState().account;
+  const diary = useUI.getState().diary;
+  if (!removeDiary || !account || !diary) {
+    signOut();
+    return true;
+  }
+  const pending = () => getDB().tracked.where('dirty').equals(1).count();
+  if ((await pending()) > 0) await syncNow();
+  if ((await pending()) > 0) return false;
+  signOut();
+  await diary.replace({ pages: [], assets: [], fonts: [] }, false);
+  await getDB().tracked.clear();
+  // This device no longer has that account's diary: the next time, it all comes again.
+  writeText(LAST_ACCOUNT_KEY, '');
+  return true;
 }
 
 // ─── Starting ───────────────────────────────────────────────────
