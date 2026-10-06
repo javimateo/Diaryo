@@ -111,7 +111,9 @@ The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules 
 Privacy: the privacy policy promises no server backups and request logs kept 5 days
 (Settings → Logs, PocketBase's default). Changing either means updating the policy. Its
 contact address, `privacidad@javiermateo.dev` (`web/src/site.ts`), forwards to a real
-inbox with Cloudflare Email Routing (Email → Email Routing → Routing rules).
+inbox with Cloudflare Email Routing (Email → Email Routing → Routing rules). Receiving
+and sending don't clash: Email Routing's MX and SPF records are on the root of
+`javiermateo.dev`, and Resend's (the server's emails) on `send.javiermateo.dev`.
 
 Backups: the whole server state is `/pb/pb_data` (PocketBase can also make scheduled
 backups in Settings → Backups). The diaries in it are encrypted on the devices: a backup

@@ -444,7 +444,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
               dispositivo se pregunta siempre (subirlo o empezar uno nuevo si la cuenta
               está vacía; combinar o usar el de la nube si no), y al cerrar sesión, si
               dejar el diario o quitarlo del dispositivo.
-      - [ ] **C7. RGPD y web**: borrar la cuenta, exportar los datos, política de
+      - [x] **C7. RGPD y web**: borrar la cuenta, exportar los datos, política de
             privacidad y condiciones; la web explica la nube (opcional, cifrada).
         - [x] En Ajustes → Cuenta y nube: «Tus datos» (un JSON con lo que el servidor
               sabe de la cuenta; el diario legible es «Guardar una copia») y «Borrar la
@@ -456,9 +456,12 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
               cuenta y en Ajustes. Contacto: `privacidad@javiermateo.dev`.
         - [x] La web explica la nube: sección «Nube», textos que decían «sin nube» y
               preguntas nuevas.
-        - [ ] Tras publicar: el reenvío de `privacidad@javiermateo.dev` (Cloudflare
-              Email Routing) y publicar la app de Google (`docs/deployment.md`). Que
-              alguien con conocimientos legales revise los textos.
+        - [x] Tras publicar: el reenvío de `privacidad@javiermateo.dev` (Cloudflare
+              Email Routing) y la app de Google publicada (`docs/deployment.md`).
+              Probado: entrar con Google, descargar los datos y borrar la cuenta.
+      - [ ] **Revisión legal** de la política de privacidad y las condiciones, por
+            alguien que sepa: sobre todo si la LSSI pide el domicilio o el NIF del
+            responsable (ahora solo están el nombre y el email).
       - [ ] **C8. Pagos** (más adelante).
   - [ ] **D. Privacidad del diario**, después de la nube: el cifrado y la contraseña
         dependen de cómo se sincronice.
