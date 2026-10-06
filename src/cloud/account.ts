@@ -163,8 +163,9 @@ export async function confirmVerification(token: string) {
 
 /**
  * Renews the session and brings the account up to date (the email confirmed on another
- * have been made again), the session ends; without a
- * connection, it stays as it was. Returns true if a session ended.
+ * device, the plan…). If the server no longer accepts it (expired, the password changed,
+ * the account gone), the session ends; without a connection, it stays as it was. Returns
+ * true if a session ended.
  */
 export async function refreshAccount(): Promise<boolean> {
   if (!pb.authStore.token) return false;

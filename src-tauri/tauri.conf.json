@@ -26,7 +26,17 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self'",
+        "img-src": "'self' data: blob:",
+        "font-src": "'self' data:",
+        "connect-src": "'self' ipc: http://ipc.localhost https://cloud.diaryo.javiermateo.dev",
+        "object-src": "'none'",
+        "base-uri": "'none'"
+      },
+      "devCsp": null
     }
   },
   "plugins": {

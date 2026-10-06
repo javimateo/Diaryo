@@ -102,7 +102,7 @@ The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules 
    test users added there can sign in: **Publish app** (Audience) opens it to everyone.
    With these basic scopes Google usually doesn't ask for a review, only to verify the
    domain in Google Search Console.
-7. Check the rules against it (it creates two throwaway users and deletes them):
+7. Check the rules against it (it creates three throwaway users and deletes them):
 
    ```bash
    PB_URL=https://cloud.diaryo.javiermateo.dev PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
@@ -123,6 +123,14 @@ backup is deleted, so turning them on means saying for how long in the privacy p
 - Website: the hashed files in `/_astro/` are cached for a year; pages are served as is.
 - Web app: `/assets/` is cached for a year and `index.html` never, so a new version
   arrives on the next load. Every path falls back to `index.html`.
+
+## Content Security Policy
+
+The web app (`deploy/app.nginx.conf`) and the desktop app (`src-tauri/tauri.conf.json`)
+only run their own code and only connect to themselves and to the cloud server, so a
+script slipped into a diary couldn't run nor send anything out. If the cloud moves to
+another address (`VITE_CLOUD_URL`), its `connect-src` changes in both. The desktop
+app's development build has none (`devCsp`: Vite's hot reload needs inline code).
 
 ## Where the data lives
 

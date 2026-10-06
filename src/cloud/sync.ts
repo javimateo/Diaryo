@@ -15,7 +15,8 @@ import { decrypt, encrypt, fromBase64, itemName, toBase64, type DiaryKeys } from
 /**
  * The cloud sync (docs/cloud.md): pushes what changed here and pulls what changed on the
  * other devices. Each tracked path is one item on the server, encrypted, under an opaque
- * key; the server only knows its kind, its time and whether it is a tombstone.
+ * key; the server only knows its kind, its time and whether it is a tombstone. The time
+ * and the deletion are sealed inside too, so the server can't change them.
  */
 
 /** An item as the server keeps it. */
@@ -23,7 +24,7 @@ export interface RemoteItem {
   id: string;
   key: string;
   kind: ItemKind;
-  /** The encrypted content (empty for a tombstone). */
+  /** The encrypted content (a tombstone's only says it was deleted). */
   data: string;
   modified: number;
   deleted: boolean;
@@ -82,6 +83,12 @@ const kindOf = (path: string): ItemKind => {
 interface Sealed {
   path: string;
   value: unknown;
+  /**
+   * The item's time and whether it was deleted, as the device wrote them (items from
+   * before they were sealed don't have them).
+   */
+  modified?: number;
+  deleted?: boolean;
 }
 
 /**
@@ -99,7 +106,7 @@ export function seal(sealed: Sealed): Uint8Array<ArrayBuffer> {
   const src = value.src as string;
   const bytes = fromBase64(src.slice(match[0].length));
   const header = new TextEncoder().encode(
-    JSON.stringify({ path: sealed.path, value: { ...value, src: undefined }, mime: match[1] }),
+    JSON.stringify({ ...sealed, value: { ...value, src: undefined }, mime: match[1] }),
   );
   const out = new Uint8Array(5 + header.length + bytes.length);
   out[0] = FILE_FORMAT;
@@ -112,11 +119,11 @@ export function seal(sealed: Sealed): Uint8Array<ArrayBuffer> {
 export function unseal(plain: Uint8Array): Sealed {
   if (plain[0] !== FILE_FORMAT) return JSON.parse(new TextDecoder().decode(plain)) as Sealed;
   const length = new DataView(plain.buffer, plain.byteOffset).getUint32(1);
-  const header = JSON.parse(new TextDecoder().decode(plain.subarray(5, 5 + length))) as Sealed & {
-    mime: string;
-  };
-  const src = `data:${header.mime};base64,${toBase64(plain.subarray(5 + length))}`;
-  return { path: header.path, value: { ...(header.value as object), src } };
+  const { mime, ...header } = JSON.parse(
+    new TextDecoder().decode(plain.subarray(5, 5 + length)),
+  ) as Sealed & { mime: string };
+  const src = `data:${mime};base64,${toBase64(plain.subarray(5 + length))}`;
+  return { ...header, value: { ...(header.value as object), src } };
 }
 
 export interface PushResult {
@@ -132,8 +139,6 @@ const nameCache = new WeakMap<CryptoKey, Map<string, Promise<string>>>();
 
 export class Sync {
   private readonly names: Map<string, Promise<string>>;
-  /** Opaque key → path, for the tombstones of items not known by their record. */
-  private paths: Map<string, string> | null = null;
 
   constructor(
     private readonly db: DiaryoDB,
@@ -158,11 +163,11 @@ export class Sync {
   private async draft(row: TrackedRow): Promise<ItemDraft> {
     const value = await readPath(this.db, row.path);
     const deleted = value === null;
-    const sealed: Sealed = { path: row.path, value };
+    const sealed: Sealed = { path: row.path, value, modified: row.modified, deleted };
     return {
       key: await this.name(row.path),
       kind: kindOf(row.path),
-      data: deleted ? '' : await encrypt(this.keys.enc, seal(sealed)),
+      data: await encrypt(this.keys.enc, seal(sealed)),
       modified: row.modified,
       deleted,
     };
@@ -215,7 +220,7 @@ export class Sync {
         try {
           const draft = await this.draft(row);
           const written = await this.write(row, draft);
-          if (written) await markPushed(this.db, row.path, row.modified, written.id);
+          if (written) await markPushed(this.db, row.path, row.modified, written);
           else await this.db.tracked.delete(row.path);
         } catch (error) {
           if (error instanceof StaleError) await markStale(this.db, row.path, row.modified);
@@ -259,34 +264,38 @@ export class Sync {
     return { cursor: this.remote.rewind?.(cursor) ?? cursor, applied };
   }
 
-  /** Decrypts an item. A tombstone tells its path by its key (known if it was here). */
+  /**
+   * Decrypts an item. Its time and whether it was deleted are only believed as sealed
+   * inside, so neither the server nor someone with the session (but not the keys) can
+   * delete things or bring an old version back. The server may lower the time (it stamps
+   * changes from the future with its own), never raise it.
+   */
   private async open(item: RemoteItem): Promise<IncomingChange | null> {
-    const base = { modified: item.modified, deleted: item.deleted, remote: item.id };
-    if (item.deleted) {
-      const row = await this.db.tracked.where('remote').equals(item.id).first();
-      const path = row?.path ?? (await this.pathOfKey(item.key));
-      return path ? { ...base, path, value: null } : null;
-    }
+    // Tombstones from before they were sealed carry nothing to check: ignored.
+    if (!item.data) return null;
+    let sealed: Sealed;
     try {
-      const plain = await decrypt(this.keys.enc, item.data);
-      const sealed = unseal(plain);
-      if (typeof sealed.path !== 'string' || (await this.name(sealed.path)) !== item.key)
-        return null;
-      return { ...base, path: sealed.path, value: sealed.value };
+      sealed = unseal(await decrypt(this.keys.enc, item.data));
     } catch (error) {
       console.error("Couldn't open an item from the cloud", item.id, error);
       return null;
     }
-  }
-
-  /** The path of an opaque key, if this device has (or had) it. */
-  private async pathOfKey(key: string): Promise<string | null> {
-    if (!this.paths) {
-      this.paths = new Map();
-      for (const path of await this.db.tracked.toCollection().primaryKeys()) {
-        this.paths.set(await this.name(path), path);
-      }
+    if (typeof sealed.path !== 'string' || (await this.name(sealed.path)) !== item.key) return null;
+    // Items from before the time was sealed can only be content, never a deletion.
+    const believed =
+      typeof sealed.modified === 'number'
+        ? sealed.deleted === item.deleted && item.modified <= sealed.modified
+        : !item.deleted;
+    if (!believed) {
+      console.error('An item from the cloud was changed outside diaryo', item.id);
+      return null;
     }
-    return this.paths.get(key) ?? null;
+    return {
+      path: sealed.path,
+      value: item.deleted ? null : sealed.value,
+      modified: item.modified,
+      deleted: item.deleted,
+      remote: item.id,
+    };
   }
 }

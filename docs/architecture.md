@@ -16,6 +16,7 @@ src/
   i18n/      The app's texts in Spanish and English, and dates in the chosen language
   storage/   The database (Dexie / IndexedDB), autosave and backup files
   diary/     The diary: one double page per day, turning pages, the desk, search
+  cloud/     The account, the end-to-end encryption and the sync (see cloud.md)
   store/     The interface state (Zustand)
   desktop/   The bridge with the desktop app (Tauri): modes, shortcuts, backups, updates
   ui/        React components (toolbar, panels, dialogs; ui/desktop, the desktop ones)
@@ -25,7 +26,8 @@ src-tauri/   The desktop side, in Rust
 web/         The website (Astro)
 ```
 
-Each layer only uses the ones above it, in this order. The engine knows nothing about
+Each layer only uses the ones above it, in this order (the store only names the desktop's
+types, to hold its state). The engine knows nothing about
 React, storage or the diary: it takes elements in, draws them, handles input and tells
 the outside what changed. Texts are passed to it (`BookSpread.labels`,
 `setLinkLabels`), so it is language-agnostic too.
@@ -118,3 +120,7 @@ installer (`web/src/release.ts`).
 Vitest runs the unit tests next to the code (`*.test.ts`): the engine's geometry, arrows,
 selection and history, the diary's pages and desk, storage (with fake-indexeddb),
 search, dates and the desktop helpers. On the Rust side, `cargo test`.
+
+The CI (`.github/workflows/ci.yml`) runs them on every push to `develop` or `main` and on
+every pull request, with the types, lint and format checks, and `cloud/check.mjs` against
+a PocketBase with the repository's schema and rules.

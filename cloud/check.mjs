@@ -1,7 +1,7 @@
 /**
  * Checks the cloud server's rules against a running PocketBase (see docs/cloud.md):
  * quotas, who reaches what, last write wins, tombstones, deleting an account. It creates
- * two throwaway users, who delete their own accounts at the end.
+ * three throwaway users, who delete their own accounts at the end.
  *
  *   PB_URL=http://127.0.0.1:8090 PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
  */
@@ -21,12 +21,13 @@ const check = (name, ok, extra = '') =>
   results.push(`${ok ? 'OK ' : 'FAIL'} ${name} ${ok ? '' : extra}`);
 
 const stamp = Date.now();
-const mk = async (n) => {
+const mk = async (n, extra = {}) => {
   const email = `u${n}-${stamp}@diaryo.test`;
   const c = await call('POST', '/collections/users/records', {
     email,
     password: 'secret12345',
     passwordConfirm: 'secret12345',
+    ...extra,
   });
   const a = await call('POST', '/collections/users/auth-with-password', {
     identity: email,
@@ -48,6 +49,12 @@ const selfQuota = await call(
   a.token,
 );
 check('user cannot raise their own quota', selfQuota.status >= 400, selfQuota.status);
+const greedy = await mk(3, { quotaBytes: 999999999, plan: 'pro' });
+check(
+  'a sign-up cannot choose its quota or plan',
+  greedy.record.quotaBytes === 104857600 && greedy.record.plan === 'free',
+  JSON.stringify(greedy.record),
+);
 
 const vault = await call(
   'POST',
@@ -121,16 +128,34 @@ const newer = await call(
   a.token,
 );
 check('a newer change goes in', newer.status === 200 && newer.body.data === 'new', newer.status);
+const bigTomb = await call(
+  'PATCH',
+  `/collections/items/records/${item.body.id}`,
+  { data: 'x'.repeat(1001), deleted: true, modified: 200 },
+  a.token,
+);
+check('a tombstone carries no content', bigTomb.status === 400, bigTomb.status);
 const tomb = await call(
   'PATCH',
   `/collections/items/records/${item.body.id}`,
-  { data: 'still here', deleted: true, modified: 200 },
+  { data: 'sealed', deleted: true, modified: 200 },
   a.token,
 );
 check(
-  'a tombstone keeps no content',
-  tomb.status === 200 && tomb.body.data === '' && tomb.body.deleted === true,
+  'a tombstone keeps only its sealed deletion',
+  tomb.status === 200 && tomb.body.data === 'sealed' && tomb.body.deleted === true,
   JSON.stringify(tomb.body),
+);
+const future = await call(
+  'PATCH',
+  `/collections/items/records/${item.body.id}`,
+  { data: 'n', deleted: false, modified: Number.MAX_SAFE_INTEGER },
+  a.token,
+);
+check(
+  'a change stamped in the future is stamped now',
+  future.status === 200 && Math.abs(future.body.modified - Date.now()) < 60_000,
+  JSON.stringify(future.body),
 );
 const del = await call('DELETE', `/collections/items/records/${item.body.id}`, null, a.token);
 check('items are never hard-deleted by clients', del.status >= 400, del.status);
@@ -185,7 +210,7 @@ check(
 // with it (cascade).
 const foreignDelete = await call('DELETE', `/collections/users/records/${a.id}`, null, b.token);
 check('nobody deletes someone else', foreignDelete.status === 404, foreignDelete.status);
-for (const u of [a, b]) {
+for (const u of [a, b, greedy]) {
   const gone = await call('DELETE', `/collections/users/records/${u.id}`, null, u.token);
   check('a user deletes their own account', gone.status === 204, gone.status);
 }

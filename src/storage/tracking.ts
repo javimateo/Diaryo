@@ -138,13 +138,25 @@ export const dirtyPaths = (db: DiaryoDB) => db.tracked.where('dirty').equals(1).
 
 /**
  * A change was pushed: it is clean, unless it changed again meanwhile (then only its
- * record is remembered, and it goes up again).
+ * record is remembered, and it goes up again). It keeps the time the server stored (which
+ * is earlier if this device's clock was ahead), the one the other devices compare with.
  */
-export async function markPushed(db: DiaryoDB, path: string, modified: number, remote: string) {
+export async function markPushed(
+  db: DiaryoDB,
+  path: string,
+  modified: number,
+  stored: { id: string; modified: number },
+) {
   await db.transaction('rw', db.tracked, async () => {
     const row = await db.tracked.get(path);
     if (!row) return;
-    await db.tracked.put({ ...row, remote, dirty: row.modified === modified ? 0 : row.dirty });
+    const same = row.modified === modified;
+    await db.tracked.put({
+      ...row,
+      remote: stored.id,
+      dirty: same ? 0 : row.dirty,
+      modified: same ? stored.modified : row.modified,
+    });
   });
 }
 
