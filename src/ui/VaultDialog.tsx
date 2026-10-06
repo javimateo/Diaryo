@@ -21,9 +21,9 @@ import {
   VaultExistsError,
 } from '../cloud/vault';
 import { locale } from '../i18n';
-import { downloadBlob } from '../storage/files';
 import { useUI, type VaultDialogRequest, type VaultView } from '../store/ui';
 import { syncNow } from './cloudSync';
+import { saveFile } from './fileActions';
 import { PasswordField } from './PasswordField';
 import { useT } from './useT';
 
@@ -328,7 +328,7 @@ function RecoveryCode({
           type="button"
           className="settings-btn"
           onClick={() =>
-            downloadBlob(new Blob([file()], { type: 'text/plain' }), `${v.fileName}.txt`)
+            void saveFile(new Blob([file()], { type: 'text/plain' }), `${v.fileName}.txt`)
           }
         >
           <Download size={15} strokeWidth={1.75} /> {v.download}

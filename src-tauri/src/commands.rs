@@ -159,6 +159,38 @@ pub fn open_sign_in(app: AppHandle, url: String) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+/// Saves a file made by the page (a copy of the diary, an image, the account's data…)
+/// where the user chooses, with the system's "Save as" dialog: the webview doesn't
+/// download files by itself. The file comes as raw bytes and its suggested name in the
+/// `x-file-name` header. Returns where it went, or nothing if the user cancelled.
+#[tauri::command]
+pub async fn save_file(
+    app: AppHandle,
+    request: tauri::ipc::Request<'_>,
+) -> Result<Option<String>, String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected the file's bytes".into());
+    };
+    let name = request
+        .headers()
+        .get("x-file-name")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("diaryo");
+    let mut dialog = app.dialog().file().set_file_name(name);
+    if let Ok(downloads) = app.path().download_dir() {
+        dialog = dialog.set_directory(downloads);
+    }
+    if let Some(window) = window::main_window(&app) {
+        dialog = dialog.set_parent(&window);
+    }
+    let Some(file) = dialog.blocking_save_file() else {
+        return Ok(None);
+    };
+    let path = file.into_path().map_err(|e| e.to_string())?;
+    std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    Ok(Some(path.display().to_string()))
+}
+
 /// Opens a page of diaryo's website in the browser (the privacy policy, the terms); any
 /// other address is refused.
 #[tauri::command]

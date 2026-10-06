@@ -812,6 +812,8 @@ export const en: Messages = {
   },
 
   toasts: {
+    savedTo: (where: string) => `Saved to ${where}`,
+    saveFailed: "The file couldn't be saved",
     allSaved: 'Everything is saved · it saves itself',
     lastPage: "It's the last page · Alt+N for a new one",
     firstPage: "It's the first page",

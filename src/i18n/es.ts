@@ -832,6 +832,8 @@ export const es = {
 
   toasts: {
     allSaved: 'Todo está guardado · se guarda solo',
+    savedTo: (where: string) => `Guardado en ${where}`,
+    saveFailed: 'No se ha podido guardar el archivo',
     lastPage: 'Es la última página · Alt+N para una nueva',
     firstPage: 'Es la primera página',
     bookmarked: 'Página marcada · tiene su pestaña en el canto',

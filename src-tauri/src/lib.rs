@@ -103,6 +103,7 @@ pub fn run() {
             commands::quit_app,
             commands::open_sign_in,
             commands::open_website,
+            commands::save_file,
         ])
         .run(tauri::generate_context!())
         .expect("couldn't start diaryo");

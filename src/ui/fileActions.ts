@@ -1,4 +1,4 @@
-import { call, isDesktop } from '../desktop/tauri';
+import { call, isDesktop, saveFileAs } from '../desktop/tauri';
 import type { Diary } from '../diary/diary';
 import type { Engine } from '../engine/engine';
 import { fonts } from '../engine/fonts';
@@ -13,10 +13,26 @@ import {
 } from '../storage/files';
 import { t } from '../i18n';
 
+/**
+ * Saves a file the user asked for: downloaded on the web; on the desktop, where they
+ * choose (and a notice says where it went).
+ */
+export async function saveFile(blob: Blob, name: string) {
+  if (!isDesktop()) return downloadBlob(blob, name);
+  const { showToast } = useUI.getState();
+  try {
+    const where = await saveFileAs(blob, name);
+    if (where) showToast(t().toasts.savedTo(where));
+  } catch (error) {
+    console.error("Couldn't save the file", error);
+    showToast(t().toasts.saveFailed);
+  }
+}
+
 /** Downloads a backup of the whole diary, with images and fonts. */
 export async function saveCopy(diary: Diary) {
   const dump = await diary.dump();
-  downloadBlob(
+  await saveFile(
     new Blob([serializeDiary(dump)], { type: 'application/json' }),
     datedName() + FILE_EXTENSION,
   );
@@ -100,5 +116,5 @@ export async function exportPng(engine: Engine) {
     useUI.getState().showToast(t().toasts.emptyPage);
     return;
   }
-  downloadBlob(blob, datedName() + '.png');
+  await saveFile(blob, datedName() + '.png');
 }
