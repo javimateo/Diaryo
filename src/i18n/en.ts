@@ -209,12 +209,22 @@ export const en: Messages = {
       `You're running out of cloud space: ${free} free. Delete pages or images you don't need.`,
     rejected: (n: number) => (n === 1 ? "1 change couldn't go up" : `${n} changes couldn't go up`),
     sessionEnded: 'Your session expired: sign in again to sync. What is pending is kept here.',
-    signOutPending: (n: number) =>
+    leaveTitle: "What should happen to this device's diary?",
+    leavePending: (n: number) =>
       n === 1
-        ? "There is 1 change that hasn't gone up to the cloud. It stays on this device and goes up when you sign in again."
-        : `There are ${n} changes that haven't gone up to the cloud. They stay on this device and go up when you sign in again.`,
-    syncAndSignOut: 'Sync and sign out',
-    signOutAnyway: 'Sign out anyway',
+        ? "There is 1 change that hasn't gone up to the cloud."
+        : `There are ${n} changes that haven't gone up to the cloud.`,
+    leaveKeep: 'Keep it here',
+    leaveKeepHint: "You keep writing without an account; it doesn't sync.",
+    leaveKeepPendingHint: 'The changes stay here and go up when you sign in again.',
+    leaveRemove: 'Remove it from here',
+    leaveSyncRemove: 'Sync and remove it from here',
+    leaveRemoveHint: (desktop: boolean) =>
+      'A blank diary opens. Yours stays in the cloud and comes back when you sign in.' +
+      (desktop ? ' The daily backups in Documents stay.' : ''),
+    leaveSyncRemoveHint: "The changes go up first; if they can't, nothing is removed.",
+    leaveFailed: "The changes couldn't go up: the diary is still here.",
+    leftRemoved: 'Signed out · the diary is no longer on this device',
     passwordMode: 'The password is asked for when syncing',
     firstTitle: 'There is already a diary in the cloud',
     firstText: 'This device has one too. What should we do?',
@@ -232,8 +242,16 @@ export const en: Messages = {
     keepMineHint: 'They join the cloud diary; if something changed on both, the most recent wins.',
     useCloudReturnHint:
       "Your changes don't go up: this device's diary is saved in a .diaryo file (you can open it whenever you like) and the cloud's one stays here.",
+    emptyTitle: "This account doesn't have a diary yet",
+    emptyText: 'There is a diary on this device. What should happen to it?',
+    upload: 'Upload this diary',
+    uploadHint: "It becomes this account's diary and syncs with your other devices.",
+    startNew: 'Start a new one and keep this one',
+    startNewHint:
+      'This diary is saved in a .diaryo file (you can open it whenever you like) and the account starts blank.',
     later: 'Not now',
     keptCopy: (where: string) => `Your previous diary is in ${where} · the cloud's one is coming`,
+    keptCopyNew: (where: string) => `Your previous diary is in ${where} · you start blank`,
     tips: {
       idle: (when: string) => `Cloud up to date · ${when}`,
       syncing: 'Syncing with the cloud…',

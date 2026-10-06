@@ -1,5 +1,7 @@
 import {
   Download,
+  Eraser,
+  HardDrive,
   KeyRound,
   LockKeyhole,
   LockKeyholeOpen,
@@ -17,7 +19,6 @@ import {
   deleteAccount,
   refreshAccount,
   resendVerification,
-  signOut,
   useAccount,
 } from '../cloud/account';
 import { forgetDevice } from '../cloud/vault';
@@ -26,7 +27,7 @@ import { isDesktop } from '../desktop/tauri';
 import { useUI, type SyncMode, type VaultView } from '../store/ui';
 import { continueWithGoogle } from './accountActions';
 import { Choice } from './Choice';
-import { syncNow, useSync } from './cloudSync';
+import { signOutOfDevice, syncNow, useSync } from './cloudSync';
 import { relativeTime } from './relativeTime';
 import { formatBytes } from './formatBytes';
 import { GoogleButton } from './GoogleButton';
@@ -41,18 +42,25 @@ export function AccountSection() {
   const setAccountDialog = useUI((s) => s.setAccountDialog);
   const showToast = useUI((s) => s.showToast);
   const [sending, setSending] = useState(false);
-  /** Signing out with changes that haven't gone up: it asks first. */
+  /** Signing out: it asks first what happens to this device's diary. */
   const [leaving, setLeaving] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const pending = useSync((state) => state.pending);
   const syncStatus = useSync((state) => state.status);
 
   // The email may have been confirmed somewhere else meanwhile.
   useEffect(() => void refreshAccount(), []);
 
-  const leave = () => {
-    setLeaving(false);
-    signOut();
-    showToast(t.account.signedOut);
+  const leave = async (removeDiary: boolean) => {
+    setRemoving(removeDiary);
+    if (await signOutOfDevice(removeDiary)) {
+      setLeaving(false);
+      setRemoving(false);
+      showToast(removeDiary ? t.sync.leftRemoved : t.account.signedOut);
+    } else {
+      setRemoving(false);
+      showToast(t.sync.leaveFailed);
+    }
   };
 
   const signInDialog = () => setAccountDialog({ view: 'signIn', fromSettings: true });
@@ -106,35 +114,65 @@ export function AccountSection() {
         <button
           type="button"
           className="settings-btn"
-          onClick={() => (pending > 0 && syncStatus !== 'off' ? setLeaving(true) : leave())}
+          disabled={leaving}
+          // Without the cloud on here, the diary isn't in the cloud: there is nothing to ask.
+          onClick={() => (syncStatus !== 'off' ? setLeaving(true) : void leave(false))}
         >
           <LogOut size={15} strokeWidth={1.75} /> {t.account.signOut}
         </button>
       </div>
       {leaving && (
-        <div className="sync-full" data-tone="low" role="alert">
-          <TriangleAlert size={16} strokeWidth={1.75} aria-hidden />
-          <div className="sign-out-confirm">
-            <p>{t.sync.signOutPending(pending)}</p>
-            <div>
-              <button
-                type="button"
-                className="settings-btn"
-                onClick={async () => {
-                  await syncNow();
-                  if (useSync.getState().pending === 0) leave();
-                }}
-              >
-                <RefreshCw size={15} strokeWidth={1.75} /> {t.sync.syncAndSignOut}
-              </button>
-              <button type="button" className="settings-btn" onClick={leave}>
-                {t.sync.signOutAnyway}
-              </button>
-              <button type="button" className="settings-btn" onClick={() => setLeaving(false)}>
-                {t.vault.back}
-              </button>
-            </div>
-          </div>
+        <div className="sign-out-choice" role="alert">
+          {pending > 0 && (
+            <p className="sign-out-pending">
+              <TriangleAlert size={15} strokeWidth={1.75} aria-hidden />{' '}
+              {t.sync.leavePending(pending)}
+            </p>
+          )}
+          <p>{t.sync.leaveTitle}</p>
+          <button
+            type="button"
+            className="open-copy-option"
+            disabled={removing}
+            onClick={() => void leave(false)}
+          >
+            <HardDrive size={20} strokeWidth={1.75} aria-hidden />
+            <span>
+              <strong>{t.sync.leaveKeep}</strong>
+              <small>{pending > 0 ? t.sync.leaveKeepPendingHint : t.sync.leaveKeepHint}</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            className="open-copy-option"
+            disabled={removing}
+            onClick={() => void leave(true)}
+          >
+            {pending > 0 ? (
+              <RefreshCw
+                size={20}
+                strokeWidth={1.75}
+                className={removing ? 'account-spin' : undefined}
+                aria-hidden
+              />
+            ) : (
+              <Eraser size={20} strokeWidth={1.75} aria-hidden />
+            )}
+            <span>
+              <strong>{pending > 0 ? t.sync.leaveSyncRemove : t.sync.leaveRemove}</strong>
+              <small>
+                {pending > 0 ? t.sync.leaveSyncRemoveHint : t.sync.leaveRemoveHint(isDesktop())}
+              </small>
+            </span>
+          </button>
+          <button
+            type="button"
+            className="settings-btn"
+            disabled={removing}
+            onClick={() => setLeaving(false)}
+          >
+            {t.vault.back}
+          </button>
         </div>
       )}
       {!account.verified && (

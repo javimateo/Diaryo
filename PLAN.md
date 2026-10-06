@@ -440,6 +440,10 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
               grande. Todo en docs/cloud.md («Edge cases»), con tests.
         - [ ] Pruebas en la app de escritorio, con dos dispositivos reales y con los
               correos reales.
+        - [x] Cambiar de cuenta (octubre de 2026): al entrar con un diario en el
+              dispositivo se pregunta siempre (subirlo o empezar uno nuevo si la cuenta
+              está vacía; combinar o usar el de la nube si no), y al cerrar sesión, si
+              dejar el diario o quitarlo del dispositivo.
       - [ ] **C7. RGPD y web**: borrar la cuenta, exportar los datos, política de
             privacidad y condiciones; la web explica la nube (opcional, cifrada).
         - [x] En Ajustes → Cuenta y nube: «Tus datos» (un JSON con lo que el servidor
@@ -467,8 +471,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
     - [ ] **Privacidad en la web** (sobre todo en ordenadores compartidos). Hoy, al
           cerrar sesión, el diario se queda en el navegador (IndexedDB) sin cifrar: el
           cifrado solo protege lo que se sube a la nube. Por decidir:
-      - Al cerrar sesión, ¿qué pasa con la copia local? (dejarla, borrarla tras
-        avisar si hay cambios sin subir, o dejarla cifrada y bloqueada).
+      - Al cerrar sesión, ¿qué pasa con la copia local? Hecho en parte: se pregunta si
+        dejarla o quitarla (tras subir lo pendiente). Falta la opción de dejarla cifrada
+        y bloqueada.
       - ¿Cada cuánto se pide la contraseña del diario? (al abrir la app, tras X
         minutos sin uso, al volver a la pestaña…; configurable).
       - ¿Caduca la sesión? Hoy dura 30 días y se renueva sola: en la web quizá una

@@ -1,11 +1,12 @@
-import { Combine, Replace, X } from 'lucide-react';
+import { Combine, FilePlus2, Replace, Upload, X } from 'lucide-react';
 import { chooseFirstSync, useSync } from './cloudSync';
 import { useT } from './useT';
 
 /**
- * The first sync, with a diary on this device and another one in the cloud, or signing in
- * again with changes here that aren't in the cloud: merge them, or use the cloud's diary
- * and keep this one in a file.
+ * The first sync with a diary on this device: with another one in the cloud, merge them or
+ * use the cloud's (keeping this one in a file); with none there, upload this one or start a
+ * blank one (keeping this one too). Or signing in again with changes here that aren't in
+ * the cloud: upload them, or use the cloud's diary.
  */
 export function FirstSyncDialog() {
   const t = useT();
@@ -14,6 +15,7 @@ export function FirstSyncDialog() {
   const pending = useSync((state) => state.pending);
   if (!choosing) return null;
   const back = choosing === 'return';
+  const empty = choosing === 'empty';
   const choose = (choice: 'merge' | 'cloud' | 'later') => () => void chooseFirstSync(choice);
 
   return (
@@ -30,7 +32,9 @@ export function FirstSyncDialog() {
         }}
       >
         <header className="dialog-header">
-          <h2 id="first-sync-title">{back ? s.returnTitle : s.firstTitle}</h2>
+          <h2 id="first-sync-title">
+            {back ? s.returnTitle : empty ? s.emptyTitle : s.firstTitle}
+          </h2>
           <button
             type="button"
             className="icon-btn"
@@ -40,7 +44,9 @@ export function FirstSyncDialog() {
             <X size={18} strokeWidth={1.75} />
           </button>
         </header>
-        <p className="open-copy-text">{back ? s.returnText(pending) : s.firstText}</p>
+        <p className="open-copy-text">
+          {back ? s.returnText(pending) : empty ? s.emptyText : s.firstText}
+        </p>
         <button
           type="button"
           className="open-copy-option"
@@ -48,17 +54,25 @@ export function FirstSyncDialog() {
           autoFocus
           onClick={choose('merge')}
         >
-          <Combine size={20} strokeWidth={1.75} aria-hidden />
+          {empty ? (
+            <Upload size={20} strokeWidth={1.75} aria-hidden />
+          ) : (
+            <Combine size={20} strokeWidth={1.75} aria-hidden />
+          )}
           <span>
-            <strong>{back ? s.keepMine : s.merge}</strong>
-            <small>{back ? s.keepMineHint : s.mergeHint}</small>
+            <strong>{back ? s.keepMine : empty ? s.upload : s.merge}</strong>
+            <small>{back ? s.keepMineHint : empty ? s.uploadHint : s.mergeHint}</small>
           </span>
         </button>
         <button type="button" className="open-copy-option" onClick={choose('cloud')}>
-          <Replace size={20} strokeWidth={1.75} aria-hidden />
+          {empty ? (
+            <FilePlus2 size={20} strokeWidth={1.75} aria-hidden />
+          ) : (
+            <Replace size={20} strokeWidth={1.75} aria-hidden />
+          )}
           <span>
-            <strong>{s.useCloud}</strong>
-            <small>{back ? s.useCloudReturnHint : s.useCloudHint}</small>
+            <strong>{empty ? s.startNew : s.useCloud}</strong>
+            <small>{back ? s.useCloudReturnHint : empty ? s.startNewHint : s.useCloudHint}</small>
           </span>
         </button>
         <div className="open-copy-footer">
