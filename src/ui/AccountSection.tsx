@@ -22,10 +22,11 @@ import {
   useAccount,
 } from '../cloud/account';
 import { forgetDevice } from '../cloud/vault';
-import { datedName, downloadBlob } from '../storage/files';
+import { datedName } from '../storage/files';
 import { isDesktop } from '../desktop/tauri';
 import { useUI, type SyncMode, type VaultView } from '../store/ui';
 import { continueWithGoogle } from './accountActions';
+import { saveFile } from './fileActions';
 import { Choice } from './Choice';
 import { signOutOfDevice, syncNow, useSync } from './cloudSync';
 import { relativeTime } from './relativeTime';
@@ -210,7 +211,7 @@ function DataRows() {
     try {
       const data = await accountData(a.dataNote);
       const json = JSON.stringify(data, null, 2);
-      downloadBlob(
+      await saveFile(
         new Blob([json], { type: 'application/json' }),
         `${datedName('diaryo-account')}.json`,
       );

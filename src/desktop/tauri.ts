@@ -12,6 +12,17 @@ export async function call<T = void>(command: string, args?: Record<string, unkn
   return invoke<T>(command, args);
 }
 
+/**
+ * Saves a file where the user chooses (the system's "Save as" dialog): the window doesn't
+ * download files. Its bytes go raw, not as JSON, so a big copy of the diary stays fast.
+ * Returns where it went, or null if the user cancelled.
+ */
+export async function saveFileAs(blob: Blob, name: string): Promise<string | null> {
+  const { invoke } = await import('@tauri-apps/api/core');
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  return invoke<string | null>('save_file', bytes, { headers: { 'x-file-name': name } });
+}
+
 /** Listens to a message from the desktop side or from another window. Returns how to stop. */
 export async function listen<T>(event: string, handler: (payload: T) => void) {
   const { listen } = await import('@tauri-apps/api/event');
