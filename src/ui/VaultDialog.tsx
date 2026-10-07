@@ -18,6 +18,7 @@ import {
   setUpVault,
   unlock,
   unlockOnce,
+  VaultChangedError,
   VaultExistsError,
 } from '../cloud/vault';
 import { locale } from '../i18n';
@@ -71,6 +72,7 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
     if (e instanceof WrongSecretError) {
       return setError(view === 'recover' ? v.errors.wrongCode : v.errors.wrongPassword);
     }
+    if (e instanceof VaultChangedError) return setError(v.errors.changed);
     if (e instanceof VaultExistsError) {
       go('unlock');
       return setError(v.errors.exists);

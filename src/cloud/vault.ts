@@ -1,3 +1,4 @@
+import { ClientResponseError } from 'pocketbase';
 import { useAccount } from './account';
 import { pb } from './client';
 import {
@@ -19,11 +20,23 @@ import { forgetKeys, loadKeys, saveKeys } from './keystore';
 
 interface VaultRecord extends VaultData {
   id: string;
+  /** Each change says the next one (see cloud/pb_hooks/main.pb.js). */
+  version: number;
 }
 
 /** The unlocked keys, while the account is signed in (sync uses them). */
 let keys: DiaryKeys | null = null;
 export const currentKeys = () => keys;
+
+/**
+ * The vault changed on another device since it was read here (its password or recovery
+ * code): this change wasn't made, so as not to undo that one.
+ */
+export class VaultChangedError extends Error {
+  constructor() {
+    super('the vault changed on another device');
+  }
+}
 
 /** A vault was created on another device meanwhile: unlock that one instead. */
 export class VaultExistsError extends Error {
@@ -48,6 +61,20 @@ const toData = ({ kdf, wrappedKey, recoveryKey, check }: VaultData): VaultData =
   recoveryKey,
   check,
 });
+
+/** Saves a change made from `vault` (refused if it changed meanwhile). */
+async function save(vault: VaultRecord, next: VaultData) {
+  try {
+    await vaults().update(
+      vault.id,
+      { ...toData(next), version: (vault.version ?? 0) + 1 },
+      { requestKey: null },
+    );
+  } catch (error) {
+    if (error instanceof ClientResponseError && error.status === 409) throw new VaultChangedError();
+    throw error;
+  }
+}
 
 async function keep(account: string, next: DiaryKeys) {
   keys = next;
@@ -128,7 +155,7 @@ export async function recover(code: string, newPassword: string) {
   const account = accountId()!;
   const vault = await existingVault();
   const recovered = await recoverWithCode(vault, code, newPassword);
-  await vaults().update(vault.id, toData(recovered.vault), { requestKey: null });
+  await save(vault, recovered.vault);
   await keep(account, recovered.keys);
 }
 
@@ -136,14 +163,14 @@ export async function recover(code: string, newPassword: string) {
 export async function changeVaultPassword(current: string, next: string) {
   const vault = await existingVault();
   const changed = await changePassword(vault, current, next);
-  await vaults().update(vault.id, toData(changed), { requestKey: null });
+  await save(vault, changed);
 }
 
 /** Makes a new recovery code (the old one stops working). Returns it, to show it once. */
 export async function replaceRecoveryCode(password: string): Promise<string> {
   const vault = await existingVault();
   const made = await newRecoveryCode(vault, password);
-  await vaults().update(vault.id, toData(made.vault), { requestKey: null });
+  await save(vault, made.vault);
   return made.recoveryCode;
 }
 

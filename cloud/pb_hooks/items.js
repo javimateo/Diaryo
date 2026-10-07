@@ -14,7 +14,7 @@ const TOMBSTONE_MAX = 1000;
 module.exports = {
   /**
    * @param {core.RecordRequestEvent} e The create or update request.
-   * @param {core.Record | null} original The item as it was (null when creating).
+   * @param {core.Record | null} original The item as stored now (null when creating).
    */
   checkItem(e, original) {
     const record = e.record;
