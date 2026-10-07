@@ -464,26 +464,40 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             responsable (ahora solo están el nombre y el email).
       - [ ] **C8. Pagos** (más adelante).
   - [ ] **D. Privacidad del diario**, después de la nube: el cifrado y la contraseña
-        dependen de cómo se sincronice.
-    - [ ] **Contraseña opcional** para abrir el diario (en el escritorio y en la web).
-          Si se quiere de verdad, que cifre el contenido guardado (la contraseña no se
-          guarda en ningún sitio; si se olvida, no hay forma de recuperarlo).
-    - [ ] **Qué se ve en el escritorio**: elegir si la mesa, el mini diario o solo
-          ciertos post-its se muestran en el escritorio de Windows, o que pidan la
-          contraseña para mostrarse. Post-its marcados como «privados».
-    - [ ] **Privacidad en la web** (sobre todo en ordenadores compartidos). Hoy, al
-          cerrar sesión, el diario se queda en el navegador (IndexedDB) sin cifrar: el
-          cifrado solo protege lo que se sube a la nube. Por decidir:
-      - Al cerrar sesión, ¿qué pasa con la copia local? Hecho en parte: se pregunta si
-        dejarla o quitarla (tras subir lo pendiente). Falta la opción de dejarla cifrada
-        y bloqueada.
-      - ¿Cada cuánto se pide la contraseña del diario? (al abrir la app, tras X
-        minutos sin uso, al volver a la pestaña…; configurable).
-      - ¿Caduca la sesión? Hoy dura 30 días y se renueva sola: en la web quizá una
-        opción «no mantener la sesión» o una duración más corta.
-    - [ ] **Cifrar solo ciertos contenidos**: post-its o páginas marcados como
-          privados, que piden la contraseña para verse (en la mesa, el mini diario y
-          la web), aunque el resto del diario esté abierto.
+        dependen de cómo se sincronice. Decidido (octubre de 2026):
+    - **Una sola contraseña del diario**, la misma en el dispositivo y en la nube, con
+      la misma clave de recuperación (también sin cuenta: se muestra siempre al ponerla).
+      Lo local se cifra con una llave local aleatoria, envuelta con el secreto del
+      diario: cambiar de cuenta solo la vuelve a envolver, nunca se recifra todo. Sin
+      cuenta, la bóveda vive en el dispositivo y, al activar la nube, se sube esa.
+    - **Cifrar es opcional y por niveles**: nada; solo ciertos post-its o páginas
+      (privados, p. ej. contraseñas en un post-it de la mesa); o todo el diario, que
+      pide la contraseña al abrir. Solo cifrado de verdad (sin candado que no cifre).
+    - **Lo que queda en claro**: los ids y el día de cada página (son índices); el
+      contenido, las miniaturas, las imágenes y las fuentes van cifrados. Se cifra antes
+      de la transacción de IndexedDB y se descifra después (WebCrypto no puede ir
+      dentro). La búsqueda usa un índice en memoria mientras está desbloqueado.
+    - **Olvidar la contraseña y la clave**: con nube, se borra el diario del
+      dispositivo y se baja de la nube (se pierde lo no subido); sin nube, no hay forma.
+    - Fases (cada una en su rama), en este orden: D1, D4, D2, D3.
+    - [ ] **D1. Contraseña y cifrado local**: bóveda local, pantalla de bloqueo,
+          cifrado en `storage` (activarla cifra lo que hay, quitarla lo descifra),
+          miniaturas, mini diario y copias `.diaryo` cifrados, llaves de la nube
+          envueltas (hoy sus bytes quedan en el disco), la llave pasa entre pestañas
+          solo en memoria. Con tests (también en `sync.test.ts`).
+    - [ ] **D4. Privados**: post-its (y luego páginas) marcados como privados: se ven
+          con un candado, del mismo tamaño y en el mismo sitio, hasta escribir la
+          contraseña; su contenido va cifrado aunque el resto no lo esté. Viajan por la
+          nube con la marca y cada dispositivo los protege igual.
+    - [ ] **D2. Qué se ve en el escritorio**: la llave pasa a la ventana de la mesa
+          (comprobar `BroadcastChannel` con una `CryptoKey` en WebView2; si no, por
+          Rust en memoria). Mientras está bloqueado, por defecto la mesa se ve sin los
+          privados (candado) y el mini diario muestra la portada; se puede elegir
+          (visible / sin privados / oculta).
+    - [ ] **D3. Privacidad en la web** (ordenadores compartidos): bloquear tras X
+          minutos sin uso o al ocultar la pestaña; al cerrar sesión, «dejarlo cifrado
+          y bloqueado» además de dejarlo o quitarlo; opción «no mantener la sesión»
+          (hoy dura 30 días y se renueva sola).
   - [ ] **E. macOS**: Tauri compila para macOS casi sin cambios; lo que es solo de
         Windows (la mesa en el escritorio, `windows-sys`) necesita su versión o quedarse
         fuera al principio. Para distribuirlo hace falta la cuenta de desarrollador de
@@ -497,6 +511,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         cada cambio):
     - [ ] **Marca**: logo, icono, colores y tipografía coherentes en la app, la web y el
           instalador.
+    - [ ] **Portada del diario editable**: que cada uno personalice la suya (no solo el
+          color). Es también lo que enseña el mini diario cuando el diario está
+          bloqueado (D2).
     - [ ] **Diario de demostración**: al empezar, una plantilla o demo que enseñe lo que
           se puede hacer (dibujo, post-its, conexiones, páginas, la mesa…), fácil de
           borrar o de empezar en blanco.
