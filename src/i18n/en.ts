@@ -177,6 +177,62 @@ export const en: Messages = {
     },
   },
 
+  lock: {
+    section: 'Privacy',
+    level: 'What is encrypted on this device',
+    levels: { off: 'Nothing', all: 'The whole diary' },
+    levelHints: {
+      off: 'As before: the diary is saved readable on this device.',
+      all: 'Everything saved here is encrypted, and the diary password is asked for when it opens.',
+    },
+    lockNow: 'Lock now',
+    lockNowHint: 'Closes the diary: the password is needed to open it again.',
+    cloudPassword:
+      "It's your cloud diary's password: change it in “Account and cloud”, and it changes in both places.",
+    enableTitle: 'Encrypt the diary on this device',
+    enableText:
+      'Everything you save here is encrypted with the diary password. If you forget it, only the recovery code opens it: nobody else can.',
+    enableCloudText:
+      "Your cloud diary's password is used, the same one everywhere. Type it to continue.",
+    enable: 'Encrypt',
+    disableTitle: 'Stop encrypting',
+    disableText:
+      'The diary is saved readable on this device again. Type the diary password to continue.',
+    disable: 'Stop encrypting',
+    encrypting: 'Encrypting the diary…',
+    decrypting: 'Decrypting the diary…',
+    keepOpen: "Don't close diaryo until it's done.",
+    enabled: 'Diary encrypted on this device',
+    disabled: "The diary isn't encrypted on this device any more",
+    codeText:
+      "If you forget the diary password, this code is the only way to open it again. It's only shown now.",
+    file: (code: string, date: string) =>
+      `diaryo · Recovery code\n\nCreated: ${date}\n\n${code}\n\nIf you forget the diary password, this code is the only way to open it again.\nKeep it somewhere safe and don't share it.\n`,
+    lockedTitle: 'Your diary is locked',
+    lockedText: 'Type the diary password.',
+    open: 'Open',
+    forgotBoth: "I don't remember the password or the code",
+    forgotTitle: 'Without the password or the code',
+    forgotText:
+      "Without them there is no way to open this diary: it's encrypted and no copy of the password is kept. You can delete it from this device and start a new one. If it's open on another device, it's still there.",
+    erase: 'Delete the diary from this device',
+    eraseConfirm: 'Yes, delete it for good',
+    ownVaultText:
+      'Your diary already has a password on this device: the cloud will use the same one, with the same recovery code.',
+    adopted: "From now on, the diary password on this device is this account's cloud one.",
+    saveTitle: 'Save a copy of the diary',
+    saveText: 'Your diary is encrypted on this device. How do you want the copy?',
+    sealed: 'Encrypted',
+    sealedHint: 'It opens with the diary password or the recovery code.',
+    readable: 'Readable',
+    readableHint: 'An open file: anyone who has it can read it.',
+    openTitle: 'Open an encrypted copy',
+    openText:
+      'This copy is encrypted. Type the password the diary had when it was made, or its recovery code.',
+    useCode: 'Use the recovery code',
+    usePassword: 'Use the password',
+  },
+
   sync: {
     row: 'Sync',
     modes: { auto: 'Automatic', manual: 'Manual', password: 'With password' },
@@ -701,6 +757,7 @@ export const en: Messages = {
     flipH: 'Flip horizontally',
     flipV: 'Flip vertically',
     lock: 'Lock',
+    lockDiary: 'Lock the diary',
     unlock: 'Unlock',
     copyPng: 'Copy as image',
     imageCopied: 'Image copied',
@@ -739,6 +796,7 @@ export const en: Messages = {
   },
 
   commandKeywords: {
+    lockDiary: 'password close privacy encrypt',
     newPage: 'sheet add create',
     turn: 'turn sheet',
     turnBack: 'turn sheet back',

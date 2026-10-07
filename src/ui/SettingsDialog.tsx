@@ -11,6 +11,7 @@ import { SettingsRow } from './SettingsRow';
 import { useT } from './useT';
 import { LANGUAGES, type Language } from '../i18n';
 import { AccountSection } from './AccountSection';
+import { PrivacySection } from './PrivacySection';
 import { formatBytes } from './formatBytes';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
@@ -64,6 +65,8 @@ function Settings() {
         </header>
         <div className="settings-body" data-scrollable>
           <AccountSection />
+
+          <PrivacySection />
 
           <section className="settings-section">
             <h3>{t.settings.appearance}</h3>

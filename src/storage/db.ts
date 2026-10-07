@@ -4,6 +4,7 @@ import { parseElement } from '../engine/clipboard';
 import type { PaperStyle } from '../engine/book';
 import type { SceneElement } from '../engine/elements';
 import { dayKey } from '../lib/dates';
+import { sealingMiddleware, type Sealing } from './sealing';
 import {
   assetPath,
   elementPath,
@@ -64,9 +65,12 @@ export class DiaryoDB extends Dexie {
   fonts!: EntityTable<FontRow, 'id'>;
   /** What changed and when, for the cloud sync (see tracking.ts). */
   tracked!: EntityTable<TrackedRow, 'path'>;
+  /** Whether the diary is encrypted on this device, and its key (see sealing.ts). */
+  readonly sealing: Sealing = { key: null, seal: false };
 
   constructor(name = 'diaryo') {
     super(name);
+    this.use(sealingMiddleware(this.sealing));
     this.version(1).stores({
       pages: 'id, updatedAt',
       elements: '[pageId+id], pageId',
@@ -490,6 +494,34 @@ export async function listTexts(db: DiaryoDB): Promise<TextEntry[]> {
     entries.push({ pageId: row.pageId, elementId: row.id, type: row.data.type, text });
   });
   return entries;
+}
+
+const REWRITE_BATCH = 100;
+
+/**
+ * Writes the whole diary again as `db.sealing` says (encrypted or in the clear), in
+ * batches: a rewrite cut halfway is carried on by running it again. It isn't a change
+ * for the other devices.
+ */
+export async function rewriteDiary(
+  db: DiaryoDB,
+  onProgress?: (done: number, total: number) => void,
+) {
+  const tables = all(db) as Table<unknown, unknown>[];
+  const keys = await Promise.all(tables.map((table) => table.toCollection().primaryKeys()));
+  const total = keys.reduce((sum, list) => sum + list.length, 0);
+  let done = 0;
+  for (const [i, table] of tables.entries()) {
+    for (let start = 0; start < keys[i].length; start += REWRITE_BATCH) {
+      const batch = keys[i].slice(start, start + REWRITE_BATCH);
+      await db.transaction('rw', table, async () => {
+        const rows = (await table.bulkGet(batch)).filter((row) => row !== undefined);
+        await table.bulkPut(rows);
+      });
+      done += batch.length;
+      onProgress?.(done, total);
+    }
+  }
 }
 
 /** A single database for the whole app. */

@@ -7,6 +7,8 @@ import { readDeskView, writeDeskView, writeToday, type TodayCard } from './saved
 import type { DesktopInfo, DesktopMode } from './settings';
 import { call, listen, onDeskChangedElsewhere } from './tauri';
 import { t } from '../i18n';
+import { sealCopy } from '../cloud/lock';
+import { readLock, useLock } from '../cloud/lockState';
 
 /** How often the diary is backed up if there were changes (besides when hiding it or quitting). */
 const BACKUP_EVERY = 30 * 60 * 1000;
@@ -70,6 +72,8 @@ export class DesktopBridge {
       () => window.clearInterval(backupTimer),
       () => window.clearTimeout(this.todayTimer),
       unsubscribe,
+      // Turning encryption on or off changes what the mini diary may show.
+      useLock.subscribe(() => this.publishToday(0)),
     );
 
     const unlisten = await Promise.all([
@@ -148,7 +152,9 @@ export class DesktopBridge {
     this.backingUp = (async () => {
       try {
         await this.diary.flush();
-        const contents = serializeDiary(await this.diary.dump());
+        const text = serializeDiary(await this.diary.dump());
+        // Encrypted like the diary, if it is encrypted here.
+        const contents = sealCopy(text) ?? text;
         await call<string>('write_backup', { day: todayKey(), contents });
         useUI.getState().setDesktop({ lastBackup: Date.now() });
       } catch (error) {
@@ -186,9 +192,17 @@ export class DesktopBridge {
     window.clearTimeout(this.todayTimer);
     this.todayTimer = window.setTimeout(async () => {
       try {
+        const cover = useUI.getState().bookStyle.cover;
+        // With the diary encrypted here, today's page isn't left readable on disk: only
+        // its cover.
+        if (readLock()) {
+          this.todayShown = todayKey();
+          writeToday({ day: this.todayShown, image: '', pending: 0, cover });
+          return;
+        }
         const preview = await this.diary.todayPreview(TODAY_WIDTH);
         this.todayShown = preview.day;
-        const card: TodayCard = { ...preview, cover: useUI.getState().bookStyle.cover };
+        const card: TodayCard = { ...preview, cover };
         writeToday(card);
       } catch (error) {
         console.error("Couldn't prepare the mini diary", error);

@@ -8,9 +8,12 @@ import {
   itemName,
   keysMatch,
   newRecoveryCode,
+  openSecret,
   parseRecoveryCode,
   recoverWithCode,
   unlockWithPassword,
+  unwrapDeviceKey,
+  wrapDeviceKey,
   WrongSecretError,
 } from './crypto';
 
@@ -94,5 +97,26 @@ describe('vault', () => {
     const a = await createVault('a', FAST);
     const b = await createVault('b', FAST);
     expect(await keysMatch(a.vault, b.keys)).toBe(false);
+  });
+});
+
+describe("the device's own key", () => {
+  it('is wrapped with the diary secret, and only that one opens it', async () => {
+    const { vault } = await createVault('una contraseña', FAST);
+    const { secret } = await openSecret(vault, 'una contraseña');
+    const key = crypto.getRandomValues(new Uint8Array(32));
+    const wrapped = await wrapDeviceKey(secret, key);
+    expect(await unwrapDeviceKey(secret, wrapped)).toEqual(key);
+    const other = await openSecret((await createVault('otra', FAST)).vault, 'otra');
+    await expect(unwrapDeviceKey(other.secret, wrapped)).rejects.toBeInstanceOf(WrongSecretError);
+  });
+
+  it('a vault made for an existing secret opens to the same one', async () => {
+    const first = await createVault('una contraseña', FAST);
+    const { secret } = await openSecret(first.vault, 'una contraseña');
+    const again = await createVault('otra contraseña', FAST, secret);
+    expect((await openSecret(again.vault, 'otra contraseña')).secret).toEqual(secret);
+    const recovered = await recoverWithCode(again.vault, again.recoveryCode, 'nueva');
+    expect(recovered.secret).toEqual(secret);
   });
 });

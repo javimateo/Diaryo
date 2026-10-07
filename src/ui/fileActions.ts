@@ -12,6 +12,8 @@ import {
   serializeDiary,
 } from '../storage/files';
 import { t } from '../i18n';
+import { openSealedCopy, sealCopy } from '../cloud/lock';
+import { readLock } from '../cloud/lockState';
 
 /**
  * Saves a file the user asked for: downloaded on the web; on the desktop, where they
@@ -29,24 +31,40 @@ export async function saveFile(blob: Blob, name: string) {
   }
 }
 
-/** Downloads a backup of the whole diary, with images and fonts. */
-export async function saveCopy(diary: Diary) {
-  const dump = await diary.dump();
-  await saveFile(
-    new Blob([serializeDiary(dump)], { type: 'application/json' }),
-    datedName() + FILE_EXTENSION,
-  );
+/**
+ * Downloads a backup of the whole diary, with images and fonts. With the diary encrypted
+ * here, the user chooses first: encrypted like the diary, or readable.
+ */
+export async function saveCopy(diary: Diary, readable?: boolean) {
+  if (readLock() && readable === undefined) {
+    useUI.getState().setCopyPrivacy({ kind: 'save' });
+    return;
+  }
+  const text = serializeDiary(await diary.dump());
+  const contents = (!readable && sealCopy(text)) || text;
+  await saveFile(new Blob([contents], { type: 'application/json' }), datedName() + FILE_EXTENSION);
 }
 
 /**
  * Opens a backup. A single-page one replaces the open page and can be undone. For a
  * whole-diary one the user chooses: replace this diary with it, or merge the two.
  */
-export async function openCopy(engine: Engine, file: File) {
+export const openCopy = async (engine: Engine, file: File) =>
+  openCopyText(engine, await file.text());
+
+/** Opens a backup's text (an encrypted one, once opened, comes here again). */
+export async function openCopyText(engine: Engine, text: string) {
   const { showToast } = useUI.getState();
-  const backup = parseBackup(await file.text());
+  const backup = parseBackup(text);
   if (!backup) {
     showToast(t().toasts.notABackup);
+    return;
+  }
+  if (backup.kind === 'sealed') {
+    // This diary's (or one opened here): at once. Otherwise its password is asked for.
+    const opened = await openSealedCopy(backup.sealed).catch(() => null);
+    if (opened !== null) return openCopyText(engine, opened);
+    useUI.getState().setCopyPrivacy({ kind: 'open', backup: backup.sealed });
     return;
   }
   const data = backup.kind === 'page' ? backup.page : backup.diary;
@@ -76,7 +94,8 @@ function moment(date = new Date()): string {
  */
 export async function keepCopyOfDiary(diary: Diary): Promise<string> {
   const texts = t().openCopy;
-  const contents = serializeDiary(await diary.dump());
+  const text = serializeDiary(await diary.dump());
+  const contents = sealCopy(text) ?? text;
   if (isDesktop()) {
     return call<string>('write_copy_before_opening', { moment: moment(), contents });
   }

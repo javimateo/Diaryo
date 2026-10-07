@@ -128,6 +128,13 @@
   pointer-events: none;
 }
 
+.mini-diary-closed {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 2;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .mini-diary-meta {
   display: flex;
   justify-content: space-between;

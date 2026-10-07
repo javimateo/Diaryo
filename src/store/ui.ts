@@ -11,6 +11,7 @@ import type { DesktopInfo } from '../desktop/settings';
 import type { Diary, DiaryState, TurnSpeed } from '../diary/diary';
 import type { SaveStatus } from '../storage/autosave';
 import type { DiaryDump } from '../storage/db';
+import type { SealedBackup } from '../storage/files';
 import { mergeToolStyle, parseRecentColors, parseStyles, RECENT_COLORS_LIMIT } from './styles';
 import { asRecord, readJSON, readText, writeJSON, writeText } from '../lib/saved';
 import { DEFAULT_LANGUAGE, isLanguage, setLanguage, type Language } from '../i18n';
@@ -40,6 +41,15 @@ export interface VaultDialogRequest {
   /** Unlock for one sync only, without keeping the keys (the "with password" mode). */
   once?: boolean;
 }
+/**
+ * What the dialog of the diary encrypted on the device does: turn it on or off, or (without
+ * an account) change its password or make a new recovery code.
+ */
+export type LockView = 'enable' | 'disable' | 'change' | 'newCode';
+
+/** With the diary encrypted: saving a copy (encrypted or readable) or opening an encrypted one. */
+export type CopyPrivacy = { kind: 'save' } | { kind: 'open'; backup: SealedBackup };
+
 /** The chosen theme: light, dark or the system one (and it follows it). */
 export type ThemePreference = Theme | 'system';
 
@@ -183,6 +193,9 @@ interface UIState {
   accountDialog: AccountDialogRequest | null;
   /** The diary password and the recovery code of the cloud diary. */
   vaultDialog: VaultDialogRequest | null;
+  /** Opened from the settings, which come back when it closes. */
+  lockDialog: LockView | null;
+  copyPrivacy: CopyPrivacy | null;
   /** Map view: all the pages at a glance. */
   mapOpen: boolean;
   /** Command palette and search (Ctrl+K). */
@@ -219,6 +232,8 @@ interface UIState {
   setPendingCopy: (copy: DiaryDump | null) => void;
   setAccountDialog: (request: AccountDialogRequest | null) => void;
   setVaultDialog: (request: VaultDialogRequest | null) => void;
+  setLockDialog: (view: LockView | null) => void;
+  setCopyPrivacy: (copy: CopyPrivacy | null) => void;
   setMapOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
   setDesktop: (patch: Partial<DesktopInfo>) => void;
@@ -263,6 +278,8 @@ export const useUI = create<UIState>()((set, get) => ({
   pendingCopy: null,
   accountDialog: null,
   vaultDialog: null,
+  lockDialog: null,
+  copyPrivacy: null,
   mapOpen: false,
   mapOrigin: null,
   paletteOpen: false,
@@ -331,6 +348,12 @@ export const useUI = create<UIState>()((set, get) => ({
         ? false
         : state.settingsOpen || Boolean(state.vaultDialog?.fromSettings),
     })),
+  setLockDialog: (lockDialog) =>
+    set((state) => ({
+      lockDialog,
+      settingsOpen: lockDialog ? false : state.settingsOpen || state.lockDialog !== null,
+    })),
+  setCopyPrivacy: (copyPrivacy) => set({ copyPrivacy }),
   setMapOpen: (mapOpen) => {
     if (mapOpen === get().mapOpen) return;
     const { diary, engine } = get();

@@ -187,6 +187,63 @@ export const es = {
     },
   },
 
+  lock: {
+    section: 'Privacidad',
+    level: 'Qué se cifra en este dispositivo',
+    levels: { off: 'Nada', all: 'Todo el diario' },
+    levelHints: {
+      off: 'Como hasta ahora: el diario se guarda legible en este dispositivo.',
+      all: 'Todo lo guardado aquí va cifrado, y pide la contraseña del diario al abrirlo.',
+    },
+    lockNow: 'Bloquear ahora',
+    lockNowHint: 'Cierra el diario: hará falta la contraseña para volver a abrirlo.',
+    cloudPassword:
+      'Es la contraseña del diario de tu nube: se cambia en «Cuenta y nube», y cambia en los dos sitios.',
+    enableTitle: 'Cifrar el diario en este dispositivo',
+    enableText:
+      'Todo lo que guardas aquí se cifra con la contraseña del diario. Si la olvidas, solo la clave de recuperación lo abre: nadie más puede.',
+    enableCloudText:
+      'Se usa la contraseña del diario de tu nube, la misma en todas partes. Escríbela para continuar.',
+    enable: 'Cifrar',
+    disableTitle: 'Quitar el cifrado',
+    disableText:
+      'El diario vuelve a guardarse legible en este dispositivo. Escribe la contraseña del diario para continuar.',
+    disable: 'Quitar el cifrado',
+    encrypting: 'Cifrando el diario…',
+    decrypting: 'Quitando el cifrado…',
+    keepOpen: 'No cierres diaryo hasta que termine.',
+    enabled: 'Diario cifrado en este dispositivo',
+    disabled: 'El diario ya no está cifrado en este dispositivo',
+    codeText:
+      'Si olvidas la contraseña del diario, esta clave es la única forma de volver a abrirlo. Solo se muestra ahora.',
+    file: (code: string, date: string) =>
+      `diaryo · Clave de recuperación\n\nCreada: ${date}\n\n${code}\n\nSi olvidas la contraseña del diario, esta clave es la única forma de volver a abrirlo.\nGuárdala en un lugar seguro y no la compartas.\n`,
+    lockedTitle: 'Tu diario está bloqueado',
+    lockedText: 'Escribe la contraseña del diario.',
+    open: 'Abrir',
+    forgotBoth: 'No recuerdo ni la contraseña ni la clave',
+    forgotTitle: 'Sin contraseña ni clave',
+    forgotText:
+      'Sin ellas no hay forma de abrir este diario: está cifrado y no se guarda ninguna copia de la contraseña. Puedes borrarlo de este dispositivo y empezar uno nuevo. Si lo tienes abierto en otro dispositivo, allí sigue.',
+    erase: 'Borrar el diario de este dispositivo',
+    eraseConfirm: 'Sí, borrarlo para siempre',
+    ownVaultText:
+      'Tu diario ya tiene contraseña en este dispositivo: la nube usará la misma, con la misma clave de recuperación.',
+    adopted:
+      'Desde ahora, la contraseña del diario en este dispositivo es la de la nube de esta cuenta.',
+    saveTitle: 'Guardar una copia del diario',
+    saveText: 'Tu diario está cifrado en este dispositivo. ¿Cómo quieres la copia?',
+    sealed: 'Cifrada',
+    sealedHint: 'Se abre con la contraseña del diario o la clave de recuperación.',
+    readable: 'Legible',
+    readableHint: 'Un archivo abierto: cualquiera que lo tenga puede leerlo.',
+    openTitle: 'Abrir una copia cifrada',
+    openText:
+      'Esta copia está cifrada. Escribe la contraseña que tenía el diario cuando se hizo, o su clave de recuperación.',
+    useCode: 'Usar la clave de recuperación',
+    usePassword: 'Usar la contraseña',
+  },
+
   sync: {
     row: 'Sincronización',
     modes: { auto: 'Automática', manual: 'Manual', password: 'Con contraseña' },
@@ -718,6 +775,7 @@ export const es = {
     flipH: 'Voltear en horizontal',
     flipV: 'Voltear en vertical',
     lock: 'Bloquear',
+    lockDiary: 'Bloquear el diario',
     unlock: 'Desbloquear',
     copyPng: 'Copiar como imagen',
     imageCopied: 'Imagen copiada',
@@ -757,6 +815,7 @@ export const es = {
 
   /** Other words that find each command in the palette. */
   commandKeywords: {
+    lockDiary: 'contraseña cerrar privacidad cifrar',
     newPage: 'hoja añadir crear',
     turn: 'pasar hoja',
     turnBack: 'pasar hoja volver',
