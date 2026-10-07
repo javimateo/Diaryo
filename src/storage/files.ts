@@ -2,7 +2,7 @@ import { isPaperStyle } from '../engine/book';
 import { parseElement } from '../engine/clipboard';
 import type { SceneElement } from '../engine/elements';
 import type { AssetRow, DiaryDump, FontRow, PageRow, StoredPage } from './db';
-import { openBytes, sealBytes } from './sealing';
+import { fromBase64, openBytes, sealBytes, toBase64 } from './sealing';
 
 /** Backup format: a readable JSON with everything needed to restore it. */
 const FILE_TYPE = 'diaryo/page';
@@ -54,21 +54,6 @@ export interface SealedBackup {
 }
 
 const sealedContext = new TextEncoder().encode(SEALED_TYPE);
-
-function toBase64(bytes: Uint8Array): string {
-  let text = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-  return btoa(text);
-}
-
-function fromBase64(text: string): Uint8Array {
-  const raw = atob(text);
-  const bytes = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-  return bytes;
-}
 
 /** Encrypts a backup (`serializeDiary`'s text) with a device's key. */
 export function serializeSealed(text: string, key: Uint8Array, lock: Record<string, unknown>) {

@@ -173,7 +173,8 @@ function drawNote(
   applyElementTransform(ctx, el);
   drawNoteBody(ctx, el, rc.mode, rc.pixelScale);
 
-  if (rc.editingId !== el.id) {
+  if (el.concealed) drawLock(ctx, el, noteInk(el, rc.mode));
+  else if (rc.editingId !== el.id) {
     const layout = noteTextLayout(el);
     ctx.save();
     ctx.translate(layout.x, layout.y);
@@ -188,6 +189,30 @@ function drawNote(
   }
   // Pin, tape or clip go on top of the text.
   drawNoteDecoration(ctx, el, rc.mode, rc.pixelScale);
+  ctx.restore();
+}
+
+/** A padlock in the middle of a private note whose text can't be seen. */
+function drawLock(ctx: CanvasRenderingContext2D, el: NoteElement, color: string) {
+  const size = Math.min(el.width, el.height) * 0.2;
+  const cx = el.width / 2;
+  const cy = el.height / 2;
+  const body = { w: size, h: size * 0.78 };
+  const top = cy - body.h * 0.2;
+  ctx.save();
+  ctx.globalAlpha *= 0.55;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = size * 0.12;
+  ctx.beginPath();
+  ctx.arc(cx, top, size * 0.3, Math.PI, 0);
+  ctx.lineTo(cx + size * 0.3, top + size * 0.05);
+  ctx.moveTo(cx - size * 0.3, top + size * 0.05);
+  ctx.lineTo(cx - size * 0.3, top);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.roundRect(cx - body.w / 2, top + size * 0.05, body.w, body.h, size * 0.12);
+  ctx.fill();
   ctx.restore();
 }
 

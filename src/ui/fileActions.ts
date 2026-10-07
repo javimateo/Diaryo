@@ -13,7 +13,7 @@ import {
 } from '../storage/files';
 import { t } from '../i18n';
 import { openSealedCopy, sealCopy } from '../cloud/lock';
-import { readLock } from '../cloud/lockState';
+import { sealedHere } from '../cloud/lockState';
 
 /**
  * Saves a file the user asked for: downloaded on the web; on the desktop, where they
@@ -36,7 +36,7 @@ export async function saveFile(blob: Blob, name: string) {
  * here, the user chooses first: encrypted like the diary, or readable.
  */
 export async function saveCopy(diary: Diary, readable?: boolean) {
-  if (readLock() && readable === undefined) {
+  if (sealedHere() && readable === undefined) {
     useUI.getState().setCopyPrivacy({ kind: 'save' });
     return;
   }

@@ -174,17 +174,58 @@ export const en: Messages = {
       exists: 'This account already has a diary in the cloud: unlock it with its password.',
       changed:
         'The password or the recovery code just changed on another device: try again with the current one.',
+      privateHidden:
+        "Show your private notes first (Settings → Privacy): their text has to move to this account's diary password.",
     },
   },
 
   lock: {
     section: 'Privacy',
     level: 'What is encrypted on this device',
-    levels: { off: 'Nothing', all: 'The whole diary' },
+    levels: { off: 'Nothing', private: 'Only what is private', all: 'The whole diary' },
     levelHints: {
       off: 'As before: the diary is saved readable on this device.',
+      private:
+        'The notes marked as private are encrypted, and the diary password is needed to see them.',
       all: 'Everything saved here is encrypted, and the diary password is asked for when it opens.',
     },
+    privateTitle: 'A password for what is private',
+    privateText:
+      'Private notes are encrypted with the diary password. If you forget it, only the recovery code opens them: nobody else can.',
+    privateCloudText:
+      "Your cloud diary's password is used, the same one everywhere. Type it to continue.",
+    privateDone: 'Password set: what is private is encrypted on this device',
+    downTitle: 'Encrypt only what is private',
+    downText:
+      'The diary is saved readable on this device again, except the private notes. Type the diary password to continue.',
+    down: 'Encrypt only what is private',
+    downDone: 'Now only what is private is encrypted',
+    offTitle: 'Remove the diary password',
+    offText:
+      'Nothing will be encrypted on this device any more. Type the diary password to continue.',
+    offNotes: (count: number) =>
+      count === 1
+        ? 'You have a private note. What happens to it?'
+        : `You have ${count} private notes. What happens to them?`,
+    keepNotes: (count: number) =>
+      count === 1 ? 'Keep it as a normal note' : 'Keep them as normal notes',
+    keepNotesHint: 'Their text stays in the diary, not encrypted.',
+    deleteNotes: (count: number) => (count === 1 ? 'Delete it' : 'Delete them'),
+    deleteNotesHint: (count: number) =>
+      count === 1
+        ? 'It leaves this diary, on your other devices too.'
+        : 'They leave this diary, on your other devices too.',
+    off: 'Remove the password',
+    revealTitle: 'Show what is private',
+    revealText: 'Type the diary password to see the private notes.',
+    reveal: 'Show',
+    revealed: 'What is private is showing',
+    hidden: 'What is private is hidden again',
+    hidePrivate: 'Hide what is private again',
+    hidePrivateOptions: { minimize: 'On minimizing', 15: 'After 15 min', 60: 'After an hour' },
+    privateRow: 'Private notes',
+    show: 'Show what is private',
+    hide: 'Hide what is private',
     lockNow: 'Lock now',
     lockNowHint: 'Closes the diary: the password is needed to open it again.',
     cloudPassword:
@@ -203,7 +244,7 @@ export const en: Messages = {
     decrypting: 'Decrypting the diary…',
     keepOpen: "Don't close diaryo until it's done.",
     enabled: 'Diary encrypted on this device',
-    disabled: "The diary isn't encrypted on this device any more",
+    disabled: 'Nothing is encrypted on this device any more',
     codeText:
       "If you forget the diary password, this code is the only way to open it again. It's only shown now.",
     file: (code: string, date: string) =>
@@ -758,6 +799,10 @@ export const en: Messages = {
     flipV: 'Flip vertically',
     lock: 'Lock',
     lockDiary: 'Lock the diary',
+    showPrivate: 'Show what is private',
+    hidePrivate: 'Hide what is private',
+    markPrivate: 'Mark as private',
+    unmarkPrivate: 'Stop being private',
     unlock: 'Unlock',
     copyPng: 'Copy as image',
     imageCopied: 'Image copied',
@@ -797,6 +842,7 @@ export const en: Messages = {
 
   commandKeywords: {
     lockDiary: 'password close privacy encrypt',
+    private: 'private note password secret see',
     newPage: 'sheet add create',
     turn: 'turn sheet',
     turnBack: 'turn sheet back',

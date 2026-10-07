@@ -120,6 +120,8 @@ export interface EngineState {
   selectionGrouped: boolean;
   /** Everything selected is locked. */
   selectionLocked: boolean;
+  /** Whether the selected notes are all private (null: no note is selected). */
+  selectionPrivate: boolean | null;
   /** Something on the page is locked. */
   hasLocked: boolean;
   /** There is a copied style ready to paste. */

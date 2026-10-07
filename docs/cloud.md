@@ -93,6 +93,10 @@ The keys are deterministic (every device computes the same one) and opaque (the 
 can't tell which page anything belongs to, nor how pages relate). The encrypted content
 carries its path, so a device knows what an item is.
 
+A **private note**'s text and link go encrypted apart inside its element, with a key that
+only the diary password gives ([privacy](privacy.md)): a device where they aren't shown
+gets the note without them, and keeps them as they came.
+
 **Not synced**: each page's view (zoom and position) and its thumbnail. The view is each
 device's own; thumbnails are drawn again on each device (a page that changed there gets
 a new one in the background).

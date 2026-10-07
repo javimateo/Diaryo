@@ -5,6 +5,7 @@ import type { PageMeta } from '../diary/pages';
 import { followLink } from './diaryActions';
 import { DesktopBridge } from '../desktop/bridge';
 import { isDesktop, notifyDeskSaved } from '../desktop/tauri';
+import { askToReveal, startPrivacy } from './privateActions';
 import { Updater } from '../desktop/updates';
 import { Engine } from '../engine/engine';
 import { getDB } from '../storage/db';
@@ -48,6 +49,8 @@ export function CanvasView() {
     const unsubscribeCamera = instance.subscribe((camera) => setZoom(camera.zoom));
     const unsubscribeState = instance.subscribeState(setDoc);
     const unsubscribeEditing = instance.subscribeEditing(setEditing);
+    // A hidden private note asks for the diary password (to see or edit it).
+    const unsubscribeReveal = instance.subscribeReveal(() => askToReveal());
     instance.onToolRequest(setTool);
     instance.onContextMenu(openContextMenu);
     instance.onLinkOpen((pageId) => void followLink(pageId));
@@ -65,6 +68,7 @@ export function CanvasView() {
       onDeskSaved: desktop ? notifyDeskSaved : undefined,
     });
     setDiary(diary);
+    const stopPrivacy = startPrivacy(diary);
     // In the desktop app, as soon as today's page is there it connects with it.
     const bridge = desktop ? new DesktopBridge(instance, diary) : null;
     useUI.getState().setDesktopBridge(bridge);
@@ -95,6 +99,8 @@ export function CanvasView() {
       unsubscribeCamera();
       unsubscribeState();
       unsubscribeEditing();
+      unsubscribeReveal();
+      stopPrivacy();
       diary.stop();
       setDiary(null);
       instance.destroy();

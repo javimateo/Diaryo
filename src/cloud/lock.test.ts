@@ -99,8 +99,24 @@ async function boot() {
     const [el] = (await storage.loadPage(db, storage.DESK_ID)).elements;
     return (el as NoteElement | undefined)?.text;
   };
+  /** A private note, and how it reads now (its text, or empty if hidden). */
+  const writePrivate = (text: string) =>
+    storage.saveChanges(db, storage.DESK_INFO, {
+      upserts: [{ ...note('p1', text), private: true }],
+      deletes: [],
+      assets: [],
+      fonts: [],
+    });
+  const readPrivate = async () => {
+    const elements = (await storage.loadPage(db, storage.DESK_ID)).elements;
+    return (elements.find((el) => el.id === 'p1') as NoteElement | undefined)?.text;
+  };
   const status = () => state.useLock.getState().status;
-  return { storage, lock, state, vault, crypto, account, keystore, db, write, read, status };
+  const level = () => state.useLock.getState().level;
+  return {
+    ...{ storage, lock, state, vault, crypto, account, keystore, db },
+    ...{ write, read, writePrivate, readPrivate, status, level },
+  };
 }
 
 type App = Awaited<ReturnType<typeof boot>>;
@@ -145,7 +161,7 @@ describe('a password for the diary on this device', () => {
   it('encrypts the diary, which then opens only with the password', async () => {
     let a = await start();
     await a.write('mi pin es 4321');
-    const code = await a.lock.enableLock('contraseña larga');
+    const code = await a.lock.enableLock('contraseña larga', 'all');
     expect(code).toMatch(/^(\w{4}-){11}\w{4}$/);
     expect(a.status()).toBe('unlocked');
     expect(await a.read()).toBe('mi pin es 4321');
@@ -162,7 +178,7 @@ describe('a password for the diary on this device', () => {
   it('recovers with the code, changes the password and makes a new code', async () => {
     let a = await start();
     await a.write('hola');
-    const code = (await a.lock.enableLock('primera contraseña'))!;
+    const code = (await a.lock.enableLock('primera contraseña', 'all'))!;
 
     a = await start();
     await a.lock.recoverDiary(code, 'segunda contraseña');
@@ -183,7 +199,7 @@ describe('a password for the diary on this device', () => {
   it('decrypts it again, and goes on with a rewrite cut halfway', async () => {
     let a = await start();
     await a.write('hola');
-    await a.lock.enableLock('contraseña larga');
+    await a.lock.enableLock('contraseña larga', 'all');
     // As if the app had closed while encrypting: a row is still in the clear.
     a.db.sealing.seal = false;
     await a.write('aún sin cifrar');
@@ -204,7 +220,7 @@ describe('a password for the diary on this device', () => {
     });
     expect(rows.every(rowIsSealed)).toBe(true);
 
-    await a.lock.disableLock('contraseña larga');
+    await a.lock.disableLock('contraseña larga', 'off');
     expect(a.status()).toBe('off');
     expect(a.state.readLock()).toBeNull();
     a = await start();
@@ -222,7 +238,7 @@ describe('a password for the diary on this device', () => {
     });
     const first = await boot();
     await first.write('hola');
-    await first.lock.enableLock('contraseña larga');
+    await first.lock.enableLock('contraseña larga', 'all');
     const second = await boot();
     await vi.waitFor(() => expect(second.status()).toBe('unlocked'));
     expect(await second.read()).toBe('hola');
@@ -234,11 +250,11 @@ describe('a password for the diary on this device', () => {
 describe('the same diary password as the cloud', () => {
   it("the device's own vault goes to the cloud as it is", async () => {
     const a = await start();
-    const code = (await a.lock.enableLock('contraseña larga'))!;
+    const code = (await a.lock.enableLock('contraseña larga', 'all'))!;
     fake.signIn('ana');
     await vi.waitFor(() => expect(a.account.useAccount.getState().vault).toBe('none'));
     expect(a.vault.hasOwnVault()).toBe(true);
-    expect(await a.vault.setUpVault(null)).toBeNull();
+    expect(await a.vault.setUpVault('contraseña larga')).toBeNull();
     expect(fake.state.vault?.wrappedKey).toBe(a.state.readLock()!.vault.wrappedKey);
     expect(a.state.readLock()!.account).toBe('ana');
     // The same code opens the cloud's diary.
@@ -253,7 +269,7 @@ describe('the same diary password as the cloud', () => {
 
     let a = await start();
     await a.write('hola');
-    await a.lock.enableLock('la de aquí');
+    await a.lock.enableLock('la de aquí', 'all');
     fake.signIn('ana');
     await vi.waitFor(() => expect(a.account.useAccount.getState().vault).toBe('locked'));
     expect(await a.vault.unlock('la de la nube')).toBe(true);
@@ -273,8 +289,10 @@ describe('the same diary password as the cloud', () => {
     fake.state.vault = { ...other.vault, id: 'v1', version: 1 };
     fake.state.record = { id: 'ana', email: 'ana@diaryo.test', verified: true };
     const a = await start();
-    await expect(a.lock.enableLock('otra')).rejects.toBeInstanceOf(a.crypto.WrongSecretError);
-    expect(await a.lock.enableLock('la de la nube')).toBeNull();
+    await expect(a.lock.enableLock('otra', 'all')).rejects.toBeInstanceOf(
+      a.crypto.WrongSecretError,
+    );
+    expect(await a.lock.enableLock('la de la nube', 'all')).toBeNull();
     expect(a.state.readLock()).toMatchObject({ account: 'ana', version: 1 });
     await vi.waitFor(() => expect(a.account.useAccount.getState().vault).toBe('unlocked'));
   });
@@ -285,7 +303,7 @@ describe('the same diary password as the cloud', () => {
     fake.state.record = { id: 'ana', email: 'ana@diaryo.test', verified: true };
     let a = await start();
     await a.write('hola');
-    await a.lock.enableLock('primera contraseña');
+    await a.lock.enableLock('primera contraseña', 'all');
 
     // Changed on another device while this one is closed.
     const changed = await a.crypto.changePassword(
@@ -311,7 +329,7 @@ describe('encrypted copies', () => {
   it('open here at once, and elsewhere with the password or the code', async () => {
     let a = await start();
     await a.write('hola');
-    const code = (await a.lock.enableLock('contraseña larga'))!;
+    const code = (await a.lock.enableLock('contraseña larga', 'all'))!;
     const text = JSON.stringify({ type: 'diaryo/diary', pages: [] });
     const sealed = a.lock.sealCopy(text)!;
     expect(sealed).not.toContain('diaryo/diary');
@@ -321,7 +339,7 @@ describe('encrypted copies', () => {
     expect(await a.lock.openSealedCopy(backup.sealed)).toBe(text);
 
     // Another device, without this diary.
-    await a.lock.disableLock('contraseña larga');
+    await a.lock.disableLock('contraseña larga', 'off');
     localStorage.removeItem('diaryo:lock');
     a = await start();
     await expect(a.lock.openSealedCopy(backup.sealed)).rejects.toBeInstanceOf(
@@ -337,5 +355,116 @@ describe('encrypted copies', () => {
   it("aren't made when the diary isn't encrypted", async () => {
     const a = await start();
     expect(a.lock.sealCopy('{}')).toBeNull();
+  });
+});
+
+describe('private notes', () => {
+  it('a password only for them: the diary opens, they show with the password', async () => {
+    let a = await start();
+    await a.write('a la vista');
+    const code = (await a.lock.enableLock('contraseña larga', 'private'))!;
+    expect(code).toMatch(/^(\w{4}-){11}\w{4}$/);
+    expect([a.status(), a.level(), a.state.useLock.getState().revealed]).toEqual([
+      'off',
+      'private',
+      true,
+    ]);
+    await a.writePrivate('pin 4321');
+    expect(await a.readPrivate()).toBe('pin 4321');
+    await a.lock.hidePrivate();
+    expect(await a.readPrivate()).toBe('');
+
+    a = await start();
+    expect(a.status()).toBe('off');
+    expect(await a.read()).toBe('a la vista');
+    expect(await a.readPrivate()).toBe('');
+    await expect(a.lock.revealPrivate('otra')).rejects.toBeInstanceOf(a.crypto.WrongSecretError);
+    await a.lock.revealPrivate('contraseña larga');
+    expect(await a.readPrivate()).toBe('pin 4321');
+
+    a = await start();
+    await a.lock.recoverDiary(code, 'nueva contraseña');
+    expect(await a.readPrivate()).toBe('pin 4321');
+  });
+
+  it('from only them to the whole diary and back, and off keeping or deleting them', async () => {
+    let a = await start();
+    await a.lock.enableLock('contraseña larga', 'private');
+    await a.writePrivate('pin 4321');
+    expect(await a.lock.enableLock('contraseña larga', 'all')).toBeNull();
+    a = await start();
+    expect(a.status()).toBe('locked');
+    await a.lock.unlockDiary('contraseña larga');
+    // Unlocking the whole diary doesn't show them.
+    expect(await a.readPrivate()).toBe('');
+    await a.lock.disableLock('contraseña larga', 'private');
+    expect([a.status(), a.level()]).toEqual(['off', 'private']);
+
+    a = await start();
+    expect(await a.lock.privateNotes()).toBe(1);
+    await a.lock.disableLock('contraseña larga', 'off', 'open');
+    expect(a.level()).toBe('off');
+    a = await start();
+    expect(await a.readPrivate()).toBe('pin 4321');
+    expect(await a.lock.privateNotes()).toBe(0);
+
+    await a.lock.enableLock('contraseña larga', 'private');
+    await a.writePrivate('otro pin');
+    await a.lock.disableLock('contraseña larga', 'off', 'delete');
+    expect(await a.readPrivate()).toBeUndefined();
+  });
+
+  it('only for them, the cloud keys stay on the device', async () => {
+    const other = await (await import('./crypto')).createVault('la de la nube', 1000);
+    fake.state.vault = { ...other.vault, id: 'v1', version: 1 };
+    fake.state.record = { id: 'ana', email: 'ana@diaryo.test', verified: true };
+    const a = await start();
+    expect(await a.lock.enableLock('la de la nube', 'private')).toBeNull();
+    await vi.waitFor(() => expect(a.account.useAccount.getState().vault).toBe('unlocked'));
+    await vi.waitFor(async () => expect(await a.keystore.loadKeys('ana')).not.toBeNull());
+  });
+
+  it("taking another account's password, hidden ones must be shown first; then they follow", async () => {
+    const other = await (await import('./crypto')).createVault('la de la nube', 1000);
+    fake.state.vault = { ...other.vault, id: 'v1', version: 2 };
+    let a = await start();
+    await a.lock.enableLock('la de aquí', 'private');
+    await a.writePrivate('pin 4321');
+    await a.lock.hidePrivate();
+    fake.signIn('ana');
+    await vi.waitFor(() => expect(a.account.useAccount.getState().vault).toBe('locked'));
+    await expect(a.vault.unlock('la de la nube')).rejects.toBeInstanceOf(
+      a.vault.PrivateHiddenError,
+    );
+    await a.lock.revealPrivate('la de aquí');
+    expect(await a.vault.unlock('la de la nube')).toBe(true);
+    expect(await a.readPrivate()).toBe('pin 4321');
+
+    a = await start();
+    await expect(a.lock.revealPrivate('la de aquí')).rejects.toThrow();
+    await a.lock.revealPrivate('la de la nube');
+    expect(await a.readPrivate()).toBe('pin 4321');
+  });
+
+  it('shown in one window, shown in the others', async () => {
+    vi.unstubAllGlobals();
+    const data = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => data.set(key, value),
+      removeItem: (key: string) => data.delete(key),
+    });
+    const first = await boot();
+    await first.lock.enableLock('contraseña larga', 'private');
+    await first.writePrivate('pin 4321');
+    await first.lock.hidePrivate();
+    const second = await boot();
+    expect(await second.readPrivate()).toBe('');
+    await first.lock.revealPrivate('contraseña larga');
+    await vi.waitFor(async () => expect(await second.readPrivate()).toBe('pin 4321'));
+    await first.lock.hidePrivate();
+    await vi.waitFor(async () => expect(await second.readPrivate()).toBe(''));
+    first.db.close();
+    app = second;
   });
 });

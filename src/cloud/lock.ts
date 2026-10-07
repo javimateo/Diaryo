@@ -1,4 +1,4 @@
-import { getDB, rewriteDiary } from '../storage/db';
+import { countPrivateNotes, getDB, releasePrivateNotes, rewriteDiary } from '../storage/db';
 import { openSealed, serializeSealed, type SealedBackup } from '../storage/files';
 import { newSealingKey } from '../storage/sealing';
 import { useAccount } from './account';
@@ -9,6 +9,7 @@ import {
   openSecret,
   openSecretWithCode,
   PBKDF2_ITERATIONS,
+  privateKeyOf,
   recoverWithCode,
   unwrapDeviceKey,
   wrapDeviceKey,
@@ -16,11 +17,13 @@ import {
   type VaultData,
 } from './crypto';
 import {
+  applyPrivateKey,
   readLock,
   setUnlockedSecret,
   unlockedSecret,
   useLock,
   writeLock,
+  type LockLevel,
   type LockRecord,
 } from './lockState';
 import {
@@ -33,11 +36,13 @@ import {
 } from './vault';
 
 /**
- * The diary encrypted on this device (docs/privacy.md). It uses the diary password and
- * recovery code, the same ones as the cloud: a key of its own encrypts the diary here
- * (storage/sealing.ts), wrapped with the diary secret, so changing the account or the
- * password never encrypts the diary again. The keys are only in memory, and the windows
- * of the app (tabs, the desk on the desktop) pass them to each other.
+ * The diary password on this device (docs/privacy.md): only the private notes encrypted,
+ * or the whole diary. It uses the diary password and recovery code, the same ones as the
+ * cloud. The whole diary is encrypted with a key of its own (storage/sealing.ts), wrapped
+ * with the diary secret, so changing the account or the password never encrypts it
+ * again; the private notes, with a key from the secret itself (the same on every device).
+ * The keys are only in memory, and the windows of the app (tabs, the desk on the desktop)
+ * pass them to each other.
  */
 
 const vaultData = ({ kdf, wrappedKey, recoveryKey, check }: VaultData): VaultData => ({
@@ -49,20 +54,26 @@ const vaultData = ({ kdf, wrappedKey, recoveryKey, check }: VaultData): VaultDat
 
 const accountId = () => useAccount.getState().account?.id ?? null;
 
-/** Writes go encrypted unless the diary is being decrypted. */
+/** What the record says: whether writes go encrypted, and what the app shows. */
 function applyRecord(lock: LockRecord | null) {
-  getDB().sealing.seal = !!lock && lock.rewriting !== 'open';
+  const db = getDB();
+  db.sealing.seal = lock?.level === 'all' && lock.rewriting !== 'open';
+  const status = lock?.level !== 'all' ? 'off' : db.sealing.key ? 'unlocked' : 'locked';
+  useLock.setState({ level: lock?.level ?? 'off', status });
 }
 
 // ─── Between windows ────────────────────────────────────────────
 
 type Message =
-  /** A window that starts locked asks the others for the secret. */
+  /** A window that starts asks the others for what is unlocked. */
   | { type: 'ask' }
   /** The diary secret, from an unlocked window. */
   | { type: 'secret'; secret: Uint8Array<ArrayBuffer> }
-  /** The lock changed (turned on or off): it is read again. */
+  /** The lock changed (its level): it is read again. */
   | { type: 'changed'; secret: Uint8Array<ArrayBuffer> | null }
+  /** The private notes are shown (with their key) or hidden. */
+  | { type: 'reveal'; key: Uint8Array }
+  | { type: 'hide' }
   /** Lock everything now. */
   | { type: 'lock' };
 
@@ -72,69 +83,44 @@ const post = (message: Message) => channel?.postMessage(message);
 
 function onMessage(message: Message) {
   const lock = readLock();
+  const db = getDB();
   if (message.type === 'ask') {
     const secret = unlockedSecret();
-    if (secret && getDB().sealing.key) post({ type: 'secret', secret });
+    if (secret && db.sealing.key) post({ type: 'secret', secret });
+    if (db.sealing.privateKey) post({ type: 'reveal', key: db.sealing.privateKey });
   } else if (message.type === 'secret') {
-    if (lock && useLock.getState().status === 'locked') {
+    if (lock?.level === 'all' && useLock.getState().status === 'locked') {
       void open(lock, message.secret, false).catch(() => undefined);
     }
   } else if (message.type === 'changed') {
     applyRecord(lock);
     if (!lock) {
+      db.sealing.key = null;
       setUnlockedSecret(null);
-      useLock.setState({ status: 'off' });
-    } else if (message.secret) {
+    } else if (lock.level === 'all' && message.secret && !db.sealing.key) {
       void open(lock, message.secret, false).catch(() => undefined);
     }
+  } else if (message.type === 'reveal') {
+    if (!db.sealing.privateKey) void applyPrivateKey(message.key);
+  } else if (message.type === 'hide') {
+    if (db.sealing.privateKey) void applyPrivateKey(null);
   } else if (message.type === 'lock') {
     location.reload();
   }
 }
 
 /**
- * Before anything reads the diary: whether it is encrypted here. If it is, another window
- * already unlocked may pass the secret.
+ * Before anything reads the diary: whether it is encrypted here. Another window already
+ * unlocked (or showing the private notes) may pass its keys.
  */
 export function startLock() {
   const lock = readLock();
   applyRecord(lock);
-  useLock.setState({ status: lock ? 'locked' : 'off' });
   if (channel) channel.onmessage = (e: MessageEvent<Message>) => onMessage(e.data);
   if (lock) post({ type: 'ask' });
 }
 
-// ─── Unlocking ──────────────────────────────────────────────────
-
-/**
- * Opens the diary with its secret: the device's key, and the cloud's keys if they are
- * the same diary's. A rewrite cut halfway goes on (only in the window the user unlocked).
- */
-async function open(lock: LockRecord, secret: Uint8Array<ArrayBuffer>, resume: boolean) {
-  getDB().sealing.key = await unwrapDeviceKey(secret, lock.deviceKey);
-  setUnlockedSecret(secret);
-  if (resume && lock.rewriting) await rewrite(lock.rewriting);
-  useLock.setState({ status: readLock() ? 'unlocked' : 'off' });
-  await takeDeviceSecret(secret).catch(() => undefined);
-}
-
-/** Unlocks with the diary password. */
-export async function unlockDiary(password: string) {
-  const lock = readLock();
-  if (!lock) return;
-  let secret: Uint8Array<ArrayBuffer>;
-  try {
-    ({ secret } = await openSecret(lock.vault, password));
-  } catch (error) {
-    // The password may have changed on another device while this one was offline.
-    const newer = await newerCloudVault(lock);
-    if (!(error instanceof WrongSecretError) || !newer) throw error;
-    ({ secret } = await openSecret(newer, password));
-    writeLock({ ...lock, vault: vaultData(newer), version: newer.version });
-  }
-  await open(lock, secret, true);
-  post({ type: 'secret', secret });
-}
+// ─── The diary secret ───────────────────────────────────────────
 
 async function newerCloudVault(lock: LockRecord): Promise<VaultRecord | null> {
   if (!lock.account || lock.account !== accountId()) return null;
@@ -143,8 +129,49 @@ async function newerCloudVault(lock: LockRecord): Promise<VaultRecord | null> {
 }
 
 /**
- * Unlocks with the recovery code and sets a new password. With the account's vault, the
- * cloud's changes too (if there is a connection; otherwise only this device's copy).
+ * The diary secret from its password. If it doesn't open the copy of the vault here, the
+ * password may have changed on another device while this one was offline: the cloud's
+ * one is tried (and kept).
+ */
+async function secretFor(lock: LockRecord, password: string) {
+  try {
+    return (await openSecret(lock.vault, password)).secret;
+  } catch (error) {
+    const newer = await newerCloudVault(lock);
+    if (!(error instanceof WrongSecretError) || !newer) throw error;
+    const { secret } = await openSecret(newer, password);
+    writeLock({ ...lock, vault: vaultData(newer), version: newer.version });
+    return secret;
+  }
+}
+
+// ─── The whole diary: locked and unlocked ───────────────────────
+
+/**
+ * Opens the diary with its secret: the device's key, and the cloud's keys if they are
+ * the same diary's. A rewrite cut halfway goes on (only in the window the user unlocked).
+ */
+async function open(lock: LockRecord, secret: Uint8Array<ArrayBuffer>, resume: boolean) {
+  getDB().sealing.key = await unwrapDeviceKey(secret, lock.deviceKey!);
+  setUnlockedSecret(secret);
+  if (resume && lock.rewriting) await rewrite(lock.rewriting);
+  applyRecord(readLock());
+  await takeDeviceSecret(secret).catch(() => undefined);
+}
+
+/** Unlocks the whole diary with the diary password. */
+export async function unlockDiary(password: string) {
+  const lock = readLock();
+  if (!lock) return;
+  const secret = await secretFor(lock, password);
+  await open(readLock()!, secret, true);
+  post({ type: 'secret', secret });
+}
+
+/**
+ * Unlocks with the recovery code and sets a new password: the whole diary, or the private
+ * notes are shown. With the account's vault, the cloud's changes too (if there is a
+ * connection; otherwise only this device's copy).
  */
 export async function recoverDiary(code: string, newPassword: string) {
   const lock = readLock();
@@ -161,13 +188,47 @@ export async function recoverDiary(code: string, newPassword: string) {
     version = newer.version;
   }
   writeLock({ ...lock, vault: vaultData(recovered.vault), version });
-  await open(readLock()!, recovered.secret, true);
-  post({ type: 'secret', secret: recovered.secret });
+  if (lock.level === 'all') {
+    await open(readLock()!, recovered.secret, true);
+    post({ type: 'secret', secret: recovered.secret });
+  } else {
+    await reveal(recovered.secret);
+  }
   if (lock.account && lock.account === accountId()) {
     await recover(code, newPassword).catch((error) =>
       console.error("Couldn't change the cloud's diary password", error),
     );
   }
+}
+
+// ─── The private notes: shown and hidden ────────────────────────
+
+async function reveal(secret: Uint8Array<ArrayBuffer>) {
+  setUnlockedSecret(secret);
+  const key = await privateKeyOf(secret);
+  await applyPrivateKey(key);
+  post({ type: 'reveal', key });
+}
+
+/**
+ * Shows the private notes, with the diary password. Without the password set on this
+ * device yet (the private notes came from the cloud), the account's one: this device
+ * keeps it for them from then on.
+ */
+export async function revealPrivate(password: string) {
+  const lock = readLock();
+  if (!lock) {
+    await enableLock(password, 'private');
+    return;
+  }
+  await reveal(await secretFor(lock, password));
+}
+
+/** Hides the private notes again (in every window). */
+export async function hidePrivate() {
+  if (readLock()?.level !== 'all') setUnlockedSecret(null);
+  await applyPrivateKey(null);
+  post({ type: 'hide' });
 }
 
 // ─── Turning it on and off ──────────────────────────────────────
@@ -182,45 +243,54 @@ async function rewrite(mode: 'seal' | 'open') {
     useLock.setState({ progress: null });
   }
   const lock = readLock();
-  if (mode === 'open') {
-    writeLock(null);
-    db.sealing.key = null;
-    setUnlockedSecret(null);
-    useLock.setState({ status: 'off' });
-    await keepKeysOnDevice();
-  } else if (lock) {
-    writeLock({ ...lock, rewriting: undefined });
-  }
+  if (mode === 'open') db.sealing.key = null;
+  if (lock) writeLock({ ...lock, rewriting: undefined });
+  applyRecord(readLock());
   post({ type: 'changed', secret: null });
 }
 
 /**
- * Encrypts the diary on this device. Signed in with a cloud diary, with its password (no
- * new recovery code); otherwise, a new diary password, and returns its recovery code to
- * show it once.
+ * Sets the diary password on this device: for the private notes only, or encrypting the
+ * whole diary. With a password here already (the private notes), it is that one; signed
+ * in with a cloud diary, its password (no new recovery code); otherwise, a new one, and
+ * its recovery code is returned to show it once. The private notes are shown afterwards
+ * if it was for them.
  */
-export async function enableLock(password: string): Promise<string | null> {
-  const account = accountId();
-  const cloud = account ? await fetchVault() : null;
-  let lock: Omit<LockRecord, 'deviceKey'>;
+export async function enableLock(password: string, level: LockLevel): Promise<string | null> {
+  const db = getDB();
+  const here = readLock();
+  let lock: Omit<LockRecord, 'deviceKey' | 'level'>;
   let secret: Uint8Array<ArrayBuffer>;
   let code: string | null = null;
-  if (cloud) {
-    ({ secret } = await openSecret(cloud, password));
-    lock = { vault: vaultData(cloud), version: cloud.version ?? 0, account };
+  if (here) {
+    secret = await secretFor(here, password);
+    lock = readLock()!;
   } else {
-    secret = newSealingKey();
-    const created = await createVault(password, PBKDF2_ITERATIONS, secret);
-    lock = { vault: created.vault, version: 0, account: null };
-    code = created.recoveryCode;
+    const account = accountId();
+    const cloud = account ? await fetchVault() : null;
+    if (cloud) {
+      ({ secret } = await openSecret(cloud, password));
+      lock = { vault: vaultData(cloud), version: cloud.version ?? 0, account };
+    } else {
+      secret = newSealingKey();
+      const created = await createVault(password, PBKDF2_ITERATIONS, secret);
+      lock = { vault: created.vault, version: 0, account: null };
+      code = created.recoveryCode;
+    }
+  }
+  setUnlockedSecret(secret);
+  if (level === 'private') {
+    writeLock({ ...lock, level, deviceKey: null });
+    applyRecord(readLock());
+    post({ type: 'changed', secret: null });
+    await takeDeviceSecret(secret).catch(() => undefined);
+    await reveal(secret);
+    return code;
   }
   const key = newSealingKey();
-  writeLock({ ...lock, deviceKey: await wrapDeviceKey(secret, key), rewriting: 'seal' });
-  const db = getDB();
+  writeLock({ ...lock, level, deviceKey: await wrapDeviceKey(secret, key), rewriting: 'seal' });
   db.sealing.key = key;
-  setUnlockedSecret(secret);
   applyRecord(readLock());
-  useLock.setState({ status: 'unlocked' });
   post({ type: 'changed', secret });
   await forgetKeptKeys();
   await takeDeviceSecret(secret).catch(() => undefined);
@@ -228,15 +298,44 @@ export async function enableLock(password: string): Promise<string | null> {
   return code;
 }
 
-/** Decrypts the diary on this device (asks for the password, to be sure). */
-export async function disableLock(password: string) {
+/** How many private notes there are (to ask what happens to them). */
+export const privateNotes = () => countPrivateNotes(getDB());
+
+/**
+ * Lowers what is encrypted here (asks for the password, to be sure): from the whole
+ * diary to only the private notes, or to nothing. To nothing, the private notes stop
+ * being private (`open`) or are deleted (`delete`).
+ */
+export async function disableLock(
+  password: string,
+  to: 'private' | 'off',
+  notes?: 'open' | 'delete',
+) {
   const lock = readLock();
   if (!lock) return;
-  await openSecret(lock.vault, password);
-  writeLock({ ...lock, rewriting: 'open' });
-  applyRecord(readLock());
-  post({ type: 'changed', secret: null });
-  await rewrite('open');
+  const db = getDB();
+  const secret = await secretFor(lock, password);
+  if (to === 'off' && (await privateNotes()) > 0) {
+    // They are shown to read them, and then released (the windows load them again).
+    await reveal(secret);
+    await releasePrivateNotes(db, notes ?? 'open');
+    await hidePrivate();
+  }
+  if (lock.level === 'all') {
+    const next: LockRecord =
+      to === 'private' ? { ...lock, level: 'private', deviceKey: null } : { ...lock };
+    writeLock({ ...next, rewriting: 'open' });
+    applyRecord(readLock());
+    post({ type: 'changed', secret: null });
+    await rewrite('open');
+  }
+  if (to === 'off') {
+    writeLock(null);
+    setUnlockedSecret(null);
+    applyRecord(null);
+    post({ type: 'changed', secret: null });
+    await keepKeysOnDevice();
+  }
 }
 
 /**
@@ -250,8 +349,10 @@ export async function dropLock() {
   await rewriteDiary(db);
   writeLock(null);
   db.sealing.key = null;
+  db.sealing.privateKey = null;
   setUnlockedSecret(null);
-  useLock.setState({ status: 'off' });
+  applyRecord(null);
+  useLock.setState({ revealed: false });
   post({ type: 'changed', secret: null });
 }
 
@@ -284,7 +385,7 @@ export async function changeLockPassword(current: string, next: string) {
 
 export async function newLockRecoveryCode(password: string): Promise<string> {
   const lock = readLock();
-  if (!lock) throw new Error('the diary is not encrypted');
+  if (!lock) throw new Error('there is no diary password here');
   const made = await newRecoveryCode(lock.vault, password);
   writeLock({ ...lock, vault: made.vault });
   return made.recoveryCode;
@@ -300,7 +401,7 @@ export async function newLockRecoveryCode(password: string): Promise<string> {
 export function sealCopy(text: string): string | null {
   const lock = readLock();
   const key = getDB().sealing.key;
-  if (!lock || !key) return null;
+  if (!lock?.deviceKey || !key) return null;
   return serializeSealed(text, key, { vault: lock.vault, deviceKey: lock.deviceKey });
 }
 

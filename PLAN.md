@@ -481,7 +481,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       (va cifrada con el mismo secreto); sigue en los dispositivos donde está abierto. La
       pantalla de bloqueo ofrece borrarlo de este dispositivo y empezar uno nuevo.
     - Fases (cada una en su rama), en este orden: D1, D4, D2, D3.
-    - [ ] **D1. Contraseña y cifrado local** (`docs/privacy.md`): un filtro de Dexie
+    - [x] **D1. Contraseña y cifrado local** (`docs/privacy.md`): un filtro de Dexie
           cifra cada fila con XChaCha20 (`@noble/ciphers`, síncrono para ir dentro de las
           transacciones; solo quedan en claro los índices); activarlo cifra lo que hay y
           quitarlo lo descifra, por tandas y reanudable; pantalla de bloqueo (con la
@@ -492,17 +492,29 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           diarias, y «Guardar una copia» pregunta cifrada o legible); el mini diario
           solo enseña la portada. Tests: los de `storage`, el diario y la sincronización
           otra vez con todo cifrado (proyecto `sealed` de Vitest) y `lock.test.ts`.
-          Falta: probarlo en la app de escritorio (la mesa en otra ventana) y contra un
-          PocketBase real.
-    - [ ] **D4. Privados**: post-its (y luego páginas) marcados como privados: se ven
-          con un candado, del mismo tamaño y en el mismo sitio, hasta escribir la
-          contraseña; su contenido va cifrado aunque el resto no lo esté. Viajan por la
-          nube con la marca y cada dispositivo los protege igual.
+          Probado en la app de escritorio. Falta probarlo contra un PocketBase real.
+    - [ ] **D4. Post-its privados**: Ajustes → Privacidad pasa a tres niveles (nada,
+          solo lo privado, todo el diario). Un post-it privado (menú contextual o paleta)
+          guarda su texto y su enlace cifrados aparte con una llave del secreto del
+          diario, la misma en todos los dispositivos; se ve con un candado, en su sitio y
+          con su tamaño y color, y se puede mover o borrar oculto; verlo o editarlo pide
+          la contraseña, también con todo el diario abierto. «Mostrar lo privado» lo
+          enseña en todas las ventanas; se vuelve a ocultar a mano, a los 15 min, a la
+          hora o al minimizar. Viaja a la nube y a las copias `.diaryo` (también las
+          legibles) con el texto cifrado. Las miniaturas y el mini diario siempre lo
+          dibujan con candado; la búsqueda solo lo encuentra a la vista. Al quitar la
+          contraseña, se elige: dejarlos como post-its normales o borrarlos. Con la
+          contraseña de otra cuenta, su texto pasa a la llave nueva (si están ocultos,
+          pide mostrarlos antes). Tests en `sealing.test.ts`, `lock.test.ts` y
+          `sync.test.ts`.
+      - [ ] Más adelante: **páginas privadas** (índice, mapa, miniaturas, pasar página).
     - [ ] **D2. Qué se ve en el escritorio**: la llave pasa a la ventana de la mesa
           (comprobar `BroadcastChannel` con una `CryptoKey` en WebView2; si no, por
           Rust en memoria). Mientras está bloqueado, por defecto la mesa se ve sin los
           privados (candado) y el mini diario muestra la portada; se puede elegir
-          (visible / sin privados / oculta).
+          (visible / sin privados / oculta). Abrir un privado desde la mesa (enseña la
+          ventana del diario y pide la contraseña); hoy la mesa los oculta y los enseña
+          cuando se muestran en el diario.
     - [ ] **D3. Privacidad en la web** (ordenadores compartidos): bloquear tras X
           minutos sin uso o al ocultar la pestaña; al cerrar sesión, «dejarlo cifrado
           y bloqueado» además de dejarlo o quitarlo; opción «no mantener la sesión»

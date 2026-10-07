@@ -41,10 +41,12 @@ import {
   createId,
   DEFAULT_STYLES,
   type ArrowBinding,
+  concealNote,
   elementBounds,
   type EditableElement,
   type ImageElement,
   NOTE_SIZE,
+  type NoteElement,
   type SceneElement,
   type ToolStyles,
 } from './elements';
@@ -171,6 +173,8 @@ export class Engine {
   private lastPointer: Vec | null = null;
   private editing: EditingState | null = null;
   private readonly editingListeners = new Set<EditingListener>();
+  /** Who is asked to show the private notes (the diary password), see `subscribeReveal`. */
+  private readonly revealListeners = new Set<() => void>();
   /** The UI decides which tool is active; the engine can only ask for it. */
   private toolRequest: (tool: ToolId) => void = () => {};
   private contextMenuListener: (request: ContextMenuRequest) => void = () => {};
@@ -579,7 +583,8 @@ export class Engine {
 
   /** Thumbnail of another page (its double page in small), at that width. */
   spreadThumbnail(target: TurnTarget, width: number): string {
-    return this.renderSpread(target, width / (PAGE_WIDTH * 2)).toDataURL('image/webp', 0.85);
+    const concealed = { ...target, elements: concealPrivate(target.elements) };
+    return this.renderSpread(concealed, width / (PAGE_WIDTH * 2)).toDataURL('image/webp', 0.85);
   }
 
   /** Draws a double page (paper and content, without covers) for the turning sheet. */
@@ -796,6 +801,12 @@ export class Engine {
     return () => this.editingListeners.delete(listener);
   }
 
+  /** The user wants to see a private note whose text is hidden (to edit it, for example). */
+  subscribeReveal(listener: () => void): () => void {
+    this.revealListeners.add(listener);
+    return () => this.revealListeners.delete(listener);
+  }
+
   /** The UI learns that the engine wants to change the tool. */
   onToolRequest(listener: (tool: ToolId) => void) {
     this.toolRequest = listener;
@@ -854,6 +865,10 @@ export class Engine {
   }
 
   private startEditing(element: EditableElement, isNew: boolean) {
+    if (element.type === 'note' && element.concealed) {
+      this.revealListeners.forEach((listener) => listener());
+      return;
+    }
     this.finishEditing(false);
     this.setSelection([]);
     // A shape without text gets an empty one with the default style.
@@ -927,6 +942,25 @@ export class Engine {
     const elements = this.selectedElements().filter((el) => el.groupId);
     if (elements.length === 0) return false;
     this.history.commit(new Map(elements.map((el) => [el.id, { ...el, groupId: null }])));
+    return true;
+  }
+
+  /**
+   * Marks the selected notes as private, or not. A hidden one can't stop being private
+   * (its text must be seen first): the password is asked for instead.
+   */
+  setPrivateSelection(on: boolean): boolean {
+    const notes = this.selectedElements().filter((el): el is NoteElement => el.type === 'note');
+    if (notes.length === 0) return false;
+    if (!on && notes.some((el) => el.concealed)) {
+      this.revealListeners.forEach((listener) => listener());
+      return false;
+    }
+    this.history.commit(
+      new Map(
+        notes.map((el) => [el.id, on ? { ...el, private: true } : { ...el, private: undefined }]),
+      ),
+    );
     return true;
   }
 
@@ -1218,7 +1252,7 @@ export class Engine {
 
   /** Thumbnail of the whole page (always in the light theme), or null if it is empty. */
   thumbnail(width: number, height: number): string | null {
-    const elements = this.pageElements();
+    const elements = concealPrivate(this.pageElements());
     if (elements.length === 0) return null;
     // In the diary, the double page in small (paper, date and content in place).
     if (this.book) {
@@ -1403,6 +1437,10 @@ export class Engine {
       selectionStyle: selectionStyle(this.selectedElements()),
       selectionGrouped: this.selectedElements().some((el) => el.groupId),
       selectionLocked: this.selection.size > 0 && this.selectedElements().every((el) => el.locked),
+      selectionPrivate: (() => {
+        const notes = this.selectedElements().filter((el) => el.type === 'note');
+        return notes.length === 0 ? null : notes.every((el) => el.private);
+      })(),
       hasLocked: this.scene.all().some((el) => el.locked),
       hasCopiedStyle: this.copiedStyle !== null,
       selectionHasLink: this.selectedElements().some((el) => el.link),
@@ -1955,3 +1993,7 @@ export class Engine {
     this.cleanups.push(() => target.removeEventListener(type, listener, options));
   }
 }
+
+/** Thumbnails never show a private note's text, even while it can be seen. */
+const concealPrivate = (elements: SceneElement[]) =>
+  elements.map((el) => (el.type === 'note' && el.private ? concealNote(el) : el));

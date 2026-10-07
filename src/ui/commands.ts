@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Copy,
   Download,
+  Eye,
   EyeOff,
   FilePlus2,
   FlipHorizontal2,
@@ -63,6 +64,8 @@ import { shortcutKeys } from '../desktop/shortcuts';
 import { TOOLS } from './toolDefs';
 import { useLock } from '../cloud/lockState';
 import { lockDiaryNow } from './lockActions';
+import { askToReveal, markSelectionPrivate } from './privateActions';
+import { hidePrivate } from '../cloud/lock';
 import { t } from '../i18n';
 
 /** What a command asks for when something needs to be typed (e.g. a title). */
@@ -271,6 +274,14 @@ export function getCommands(): Command[] {
       keywords: kw.lock,
       run: () => engine.toggleLockSelection(),
     },
+    doc.selectionPrivate !== null && {
+      id: 'private',
+      label: doc.selectionPrivate ? c.unmarkPrivate : c.markPrivate,
+      icon: doc.selectionPrivate ? EyeOff : Eye,
+      keywords: kw.private,
+      run: () =>
+        doc.selectionPrivate ? engine.setPrivateSelection(false) : markSelectionPrivate(),
+    },
     selected && {
       id: 'copy-png',
       label: c.copyPng,
@@ -387,6 +398,22 @@ export function getCommands(): Command[] {
       checked: themePreference === 'system',
       run: () => state.setThemePreference('system'),
     },
+    useLock.getState().level !== 'off' &&
+      (useLock.getState().revealed
+        ? {
+            id: 'hide-private',
+            label: c.hidePrivate,
+            icon: EyeOff,
+            keywords: kw.private,
+            run: () => void hidePrivate(),
+          }
+        : {
+            id: 'show-private',
+            label: c.showPrivate,
+            icon: Eye,
+            keywords: kw.private,
+            run: () => askToReveal(),
+          }),
     useLock.getState().status === 'unlocked' && {
       id: 'lock-diary',
       label: c.lockDiary,

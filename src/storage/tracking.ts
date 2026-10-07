@@ -2,6 +2,7 @@ import Dexie from 'dexie';
 import { now as clockNow } from '../lib/clock';
 import type { SceneElement } from '../engine/elements';
 import type { AssetRow, DiaryoDB, FontRow, PageRow } from './db';
+import { privateForTransport } from './sealing';
 
 /**
  * What changed and when, for the cloud sync (docs/cloud.md). Every write to the diary
@@ -127,7 +128,8 @@ export async function readPath(db: DiaryoDB, path: string): Promise<unknown> {
   }
   if (target.kind === 'el') {
     const row = await db.elements.get([target.pageId!, target.id]);
-    return row ? row.data : null;
+    // A private note's text goes up encrypted apart too (see sealing.ts).
+    return row ? privateForTransport(row.data, db.sealing) : null;
   }
   if (target.kind === 'asset') return (await db.assets.get(target.id)) ?? null;
   return (await db.fonts.get(target.id)) ?? null;

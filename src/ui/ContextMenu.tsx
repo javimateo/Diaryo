@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ContextMenuRequest } from '../engine/engine';
 import { useUI } from '../store/ui';
+import { markSelectionPrivate } from './privateActions';
 import { copySelection, cutSelection, pasteFromClipboard } from './clipboard';
 import { t } from '../i18n';
 
@@ -152,6 +153,15 @@ function Menu({ request, onClose }: { request: ContextMenuRequest; onClose: () =
           shortcut: 'Ctrl+Shift+L',
           run: () => engine.toggleLockSelection(),
         },
+        ...(doc.selectionPrivate === null
+          ? []
+          : [
+              {
+                label: doc.selectionPrivate ? c.unmarkPrivate : c.markPrivate,
+                run: () =>
+                  doc.selectionPrivate ? engine.setPrivateSelection(false) : markSelectionPrivate(),
+              },
+            ]),
         'divider',
         {
           label: m.delete,

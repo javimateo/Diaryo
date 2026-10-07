@@ -1,5 +1,5 @@
 import { ClientResponseError } from 'pocketbase';
-import { getDB } from '../storage/db';
+import { countPrivateNotes, getDB, reboxPrivateNotes } from '../storage/db';
 import { useAccount } from './account';
 import { pb } from './client';
 import {
@@ -9,6 +9,7 @@ import {
   keysMatch,
   newRecoveryCode,
   openSecret,
+  privateKeyOf,
   recoverWithCode,
   unlockWithPassword,
   wrapDeviceKey,
@@ -16,7 +17,14 @@ import {
   type VaultData,
 } from './crypto';
 import { forgetKeys, loadKeys, saveKeys } from './keystore';
-import { readLock, setUnlockedSecret, unlockedSecret, writeLock } from './lockState';
+import {
+  applyPrivateKey,
+  readLock,
+  sealedHere,
+  setUnlockedSecret,
+  unlockedSecret,
+  writeLock,
+} from './lockState';
 
 /**
  * The account's vault (the wrapped diary key, see docs/cloud.md) and this device's
@@ -80,38 +88,54 @@ async function save(vault: VaultRecord, next: VaultData): Promise<VaultRecord> {
 }
 
 /**
- * With the diary encrypted on this device (lockState.ts), the keys aren't kept on disk:
- * they come from the diary password each time it is unlocked.
+ * With the whole diary encrypted on this device (lockState.ts), the keys aren't kept on
+ * disk: they come from the diary password each time it is unlocked.
  */
 async function keep(account: string, next: DiaryKeys) {
   keys = next;
-  if (!readLock()) await saveKeys(account, next);
+  if (!sealedHere()) await saveKeys(account, next);
   setVault('unlocked');
 }
 
-const sameBytes = (a: Uint8Array, b: Uint8Array) =>
-  a.length === b.length && a.every((byte, i) => byte === b[i]);
+/**
+ * The private notes here are hidden and the account's diary has another password: they
+ * must be shown first, so their text can go with the new one (see `follow`).
+ */
+export class PrivateHiddenError extends Error {
+  constructor() {
+    super('the private notes must be shown first');
+  }
+}
+
+const sameSecret = async (vault: VaultData, secret: Uint8Array<ArrayBuffer>) =>
+  keysMatch(vault, await diaryKeys(secret));
+
+async function canFollow(secret: Uint8Array<ArrayBuffer>) {
+  const lock = readLock();
+  if (!lock || unlockedSecret() || (await sameSecret(lock.vault, secret))) return;
+  if ((await countPrivateNotes(getDB())) > 0) throw new PrivateHiddenError();
+}
 
 /**
- * With the diary encrypted here, the device follows the account's vault: the same diary
+ * With the diary password set on this device, it follows the account's vault: the same
  * password opens both. A vault with another secret (the first time with an account that
- * had a diary already) wraps this device's key again. Returns whether the password
- * changed here.
+ * had a diary already) wraps this device's key again, and the private notes' text goes
+ * with the new secret. Returns whether the password changed here.
  */
 async function follow(account: string, vault: VaultRecord, secret: Uint8Array<ArrayBuffer>) {
   const lock = readLock();
-  const deviceKey = getDB().sealing.key;
-  if (!lock || !deviceKey) return false;
-  const current = unlockedSecret();
-  const same = !!current && sameBytes(current, secret);
-  writeLock({
-    ...lock,
-    vault: toData(vault),
-    version: vault.version ?? 0,
-    account,
-    deviceKey: same ? lock.deviceKey : await wrapDeviceKey(secret, deviceKey),
-  });
+  if (!lock) return false;
+  const db = getDB();
+  const same = await sameSecret(lock.vault, secret);
+  let deviceKey = lock.deviceKey;
+  if (!same) {
+    if (deviceKey && db.sealing.key) deviceKey = await wrapDeviceKey(secret, db.sealing.key);
+    const old = unlockedSecret();
+    if (old) await reboxPrivateNotes(db, await privateKeyOf(old), await privateKeyOf(secret));
+  }
+  writeLock({ ...lock, vault: toData(vault), version: vault.version ?? 0, account, deviceKey });
   setUnlockedSecret(secret);
+  if (!same && db.sealing.privateKey) await applyPrivateKey(await privateKeyOf(secret));
   return !same;
 }
 
@@ -144,7 +168,10 @@ export async function checkVault() {
     return setVault('unknown');
   }
   const lock = readLock();
-  const kept = lock ? keys : await loadKeys(account).catch(() => null);
+  const sealed = lock?.level === 'all';
+  // The keys kept on disk or, from the diary password typed here, the ones in memory.
+  const stored = sealed ? null : await loadKeys(account).catch(() => null);
+  const kept = stored ?? keys;
   if (kept) {
     keys = kept;
     setVault('unlocked');
@@ -161,6 +188,7 @@ export async function checkVault() {
     return setVault('none');
   }
   if (kept && (await keysMatch(vault, kept))) {
+    if (!sealed && !stored) await saveKeys(account, kept).catch(() => undefined);
     // The password may have changed on another device: the copy here follows.
     const secret = unlockedSecret();
     if (lock && secret && (lock.account !== account || (vault.version ?? 0) > lock.version)) {
@@ -169,40 +197,36 @@ export async function checkVault() {
     return;
   }
   keys = null;
-  if (kept && !lock) await forgetKeys().catch(() => undefined);
+  if (stored) await forgetKeys().catch(() => undefined);
   setVault('locked');
 }
 
 /**
- * This device has its own vault (the diary encrypted here without an account): it goes to
- * the cloud as it is, with the same password and recovery code.
+ * This device has its own vault (the diary password set here without an account): it
+ * goes to the cloud as it is, with the same password and recovery code.
  */
-export function hasOwnVault() {
-  const lock = readLock();
-  return !!lock && lock.account === null && !!unlockedSecret();
-}
+export const hasOwnVault = () => readLock()?.account === null;
 
 /**
  * The first device: creates the vault. Returns the recovery code (to show it once), or
- * null when it is this device's own vault (without a password), whose code was shown
- * when it was made.
+ * null when it is this device's own vault (opened with its password), whose code was
+ * shown when it was made.
  */
-export async function setUpVault(password: string | null): Promise<string | null> {
+export async function setUpVault(password: string): Promise<string | null> {
   const account = accountId();
   if (!account) throw new Error('not signed in');
   const lock = readLock();
-  const secret = unlockedSecret();
-  const own = password === null && lock && lock.account === null && secret ? lock : null;
-  if (password === null && !own) throw new Error('no vault on this device');
+  const own = lock?.account === null ? lock : null;
+  const opened = own ? await openSecret(own.vault, password) : null;
   const created = own
-    ? { vault: own.vault, keys: await diaryKeys(secret!), recoveryCode: null }
-    : await createVault(password!);
+    ? { vault: own.vault, keys: opened!.keys, recoveryCode: null }
+    : await createVault(password);
   try {
     const record = await vaults().create<VaultRecord>(
       { user: account, ...created.vault },
       { requestKey: null },
     );
-    if (own) await follow(account, record, secret!);
+    if (opened) await follow(account, record, opened.secret);
   } catch (error) {
     // Unique per user: another device was quicker.
     if ((await fetchVault().catch(() => null)) !== null) {
@@ -232,6 +256,7 @@ export async function unlock(password: string): Promise<boolean> {
   const account = accountId()!;
   const vault = await existingVault();
   const opened = await openSecret(vault, password);
+  await canFollow(opened.secret);
   await keep(account, opened.keys);
   return follow(account, vault, opened.secret);
 }
@@ -241,6 +266,7 @@ export async function recover(code: string, newPassword: string): Promise<boolea
   const account = accountId()!;
   const vault = await existingVault();
   const recovered = await recoverWithCode(vault, code, newPassword);
+  await canFollow(recovered.secret);
   const saved = await save(vault, recovered.vault);
   await keep(account, recovered.keys);
   return follow(account, saved, recovered.secret);
@@ -274,7 +300,7 @@ useAccount.subscribe((state, previous) => {
   if (state.account?.id === previous.account?.id) return;
   keys = null;
   if (!state.account) void forgetKeys().catch(() => undefined);
-  const secret = readLock() ? unlockedSecret() : null;
+  const secret = sealedHere() ? unlockedSecret() : null;
   void (secret ? takeDeviceSecret(secret) : checkVault());
 });
 

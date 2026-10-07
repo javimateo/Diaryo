@@ -1,6 +1,7 @@
 import { bookBoundsWith } from '../engine/book';
 import { isEditableTarget } from '../engine/dom';
 import type { Engine, ScreenRect } from '../engine/engine';
+import { handlePrivacy } from '../cloud/lockState';
 import { Autosave, type SaveStatus } from '../storage/autosave';
 import { DESK_ID, DESK_INFO, getDB, listPages, loadPage } from '../storage/db';
 import { loadThemePreference, SETTINGS_KEY, THEME_KEY, useUI } from '../store/ui';
@@ -45,6 +46,14 @@ export class DeskLayerController {
       }),
     );
     this.listenWindow();
+    // The private notes shown or hidden (from the diary's window): the desk loads again.
+    handlePrivacy(async (apply) => {
+      this.engine.finishEditing(false);
+      await this.autosave.flush();
+      apply();
+      await this.reload();
+    });
+    this.cleanups.push(() => handlePrivacy(null));
 
     await this.frameBook();
     await this.autosave.start();

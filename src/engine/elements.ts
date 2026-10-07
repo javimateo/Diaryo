@@ -233,6 +233,19 @@ export interface NoteElement extends BoxElement {
   font: string;
   align: TextAlign;
   valign: VerticalAlign;
+  /**
+   * Private: its text (and link) are encrypted apart and need the diary password to be
+   * seen (docs/privacy.md). Where they can't be read, `concealed` is set, the text is
+   * empty and `box` carries them encrypted, as they are.
+   */
+  private?: boolean;
+  concealed?: boolean;
+  box?: string;
+}
+
+/** A private note, as it shows where its text can't be seen (thumbnails, locked). */
+export function concealNote(el: NoteElement): NoteElement {
+  return { ...el, text: '', link: null, concealed: true };
 }
 
 export interface ImageElement extends BoxElement {

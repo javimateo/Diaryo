@@ -1,10 +1,18 @@
-import { KeyRound, Loader2, LockKeyhole, LockKeyholeOpen, X } from 'lucide-react';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { Eye, KeyRound, Loader2, LockKeyhole, LockKeyholeOpen, Trash2, X } from 'lucide-react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { accountError, PASSWORD_MIN, useAccount } from '../cloud/account';
 import { WrongSecretError } from '../cloud/crypto';
-import { changeLockPassword, disableLock, enableLock, newLockRecoveryCode } from '../cloud/lock';
+import {
+  changeLockPassword,
+  disableLock,
+  enableLock,
+  newLockRecoveryCode,
+  privateNotes,
+  recoverDiary,
+  revealPrivate,
+} from '../cloud/lock';
 import { useLock } from '../cloud/lockState';
-import { useUI, type LockView } from '../store/ui';
+import { useUI, type LockDialogRequest, type LockView } from '../store/ui';
 import { PasswordField } from './PasswordField';
 import { useT } from './useT';
 import { RecoveryCode } from './VaultDialog';
@@ -12,34 +20,56 @@ import { RecoveryCode } from './VaultDialog';
 /** The diary password allows long phrases. */
 const PHRASE_MAX = 200;
 
+/** Inside the dialog, besides what it was opened for: recovering with the code. */
+type View = LockView | 'recover';
+
 /**
- * The diary encrypted on this device: turning it on (with the cloud's diary password, or
- * a new one and its recovery code) or off, and, without an account, changing its password
- * or making a new recovery code.
+ * The diary password on this device: setting it for the private notes or the whole diary
+ * (the cloud's diary password, or a new one and its recovery code), lowering that,
+ * showing the private notes and, without an account, changing the password or making a
+ * new recovery code.
  */
 export function LockDialog() {
-  const view = useUI((s) => s.lockDialog);
-  if (!view) return null;
-  return <Dialog view={view} />;
+  const request = useUI((s) => s.lockDialog);
+  if (!request) return null;
+  return <Dialog request={request} />;
 }
 
-function Dialog({ view }: { view: LockView }) {
+function Dialog({ request }: { request: LockDialogRequest }) {
   const t = useT();
   const l = t.lock;
   const v = t.vault;
   const setLockDialog = useUI((s) => s.setLockDialog);
   const showToast = useUI((s) => s.showToast);
-  // Signed in with a cloud diary: its password is the one.
+  const level = useLock((s) => s.level);
+  // Signed in with a cloud diary and no password here yet: its password is the one.
   const cloud = useAccount((s) => !!s.account && (s.vault === 'locked' || s.vault === 'unlocked'));
+  const [view, setView] = useState<View>(request.view);
   const [password, setPassword] = useState('');
   const [repeat, setRepeat] = useState('');
   const [current, setCurrent] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [shownCode, setShownCode] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  /** Turning it off: how many private notes there are, and what happens to them. */
+  const [notes, setNotes] = useState(0);
+  const [release, setRelease] = useState<'open' | 'delete'>('open');
 
-  const choosing = (view === 'enable' && !cloud) || view === 'change';
+  useEffect(() => {
+    if (request.view === 'off') void privateNotes().then(setNotes);
+  }, [request.view]);
+
+  // A new password is chosen when there is none here (nor in the cloud), when changing it
+  // and when recovering.
+  const fresh = level === 'off' && !cloud;
+  const choosing =
+    ((view === 'private' || view === 'all') && fresh) || view === 'change' || view === 'recover';
+  // Encrypting or decrypting the whole diary takes a while: its progress shows.
+  const rewriting =
+    (view === 'all' || view === 'down' || (view === 'off' && level === 'all')) && busy;
+
   const close = () => {
     if (busy || (shownCode && !saved)) return;
     setLockDialog(null);
@@ -47,6 +77,7 @@ function Dialog({ view }: { view: LockView }) {
   const finish = (message: string) => {
     setLockDialog(null);
     showToast(message);
+    request.then?.();
   };
 
   const submit = (e: FormEvent) => {
@@ -60,13 +91,22 @@ function Dialog({ view }: { view: LockView }) {
     setError('');
     void (async () => {
       try {
-        if (view === 'enable') {
-          const code = await enableLock(password);
-          if (code) setShownCode(code);
-          else finish(l.enabled);
-        } else if (view === 'disable') {
-          await disableLock(password);
+        if (view === 'private' || view === 'all') {
+          const made = await enableLock(password, view);
+          if (made) setShownCode(made);
+          else finish(view === 'private' ? l.privateDone : l.enabled);
+        } else if (view === 'down') {
+          await disableLock(password, 'private');
+          finish(l.downDone);
+        } else if (view === 'off') {
+          await disableLock(password, 'off', release);
           finish(l.disabled);
+        } else if (view === 'reveal') {
+          await revealPrivate(password);
+          finish(l.revealed);
+        } else if (view === 'recover') {
+          await recoverDiary(code, password);
+          finish(l.revealed);
         } else if (view === 'change') {
           await changeLockPassword(current, password);
           finish(v.changed);
@@ -74,36 +114,51 @@ function Dialog({ view }: { view: LockView }) {
           setShownCode(await newLockRecoveryCode(password));
         }
       } catch (e) {
-        if (e instanceof WrongSecretError) setError(v.errors.wrongPassword);
-        else setError(t.account.errors[accountError(e)] || t.account.errors.unknown);
+        if (e instanceof WrongSecretError) {
+          setError(view === 'recover' ? v.errors.wrongCode : v.errors.wrongPassword);
+        } else setError(t.account.errors[accountError(e)] || t.account.errors.unknown);
       } finally {
         setBusy(false);
       }
     })();
   };
 
-  const titles: Record<LockView, string> = {
-    enable: l.enableTitle,
-    disable: l.disableTitle,
+  const titles: Record<View, string> = {
+    private: l.privateTitle,
+    all: l.enableTitle,
+    down: l.downTitle,
+    off: l.offTitle,
+    reveal: l.revealTitle,
+    recover: v.recoverTitle,
     change: v.changeTitle,
     newCode: v.newCodeTitle,
   };
-  const intros: Record<LockView, string> = {
-    enable: cloud ? l.enableCloudText : l.enableText,
-    disable: l.disableText,
+  const intros: Record<View, string> = {
+    private: fresh ? l.privateText : l.privateCloudText,
+    all: fresh ? l.enableText : l.enableCloudText,
+    down: l.downText,
+    off: l.offText,
+    reveal: l.revealText,
+    recover: v.recoverText,
     change: '',
     newCode: v.newCodeText,
   };
-  const submits: Record<LockView, string> = {
-    enable: l.enable,
-    disable: l.disable,
+  const submits: Record<View, string> = {
+    private: v.next,
+    all: l.enable,
+    down: l.down,
+    off: l.off,
+    reveal: l.reveal,
+    recover: v.recover,
     change: v.change,
     newCode: v.makeCode,
   };
   const icon =
-    view === 'disable' ? (
+    view === 'off' || view === 'down' ? (
       <LockKeyholeOpen size={18} strokeWidth={1.75} aria-hidden />
-    ) : view === 'newCode' || shownCode ? (
+    ) : view === 'reveal' ? (
+      <Eye size={18} strokeWidth={1.75} aria-hidden />
+    ) : view === 'newCode' || view === 'recover' || shownCode ? (
       <KeyRound size={18} strokeWidth={1.75} aria-hidden />
     ) : (
       <LockKeyhole size={18} strokeWidth={1.75} aria-hidden />
@@ -138,16 +193,75 @@ function Dialog({ view }: { view: LockView }) {
         saved={saved}
         onSaved={setSaved}
         finishLabel={v.done}
-        onFinish={() => finish(view === 'enable' ? l.enabled : v.done)}
+        onFinish={() =>
+          finish(view === 'private' ? l.privateDone : view === 'all' ? l.enabled : v.done)
+        }
       />
     );
-  } else if (busy && (view === 'enable' || view === 'disable')) {
-    body = <LockProgress label={view === 'enable' ? l.encrypting : l.decrypting} />;
+  } else if (rewriting) {
+    body = <LockProgress label={view === 'all' ? l.encrypting : l.decrypting} />;
   } else {
     body = (
       <>
         {intros[view] && <p className="account-text">{intros[view]}</p>}
+        {view === 'off' && notes > 0 && (
+          <fieldset className="lock-release">
+            <legend className="account-text">{l.offNotes(notes)}</legend>
+            {(
+              [
+                [
+                  'open',
+                  l.keepNotes(notes),
+                  l.keepNotesHint,
+                  <Eye key="i" size={18} strokeWidth={1.75} />,
+                ],
+                [
+                  'delete',
+                  l.deleteNotes(notes),
+                  l.deleteNotesHint(notes),
+                  <Trash2 key="i" size={18} strokeWidth={1.75} />,
+                ],
+              ] as const
+            ).map(([id, label, hint, glyph]) => (
+              <label
+                key={id}
+                className="open-copy-option"
+                data-primary={release === id || undefined}
+              >
+                <input
+                  type="radio"
+                  name="release"
+                  checked={release === id}
+                  onChange={() => setRelease(id)}
+                />
+                {glyph}
+                <span>
+                  <strong>{label}</strong>
+                  <small>{hint}</small>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
         <form className="account-form" onSubmit={submit}>
+          {view === 'recover' && (
+            <label className="account-field">
+              <span>{v.code}</span>
+              <input
+                className="vault-code-input"
+                autoFocus
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                placeholder="XXXX-XXXX-XXXX-…"
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  setError('');
+                }}
+              />
+            </label>
+          )}
           {view === 'change' &&
             field(v.current, current, setCurrent, {
               autoFocus: true,
@@ -155,10 +269,15 @@ function Dialog({ view }: { view: LockView }) {
             })}
           {choosing ? (
             <>
-              {field(view === 'change' ? v.newPassword : v.password, password, setPassword, {
-                autoFocus: view !== 'change',
-                hint: v.passwordHint,
-              })}
+              {field(
+                view === 'private' || view === 'all' ? v.password : v.newPassword,
+                password,
+                setPassword,
+                {
+                  autoFocus: view === 'private' || view === 'all',
+                  hint: v.passwordHint,
+                },
+              )}
               {field(v.repeat, repeat, setRepeat)}
             </>
           ) : (
@@ -177,6 +296,20 @@ function Dialog({ view }: { view: LockView }) {
             {submits[view]}
           </button>
         </form>
+        {(view === 'reveal' || view === 'recover') && (
+          <div className="account-links">
+            <button
+              type="button"
+              className="account-link"
+              onClick={() => {
+                setView(view === 'reveal' ? 'recover' : 'reveal');
+                setError('');
+              }}
+            >
+              {view === 'reveal' ? v.forgot : v.back}
+            </button>
+          </div>
+        )}
       </>
     );
   }

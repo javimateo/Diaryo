@@ -1,5 +1,6 @@
 import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
 import type { DBCore, DBCoreCursor, DBCoreTable, Middleware } from 'dexie';
+import type { NoteElement } from '../engine/elements';
 
 /**
  * The diary encrypted on the device (docs/privacy.md). Every read and write of the diary's
@@ -12,6 +13,11 @@ import type { DBCore, DBCoreCursor, DBCoreTable, Middleware } from 'dexie';
  *
  * Sealed and plain rows are both read: turning encryption on or off rewrites the diary
  * in batches, and a half-done rewrite is just carried on.
+ *
+ * Private notes go further: their text and link are always kept in a `box` encrypted with
+ * the private key (the same on every device, from the diary secret), and only read while
+ * that key is here (the private notes are shown). Otherwise the note comes `concealed`,
+ * with its box as it is.
  */
 
 /** What each table keeps in the clear: the fields IndexedDB indexes. */
@@ -31,6 +37,8 @@ export interface Sealing {
   key: Uint8Array<ArrayBuffer> | null;
   /** Writes are sealed (the diary is encrypted, or being encrypted). */
   seal: boolean;
+  /** The private notes' key, while they are shown. */
+  privateKey?: Uint8Array | null;
 }
 
 /** The diary is encrypted and locked: nothing can be read or written without the key. */
@@ -91,21 +99,85 @@ function unseal(table: string, key: unknown, row: SealedRow, secret: Uint8Array)
   return { ...rest, ...clear };
 }
 
+export function toBase64(bytes: Uint8Array): string {
+  let text = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(text);
+}
+
+export function fromBase64(text: string): Uint8Array {
+  const raw = atob(text);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  return bytes;
+}
+
+// ─── Private notes ──────────────────────────────────────────────
+
+const PRIVATE = encoder.encode('diaryo private');
+
+const isPrivate = (data: unknown): data is NoteElement =>
+  (data as NoteElement | undefined)?.type === 'note' && (data as NoteElement).private === true;
+
+/** The private note as it is kept and travels: its text and link only in the box. */
+export function boxNote(note: NoteElement, privateKey: Uint8Array | null | undefined) {
+  if (note.concealed) return note;
+  if (!privateKey) throw new LockedError();
+  const content = encoder.encode(JSON.stringify({ text: note.text, link: note.link ?? null }));
+  const box = toBase64(sealBytes(privateKey, content, PRIVATE));
+  return { ...note, text: '', link: null, concealed: true, box };
+}
+
+/** The private note with its text, if its box opens with this key; concealed otherwise. */
+function openNote(note: NoteElement, privateKey: Uint8Array | null | undefined): NoteElement {
+  if (!note.box) return note;
+  if (privateKey) {
+    try {
+      const content = JSON.parse(
+        decoder.decode(openBytes(privateKey, fromBase64(note.box), PRIVATE)),
+      );
+      const text = String(content.text ?? '');
+      return { ...note, text, link: content.link ?? null, concealed: undefined, box: undefined };
+    } catch {
+      // Another diary's (pasted from it): it stays hidden.
+    }
+  }
+  return { ...note, text: '', link: null, concealed: true };
+}
+
+/**
+ * Private notes for the other devices and for backups: always with their text in the box,
+ * even while it can be read here.
+ */
+export function privateForTransport(data: unknown, state: Sealing): unknown {
+  return isPrivate(data) ? boxNote(data, state.privateKey) : data;
+}
+
 function sealedTable(table: DBCoreTable, state: Sealing): DBCoreTable {
   const { name } = table;
   const keyOf = (value: unknown) => table.schema.primaryKey.extractKey!(value);
+  const notes = name === 'elements';
 
   // The row's key is in the clear, so it is taken from the row itself.
   const read = (value: unknown) => {
-    if (!isSealed(value)) return value;
-    if (!state.key) throw new LockedError();
-    return unseal(name, keyOf(value), value, state.key);
+    let row = value as Record<string, unknown> | undefined;
+    if (isSealed(row)) {
+      if (!state.key) throw new LockedError();
+      row = unseal(name, keyOf(row), row, state.key);
+    }
+    if (notes && row && isPrivate(row.data))
+      row = { ...row, data: openNote(row.data, state.privateKey) };
+    return row;
   };
 
   const write = (value: Record<string, unknown>) => {
-    if (!state.seal) return value;
+    let row = value;
+    if (notes && isPrivate(row.data)) row = { ...row, data: boxNote(row.data, state.privateKey) };
+    if (!state.seal) return row;
     if (!state.key) throw new LockedError();
-    return seal(name, keyOf(value), value, state.key);
+    return seal(name, keyOf(row), row, state.key);
   };
 
   const cursorOf = (cursor: DBCoreCursor): DBCoreCursor =>
