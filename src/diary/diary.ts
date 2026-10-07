@@ -30,7 +30,15 @@ import {
 import type { AppliedChanges } from '../storage/tracking';
 import { todayKey, type DayKey } from '../lib/dates';
 import { formatDay, formatDayMonth } from '../i18n/dates';
-import { comparePages, neighbor, newPage, pagesOfDay, sortPages, type PageMeta } from './pages';
+import {
+  arrivedInstead,
+  comparePages,
+  neighbor,
+  newPage,
+  pagesOfDay,
+  sortPages,
+  type PageMeta,
+} from './pages';
 import { asRecord, readJSON, writeJSON } from '../lib/saved';
 import { t } from '../i18n';
 
@@ -468,7 +476,10 @@ export class Diary {
     this.pages = (await listPages(this.db)).map(toMeta);
     const current = this.current;
     const stillThere = current && this.pages.find((p) => p.id === current.id);
-    if (current && (applied.pages.has(current.id) || applied.assets)) {
+    // A blank page is open and that day's page was made on another device: that one.
+    const arrived = current && arrivedInstead(this.pages, current, this.isEmpty, applied.pages);
+    if (current && arrived) await this.openInstead(current, arrived);
+    else if (current && (applied.pages.has(current.id) || applied.assets)) {
       await this.autosave?.stop();
       this.autosave = null;
       // Deleted on another device: today's page opens instead.
@@ -507,17 +518,18 @@ export class Diary {
   openArrivedPage(): Promise<void> {
     return this.run(async () => {
       const current = this.current;
-      if (!current || !this.isEmpty || current.title) return;
-      const arrived = pagesOfDay(this.pages, current.date)
-        .filter((page) => page.id !== current.id)
-        .at(-1);
-      if (!arrived) return;
-      await this.autosave?.stop();
-      this.autosave = null;
-      await deletePage(this.db, current.id);
-      this.pages = this.pages.filter((page) => page.id !== current.id);
-      await this.open(arrived, 0);
+      const arrived = current && arrivedInstead(this.pages, current, this.isEmpty);
+      if (current && arrived) await this.openInstead(current, arrived);
     });
+  }
+
+  /** Opens `arrived` in place of the blank page `current`, which goes. */
+  private async openInstead(current: PageMeta, arrived: PageMeta) {
+    await this.autosave?.stop();
+    this.autosave = null;
+    await deletePage(this.db, current.id);
+    this.pages = this.pages.filter((page) => page.id !== current.id);
+    await this.open(arrived, 0);
   }
 
   /**
