@@ -1,0 +1,50 @@
+/* ─── The diary encrypted on the device ─────────────────────── */
+
+/* Locked: only the desk and the card that asks for the password. */
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  padding: 16px;
+  background-color: var(--desk-color, var(--canvas-bg));
+  background-image: var(--desk-image, none);
+  background-size: var(--desk-size, auto);
+}
+
+/* Over the desktop (the floating diary), only the card. */
+:root[data-widget] .lock-screen {
+  background: transparent;
+}
+
+.lock-erase {
+  justify-content: center;
+  width: 100%;
+}
+
+.lock-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lock-progress .account-text,
+.lock-progress .settings-note {
+  margin: 0;
+}
+
+.lock-progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  overflow: hidden;
+}
+
+.lock-progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 200ms var(--ease);
+}

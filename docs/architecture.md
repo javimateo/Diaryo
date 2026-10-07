@@ -14,9 +14,11 @@ src/
   lib/       Pure helpers any layer may use (dates, what is saved in the browser)
   engine/    The canvas engine: plain TypeScript, no React, no storage, no diary
   i18n/      The app's texts in Spanish and English, and dates in the chosen language
-  storage/   The database (Dexie / IndexedDB), autosave and backup files
+  storage/   The database (Dexie / IndexedDB), its encryption on the device, autosave and
+             backup files
   diary/     The diary: one double page per day, turning pages, the desk, search
-  cloud/     The account, the end-to-end encryption and the sync (see cloud.md)
+  cloud/     The account, the end-to-end encryption, the sync (see cloud.md) and the diary
+             encrypted on the device (privacy.md)
   store/     The interface state (Zustand)
   desktop/   The bridge with the desktop app (Tauri): modes, shortcuts, backups, updates
   ui/        React components (toolbar, panels, dialogs; ui/desktop, the desktop ones)
@@ -74,7 +76,8 @@ between page and desk only when it crosses the book's edge.
 Storage is IndexedDB through Dexie (`storage/db.ts`): a `pages` table and an `elements`
 table (one row per element, so changing one only writes that one), plus images and
 custom fonts. `Autosave` writes the changes shortly after they happen. A whole diary can
-be dumped to a `.diaryo` file and merged back (`storage/files.ts`).
+be dumped to a `.diaryo` file and merged back (`storage/files.ts`). Optionally, everything
+is encrypted on the device (`storage/sealing.ts`, see [privacy](privacy.md)).
 
 ## The interface (`src/ui`, `src/store`)
 

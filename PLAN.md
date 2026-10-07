@@ -474,17 +474,26 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       (privados, p. ej. contraseñas en un post-it de la mesa); o todo el diario, que
       pide la contraseña al abrir. Solo cifrado de verdad (sin candado que no cifre).
     - **Lo que queda en claro**: los ids y el día de cada página (son índices); el
-      contenido, las miniaturas, las imágenes y las fuentes van cifrados. Se cifra antes
-      de la transacción de IndexedDB y se descifra después (WebCrypto no puede ir
-      dentro). La búsqueda usa un índice en memoria mientras está desbloqueado.
-    - **Olvidar la contraseña y la clave**: con nube, se borra el diario del
-      dispositivo y se baja de la nube (se pierde lo no subido); sin nube, no hay forma.
+      contenido, las miniaturas, las imágenes y las fuentes van cifrados, con un filtro
+      de Dexie que cifra dentro de las transacciones (síncrono: WebCrypto no puede ir
+      dentro). La búsqueda lee los textos descifrados, como antes.
+    - **Olvidar la contraseña y la clave**: no hay forma de abrirlo, tampoco en la nube
+      (va cifrada con el mismo secreto); sigue en los dispositivos donde está abierto. La
+      pantalla de bloqueo ofrece borrarlo de este dispositivo y empezar uno nuevo.
     - Fases (cada una en su rama), en este orden: D1, D4, D2, D3.
-    - [ ] **D1. Contraseña y cifrado local**: bóveda local, pantalla de bloqueo,
-          cifrado en `storage` (activarla cifra lo que hay, quitarla lo descifra),
-          miniaturas, mini diario y copias `.diaryo` cifrados, llaves de la nube
-          envueltas (hoy sus bytes quedan en el disco), la llave pasa entre pestañas
-          solo en memoria. Con tests (también en `sync.test.ts`).
+    - [ ] **D1. Contraseña y cifrado local** (`docs/privacy.md`): un filtro de Dexie
+          cifra cada fila con XChaCha20 (`@noble/ciphers`, síncrono para ir dentro de las
+          transacciones; solo quedan en claro los índices); activarlo cifra lo que hay y
+          quitarlo lo descifra, por tandas y reanudable; pantalla de bloqueo (con la
+          clave de recuperación y «borrar el diario» si se olvidan las dos); Ajustes →
+          Privacidad y «Bloquear el diario» en la paleta; la bóveda local sigue a la de
+          la nube; las llaves de la nube ya no quedan en el disco; el secreto pasa entre
+          pestañas y a la mesa por `BroadcastChannel`; copias `.diaryo` cifradas (las
+          diarias, y «Guardar una copia» pregunta cifrada o legible); el mini diario
+          solo enseña la portada. Tests: los de `storage`, el diario y la sincronización
+          otra vez con todo cifrado (proyecto `sealed` de Vitest) y `lock.test.ts`.
+          Falta: probarlo en la app de escritorio (la mesa en otra ventana) y contra un
+          PocketBase real.
     - [ ] **D4. Privados**: post-its (y luego páginas) marcados como privados: se ven
           con un candado, del mismo tamaño y en el mismo sitio, hasta escribir la
           contraseña; su contenido va cifrado aunque el resto no lo esté. Viajan por la

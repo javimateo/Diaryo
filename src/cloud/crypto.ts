@@ -211,9 +211,15 @@ async function openWith(vault: VaultData, secret: Uint8Array<ArrayBuffer>): Prom
   return keys;
 }
 
-/** A new vault for a new diary secret: what to save, the keys and the recovery code. */
-export async function createVault(password: string, iterations = PBKDF2_ITERATIONS) {
-  const secret = random(SECRET_BYTES);
+/**
+ * A new vault: what to save, the keys and the recovery code. For a new diary secret, or
+ * for one that exists already (a diary encrypted on the device goes to the cloud).
+ */
+export async function createVault(
+  password: string,
+  iterations = PBKDF2_ITERATIONS,
+  secret = random(SECRET_BYTES),
+) {
   const code = random(RECOVERY_BYTES);
   const kdf: VaultKdf = {
     alg: 'PBKDF2-SHA-256',
@@ -254,6 +260,19 @@ export async function unlockWithPassword(vault: VaultData, password: string) {
   return openWith(vault, await secretFromPassword(vault, password));
 }
 
+/** The diary secret itself, checked (the device's own encryption needs it, see lock.ts). */
+export async function openSecret(vault: VaultData, password: string) {
+  const secret = await secretFromPassword(vault, password);
+  return { secret, keys: await openWith(vault, secret) };
+}
+
+/** The diary secret from the recovery code, checked (to open an encrypted backup). */
+export async function openSecretWithCode(vault: VaultData, code: string) {
+  const secret = await secretFromRecovery(vault, code);
+  await openWith(vault, secret);
+  return secret;
+}
+
 /**
  * Unlocks with the recovery code and sets a new password: returns the keys and the
  * vault to save (the recovery code keeps working).
@@ -267,7 +286,7 @@ export async function recoverWithCode(vault: VaultData, code: string, newPasswor
     kdf,
     wrappedKey: await wrapWithPassword(secret, newPassword, kdf),
   };
-  return { keys, vault: next };
+  return { keys, vault: next, secret };
 }
 
 /** Changes the diary password (the diary itself isn't encrypted again). */
@@ -292,4 +311,35 @@ export async function newRecoveryCode(vault: VaultData, password: string) {
 export async function keysMatch(vault: VaultData, keys: DiaryKeys): Promise<boolean> {
   const check = await decrypt(keys.enc, vault.check).catch(() => null);
   return !!check && new TextDecoder().decode(check) === CHECK_TEXT;
+}
+
+// ─── The device's own key ───────────────────────────────────────
+
+/** The key that wraps the device's own key (see lock.ts), from the diary secret. */
+async function deviceWrapKey(secret: Uint8Array<ArrayBuffer>) {
+  const base = await subtle().importKey('raw', secret, 'HKDF', false, ['deriveKey']);
+  return subtle().deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new Uint8Array(0),
+      info: encoder.encode('diaryo device'),
+    },
+    base,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+}
+
+/** Wraps the key that encrypts the diary on the device with the diary secret. */
+export async function wrapDeviceKey(secret: Uint8Array<ArrayBuffer>, key: Uint8Array<ArrayBuffer>) {
+  return encrypt(await deviceWrapKey(secret), key);
+}
+
+/** The opposite of `wrapDeviceKey`. Throws `WrongSecretError` with another secret. */
+export async function unwrapDeviceKey(secret: Uint8Array<ArrayBuffer>, wrapped: string) {
+  return decrypt(await deviceWrapKey(secret), wrapped).catch(() => {
+    throw new WrongSecretError();
+  });
 }

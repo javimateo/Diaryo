@@ -13,6 +13,7 @@ import { accountError, PASSWORD_MIN, useAccount } from '../cloud/account';
 import { WrongSecretError } from '../cloud/crypto';
 import {
   changeVaultPassword,
+  hasOwnVault,
   recover,
   replaceRecoveryCode,
   setUpVault,
@@ -58,6 +59,8 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
   /** The recovery code just made, until it is saved. */
   const [shownCode, setShownCode] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  /** The diary is encrypted on this device already: the cloud takes that vault. */
+  const [ownVault] = useState(hasOwnVault);
 
   const close = () => {
     if (shownCode && !saved) return;
@@ -100,12 +103,17 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (busy) return;
-    const choosing = view === 'create' || view === 'recover' || view === 'change';
+    const choosing = (view === 'create' && !ownVault) || view === 'recover' || view === 'change';
     if (choosing && password.length < PASSWORD_MIN) {
       return setError(t.account.errors.shortPassword(PASSWORD_MIN));
     }
     if (choosing && password !== repeat) return setError(v.errors.mismatch);
-    if (view === 'create') {
+    if (view === 'create' && ownVault) {
+      void run(async () => {
+        await setUpVault(null);
+        finish(v.ready);
+      });
+    } else if (view === 'create') {
       void run(async () => setShownCode(await setUpVault(password)));
     } else if (view === 'unlock') {
       void run(async () => {
@@ -115,13 +123,11 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
           await syncNow(keys);
           return;
         }
-        await unlock(password);
-        finish(v.unlocked);
+        finish((await unlock(password)) ? t.lock.adopted : v.unlocked);
       });
     } else if (view === 'recover') {
       void run(async () => {
-        await recover(code, password);
-        finish(v.unlocked);
+        finish((await recover(code, password)) ? t.lock.adopted : v.unlocked);
       });
     } else if (view === 'change') {
       void run(async () => {
@@ -199,7 +205,15 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
   } else {
     body = (
       <>
-        {intros[view] && <p className="account-text">{request.once ? v.onceText : intros[view]}</p>}
+        {intros[view] && (
+          <p className="account-text">
+            {request.once
+              ? v.onceText
+              : ownVault && view === 'create'
+                ? t.lock.ownVaultText
+                : intros[view]}
+          </p>
+        )}
         <form className="account-form" onSubmit={submit}>
           {view === 'recover' && (
             <label className="account-field">
@@ -229,7 +243,7 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
               autoFocus: true,
               autoComplete: 'current-password',
             })}
-          {(view === 'create' || view === 'recover' || view === 'change') && (
+          {((view === 'create' && !ownVault) || view === 'recover' || view === 'change') && (
             <>
               {field(view === 'create' ? v.password : v.newPassword, password, setPassword, {
                 autoFocus: view === 'create',
@@ -295,31 +309,39 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
   );
 }
 
-/** The recovery code, shown once: to download, print or copy, and say it was saved. */
-function RecoveryCode({
+/**
+ * The recovery code, shown once: to download, print or copy, and say it was saved. The
+ * cloud's one by default; the diary encrypted on the device without an account says
+ * its own text.
+ */
+export function RecoveryCode({
   code,
   saved,
   onSaved,
   finishLabel,
   onFinish,
+  local = false,
 }: {
   code: string;
   saved: boolean;
   onSaved: (saved: boolean) => void;
   finishLabel: string;
   onFinish: () => void;
+  local?: boolean;
 }) {
   const t = useT();
   const v = t.vault;
   const showToast = useUI((s) => s.showToast);
   const email = useAccount((s) => s.account?.email ?? '');
-  const file = () =>
-    v.file(email, code, new Date().toLocaleDateString(locale(), { dateStyle: 'long' }));
+  const file = () => {
+    const date = new Date().toLocaleDateString(locale(), { dateStyle: 'long' });
+    return local ? t.lock.file(code, date) : v.file(email, code, date);
+  };
   const groups = code.split('-');
 
   return (
     <>
-      <p className="account-text">{v.codeText}</p>
+      <p className="account-text">{local ? t.lock.codeText : v.codeText}</p>
       <div className="vault-code" aria-label={v.code}>
         {[0, 4, 8].map((start) => (
           <span key={start}>{groups.slice(start, start + 4).join('-')}</span>

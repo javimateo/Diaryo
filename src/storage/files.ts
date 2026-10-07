@@ -2,6 +2,7 @@ import { isPaperStyle } from '../engine/book';
 import { parseElement } from '../engine/clipboard';
 import type { SceneElement } from '../engine/elements';
 import type { AssetRow, DiaryDump, FontRow, PageRow, StoredPage } from './db';
+import { openBytes, sealBytes } from './sealing';
 
 /** Backup format: a readable JSON with everything needed to restore it. */
 const FILE_TYPE = 'diaryo/page';
@@ -40,7 +41,56 @@ export function serializeDiary(dump: DiaryDump): string {
   });
 }
 
-export type Backup = { kind: 'page'; page: PageFile } | { kind: 'diary'; diary: DiaryDump };
+/**
+ * A backup encrypted like the diary on the device it comes from (docs/privacy.md): its
+ * contents, sealed with that device's key, and `lock`, which says how to get that key
+ * back with the diary password or the recovery code (cloud/lock.ts reads it).
+ */
+const SEALED_TYPE = 'diaryo/sealed';
+
+export interface SealedBackup {
+  lock: Record<string, unknown>;
+  data: Uint8Array;
+}
+
+const sealedContext = new TextEncoder().encode(SEALED_TYPE);
+
+function toBase64(bytes: Uint8Array): string {
+  let text = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(text);
+}
+
+function fromBase64(text: string): Uint8Array {
+  const raw = atob(text);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  return bytes;
+}
+
+/** Encrypts a backup (`serializeDiary`'s text) with a device's key. */
+export function serializeSealed(text: string, key: Uint8Array, lock: Record<string, unknown>) {
+  const data = sealBytes(key, new TextEncoder().encode(text), sealedContext);
+  return JSON.stringify({
+    type: SEALED_TYPE,
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    lock,
+    data: toBase64(data),
+  });
+}
+
+/** The backup's text, with the key it was encrypted with. Throws with another one. */
+export function openSealed(backup: SealedBackup, key: Uint8Array): string {
+  return new TextDecoder().decode(openBytes(key, backup.data, sealedContext));
+}
+
+export type Backup =
+  | { kind: 'page'; page: PageFile }
+  | { kind: 'diary'; diary: DiaryDump }
+  | { kind: 'sealed'; sealed: SealedBackup };
 
 function parseJson(text: string): Record<string, unknown> | null {
   try {
@@ -134,6 +184,14 @@ export function parseBackup(text: string): Backup | null {
       kind: 'page',
       page: { elements: parseElements(data.elements, assets), assets, fonts },
     };
+  }
+  if (data.type === SEALED_TYPE && typeof data.data === 'string' && typeof data.lock === 'object') {
+    try {
+      const lock = (data.lock ?? {}) as Record<string, unknown>;
+      return { kind: 'sealed', sealed: { lock, data: fromBase64(data.data) } };
+    } catch {
+      return null;
+    }
   }
   if (data.type === DIARY_TYPE && Array.isArray(data.pages)) {
     const pages = data.pages

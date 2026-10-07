@@ -13,6 +13,7 @@ import {
   syncRound,
   type Question,
 } from '../cloud/session';
+import { dropLock } from '../cloud/lock';
 import { currentKeys } from '../cloud/vault';
 import { isDesktop, onDeskChangedElsewhere } from '../desktop/tauri';
 import { t } from '../i18n';
@@ -363,6 +364,8 @@ export async function signOutOfDevice(removeDiary: boolean): Promise<boolean> {
   if ((await countPending(db)) > 0) return false;
   signOut();
   await removeDiaryFromDevice(db, diary);
+  // The blank diary that stays isn't encrypted (nor asks for a password).
+  await dropLock();
   return true;
 }
 

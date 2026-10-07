@@ -1,3 +1,4 @@
+import { LockKeyhole } from 'lucide-react';
 import { forwardRef, useEffect, useRef, useState, type PointerEvent } from 'react';
 import { readToday, TODAY_KEY, type TodayCard } from '../../desktop/saved';
 import { call, emit } from '../../desktop/tauri';
@@ -95,7 +96,14 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
         onPointerCancel={() => (drag.current = null)}
       >
         <div className="mini-diary-book" style={{ background: card.cover }}>
-          <img src={card.image} alt="" draggable={false} onLoad={onChange} />
+          {card.image ? (
+            <img src={card.image} alt="" draggable={false} onLoad={onChange} />
+          ) : (
+            // The diary is encrypted: only its cover.
+            <div className="mini-diary-closed">
+              <LockKeyhole size={22} strokeWidth={1.75} aria-hidden />
+            </div>
+          )}
         </div>
         <div className="mini-diary-meta">
           <span className="mini-diary-chip">{tasks}</span>

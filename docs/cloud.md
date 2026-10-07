@@ -62,12 +62,18 @@ keeps the vault and the device's keys.
   says so) instead of undoing the first.
 - Each device unlocks once and keeps the two derived keys in IndexedDB
   (`diaryo-keys`), as non-extractable `CryptoKey`s: the app can use them, not read
-  them. The desktop app does the same in its webview (the local diary on that computer
-  isn't encrypted either, so the system's keychain would add little). Signing out
-  forgets them. When the app starts, the kept keys are checked against the vault.
+  them (their bytes are still on disk). The desktop app does the same in its webview.
+  Signing out forgets them. When the app starts, the kept keys are checked against the
+  vault. With the diary encrypted on the device ([privacy](privacy.md)), they aren't
+  kept: they come from the same diary password each time it is unlocked.
 
 Losing both the password and the recovery code means losing the cloud copy: the local
-diaries and `.diaryo` files stay readable on the devices that have them.
+diaries and `.diaryo` files stay readable on the devices that have them, unless they are
+encrypted there too (with the same password, see [privacy](privacy.md)).
+
+The diary encrypted on a device uses this same password and recovery code: its vault is
+this one (a copy kept on the device), or, without an account, one of the device's own
+that goes up as it is when the cloud is set up.
 
 **Later**: unlocking with the device's biometrics (Windows Hello, Touch ID, the phone's
 fingerprint) instead of typing the password on each new device, through WebAuthn's PRF

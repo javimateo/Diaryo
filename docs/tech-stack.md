@@ -27,6 +27,7 @@ license, all of them permissive and compatible with that.
 | [react](https://react.dev), react-dom                               | The interface (toolbar, panels, dialogs)               | MIT               |
 | [zustand](https://github.com/pmndrs/zustand)                        | Interface state                                        | MIT               |
 | [dexie](https://dexie.org)                                          | The diary's database (IndexedDB)                       | Apache-2.0        |
+| [@noble/ciphers](https://github.com/paulmillr/noble-ciphers)        | Encrypting the diary on the device (XChaCha20)         | MIT               |
 | [perfect-freehand](https://github.com/steveruizok/perfect-freehand) | Pressure-sensitive pencil and highlighter strokes      | MIT               |
 | [roughjs](https://roughjs.com)                                      | The hand-drawn look of shapes and arrows               | MIT               |
 | [rbush](https://github.com/mourner/rbush)                           | Spatial index: hit testing and drawing only what shows | MIT               |

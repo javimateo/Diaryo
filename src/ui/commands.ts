@@ -23,6 +23,7 @@ import {
   LayoutGrid,
   Link,
   Lock,
+  LockKeyhole,
   LockOpen,
   Moon,
   Palette,
@@ -60,6 +61,8 @@ import { backupDesktop, hideDesktop, quitDesktop, showDesktopMode } from '../des
 import { openBackupDir } from '../desktop/settings';
 import { shortcutKeys } from '../desktop/shortcuts';
 import { TOOLS } from './toolDefs';
+import { useLock } from '../cloud/lockState';
+import { lockDiaryNow } from './lockActions';
 import { t } from '../i18n';
 
 /** What a command asks for when something needs to be typed (e.g. a title). */
@@ -383,6 +386,13 @@ export function getCommands(): Command[] {
       keywords: kw.system,
       checked: themePreference === 'system',
       run: () => state.setThemePreference('system'),
+    },
+    useLock.getState().status === 'unlocked' && {
+      id: 'lock-diary',
+      label: c.lockDiary,
+      icon: LockKeyhole,
+      keywords: kw.lockDiary,
+      run: () => void lockDiaryNow(),
     },
     {
       id: 'settings',

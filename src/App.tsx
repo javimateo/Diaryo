@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useUI } from './store/ui';
 import { AccountDialog } from './ui/AccountDialog';
 import { VaultDialog } from './ui/VaultDialog';
+import { LockDialog } from './ui/LockDialog';
+import { CopyPrivacyDialog } from './ui/CopyPrivacyDialog';
 import { FirstSyncDialog } from './ui/FirstSyncDialog';
 import { startSync } from './ui/cloudSync';
 import { startAccount } from './ui/accountActions';
@@ -81,6 +83,8 @@ export function App() {
       <SettingsDialog />
       <AccountDialog />
       <VaultDialog />
+      <LockDialog />
+      <CopyPrivacyDialog />
       <FirstSyncDialog />
       <CommandPalette />
     </div>
