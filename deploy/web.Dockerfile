@@ -14,8 +14,6 @@ ARG APP_URL=https://app.diaryo.javiermateo.dev
 ARG UMAMI_SRC=
 ARG UMAMI_ID=
 ENV SITE_URL=$SITE_URL APP_URL=$APP_URL UMAMI_SRC=$UMAMI_SRC UMAMI_ID=$UMAMI_ID
-# Temporary: prints what Coolify actually passed, to debug the Umami setup.
-RUN echo "DEBUG UMAMI_SRC=[$UMAMI_SRC] UMAMI_ID=[$UMAMI_ID]"
 RUN npm --prefix web run build
 
 FROM nginx:1.27-alpine

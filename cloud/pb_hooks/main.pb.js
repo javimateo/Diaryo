@@ -1,9 +1,12 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-/** Free plan: storage for each new account (OAuth2 sign-ups too). */
+/**
+ * Free plan: storage for each new account (OAuth2 sign-ups too). Always, whatever the
+ * sign-up sent: only the server gives a bigger plan, by changing it afterwards.
+ */
 onRecordCreate((e) => {
-  if (!e.record.getInt('quotaBytes')) e.record.set('quotaBytes', 100 * 1024 * 1024);
-  if (!e.record.getString('plan')) e.record.set('plan', 'free');
+  e.record.set('quotaBytes', 100 * 1024 * 1024);
+  e.record.set('plan', 'free');
   e.next();
 }, 'users');
 

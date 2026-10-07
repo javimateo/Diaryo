@@ -1,0 +1,76 @@
+# The checks of CLAUDE.md ("Verifying") on every push to develop or main and on every
+# pull request: the app's types, lint, tests and format, the desktop side (on Windows,
+# where its code runs) and the cloud server's rules against a real PocketBase.
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx eslint src
+      - run: npx vitest run
+      - run: npx prettier --check src docs
+
+  desktop:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
+        with:
+          toolchain: stable
+          components: rustfmt
+      - uses: swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: src-tauri
+      # Tauri embeds the built page (`frontendDist`): an empty folder is enough to check it.
+      - run: mkdir ../dist
+      - run: cargo fmt --check
+      - run: cargo test
+
+  cloud:
+    runs-on: ubuntu-latest
+    env:
+      # The same version as deploy/cloud.Dockerfile.
+      PB_VERSION: 0.40.4
+      PB_SHA256: 9042ec818570e79c3628dadcd0a756c1496d9e1173918ec409d133c02f82e5fa
+      PB_URL: http://127.0.0.1:8090
+      PB_ADMIN_EMAIL: ci@diaryo.test
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: PocketBase
+        run: |
+          curl -fsSL -o pb.zip "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip"
+          echo "${PB_SHA256}  pb.zip" | sha256sum -c -
+          unzip -q pb.zip pocketbase
+      - name: Server with diaryo's schema and rules
+        run: |
+          # A throwaway administrator for this run only.
+          echo "PB_ADMIN_PASSWORD=$(openssl rand -hex 16)" >> "$GITHUB_ENV"
+          flags="--dir=pb_data --migrationsDir=cloud/pb_migrations --hooksDir=cloud/pb_hooks"
+          ./pocketbase serve --http=127.0.0.1:8090 --automigrate=false $flags > pb.log 2>&1 &
+          curl -fs --retry 30 --retry-delay 1 --retry-all-errors "$PB_URL/api/health"
+      - run: ./pocketbase superuser upsert "$PB_ADMIN_EMAIL" "$PB_ADMIN_PASSWORD" --dir=pb_data
+      - run: node cloud/check.mjs
+      - if: failure()
+        run: cat pb.log

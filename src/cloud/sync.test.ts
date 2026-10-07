@@ -14,7 +14,7 @@ import {
   type PageInfo,
 } from '../storage/db';
 import { dirtyPaths, trackEverything } from '../storage/tracking';
-import { createVault, type DiaryKeys } from './crypto';
+import { createVault, itemName, type DiaryKeys } from './crypto';
 import {
   DuplicateError,
   MissingError,
@@ -31,7 +31,10 @@ import {
   type RemoteItem,
 } from './sync';
 
-/** A server that behaves like ours (pb_hooks/items.js): newest wins, quota, unique keys. */
+/**
+ * A server that behaves like ours (pb_hooks/items.js): newest wins, no times from the
+ * future, small tombstones, quota, unique keys.
+ */
 class FakeServer {
   items: RemoteItem[] = [];
   quota = Infinity;
@@ -42,6 +45,13 @@ class FakeServer {
 
   private used(except?: string) {
     return this.items.filter((i) => i.id !== except).reduce((n, i) => n + i.data.length, 0);
+  }
+
+  /** A time from the future becomes now; a tombstone carries no content; nothing too big. */
+  private check(draft: ItemDraft): ItemDraft {
+    if (draft.data.length > (draft.deleted ? 1000 : this.maxData)) throw new RejectedError();
+    const now = Date.now();
+    return draft.modified > now + 60_000 ? { ...draft, modified: now } : draft;
   }
 
   private stamp() {
@@ -60,12 +70,10 @@ class FakeServer {
           .map((i) => ({ ...i })),
       create: async (draft: ItemDraft) => {
         if (this.items.some((i) => i.key === draft.key)) throw new DuplicateError();
-        if (draft.data.length > this.maxData) throw new RejectedError();
-        const data = draft.deleted ? '' : draft.data;
-        if (this.used() + data.length > this.quota) throw new QuotaError();
+        draft = this.check(draft);
+        if (this.used() + draft.data.length > this.quota) throw new QuotaError();
         const item = {
           ...draft,
-          data,
           id: `r${String(++this.ids).padStart(6, '0')}`,
           updated: this.stamp(),
         };
@@ -75,13 +83,12 @@ class FakeServer {
       update: async (id: string, draft: ItemDraft) => {
         const item = this.items.find((i) => i.id === id);
         if (!item) throw new MissingError();
+        draft = this.check(draft);
         if (draft.modified < item.modified) throw new StaleError();
-        if (draft.data.length > this.maxData) throw new RejectedError();
-        const data = draft.deleted ? '' : draft.data;
-        if (data.length > item.data.length && this.used(id) + data.length > this.quota) {
-          throw new QuotaError();
-        }
-        Object.assign(item, { ...draft, data, updated: this.stamp() });
+        const { data } = draft;
+        const growing = !draft.deleted && data.length > item.data.length;
+        if (growing && this.used(id) + data.length > this.quota) throw new QuotaError();
+        Object.assign(item, { ...draft, updated: this.stamp() });
         return { ...item };
       },
       // As the real one: the next pull reads the last few writes again.
@@ -544,6 +551,70 @@ describe('sync', () => {
         expect((await listPages(device.db)).map((p) => p.id)).toEqual(['p1']);
         expect((await device.elements('p1')).map((r) => r.id)).toEqual(['from-b']);
       }
+    });
+  });
+
+  describe('what the server (or someone with the session, not the keys) could change', () => {
+    const itemOf = async (server: FakeServer, path: string) => {
+      const key = await itemName(keys.mac, path);
+      return server.items.find((i) => i.key === key)!;
+    };
+
+    it('a deletion that is not sealed deletes nothing', async () => {
+      const { server, a, b } = setUp();
+      await save(a.db, 'p1', [stroke('s1')]);
+      await a.push();
+      await b.pull();
+      const item = await itemOf(server, 'el/p1/s1');
+      // Marked deleted, with a later time: without content, or keeping the sealed content.
+      Object.assign(item, { deleted: true, data: '', modified: item.modified + 1000 });
+      item.updated = '999999999990';
+      await b.pull();
+      const { data } = await itemOf(server, 'page/p1');
+      Object.assign(await itemOf(server, 'page/p1'), {
+        deleted: true,
+        data,
+        updated: '999999999991',
+      });
+      await b.pull();
+      expect((await b.elements('p1')).map((r) => r.id)).toEqual(['s1']);
+      expect((await listPages(b.db)).map((p) => p.id)).toEqual(['p1']);
+    });
+
+    it('an old version brought back with a newer time is ignored', async () => {
+      const { server, a, b } = setUp();
+      await save(a.db, 'p1', [text('t1', 'primera')]);
+      await a.push();
+      const old = (await itemOf(server, 'el/p1/t1')).data;
+      await new Promise((r) => setTimeout(r, 5));
+      await save(a.db, 'p1', [text('t1', 'segunda')]);
+      await a.push();
+      await b.pull();
+      const item = await itemOf(server, 'el/p1/t1');
+      Object.assign(item, { data: old, modified: item.modified + 1000, updated: '999999999990' });
+      await b.pull();
+      const [row] = await b.elements('p1');
+      expect((row.data as TextElement).text).toBe('segunda');
+    });
+
+    it('a time from the future is stamped now, and the device keeps the stamped one', async () => {
+      const { server, a, b } = setUp();
+      await save(a.db, 'p1', [text('t1', 'reloj adelantado')]);
+      const ahead = Date.now() + 24 * 60 * 60 * 1000;
+      await a.db.tracked.update('el/p1/t1', { modified: ahead });
+      await a.push();
+      await b.pull();
+      const stored = (await itemOf(server, 'el/p1/t1')).modified;
+      expect(stored).toBeLessThan(ahead - 60_000);
+      expect((await a.db.tracked.get('el/p1/t1'))?.modified).toBe(stored);
+
+      // A later change on the other device wins, here too.
+      await new Promise((r) => setTimeout(r, 5));
+      await save(b.db, 'p1', [text('t1', 'de b')]);
+      await b.push();
+      await a.pull();
+      const [row] = await a.elements('p1');
+      expect((row.data as TextElement).text).toBe('de b');
     });
   });
 });

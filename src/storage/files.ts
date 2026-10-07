@@ -61,11 +61,15 @@ function parseAssets(raw: unknown): AssetRow[] {
   return assets;
 }
 
+/** The fonts' files go inside the backup (a data URL): one that points elsewhere isn't read. */
 function parseFonts(raw: unknown): FontRow[] {
   return Array.isArray(raw)
     ? raw.filter(
         (f): f is FontRow =>
-          typeof f?.id === 'string' && typeof f?.name === 'string' && typeof f?.src === 'string',
+          typeof f?.id === 'string' &&
+          typeof f?.name === 'string' &&
+          typeof f?.src === 'string' &&
+          f.src.startsWith('data:'),
       )
     : [];
 }
@@ -78,13 +82,20 @@ function parseElements(raw: unknown[], assets: AssetRow[]): SceneElement[] {
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+/** A page's id as diaryo makes them (a UUID, or `desk`): anything else isn't from diaryo. */
+const PAGE_ID = /^[\w-]{1,64}$/;
 const num = (value: unknown, fallback: number) =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
 function parseStoredPage(raw: unknown, assets: AssetRow[]): StoredPage | null {
   if (!raw || typeof raw !== 'object') return null;
   const data = raw as Record<string, unknown>;
-  if (typeof data.id !== 'string' || typeof data.date !== 'string' || !DAY.test(data.date)) {
+  if (
+    typeof data.id !== 'string' ||
+    !PAGE_ID.test(data.id) ||
+    typeof data.date !== 'string' ||
+    !DAY.test(data.date)
+  ) {
     return null;
   }
   const camera = data.camera as PageRow['camera'];

@@ -183,6 +183,18 @@ describe("a page's own paper", () => {
     if (parsed?.kind !== 'diary') throw new Error('copia no válida');
     expect(parsed.diary.pages[0].page.paper).toBeNull();
   });
+
+  it('a page whose id is not one of diaryo is not read from a backup', () => {
+    const page = { id: 'x', date: '2026-09-24', elements: [] };
+    const file = (id: string) =>
+      JSON.stringify({ type: 'diaryo/diary', version: 1, pages: [page, { ...page, id }] });
+    const ids = (text: string) => {
+      const backup = parseBackup(text);
+      return backup?.kind === 'diary' ? backup.diary.pages.map((p) => p.page.id) : null;
+    };
+    expect(ids(file('a"><img src=x onerror=alert(1)>'))).toEqual(['x']);
+    expect(ids(file('0b7c6a8e-1f2d-4c3b-9a8e-7d6c5b4a3f2e'))).toHaveLength(2);
+  });
 });
 
 describe('search', () => {
@@ -338,6 +350,18 @@ describe('file backups', () => {
     const page = parsePage(text)!;
     expect(page.elements).toHaveLength(2);
     expect(page.fonts[0].name).toBe('Mía');
+  });
+
+  it('reads a font only from inside the file, never from an address', () => {
+    const text = serializePage({
+      elements: [],
+      assets: [],
+      fonts: [
+        { id: 'custom-1', name: 'Dentro', src: 'data:font/ttf;base64,AAAA' },
+        { id: 'custom-2', name: 'Fuera', src: 'https://example.com/font.woff2' },
+      ],
+    });
+    expect(parsePage(text)!.fonts.map((f) => f.name)).toEqual(['Dentro']);
   });
 
   it("rejects files that aren't from diaryo", () => {
