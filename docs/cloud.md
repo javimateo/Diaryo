@@ -99,7 +99,11 @@ Both are sealed inside the encryption too, and a device only believes them from 
 neither the server nor someone with the session but not the keys can delete things or
 bring an old version back (`open` in `src/cloud/sync.ts`). The server may lower the time
 (see Clocks), never raise it. Tombstones from before they were sealed are ignored; items
-from before then are still read, as content only.
+from before then (`SEALED_SINCE`) are read as content only, and only with a time from
+before then: an old one can't come back passed off as new. Left open, on purpose: someone
+who kept old encrypted copies could still bring back an older version of an item untouched
+since then, dated before the sealing (re-sealing everything would cost moving the whole
+diary once per device).
 
 ## Protocol
 

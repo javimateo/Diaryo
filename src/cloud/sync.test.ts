@@ -14,7 +14,7 @@ import {
   type PageInfo,
 } from '../storage/db';
 import { dirtyPaths, trackEverything } from '../storage/tracking';
-import { createVault, itemName, type DiaryKeys } from './crypto';
+import { createVault, encrypt, itemName, type DiaryKeys } from './crypto';
 import {
   removeDiaryFromDevice,
   settleChoice,
@@ -29,6 +29,7 @@ import {
   QuotaError,
   RejectedError,
   StaleError,
+  SEALED_SINCE,
   START,
   seal,
   Sync,
@@ -603,6 +604,40 @@ describe('sync', () => {
       await b.pull();
       const [row] = await b.elements('p1');
       expect((row.data as TextElement).text).toBe('segunda');
+    });
+
+    it('a version without the time sealed and a time after the sealing is ignored', async () => {
+      const { server, a, b } = setUp();
+      await save(a.db, 'p1', [text('t1', 'segunda')]);
+      await a.push();
+      await b.pull();
+      const forged = await encrypt(
+        keys.enc,
+        seal({ path: 'el/p1/t1', value: text('t1', 'vieja') }),
+      );
+      const item = await itemOf(server, 'el/p1/t1');
+      Object.assign(item, {
+        data: forged,
+        modified: item.modified + 1000,
+        updated: '999999999990',
+      });
+      await b.pull();
+      const [row] = await b.elements('p1');
+      expect((row.data as TextElement).text).toBe('segunda');
+    });
+
+    it('an item written before the sealing is still read', async () => {
+      const { server, b } = setUp();
+      const path = 'el/p1/old';
+      await server.remote().create({
+        key: await itemName(keys.mac, path),
+        kind: 'element',
+        data: await encrypt(keys.enc, seal({ path, value: text('old', 'de antes') })),
+        modified: SEALED_SINCE - 1000,
+        deleted: false,
+      });
+      await b.pull();
+      expect((await b.elements('p1')).map((r) => r.id)).toEqual(['old']);
     });
 
     it('a time from the future is stamped now, and the device keeps the stamped one', async () => {

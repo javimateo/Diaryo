@@ -69,6 +69,13 @@ export class MissingError extends Error {}
 /** The server refused this item (too big, or not valid): it stays pending, the rest go on. */
 export class RejectedError extends Error {}
 
+/**
+ * Since when every device seals each item's time and deletion (the web app with it went up
+ * at 08:56 UTC; the desktop app had no cloud yet). An item without them is only believed
+ * from before then: one with a later time is an old version passed off as new.
+ */
+export const SEALED_SINCE = Date.UTC(2026, 9, 7, 9, 30);
+
 const PULL_PAGE = 200;
 const PUSH_AT_ONCE = 6;
 
@@ -281,11 +288,11 @@ export class Sync {
       return null;
     }
     if (typeof sealed.path !== 'string' || (await this.name(sealed.path)) !== item.key) return null;
-    // Items from before the time was sealed can only be content, never a deletion.
-    const believed =
-      typeof sealed.modified === 'number'
-        ? sealed.deleted === item.deleted && item.modified <= sealed.modified
-        : !item.deleted;
+    // Items from before the time was sealed can only be content, from before then.
+    const unsealed = typeof sealed.modified !== 'number';
+    const believed = unsealed
+      ? !item.deleted && item.modified < SEALED_SINCE
+      : sealed.deleted === item.deleted && item.modified <= sealed.modified!;
     if (!believed) {
       console.error('An item from the cloud was changed outside diaryo', item.id);
       return null;
