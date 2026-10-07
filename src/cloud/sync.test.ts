@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ImageElement, StrokeElement, TextElement } from '../engine/elements';
 import {
   deletePage,
@@ -15,6 +15,14 @@ import {
 } from '../storage/db';
 import { dirtyPaths, trackEverything } from '../storage/tracking';
 import { createVault, itemName, type DiaryKeys } from './crypto';
+import {
+  removeDiaryFromDevice,
+  settleChoice,
+  signedIn,
+  syncRound,
+  type Question,
+  type SyncedDiary,
+} from './session';
 import {
   DuplicateError,
   MissingError,
@@ -616,5 +624,113 @@ describe('sync', () => {
       const [row] = await a.elements('p1');
       expect((row.data as TextElement).text).toBe('de b');
     });
+  });
+});
+
+describe('what the user is asked, and what each answer does', () => {
+  beforeEach(() => {
+    const data = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => data.set(key, value),
+    });
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  /** Device `b` through the session, as the app syncs it (its storage is the stubbed one). */
+  const session = (device: Device, server: FakeServer, account = 'cuenta') => {
+    const diary: SyncedDiary = {
+      applyRemote: (apply) => apply(),
+      showRemote: async () => {},
+      replace: async (dump, track) => {
+        await replaceDiary(device.db, dump, track);
+        return dump.pages.length;
+      },
+    };
+    return {
+      round: () =>
+        syncRound(device.db, server.remote(), keys, account, diary, { idle: async () => true }),
+      choose: (asked: Question, choice: 'merge' | 'cloud') =>
+        settleChoice(device.db, account, diary, asked, choice),
+      remove: () => removeDiaryFromDevice(device.db, diary),
+    };
+  };
+  const pageIds = async (device: Device) => (await listPages(device.db)).map((p) => p.id).sort();
+
+  it('the first time with nothing here, the cloud diary comes without asking', async () => {
+    const { server, a, b } = setUp();
+    await save(a.db, 'p1', [stroke('s1')]);
+    await a.push();
+    expect((await session(b, server).round()).question).toBeNull();
+    expect(await pageIds(b)).toEqual(['p1']);
+  });
+
+  it('with a diary here and one there it asks first, and merging keeps both', async () => {
+    const { server, a, b } = setUp();
+    await save(a.db, 'p1', [stroke('s1')]);
+    await a.push();
+    await save(b.db, 'p2', [stroke('s2')]);
+    const s = session(b, server);
+    expect((await s.round()).question).toBe('first');
+    expect(server.items).toHaveLength(2); // Nothing of this device went up meanwhile.
+    await s.choose('first', 'merge');
+    expect((await s.round()).question).toBeNull();
+    expect(await pageIds(b)).toEqual(['p1', 'p2']);
+    await a.pull();
+    expect(await pageIds(a)).toEqual(['p1', 'p2']);
+  });
+
+  it('with a diary here and an empty cloud it asks too', async () => {
+    const { server, b } = setUp();
+    await save(b.db, 'p2', [stroke('s2')]);
+    expect((await session(b, server).round()).question).toBe('empty');
+    expect(server.items).toEqual([]);
+  });
+
+  it("taking the cloud's diary replaces this one and deletes nothing up there", async () => {
+    const { server, a, b } = setUp();
+    await save(a.db, 'p1', [stroke('s1')]);
+    await a.push();
+    await save(b.db, 'p2', [stroke('s2')]);
+    const s = session(b, server);
+    await s.round();
+    await s.choose('first', 'cloud');
+    await s.round();
+    expect(await pageIds(b)).toEqual(['p1']);
+    expect(server.items.every((item) => !item.deleted)).toBe(true);
+  });
+
+  it('signing in again with changes made meanwhile waits for the user', async () => {
+    const { server, b } = setUp();
+    const s = session(b, server);
+    await s.round();
+    await save(b.db, 'p3', [stroke('s3')]);
+    signedIn('cuenta');
+    const asked = await s.round();
+    expect(asked).toEqual({ question: 'return', pending: 2 });
+    expect(server.items).toEqual([]);
+    await s.choose('return', 'merge');
+    await s.round();
+    expect(server.items).toHaveLength(2);
+  });
+
+  it('another account on this device asks again', async () => {
+    const { server, b } = setUp();
+    await session(b, server, 'una').round();
+    await save(b.db, 'p1', [stroke('s1')]);
+    await session(b, server, 'una').round();
+    expect((await session(b, new FakeServer(), 'otra').round()).question).toBe('empty');
+  });
+
+  it('a diary removed from this device comes back whole with the next sign-in', async () => {
+    const { server, a, b } = setUp();
+    await save(a.db, 'p1', [stroke('s1')]);
+    await a.push();
+    const s = session(b, server);
+    await s.round();
+    await s.remove();
+    expect(await pageIds(b)).toEqual([]);
+    expect((await s.round()).question).toBeNull();
+    expect(await pageIds(b)).toEqual(['p1']);
   });
 });

@@ -4,21 +4,26 @@ import { refreshAccount, signOut, useAccount } from '../cloud/account';
 import { pb } from '../cloud/client';
 import type { DiaryKeys } from '../cloud/crypto';
 import { fetchUsage, pocketbaseRemote } from '../cloud/pbRemote';
-import { START, Sync, type PullCursor, type Remote } from '../cloud/sync';
+import {
+  countPending,
+  loadSaved,
+  removeDiaryFromDevice,
+  settleChoice,
+  signedIn,
+  syncRound,
+  type Question,
+} from '../cloud/session';
 import { currentKeys } from '../cloud/vault';
 import { isDesktop, onDeskChangedElsewhere } from '../desktop/tauri';
 import { t } from '../i18n';
-import { asRecord, readJSON, readText, writeJSON, writeText } from '../lib/saved';
-import { cleanUpDiary, getDB, type DiaryoDB } from '../storage/db';
+import { readText, writeText } from '../lib/saved';
+import { getDB, type DiaryoDB } from '../storage/db';
 import {
-  applyIncoming,
   type AppliedChanges,
-  hasContent,
   largePendingAssets,
   onLocalChanges,
   parsePath,
   replaceAssetSrc,
-  trackEverything,
 } from '../storage/tracking';
 import { shrinkImage } from '../engine/assets';
 import { useUI } from '../store/ui';
@@ -48,12 +53,8 @@ interface SyncState {
   /** Changes waiting to go up. */
   pending: number;
   usage: { used: number; quota: number } | null;
-  /**
-   * The user decides before syncing: the first time with a diary here and one in the cloud
-   * (`first`) or none there (`empty`), or on signing in again with changes here that aren't
-   * in the cloud (`return`).
-   */
-  choosing: 'first' | 'empty' | 'return' | null;
+  /** What the user is asked before syncing (see `Question`). */
+  choosing: Question | null;
   /** Changes the server refused in the last sync (they stay pending). */
   rejected: number;
 }
@@ -74,45 +75,6 @@ const AFTER_CHANGE = 4000;
 const EVERY = 5 * 60 * 1000;
 /** The longest a pull waits for the user to finish a stroke or a text. */
 const IDLE_WAIT = 20_000;
-
-// ─── What is remembered per account ─────────────────────────────
-
-interface Saved {
-  cursor: PullCursor;
-  /** The first sync with this account was done on this device. */
-  began: boolean;
-  lastSync: number | null;
-}
-
-const savedKey = (account: string) => `diaryo:sync:${account}`;
-/** The account this device synced with last (its server records are the ones known here). */
-const LAST_ACCOUNT_KEY = 'diaryo:sync-account';
-
-function loadSaved(account: string): Saved {
-  const saved = asRecord(readJSON(savedKey(account)));
-  const cursor = asRecord(saved.cursor);
-  const same = readText(LAST_ACCOUNT_KEY) === account;
-  return {
-    cursor:
-      same && typeof cursor.updated === 'string' && typeof cursor.id === 'string'
-        ? { updated: cursor.updated, id: cursor.id }
-        : START,
-    began: same && saved.began === true,
-    lastSync: typeof saved.lastSync === 'number' ? saved.lastSync : null,
-  };
-}
-
-/**
- * Signed in again with changes made here that aren't in the cloud (while signed out, or
- * left pending): they don't go up until the user says so. Kept until then, even if the
- * app is closed.
- */
-const askKey = (account: string) => `diaryo:sync-ask:${account}`;
-
-function store(account: string, saved: Saved) {
-  writeJSON(savedKey(account), saved);
-  writeText(LAST_ACCOUNT_KEY, account);
-}
 
 // ─── Syncing ────────────────────────────────────────────────────
 
@@ -183,75 +145,38 @@ async function alone(action: () => Promise<void>) {
   });
 }
 
-/**
- * The first sync with this account: with nothing here, the cloud's diary comes. With a
- * diary here, the user chooses what to do with it (returns which question): it may be
- * another account's, or one they don't want in this account.
- */
-async function begin(db: DiaryoDB, remote: Remote): Promise<'first' | 'empty' | null> {
-  if (await hasContent(db)) {
-    return (await remote.listAfter(START, 1)).length > 0 ? 'first' : 'empty';
-  }
-  await db.tracked.clear();
-  return null;
-}
-
-async function syncOnce(keys: DiaryKeys) {
+async function syncOnce(keys: DiaryKeys, still: () => boolean) {
   const account = useAccount.getState().account;
   const diary = useUI.getState().diary;
-  if (!account || !diary) return;
+  if (!account || !diary || !still()) return;
   if (!navigator.onLine) return useSync.setState({ status: 'offline' });
   useSync.setState({ status: 'syncing', progress: null });
   const db = getDB();
-  const remote = pocketbaseRemote(account.id);
-  const saved = loadSaved(account.id);
   try {
-    if (!saved.began) {
-      const question = await begin(db, remote);
-      if (question) {
-        useSync.setState({ status: 'idle', choosing: postponed ? null : question });
-        return;
-      }
-      writeText(askKey(account.id), '');
-      saved.began = true;
-      saved.cursor = START;
-      store(account.id, saved);
+    const result = await syncRound(db, pocketbaseRemote(account.id), keys, account.id, diary, {
+      idle: whenIdle,
+      beforePush: () => shrinkPendingImages(db),
+      onProgress: (done, total) =>
+        useSync.setState({ progress: total > 20 ? { done, total } : null }),
+    });
+    if (result.question) {
+      const pending = result.question === 'return' ? { pending: result.pending } : {};
+      useSync.setState({
+        status: 'idle',
+        choosing: postponed ? null : result.question,
+        ...pending,
+      });
+      return;
     }
-    if (readText(askKey(account.id))) {
-      const pending = await db.tracked.where('dirty').equals(1).count();
-      if (pending > 0) {
-        useSync.setState({ status: 'idle', choosing: postponed ? null : 'return', pending });
-        return;
-      }
-      writeText(askKey(account.id), '');
-    }
-    // Each batch is written as it comes; the diary shows them all at the end.
-    const sync = new Sync(db, remote, keys, (changes) =>
-      diary.applyRemote(() => applyIncoming(db, changes), false),
-    );
-    if (await whenIdle()) {
-      const pulled = await sync.pull(saved.cursor);
-      saved.cursor = pulled.cursor;
-      store(account.id, saved);
-      await diary.showRemote(pulled.applied);
-      tellOtherTabs(pulled.applied);
-    } else {
-      // Still drawing or writing: what came is fetched next time.
-      again = true;
-    }
-    // What nothing uses any more (elements of deleted pages, images) frees its space.
-    await cleanUpDiary(db);
-    await shrinkPendingImages(db);
-    const result = await sync.push((done, total) =>
-      useSync.setState({ progress: total > 20 ? { done, total } : null }),
-    );
-    saved.lastSync = Date.now();
-    store(account.id, saved);
+    if (result.applied) tellOtherTabs(result.applied);
+    // Still drawing or writing: what came is fetched next time.
+    else again = true;
+    const { full, rejected } = result.push;
     useSync.setState({
-      status: result.full ? 'full' : result.rejected > 0 ? 'error' : 'idle',
-      lastSync: saved.lastSync,
+      status: full ? 'full' : rejected > 0 ? 'error' : 'idle',
+      lastSync: result.lastSync,
       progress: null,
-      rejected: result.rejected,
+      rejected,
     });
   } catch (error) {
     console.error("Couldn't sync", error);
@@ -266,17 +191,26 @@ async function syncOnce(keys: DiaryKeys) {
   }
 }
 
-/** Syncs with these keys (one at a time; if asked meanwhile, once more after). */
-function run(keys: DiaryKeys): Promise<void> {
+/**
+ * Syncs with these keys (one at a time; if asked meanwhile, once more after). The keys of
+ * `once` come from the password dialog; the others are this device's, and the rounds stop
+ * if they stop being so (signed out, or the vault made again): what they encrypted would
+ * be unreadable on the account's other devices.
+ */
+function run(keys: DiaryKeys, once = false): Promise<void> {
   if (running) {
     again = true;
     return running;
   }
+  const account = useAccount.getState().account?.id;
+  const still = () =>
+    useAccount.getState().account?.id === account && (once || currentKeys() === keys);
   running = (async () => {
     let rounds = 0;
     do {
       again = false;
-      await alone(() => syncOnce(keys));
+      if (!still()) break;
+      await alone(() => syncOnce(keys, still));
       // Waiting for the user to finish: a little later.
       if (again && busy()) {
         again = false;
@@ -295,11 +229,7 @@ let usageAt = 0;
 
 /** How many changes are waiting, and how much space is used. */
 async function refreshInfo(force = false) {
-  const pending = await getDB()
-    .tracked.where('dirty')
-    .equals(1)
-    .count()
-    .catch(() => 0);
+  const pending = await countPending(getDB()).catch(() => 0);
   useSync.setState({ pending });
   if (!navigator.onLine || !useAccount.getState().account) return;
   if (!force && Date.now() - usageAt < USAGE_EVERY) return;
@@ -364,7 +294,7 @@ export function syncNow(keys?: DiaryKeys): Promise<void> {
     }
     return Promise.resolve();
   }
-  return run(use);
+  return run(use, !!keys);
 }
 
 let timer = 0;
@@ -395,10 +325,9 @@ export async function chooseFirstSync(choice: 'merge' | 'cloud' | 'later') {
   }
   const account = useAccount.getState().account;
   const { diary, showToast } = useUI.getState();
-  if (!account || !diary) return;
-  const db = getDB();
+  if (!account || !diary || !asked) return;
+  let where = '';
   if (choice === 'cloud') {
-    let where: string;
     try {
       where = await keepCopyOfDiary(diary);
     } catch (error) {
@@ -406,19 +335,11 @@ export async function chooseFirstSync(choice: 'merge' | 'cloud' | 'later') {
       showToast(t().openCopy.beforeFailed);
       return;
     }
-    await diary.replace({ pages: [], assets: [], fonts: [] }, false);
-    showToast((asked === 'empty' ? t().sync.keptCopyNew : t().sync.keptCopy)(where));
-  } else if (asked !== 'return') {
-    await trackEverything(db);
   }
-  writeText(askKey(account.id), '');
-  // Taking the cloud's diary reads all of it again; merging goes on from where it was.
-  const saved = loadSaved(account.id);
-  store(account.id, {
-    ...saved,
-    began: true,
-    cursor: choice === 'cloud' || asked !== 'return' ? START : saved.cursor,
-  });
+  await settleChoice(getDB(), account.id, diary, asked, choice);
+  if (choice === 'cloud') {
+    showToast((asked === 'empty' ? t().sync.keptCopyNew : t().sync.keptCopy)(where));
+  }
   await syncNow();
   if (choice === 'cloud') await diary.openArrivedPage();
 }
@@ -437,14 +358,11 @@ export async function signOutOfDevice(removeDiary: boolean): Promise<boolean> {
     signOut();
     return true;
   }
-  const pending = () => getDB().tracked.where('dirty').equals(1).count();
-  if ((await pending()) > 0) await syncNow();
-  if ((await pending()) > 0) return false;
+  const db = getDB();
+  if ((await countPending(db)) > 0) await syncNow();
+  if ((await countPending(db)) > 0) return false;
   signOut();
-  await diary.replace({ pages: [], assets: [], fonts: [] }, false);
-  await getDB().tracked.clear();
-  // This device no longer has that account's diary: the next time, it all comes again.
-  writeText(LAST_ACCOUNT_KEY, '');
+  await removeDiaryFromDevice(db, diary);
   return true;
 }
 
@@ -496,7 +414,7 @@ export function startSync() {
   const unsubscribeAccount = useAccount.subscribe((state, previous) => {
     // Signing in (not opening the app already signed in): what changed here meanwhile
     // waits for the user's say.
-    if (state.account && !previous.account) writeText(askKey(state.account.id), '1');
+    if (state.account && !previous.account) signedIn(state.account.id);
     if (state.account?.id !== previous.account?.id || state.vault !== previous.vault) update();
   });
   const unsubscribeUI = useUI.subscribe((state, previous) => {
