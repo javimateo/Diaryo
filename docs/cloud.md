@@ -102,8 +102,10 @@ from before then are still read, as content only.
 ## Protocol
 
 The pieces: `src/storage/tracking.ts` (what changed), `src/cloud/sync.ts` (pushing and
-pulling, with tests against a fake server and two devices), `src/cloud/pbRemote.ts`
-(PocketBase) and `src/ui/cloudSync.ts` (when, and the state the app shows).
+pulling, with tests against a fake server and two devices), `src/cloud/session.ts` (one
+account on this device: the first sync, the questions and what each answer does, tested
+the same way), `src/cloud/pbRemote.ts` (PocketBase) and `src/ui/cloudSync.ts` (when, and
+the state the app shows). A round only runs with the keys of the account signed in.
 
 - **Tracking**: every write to the local database notes, in the same transaction, the
   paths it touched in the `tracked` table: the time of the change and whether it is
@@ -166,7 +168,7 @@ pulling, with tests against a fake server and two devices), `src/cloud/pbRemote.
   says so and signs out; what is pending stays on the device and goes up when the user
   signs in again with the same account.
 - **Signing out** asks what happens to this device's diary (`signOutOfDevice` in
-  `src/ui/cloudSync.ts`): **keep it here** (what is pending goes up when the same account
+  `src/ui/cloudSync.ts`, `removeDiaryFromDevice` in `src/cloud/session.ts`): **keep it here** (what is pending goes up when the same account
   signs in again), or **remove it from here**: what is pending goes up first (if it can't,
   nothing is removed), and a blank diary opens; this device forgets it synced that
   account, so signing in again brings it all back. On the desktop, the daily backups
