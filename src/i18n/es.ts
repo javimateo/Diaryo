@@ -182,6 +182,8 @@ export const es = {
       wrongPassword: 'Esa no es la contraseña del diario.',
       wrongCode: 'Esa clave de recuperación no es correcta.',
       exists: 'Ya hay un diario en la nube de esta cuenta: desbloquéalo con su contraseña.',
+      changed:
+        'La contraseña o la clave de recuperación acaban de cambiar en otro dispositivo: vuelve a intentarlo con la actual.',
     },
   },
 

@@ -172,6 +172,8 @@ export const en: Messages = {
       wrongPassword: "That isn't the diary password.",
       wrongCode: "That recovery code isn't right.",
       exists: 'This account already has a diary in the cloud: unlock it with its password.',
+      changed:
+        'The password or the recovery code just changed on another device: try again with the current one.',
     },
   },
 

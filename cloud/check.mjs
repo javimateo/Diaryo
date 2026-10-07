@@ -1,7 +1,7 @@
 /**
  * Checks the cloud server's rules against a running PocketBase (see docs/cloud.md):
  * quotas, who reaches what, last write wins, tombstones, deleting an account. It creates
- * three throwaway users, who delete their own accounts at the end.
+ * four throwaway users, who delete their own accounts at the end.
  *
  *   PB_URL=http://127.0.0.1:8090 PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
  */
@@ -200,6 +200,52 @@ const shrink = await call(
 );
 check('shrinking is always allowed', shrink.status === 200, shrink.status);
 
+// Many writes at once (a device pushes several in parallel) can't add up past the quota.
+const busy = await mk(4);
+await call('PATCH', `/collections/users/records/${busy.id}`, { quotaBytes: 3000 }, su.body.token);
+await Promise.all(
+  Array.from({ length: 10 }, (_, i) =>
+    call(
+      'POST',
+      '/collections/items/records',
+      { user: busy.id, key: `p${i}`, kind: 'element', data: 'z'.repeat(1000), modified: 1 },
+      busy.token,
+    ),
+  ),
+);
+const busyUsage = await call('GET', '/diaryo/usage', null, busy.token);
+check(
+  'writes at once stay within the quota',
+  busyUsage.body.used <= 3000,
+  JSON.stringify(busyUsage.body),
+);
+
+// The vault changes from the version it was read at: of two changes made from the same
+// one (the password on one device, a new recovery code on another), the second is refused
+// instead of undoing the first.
+const busyVault = await call(
+  'POST',
+  '/collections/vaults/records',
+  { user: busy.id, kdf: { alg: 'PBKDF2' }, wrappedKey: 'w0', recoveryKey: 'r0', check: 'c' },
+  busy.token,
+);
+const vaultUrl = `/collections/vaults/records/${busyVault.body.id}`;
+const both = await Promise.all(
+  ['w1', 'w2'].map((wrappedKey) =>
+    call('PATCH', vaultUrl, { wrappedKey, version: busyVault.body.version + 1 }, busy.token),
+  ),
+);
+check(
+  'of two changes to the same vault version, only one goes in',
+  both
+    .map((r) => r.status)
+    .sort()
+    .join() === '200,409',
+  both.map((r) => r.status).join(),
+);
+const unversioned = await call('PATCH', vaultUrl, { wrappedKey: 'w3' }, busy.token);
+check('a vault change says its version', unversioned.status === 409, unversioned.status);
+
 check(
   'an account keeps no name or picture',
   !('name' in a.record) && !('avatar' in a.record),
@@ -210,7 +256,7 @@ check(
 // with it (cascade).
 const foreignDelete = await call('DELETE', `/collections/users/records/${a.id}`, null, b.token);
 check('nobody deletes someone else', foreignDelete.status === 404, foreignDelete.status);
-for (const u of [a, b, greedy]) {
+for (const u of [a, b, greedy, busy]) {
   const gone = await call('DELETE', `/collections/users/records/${u.id}`, null, u.token);
   check('a user deletes their own account', gone.status === 204, gone.status);
 }

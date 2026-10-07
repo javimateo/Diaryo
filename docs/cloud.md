@@ -57,7 +57,9 @@ keeps the vault and the device's keys.
   to tell a wrong secret at once). Never the password, the code or the secret.
 - **Changing the password** or **making a new recovery code** only wraps the secret
   again (it asks for the current password); the items aren't encrypted again. A new
-  code makes the old one useless.
+  code makes the old one useless. Each change says the vault's `version` it was made
+  from: of two made at once on two devices, the second is refused (`409`, and the app
+  says so) instead of undoing the first.
 - Each device unlocks once and keeps the two derived keys in IndexedDB
   (`diaryo-keys`), as non-extractable `CryptoKey`s: the app can use them, not read
   them. The desktop app does the same in its webview (the local diary on that computer
@@ -179,7 +181,9 @@ the state the app shows). A round only runs with the keys of the account signed 
 ## Quota
 
 The server computes each item's size (`size`) and, before saving, checks that the
-user's total stays within `quotaBytes`; otherwise it answers `403 quota_exceeded`.
+user's total stays within `quotaBytes`; otherwise it answers `403 quota_exceeded`. Each
+write runs in a transaction with its checks, so writes arriving at once (a device pushes
+several in parallel) go one at a time and can't add up past it.
 `GET /api/diaryo/usage` (pb_hooks/main.pb.js) gives the signed-in user their usage.
 
 When the space is full, pushing stops: the diary keeps working and saving on the device,
