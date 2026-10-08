@@ -1,4 +1,4 @@
-import { isLocked } from '../elements';
+import { isLocked, isPrivateNote } from '../elements';
 import { segmentBounds } from '../geometry';
 import type { Vec } from '../math';
 import { elementHitsSegment } from '../hit';
@@ -91,7 +91,8 @@ export class EraseHandler implements ToolHandler {
     const radius = ERASER_RADIUS / this.ctx.camera.zoom;
     let changed = false;
     for (const el of this.ctx.scene.search(segmentBounds(a, b, radius))) {
-      if (this.erasing.has(el.id) || isLocked(el)) continue;
+      // A private note is never erased: deleting it asks for the diary password.
+      if (this.erasing.has(el.id) || isLocked(el) || isPrivateNote(el)) continue;
       if (elementHitsSegment(el, a, b, radius)) {
         this.erasing.add(el.id);
         changed = true;

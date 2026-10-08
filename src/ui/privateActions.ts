@@ -19,6 +19,28 @@ export function askToReveal(notes: Notes, then?: () => void) {
 }
 
 /**
+ * Deleting private notes asks for the diary password first; then `remove` runs (the
+ * notes themselves, or the page they are on). Shown to check the password, they are
+ * hidden again once gone, so the key doesn't stay for them.
+ */
+export function askToDelete(notes: readonly string[], remove: () => void) {
+  useUI.getState().setLockDialog({
+    view: 'delete',
+    notes,
+    then: () => {
+      remove();
+      void hideNotes(notes);
+    },
+  });
+}
+
+/**
+ * Deleting these elements (`notes` are the private ones) asks for the diary password first.
+ */
+export const deletePrivate = (ids: string[], notes: readonly string[] = ids) =>
+  askToDelete(notes, () => useUI.getState().engine?.deleteElements(ids));
+
+/**
  * Marks these notes as private. Writing them needs the private key: with it here (other
  * notes are shown) they stay shown; otherwise the password is asked for first.
  */

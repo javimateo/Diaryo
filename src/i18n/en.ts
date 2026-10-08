@@ -220,6 +220,13 @@ export const en: Messages = {
     revealText: 'Type the diary password to see all the private notes.',
     revealOneText: 'Type the diary password to see this note.',
     showThis: 'Show this note',
+    deleteTitle: (count: number) =>
+      count === 1 ? 'Delete a private note' : `Delete ${count} private notes`,
+    deleteText: (count: number) =>
+      count === 1
+        ? "It's private: type the diary password to delete it."
+        : "They're private: type the diary password to delete them.",
+    delete: 'Delete',
     hideThis: 'Hide this note',
     reveal: 'Show',
     revealed: 'What is private is showing',

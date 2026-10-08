@@ -105,6 +105,11 @@ function Dialog({ request }: { request: LockDialogRequest }) {
         } else if (view === 'reveal') {
           await revealNotes(password, request.notes ?? 'all');
           finish(l.revealed);
+        } else if (view === 'delete') {
+          // The password is checked by showing them, just before they go.
+          await revealNotes(password, request.notes ?? []);
+          setLockDialog(null);
+          request.then?.();
         } else if (view === 'recover') {
           await recoverDiary(code, password, request.notes ?? 'all');
           finish(l.revealed);
@@ -124,14 +129,16 @@ function Dialog({ request }: { request: LockDialogRequest }) {
     })();
   };
 
-  // Showing a single private note (not all of them).
-  const one = Array.isArray(request.notes) && request.notes.length === 1;
+  // Showing (or deleting) these private notes: a single one, or how many.
+  const count = Array.isArray(request.notes) ? request.notes.length : 0;
+  const one = count === 1;
   const titles: Record<View, string> = {
     private: l.privateTitle,
     all: l.enableTitle,
     down: l.downTitle,
     off: l.offTitle,
     reveal: one ? l.showThis : l.revealTitle,
+    delete: l.deleteTitle(count),
     recover: v.recoverTitle,
     change: v.changeTitle,
     newCode: v.newCodeTitle,
@@ -141,8 +148,8 @@ function Dialog({ request }: { request: LockDialogRequest }) {
     all: fresh ? l.enableText : l.enableCloudText,
     down: l.downText,
     off: l.offText,
-    reveal:
-      Array.isArray(request.notes) && request.notes.length === 1 ? l.revealOneText : l.revealText,
+    reveal: one ? l.revealOneText : l.revealText,
+    delete: l.deleteText(count),
     recover: v.recoverText,
     change: '',
     newCode: v.newCodeText,
@@ -153,6 +160,7 @@ function Dialog({ request }: { request: LockDialogRequest }) {
     down: l.down,
     off: l.off,
     reveal: l.reveal,
+    delete: l.delete,
     recover: v.recover,
     change: v.change,
     newCode: v.makeCode,
@@ -162,6 +170,8 @@ function Dialog({ request }: { request: LockDialogRequest }) {
       <LockKeyholeOpen size={18} strokeWidth={1.75} aria-hidden />
     ) : view === 'reveal' ? (
       <Eye size={18} strokeWidth={1.75} aria-hidden />
+    ) : view === 'delete' ? (
+      <Trash2 size={18} strokeWidth={1.75} aria-hidden />
     ) : view === 'newCode' || view === 'recover' || shownCode ? (
       <KeyRound size={18} strokeWidth={1.75} aria-hidden />
     ) : (

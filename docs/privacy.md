@@ -101,10 +101,14 @@ style stay as they are, so it shows in its place with a padlock.
   shows them all at once. A note shown has an open padlock in its corner: a click there
   hides it again.
 - **Hidden, nothing changes it.** It counts as locked (`isLocked` in
-  `src/engine/elements.ts`): it isn't selected, moved, styled, erased, deleted nor
-  joined with arrows, also with select all, the eraser or the lasso. Its own context menu
-  only shows it, or deletes it once the password is typed; deleting a page with hidden
-  private notes asks for it too.
+  `src/engine/elements.ts`): it isn't selected (not even with its group), moved, styled,
+  erased, deleted nor joined with arrows, also with select all, the eraser or the lasso.
+  Its own context menu only shows it, or deletes it.
+- **Deleting a private note always asks for the password**, shown or hidden: deleting
+  (or cutting) a selection with one waits for it (`subscribeDeletePrivate` in the
+  engine), the eraser skips them, and so does deleting a page that has them. Once gone,
+  they are hidden again, so the key doesn't stay in memory for them. Copying a shown one
+  copies its text, in the clear.
 - In `src/storage/sealing.ts`, with the rest: a private note is always written with its
   text in the box (`boxNote`), and read with it only if it is one of the notes shown
   (`sealing.shown`) and the private key is in memory; otherwise it comes `concealed`

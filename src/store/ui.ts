@@ -46,7 +46,8 @@ export interface VaultDialogRequest {
  * or the whole diary, lower that (to only the private notes, or nothing), show the
  * private notes, or (without an account) change the password or make a new code.
  */
-export type LockView = 'private' | 'all' | 'down' | 'off' | 'reveal' | 'change' | 'newCode';
+export type LockView =
+  'private' | 'all' | 'down' | 'off' | 'reveal' | 'delete' | 'change' | 'newCode';
 
 export interface LockDialogRequest {
   view: LockView;

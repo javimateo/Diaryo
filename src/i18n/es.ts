@@ -230,6 +230,13 @@ export const es = {
     revealText: 'Escribe la contraseña del diario para ver todos los post-its privados.',
     revealOneText: 'Escribe la contraseña del diario para ver este post-it.',
     showThis: 'Mostrar este post-it',
+    deleteTitle: (count: number) =>
+      count === 1 ? 'Borrar un post-it privado' : `Borrar ${count} post-its privados`,
+    deleteText: (count: number) =>
+      count === 1
+        ? 'Es privado: escribe la contraseña del diario para borrarlo.'
+        : 'Son privados: escribe la contraseña del diario para borrarlos.',
+    delete: 'Borrar',
     hideThis: 'Ocultar este post-it',
     reveal: 'Mostrar',
     revealed: 'Lo privado está a la vista',

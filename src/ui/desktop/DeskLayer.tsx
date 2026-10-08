@@ -6,7 +6,7 @@ import { useUI } from '../../store/ui';
 import { readCanvasTheme } from '../canvasTheme';
 import { TextEditor } from '../TextEditor';
 import { LockDialog } from '../LockDialog';
-import { askToReveal, startPrivacyTimers } from '../privateActions';
+import { askToReveal, deletePrivate, startPrivacyTimers } from '../privateActions';
 import { MiniDiary } from './MiniDiary';
 
 /**
@@ -37,6 +37,7 @@ export function DeskLayer() {
     // A hidden private note asks for the diary password right here (the diary may be put
     // away); the ones shown hide again by themselves, as in the diary.
     const stopReveal = instance.subscribeReveal((id) => askToReveal([id]));
+    const stopDelete = instance.subscribeDeletePrivate(deletePrivate);
     const stopTimers = startPrivacyTimers(instance);
     controllerRef.current = controller;
     useUI.getState().setEngine(instance);
@@ -45,6 +46,7 @@ export function DeskLayer() {
     void controller.start();
     return () => {
       stopReveal();
+      stopDelete();
       stopTimers();
       controller.stop();
       controllerRef.current = null;

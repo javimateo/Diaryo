@@ -45,6 +45,7 @@ import {
   elementBounds,
   isConcealed,
   isLocked,
+  isPrivateNote,
   privateBadge,
   toLocal,
   type EditableElement,
@@ -181,6 +182,8 @@ export class Engine {
   private readonly revealListeners = new Set<(id: string) => void>();
   /** Who hides a private note again (its open padlock was clicked). */
   private readonly hideListeners = new Set<(id: string) => void>();
+  /** Who confirms deleting private notes (with the diary password), see `deleteSelection`. */
+  private readonly deleteListeners = new Set<(ids: string[], notes: string[]) => void>();
   /** The UI decides which tool is active; the engine can only ask for it. */
   private toolRequest: (tool: ToolId) => void = () => {};
   private contextMenuListener: (request: ContextMenuRequest) => void = () => {};
@@ -670,13 +673,19 @@ export class Engine {
       .filter((el) => !isLocked(el))
       .map((el) => el.id);
     if (ids.length === 0 || this.gesture?.type === 'tool') return false;
+    // Private notes need the diary password first (the whole selection waits for it).
+    const notes = ids.filter((id) => isPrivateNote(this.scene.get(id)!));
+    if (notes.length > 0) {
+      this.deleteListeners.forEach((listener) => listener(ids, notes));
+      return true;
+    }
     const changes: Changes = new Map(ids.map((id) => [id, null]));
     this.setSelection([]);
     this.history.commit(changes);
     return true;
   }
 
-  /** Deletes these elements, if they can be (a private note once it is shown). */
+  /** Deletes these elements, if they can be (private notes, once the password was typed). */
   deleteElements(ids: string[]): boolean {
     const gone = ids.filter((id) => {
       const el = this.scene.get(id);
@@ -823,6 +832,15 @@ export class Engine {
   subscribeReveal(listener: (id: string) => void): () => void {
     this.revealListeners.add(listener);
     return () => this.revealListeners.delete(listener);
+  }
+
+  /**
+   * The user deletes something with private notes in it (`notes`): nothing goes until the
+   * diary password is typed, and then `deleteElements` with all the `ids`.
+   */
+  subscribeDeletePrivate(listener: (ids: string[], notes: string[]) => void): () => void {
+    this.deleteListeners.add(listener);
+    return () => this.deleteListeners.delete(listener);
   }
 
   /** The user hides a private note that is shown (its open padlock). */

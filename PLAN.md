@@ -505,10 +505,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           (minimizarlo, otra pestaña, o a la bandeja en el escritorio), con un
           interruptor. En la mesa del escritorio, el doble clic pide la contraseña allí
           mismo, con el diario escondido.
-          **Oculto, nada lo cambia**: cuenta como bloqueado (no se selecciona, mueve,
-          borra, ni con el borrador ni seleccionando todo); su menú solo lo muestra o lo
-          borra pidiendo la contraseña, y borrar una página con privados ocultos también
-          la pide. Viaja a la nube y a las copias `.diaryo` (también las legibles) con el
+          **Oculto, nada lo cambia**: cuenta como bloqueado (no se selecciona, ni con su
+          grupo, ni se mueve o borra, ni con el borrador ni seleccionando todo).
+          **Borrar un privado siempre pide la contraseña**, a la vista u oculto (también
+          cortar o borrar la página que lo tiene; el borrador no lo toca). Copiar uno a la
+          vista copia su texto legible (decidido así). Viaja a la nube y a las copias `.diaryo` (también las legibles) con el
           texto cifrado. Las miniaturas y el mini diario siempre lo dibujan con candado;
           la búsqueda solo encuentra los que están a la vista. Al quitar la contraseña,
           se elige: dejarlos como post-its normales o borrarlos. Con la contraseña de

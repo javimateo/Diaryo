@@ -250,6 +250,10 @@ export interface NoteElement extends BoxElement {
 export const isLocked = (el: SceneElement) =>
   el.locked || (el.type === 'note' && el.concealed === true);
 
+/** A private note, shown or not: deleting it needs the diary password. */
+export const isPrivateNote = (el: SceneElement): el is NoteElement =>
+  el.type === 'note' && el.private === true;
+
 /** A hidden private note (its text can't be seen here). */
 export const isConcealed = (el: SceneElement): el is NoteElement =>
   el.type === 'note' && el.concealed === true;

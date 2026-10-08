@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ContextMenuRequest } from '../engine/engine';
 import { useUI } from '../store/ui';
-import { askToReveal, markPrivate } from './privateActions';
+import { askToReveal, deletePrivate, markPrivate } from './privateActions';
 import { hideNotes } from '../cloud/lock';
 import { copySelection, cutSelection, pasteFromClipboard } from './clipboard';
 import { t } from '../i18n';
@@ -82,7 +82,7 @@ function Menu({ request, onClose }: { request: ContextMenuRequest; onClose: () =
         {
           label: m.delete,
           danger: true,
-          run: () => askToReveal([hidden], () => useUI.getState().engine?.deleteElements([hidden])),
+          run: () => deletePrivate([hidden]),
         },
       ]
     : request.onElement

@@ -5,7 +5,7 @@ import type { PageMeta } from '../diary/pages';
 import { followLink } from './diaryActions';
 import { DesktopBridge } from '../desktop/bridge';
 import { isDesktop, notifyDeskSaved } from '../desktop/tauri';
-import { askToReveal, startPrivacy } from './privateActions';
+import { askToReveal, deletePrivate, startPrivacy } from './privateActions';
 import { hideNotes } from '../cloud/lock';
 import { Updater } from '../desktop/updates';
 import { Engine } from '../engine/engine';
@@ -54,6 +54,8 @@ export function CanvasView() {
     const unsubscribeReveal = instance.subscribeReveal((id) => askToReveal([id]));
     // Its open padlock hides a private note that is shown.
     const unsubscribeHide = instance.subscribeHide((id) => void hideNotes([id]));
+    // Deleting private notes asks for the diary password.
+    const unsubscribeDelete = instance.subscribeDeletePrivate(deletePrivate);
     instance.onToolRequest(setTool);
     instance.onContextMenu(openContextMenu);
     instance.onLinkOpen((pageId) => void followLink(pageId));
@@ -104,6 +106,7 @@ export function CanvasView() {
       unsubscribeEditing();
       unsubscribeReveal();
       unsubscribeHide();
+      unsubscribeDelete();
       stopPrivacy();
       diary.stop();
       setDiary(null);
