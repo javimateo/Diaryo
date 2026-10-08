@@ -1,6 +1,7 @@
 import { bookBoundsWith } from '../engine/book';
 import { isEditableTarget } from '../engine/dom';
 import type { Engine, ScreenRect } from '../engine/engine';
+import { hideNotes } from '../cloud/lock';
 import { handlePrivacy } from '../cloud/lockState';
 import { Autosave, type SaveStatus } from '../storage/autosave';
 import { DESK_ID, DESK_INFO, getDB, listPages, loadPage } from '../storage/db';
@@ -53,7 +54,11 @@ export class DeskLayerController {
       apply();
       await this.reload();
     });
-    this.cleanups.push(() => handlePrivacy(null));
+    this.cleanups.push(
+      () => handlePrivacy(null),
+      // Its open padlock hides a private note shown here too.
+      engine.subscribeHide((id) => void hideNotes([id])),
+    );
 
     await this.frameBook();
     await this.autosave.start();

@@ -1,4 +1,10 @@
-import { countPrivateNotes, getDB, releasePrivateNotes, rewriteDiary } from '../storage/db';
+import {
+  countPrivateNotes,
+  getDB,
+  privateNoteIds,
+  releasePrivateNotes,
+  rewriteDiary,
+} from '../storage/db';
 import { openSealed, serializeSealed, type SealedBackup } from '../storage/files';
 import { newSealingKey } from '../storage/sealing';
 import { useAccount } from './account';
@@ -17,13 +23,16 @@ import {
   type VaultData,
 } from './crypto';
 import {
-  applyPrivateKey,
+  applyPrivacy,
+  lockChannel,
+  postLock,
   readLock,
   setUnlockedSecret,
   unlockedSecret,
   useLock,
   writeLock,
   type LockLevel,
+  type LockMessage,
   type LockRecord,
 } from './lockState';
 import {
@@ -64,30 +73,16 @@ function applyRecord(lock: LockRecord | null) {
 
 // ─── Between windows ────────────────────────────────────────────
 
-type Message =
-  /** A window that starts asks the others for what is unlocked. */
-  | { type: 'ask' }
-  /** The diary secret, from an unlocked window. */
-  | { type: 'secret'; secret: Uint8Array<ArrayBuffer> }
-  /** The lock changed (its level): it is read again. */
-  | { type: 'changed'; secret: Uint8Array<ArrayBuffer> | null }
-  /** The private notes are shown (with their key) or hidden. */
-  | { type: 'reveal'; key: Uint8Array }
-  | { type: 'hide' }
-  /** Lock everything now. */
-  | { type: 'lock' };
+const post = postLock;
 
-const channel =
-  typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('diaryo-lock');
-const post = (message: Message) => channel?.postMessage(message);
-
-function onMessage(message: Message) {
+function onMessage(message: LockMessage) {
   const lock = readLock();
   const db = getDB();
   if (message.type === 'ask') {
     const secret = unlockedSecret();
     if (secret && db.sealing.key) post({ type: 'secret', secret });
-    if (db.sealing.privateKey) post({ type: 'reveal', key: db.sealing.privateKey });
+    const { shown } = useLock.getState();
+    if (db.sealing.privateKey) post({ type: 'privacy', key: db.sealing.privateKey, shown });
   } else if (message.type === 'secret') {
     if (lock?.level === 'all' && useLock.getState().status === 'locked') {
       void open(lock, message.secret, false).catch(() => undefined);
@@ -100,10 +95,8 @@ function onMessage(message: Message) {
     } else if (lock.level === 'all' && message.secret && !db.sealing.key) {
       void open(lock, message.secret, false).catch(() => undefined);
     }
-  } else if (message.type === 'reveal') {
-    if (!db.sealing.privateKey) void applyPrivateKey(message.key);
-  } else if (message.type === 'hide') {
-    if (db.sealing.privateKey) void applyPrivateKey(null);
+  } else if (message.type === 'privacy') {
+    void applyPrivacy(message.key, message.shown);
   } else if (message.type === 'lock') {
     location.reload();
   }
@@ -116,7 +109,7 @@ function onMessage(message: Message) {
 export function startLock() {
   const lock = readLock();
   applyRecord(lock);
-  if (channel) channel.onmessage = (e: MessageEvent<Message>) => onMessage(e.data);
+  if (lockChannel) lockChannel.onmessage = (e: MessageEvent<LockMessage>) => onMessage(e.data);
   if (lock) post({ type: 'ask' });
 }
 
@@ -173,7 +166,7 @@ export async function unlockDiary(password: string) {
  * notes are shown. With the account's vault, the cloud's changes too (if there is a
  * connection; otherwise only this device's copy).
  */
-export async function recoverDiary(code: string, newPassword: string) {
+export async function recoverDiary(code: string, newPassword: string, notes: Notes = []) {
   const lock = readLock();
   if (!lock) return;
   let recovered: Awaited<ReturnType<typeof recoverWithCode>>;
@@ -192,7 +185,7 @@ export async function recoverDiary(code: string, newPassword: string) {
     await open(readLock()!, recovered.secret, true);
     post({ type: 'secret', secret: recovered.secret });
   } else {
-    await reveal(recovered.secret);
+    await show(recovered.secret, await which(notes));
   }
   if (lock.account && lock.account === accountId()) {
     await recover(code, newPassword).catch((error) =>
@@ -203,32 +196,55 @@ export async function recoverDiary(code: string, newPassword: string) {
 
 // ─── The private notes: shown and hidden ────────────────────────
 
-async function reveal(secret: Uint8Array<ArrayBuffer>) {
+/** Some private notes (their ids), or all of them. */
+export type Notes = readonly string[] | 'all';
+
+const which = async (notes: Notes) => (notes === 'all' ? privateNoteIds(getDB()) : notes);
+
+/** These notes are shown too (in every window), with the key from the secret. */
+async function show(secret: Uint8Array<ArrayBuffer>, notes: readonly string[]) {
   setUnlockedSecret(secret);
   const key = await privateKeyOf(secret);
-  await applyPrivateKey(key);
-  post({ type: 'reveal', key });
+  const shown = [...new Set([...useLock.getState().shown, ...notes])];
+  await applyPrivacy(key, shown);
+  post({ type: 'privacy', key, shown });
 }
 
 /**
- * Shows the private notes, with the diary password. Without the password set on this
- * device yet (the private notes came from the cloud), the account's one: this device
- * keeps it for them from then on.
+ * Shows these private notes (each one opens on its own: the others stay hidden), or all
+ * of them, with the diary password. Without the password set on this device yet (the
+ * private notes came from the cloud), the account's one: this device keeps it for them
+ * from then on.
  */
-export async function revealPrivate(password: string) {
+export async function revealNotes(password: string, notes: Notes) {
   const lock = readLock();
   if (!lock) {
-    await enableLock(password, 'private');
+    await enableLock(password, 'private', await which(notes));
     return;
   }
-  await reveal(await secretFor(lock, password));
+  await show(await secretFor(lock, password), await which(notes));
 }
 
-/** Hides the private notes again (in every window). */
-export async function hidePrivate() {
-  if (readLock()?.level !== 'all') setUnlockedSecret(null);
-  await applyPrivateKey(null);
-  post({ type: 'hide' });
+/**
+ * Notes marked as private just now, with the key here (others are shown): they stay
+ * shown, without asking. Returns false if the password is needed.
+ */
+export async function showAlso(notes: readonly string[]): Promise<boolean> {
+  const key = getDB().sealing.privateKey;
+  if (!key) return false;
+  const shown = [...new Set([...useLock.getState().shown, ...notes])];
+  await applyPrivacy(key, shown);
+  post({ type: 'privacy', key, shown });
+  return true;
+}
+
+/** Hides these private notes again (or all), in every window. */
+export async function hideNotes(notes: Notes) {
+  const shown = notes === 'all' ? [] : useLock.getState().shown.filter((id) => !notes.includes(id));
+  const key = shown.length > 0 ? (getDB().sealing.privateKey ?? null) : null;
+  if (!key && readLock()?.level !== 'all') setUnlockedSecret(null);
+  await applyPrivacy(key, shown);
+  post({ type: 'privacy', key, shown });
 }
 
 // ─── Turning it on and off ──────────────────────────────────────
@@ -256,7 +272,11 @@ async function rewrite(mode: 'seal' | 'open') {
  * its recovery code is returned to show it once. The private notes are shown afterwards
  * if it was for them.
  */
-export async function enableLock(password: string, level: LockLevel): Promise<string | null> {
+export async function enableLock(
+  password: string,
+  level: LockLevel,
+  notes: readonly string[] = [],
+): Promise<string | null> {
   const db = getDB();
   const here = readLock();
   let lock: Omit<LockRecord, 'deviceKey' | 'level'>;
@@ -284,7 +304,8 @@ export async function enableLock(password: string, level: LockLevel): Promise<st
     applyRecord(readLock());
     post({ type: 'changed', secret: null });
     await takeDeviceSecret(secret).catch(() => undefined);
-    await reveal(secret);
+    // The key stays in memory only to show the notes it was set for.
+    if (notes.length > 0) await show(secret, notes);
     return code;
   }
   const key = newSealingKey();
@@ -317,9 +338,9 @@ export async function disableLock(
   const secret = await secretFor(lock, password);
   if (to === 'off' && (await privateNotes()) > 0) {
     // They are shown to read them, and then released (the windows load them again).
-    await reveal(secret);
+    await show(secret, await which('all'));
     await releasePrivateNotes(db, notes ?? 'open');
-    await hidePrivate();
+    await hideNotes('all');
   }
   if (lock.level === 'all') {
     const next: LockRecord =
@@ -350,9 +371,10 @@ export async function dropLock() {
   writeLock(null);
   db.sealing.key = null;
   db.sealing.privateKey = null;
+  db.sealing.shown = new Set();
   setUnlockedSecret(null);
   applyRecord(null);
-  useLock.setState({ revealed: false });
+  useLock.setState({ shown: [], revealed: false });
   post({ type: 'changed', secret: null });
 }
 

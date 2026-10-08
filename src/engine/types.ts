@@ -138,6 +138,8 @@ export interface ContextMenuRequest {
   y: number;
   /** It was on an element (already selected) or on an empty spot. */
   onElement: boolean;
+  /** It was on a hidden private note (not selected): its id. */
+  hiddenNote?: string;
 }
 
 /** Text or note open in the editor. */

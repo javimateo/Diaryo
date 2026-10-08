@@ -1,5 +1,5 @@
 import { Eye, EyeOff, KeyRound, Lock, LockKeyhole } from 'lucide-react';
-import { hidePrivate } from '../cloud/lock';
+import { hideNotes } from '../cloud/lock';
 import { readLock, useLock, type LockLevel } from '../cloud/lockState';
 import { useUI, type HidePrivate, type LockView } from '../store/ui';
 import { Choice } from './Choice';
@@ -42,7 +42,7 @@ export function PrivacySection() {
           value={level}
           onChange={(next) => {
             const view = CHANGES[level][next];
-            if (view) setLockDialog({ view });
+            if (view) setLockDialog({ view, fromSettings: true });
           }}
         />
       </SettingsRow>
@@ -50,14 +50,14 @@ export function PrivacySection() {
         <>
           <SettingsRow label={l.privateRow}>
             {revealed ? (
-              <button type="button" className="settings-btn" onClick={() => void hidePrivate()}>
+              <button type="button" className="settings-btn" onClick={() => void hideNotes('all')}>
                 <EyeOff size={15} strokeWidth={1.75} /> {l.hide}
               </button>
             ) : (
               <button
                 type="button"
                 className="settings-btn"
-                onClick={() => setLockDialog({ view: 'reveal' })}
+                onClick={() => setLockDialog({ view: 'reveal', notes: 'all', fromSettings: true })}
               >
                 <Eye size={15} strokeWidth={1.75} /> {l.show}
               </button>
@@ -86,7 +86,7 @@ export function PrivacySection() {
               <button
                 type="button"
                 className="settings-btn"
-                onClick={() => setLockDialog({ view: 'change' })}
+                onClick={() => setLockDialog({ view: 'change', fromSettings: true })}
               >
                 <LockKeyhole size={15} strokeWidth={1.75} /> {t.vault.change}
               </button>
@@ -95,7 +95,7 @@ export function PrivacySection() {
               <button
                 type="button"
                 className="settings-btn"
-                onClick={() => setLockDialog({ view: 'newCode' })}
+                onClick={() => setLockDialog({ view: 'newCode', fromSettings: true })}
               >
                 <KeyRound size={15} strokeWidth={1.75} /> {t.vault.newCode}
               </button>

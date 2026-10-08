@@ -1,3 +1,4 @@
+import { isLocked } from '../elements';
 import { segmentBounds } from '../geometry';
 import type { Vec } from '../math';
 import { elementHitsSegment } from '../hit';
@@ -90,7 +91,7 @@ export class EraseHandler implements ToolHandler {
     const radius = ERASER_RADIUS / this.ctx.camera.zoom;
     let changed = false;
     for (const el of this.ctx.scene.search(segmentBounds(a, b, radius))) {
-      if (this.erasing.has(el.id) || el.locked) continue;
+      if (this.erasing.has(el.id) || isLocked(el)) continue;
       if (elementHitsSegment(el, a, b, radius)) {
         this.erasing.add(el.id);
         changed = true;

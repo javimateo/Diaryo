@@ -212,10 +212,11 @@ describe('the diary encrypted on the device', () => {
 describe('private notes', () => {
   const secretNote = () => ({ ...note('p', 'clave del banco: 1234'), private: true, link: 'p9' });
 
-  it('keep their text apart, readable only with the private key', async () => {
+  it('keep their text apart, readable only with the private key and when shown', async () => {
     fresh();
     const key = newSealingKey();
     db.sealing.privateKey = key;
+    db.sealing.shown = new Set(['p']);
     await saveChanges(db, DESK_INFO, {
       upserts: [secretNote(), note('n', 'a la vista')],
       deletes: [],
@@ -248,7 +249,13 @@ describe('private notes', () => {
       x: 500,
       text: 'clave del banco: 1234',
     });
+    // Not shown, it stays hidden even with the key.
+    db.sealing.shown = new Set();
+    expect((await loadPage(db, DESK_ID)).elements.find((el) => el.id === 'p')).toMatchObject({
+      concealed: true,
+    });
     // Another key doesn't open it.
+    db.sealing.shown = new Set(['p']);
     db.sealing.privateKey = newSealingKey();
     expect((await loadPage(db, DESK_ID)).elements.find((el) => el.id === 'p')).toMatchObject({
       concealed: true,
@@ -283,6 +290,7 @@ describe('private notes', () => {
     await db.delete();
     fresh();
     db.sealing.privateKey = key;
+    db.sealing.shown = new Set(['p']);
     const parsed = parseBackup(backup);
     if (parsed?.kind !== 'diary') throw new Error('not a diary');
     await replaceDiary(db, parsed.diary);
@@ -294,6 +302,7 @@ describe('private notes', () => {
   it('stop being private (shown) or go, and the other devices follow', async () => {
     fresh();
     db.sealing.privateKey = newSealingKey();
+    db.sealing.shown = new Set(['p', 'q']);
     await saveChanges(db, DESK_INFO, {
       upserts: [secretNote(), { ...secretNote(), id: 'q' }],
       deletes: [],

@@ -64,8 +64,8 @@ import { shortcutKeys } from '../desktop/shortcuts';
 import { TOOLS } from './toolDefs';
 import { useLock } from '../cloud/lockState';
 import { lockDiaryNow } from './lockActions';
-import { askToReveal, markSelectionPrivate } from './privateActions';
-import { hidePrivate } from '../cloud/lock';
+import { askToReveal, markPrivate } from './privateActions';
+import { hideNotes } from '../cloud/lock';
 import { t } from '../i18n';
 
 /** What a command asks for when something needs to be typed (e.g. a title). */
@@ -280,7 +280,9 @@ export function getCommands(): Command[] {
       icon: doc.selectionPrivate ? EyeOff : Eye,
       keywords: kw.private,
       run: () =>
-        doc.selectionPrivate ? engine.setPrivateSelection(false) : markSelectionPrivate(),
+        doc.selectionPrivate
+          ? engine.setPrivate(engine.selectedNotes(), false)
+          : void markPrivate(engine.selectedNotes()),
     },
     selected && {
       id: 'copy-png',
@@ -405,14 +407,14 @@ export function getCommands(): Command[] {
             label: c.hidePrivate,
             icon: EyeOff,
             keywords: kw.private,
-            run: () => void hidePrivate(),
+            run: () => void hideNotes('all'),
           }
         : {
             id: 'show-private',
             label: c.showPrivate,
             icon: Eye,
             keywords: kw.private,
-            run: () => askToReveal(),
+            run: () => askToReveal('all'),
           }),
     useLock.getState().status === 'unlocked' && {
       id: 'lock-diary',

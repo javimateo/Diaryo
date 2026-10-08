@@ -1,5 +1,11 @@
 import { isClosedStroke } from './containers';
-import { elementBounds, toLocal, type ContainerElement, type SceneElement } from './elements';
+import {
+  elementBounds,
+  isLocked,
+  toLocal,
+  type ContainerElement,
+  type SceneElement,
+} from './elements';
 import { pointInPolygon, type Bounds } from './geometry';
 
 export { pointInPolygon };
@@ -96,7 +102,7 @@ export function hitTestElement(
     maxY: world.y + tolerance,
   });
   for (let i = candidates.length - 1; i >= 0; i--) {
-    if (candidates[i].locked && !includeLocked) continue;
+    if (isLocked(candidates[i]) && !includeLocked) continue;
     if (elementHitsSegment(candidates[i], world, world, tolerance)) return candidates[i];
   }
   return null;
@@ -127,7 +133,7 @@ export function containerAt(scene: Scene, world: Vec): ContainerElement | null {
   const candidates = scene.search({ minX: world.x, minY: world.y, maxX: world.x, maxY: world.y });
   for (let i = candidates.length - 1; i >= 0; i--) {
     const el = candidates[i];
-    if (el.locked) continue;
+    if (isLocked(el)) continue;
     const container =
       el.type === 'shape' || (el.type === 'stroke' && isClosedStroke(el)) ? el : null;
     if (container && insideContainer(container, toLocal(container, world))) return container;
@@ -138,7 +144,7 @@ export function containerAt(scene: Scene, world: Vec): ContainerElement | null {
 /** Elements completely inside the rectangle. */
 export function elementsInRect(scene: Scene, rect: Bounds): SceneElement[] {
   return scene.search(rect).filter((el) => {
-    if (el.locked) return false;
+    if (isLocked(el)) return false;
     const b = elementBounds(el);
     return b.minX >= rect.minX && b.maxX <= rect.maxX && b.minY >= rect.minY && b.maxY <= rect.maxY;
   });
@@ -164,7 +170,7 @@ export function elementsInLasso(scene: Scene, polygon: Vec[]): SceneElement[] {
     { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
   );
   return scene.search(bounds).filter((el) => {
-    if (el.locked) return false;
+    if (isLocked(el)) return false;
     const samples = elementSamples(el, LASSO_MAX_SAMPLES);
     const inside = samples.filter((p) => pointInPolygon(p, polygon)).length;
     return inside / samples.length >= LASSO_THRESHOLD;

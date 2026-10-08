@@ -100,16 +100,16 @@ async function boot() {
     return (el as NoteElement | undefined)?.text;
   };
   /** A private note, and how it reads now (its text, or empty if hidden). */
-  const writePrivate = (text: string) =>
+  const writePrivate = (text: string, id = 'p1') =>
     storage.saveChanges(db, storage.DESK_INFO, {
-      upserts: [{ ...note('p1', text), private: true }],
+      upserts: [{ ...note(id, text), private: true }],
       deletes: [],
       assets: [],
       fonts: [],
     });
-  const readPrivate = async () => {
+  const readPrivate = async (id = 'p1') => {
     const elements = (await storage.loadPage(db, storage.DESK_ID)).elements;
-    return (elements.find((el) => el.id === 'p1') as NoteElement | undefined)?.text;
+    return (elements.find((el) => el.id === id) as NoteElement | undefined)?.text;
   };
   const status = () => state.useLock.getState().status;
   const level = () => state.useLock.getState().level;
@@ -359,37 +359,60 @@ describe('encrypted copies', () => {
 });
 
 describe('private notes', () => {
-  it('a password only for them: the diary opens, they show with the password', async () => {
+  it('a password only for them: the diary opens, each one shows with the password', async () => {
     let a = await start();
     await a.write('a la vista');
-    const code = (await a.lock.enableLock('contraseña larga', 'private'))!;
+    const code = (await a.lock.enableLock('contraseña larga', 'private', ['p1', 'p2']))!;
     expect(code).toMatch(/^(\w{4}-){11}\w{4}$/);
-    expect([a.status(), a.level(), a.state.useLock.getState().revealed]).toEqual([
-      'off',
-      'private',
-      true,
-    ]);
-    await a.writePrivate('pin 4321');
-    expect(await a.readPrivate()).toBe('pin 4321');
-    await a.lock.hidePrivate();
-    expect(await a.readPrivate()).toBe('');
+    expect([a.status(), a.level()]).toEqual(['off', 'private']);
+    await a.writePrivate('pin 4321', 'p1');
+    await a.writePrivate('correo hola2026', 'p2');
+    await a.lock.hideNotes('all');
+    expect(await a.readPrivate('p1')).toBe('');
 
     a = await start();
     expect(a.status()).toBe('off');
     expect(await a.read()).toBe('a la vista');
-    expect(await a.readPrivate()).toBe('');
-    await expect(a.lock.revealPrivate('otra')).rejects.toBeInstanceOf(a.crypto.WrongSecretError);
-    await a.lock.revealPrivate('contraseña larga');
-    expect(await a.readPrivate()).toBe('pin 4321');
+    await expect(a.lock.revealNotes('otra', ['p1'])).rejects.toBeInstanceOf(
+      a.crypto.WrongSecretError,
+    );
+    // Only the one asked for shows.
+    await a.lock.revealNotes('contraseña larga', ['p1']);
+    expect(await a.readPrivate('p1')).toBe('pin 4321');
+    expect(await a.readPrivate('p2')).toBe('');
+    await a.lock.revealNotes('contraseña larga', ['p2']);
+    expect(await a.readPrivate('p2')).toBe('correo hola2026');
+    // Hidden again one by one; with none shown, the key goes.
+    await a.lock.hideNotes(['p1']);
+    expect([await a.readPrivate('p1'), await a.readPrivate('p2')]).toEqual(['', 'correo hola2026']);
+    await a.lock.hideNotes(['p2']);
+    expect(a.db.sealing.privateKey).toBeNull();
 
     a = await start();
-    await a.lock.recoverDiary(code, 'nueva contraseña');
-    expect(await a.readPrivate()).toBe('pin 4321');
+    await a.lock.revealNotes('contraseña larga', 'all');
+    expect([await a.readPrivate('p1'), await a.readPrivate('p2')]).toEqual([
+      'pin 4321',
+      'correo hola2026',
+    ]);
+
+    a = await start();
+    await a.lock.recoverDiary(code, 'nueva contraseña', ['p2']);
+    expect([await a.readPrivate('p1'), await a.readPrivate('p2')]).toEqual(['', 'correo hola2026']);
+  });
+
+  it('notes marked while others are shown stay shown, without asking', async () => {
+    const a = await start();
+    expect(await a.lock.showAlso(['p2'])).toBe(false);
+    await a.lock.enableLock('contraseña larga', 'private', ['p1']);
+    await a.writePrivate('pin 4321', 'p1');
+    expect(await a.lock.showAlso(['p2'])).toBe(true);
+    await a.writePrivate('otro', 'p2');
+    expect(await a.readPrivate('p2')).toBe('otro');
   });
 
   it('from only them to the whole diary and back, and off keeping or deleting them', async () => {
     let a = await start();
-    await a.lock.enableLock('contraseña larga', 'private');
+    await a.lock.enableLock('contraseña larga', 'private', ['p1']);
     await a.writePrivate('pin 4321');
     expect(await a.lock.enableLock('contraseña larga', 'all')).toBeNull();
     a = await start();
@@ -408,7 +431,7 @@ describe('private notes', () => {
     expect(await a.readPrivate()).toBe('pin 4321');
     expect(await a.lock.privateNotes()).toBe(0);
 
-    await a.lock.enableLock('contraseña larga', 'private');
+    await a.lock.enableLock('contraseña larga', 'private', ['p1']);
     await a.writePrivate('otro pin');
     await a.lock.disableLock('contraseña larga', 'off', 'delete');
     expect(await a.readPrivate()).toBeUndefined();
@@ -428,21 +451,22 @@ describe('private notes', () => {
     const other = await (await import('./crypto')).createVault('la de la nube', 1000);
     fake.state.vault = { ...other.vault, id: 'v1', version: 2 };
     let a = await start();
-    await a.lock.enableLock('la de aquí', 'private');
+    await a.lock.enableLock('la de aquí', 'private', ['p1']);
     await a.writePrivate('pin 4321');
-    await a.lock.hidePrivate();
+    await a.lock.hideNotes('all');
     fake.signIn('ana');
     await vi.waitFor(() => expect(a.account.useAccount.getState().vault).toBe('locked'));
     await expect(a.vault.unlock('la de la nube')).rejects.toBeInstanceOf(
       a.vault.PrivateHiddenError,
     );
-    await a.lock.revealPrivate('la de aquí');
+    await a.lock.revealNotes('la de aquí', ['p1']);
     expect(await a.vault.unlock('la de la nube')).toBe(true);
-    expect(await a.readPrivate()).toBe('pin 4321');
+    // Hidden after the change; they open with the account's password.
+    expect(await a.readPrivate()).toBe('');
 
     a = await start();
-    await expect(a.lock.revealPrivate('la de aquí')).rejects.toThrow();
-    await a.lock.revealPrivate('la de la nube');
+    await expect(a.lock.revealNotes('la de aquí', ['p1'])).rejects.toThrow();
+    await a.lock.revealNotes('la de la nube', ['p1']);
     expect(await a.readPrivate()).toBe('pin 4321');
   });
 
@@ -455,14 +479,14 @@ describe('private notes', () => {
       removeItem: (key: string) => data.delete(key),
     });
     const first = await boot();
-    await first.lock.enableLock('contraseña larga', 'private');
+    await first.lock.enableLock('contraseña larga', 'private', ['p1']);
     await first.writePrivate('pin 4321');
-    await first.lock.hidePrivate();
+    await first.lock.hideNotes('all');
     const second = await boot();
     expect(await second.readPrivate()).toBe('');
-    await first.lock.revealPrivate('contraseña larga');
+    await first.lock.revealNotes('contraseña larga', ['p1']);
     await vi.waitFor(async () => expect(await second.readPrivate()).toBe('pin 4321'));
-    await first.lock.hidePrivate();
+    await first.lock.hideNotes(['p1']);
     await vi.waitFor(async () => expect(await second.readPrivate()).toBe(''));
     first.db.close();
     app = second;

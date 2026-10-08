@@ -50,8 +50,12 @@ export type LockView = 'private' | 'all' | 'down' | 'off' | 'reveal' | 'change' 
 
 export interface LockDialogRequest {
   view: LockView;
+  /** The private notes to show (their ids), or all of them. */
+  notes?: readonly string[] | 'all';
   /** What to do once it is done (marking the selected notes as private). */
   then?: () => void;
+  /** Opened from the settings, which come back when it closes. */
+  fromSettings?: boolean;
 }
 
 /** With the diary encrypted: saving a copy (encrypted or readable) or opening an encrypted one. */
@@ -367,7 +371,9 @@ export const useUI = create<UIState>()((set, get) => ({
   setLockDialog: (lockDialog) =>
     set((state) => ({
       lockDialog,
-      settingsOpen: lockDialog ? false : state.settingsOpen || state.lockDialog !== null,
+      settingsOpen: lockDialog
+        ? false
+        : state.settingsOpen || Boolean(state.lockDialog?.fromSettings),
     })),
   setCopyPrivacy: (copyPrivacy) => set({ copyPrivacy }),
   setMapOpen: (mapOpen) => {

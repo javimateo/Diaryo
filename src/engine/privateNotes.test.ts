@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseElement } from './clipboard';
-import { concealNote, type NoteElement } from './elements';
+import { concealNote, isLocked, privateBadge, type NoteElement } from './elements';
+import { Scene } from './scene';
+import { elementsInRect, hitTestElement } from './selection';
 
 const note: NoteElement = {
   id: 'n',
@@ -42,5 +44,26 @@ describe('private notes', () => {
   it("a hidden one without its encrypted text isn't private any more (nothing to open)", () => {
     const broken = { ...concealNote(note) };
     expect(parseElement(broken, () => true)).not.toHaveProperty('private');
+  });
+});
+
+describe('a hidden private note', () => {
+  it('counts as locked: not hit, not boxed, but its menu reaches it', () => {
+    const hidden = { ...concealNote(note), box: 'Y2lmcmFkbw==' };
+    expect(isLocked(hidden)).toBe(true);
+    expect(isLocked(note)).toBe(false);
+    const scene = new Scene();
+    scene.apply(new Map([[hidden.id, hidden]]));
+    const center = { x: 110, y: 110 };
+    expect(hitTestElement(scene, center, 1)).toBeNull();
+    expect(hitTestElement(scene, center, 1, true)?.id).toBe('n');
+    expect(elementsInRect(scene, { minX: -10, minY: -10, maxX: 300, maxY: 300 })).toEqual([]);
+  });
+
+  it('shown, has its open padlock in the corner', () => {
+    const badge = privateBadge(note);
+    expect(badge.x).toBeGreaterThan(note.width / 2);
+    expect(badge.y).toBeGreaterThan(note.height / 2);
+    expect(badge.x + badge.r).toBeLessThan(note.width);
   });
 });

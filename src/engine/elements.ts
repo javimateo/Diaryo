@@ -243,6 +243,26 @@ export interface NoteElement extends BoxElement {
   box?: string;
 }
 
+/**
+ * Locked: nothing changes it (it isn't selected, moved, erased or deleted). A private note
+ * whose text is hidden counts as locked too, until the diary password shows it.
+ */
+export const isLocked = (el: SceneElement) =>
+  el.locked || (el.type === 'note' && el.concealed === true);
+
+/** A hidden private note (its text can't be seen here). */
+export const isConcealed = (el: SceneElement): el is NoteElement =>
+  el.type === 'note' && el.concealed === true;
+
+/**
+ * The open padlock in the corner of a private note that is shown (element coordinates):
+ * a click there hides it again.
+ */
+export function privateBadge(el: NoteElement) {
+  const r = Math.min(el.width, el.height) * 0.075;
+  return { x: el.width - r * 1.8, y: el.height - r * 1.8, r };
+}
+
 /** A private note, as it shows where its text can't be seen (thumbnails, locked). */
 export function concealNote(el: NoteElement): NoteElement {
   return { ...el, text: '', link: null, concealed: true };

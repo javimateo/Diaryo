@@ -43,6 +43,10 @@ import {
   type ArrowBinding,
   concealNote,
   elementBounds,
+  isConcealed,
+  isLocked,
+  privateBadge,
+  toLocal,
   type EditableElement,
   type ImageElement,
   NOTE_SIZE,
@@ -173,8 +177,10 @@ export class Engine {
   private lastPointer: Vec | null = null;
   private editing: EditingState | null = null;
   private readonly editingListeners = new Set<EditingListener>();
-  /** Who is asked to show the private notes (the diary password), see `subscribeReveal`. */
-  private readonly revealListeners = new Set<() => void>();
+  /** Who shows a hidden private note (with the diary password), see `subscribeReveal`. */
+  private readonly revealListeners = new Set<(id: string) => void>();
+  /** Who hides a private note again (its open padlock was clicked). */
+  private readonly hideListeners = new Set<(id: string) => void>();
   /** The UI decides which tool is active; the engine can only ask for it. */
   private toolRequest: (tool: ToolId) => void = () => {};
   private contextMenuListener: (request: ContextMenuRequest) => void = () => {};
@@ -650,7 +656,7 @@ export class Engine {
     this.setSelection(
       this.scene
         .all()
-        .filter((el) => !el.locked)
+        .filter((el) => !isLocked(el))
         .map((el) => el.id),
     );
   }
@@ -661,12 +667,24 @@ export class Engine {
 
   deleteSelection(): boolean {
     const ids = this.selectedElements()
-      .filter((el) => !el.locked)
+      .filter((el) => !isLocked(el))
       .map((el) => el.id);
     if (ids.length === 0 || this.gesture?.type === 'tool') return false;
     const changes: Changes = new Map(ids.map((id) => [id, null]));
     this.setSelection([]);
     this.history.commit(changes);
+    return true;
+  }
+
+  /** Deletes these elements, if they can be (a private note once it is shown). */
+  deleteElements(ids: string[]): boolean {
+    const gone = ids.filter((id) => {
+      const el = this.scene.get(id);
+      return el && !isLocked(el);
+    });
+    if (gone.length === 0) return false;
+    this.setSelection([...this.selection].filter((id) => !gone.includes(id)));
+    this.history.commit(new Map(gone.map((id) => [id, null])));
     return true;
   }
 
@@ -680,7 +698,7 @@ export class Engine {
 
   /** Moves the selection a few screen pixels (keyboard arrows). */
   nudgeSelection(dx: number, dy: number): boolean {
-    const elements = this.selectedElements().filter((el) => !el.locked);
+    const elements = this.selectedElements().filter((el) => !isLocked(el));
     if (elements.length === 0 || this.gesture?.type === 'tool') return false;
     const { zoom } = this.camera;
     const moving = new Set(elements.map((el) => el.id));
@@ -802,9 +820,28 @@ export class Engine {
   }
 
   /** The user wants to see a private note whose text is hidden (to edit it, for example). */
-  subscribeReveal(listener: () => void): () => void {
+  subscribeReveal(listener: (id: string) => void): () => void {
     this.revealListeners.add(listener);
     return () => this.revealListeners.delete(listener);
+  }
+
+  /** The user hides a private note that is shown (its open padlock). */
+  subscribeHide(listener: (id: string) => void): () => void {
+    this.hideListeners.add(listener);
+    return () => this.hideListeners.delete(listener);
+  }
+
+  /** The private note shown whose open padlock is under the point. */
+  private privateBadgeUnder(world: Vec): string | null {
+    const near = { minX: world.x - 1, minY: world.y - 1, maxX: world.x + 1, maxY: world.y + 1 };
+    const candidates = this.scene.search(near).sort((a, b) => b.z - a.z);
+    for (const el of candidates) {
+      if (el.type !== 'note' || !el.private || el.concealed) continue;
+      const badge = privateBadge(el);
+      const p = toLocal(el, world);
+      if (Math.hypot(p.x - badge.x, p.y - badge.y) <= badge.r * 1.3) return el.id;
+    }
+    return null;
   }
 
   /** The UI learns that the engine wants to change the tool. */
@@ -866,7 +903,7 @@ export class Engine {
 
   private startEditing(element: EditableElement, isNew: boolean) {
     if (element.type === 'note' && element.concealed) {
-      this.revealListeners.forEach((listener) => listener());
+      this.revealListeners.forEach((listener) => listener(element.id));
       return;
     }
     this.finishEditing(false);
@@ -891,6 +928,12 @@ export class Engine {
     const world = screenToWorld(this.camera, this.localPoint(e));
     const hit = hitTestElement(this.scene, world, 4 / this.camera.zoom);
     // Inside a shape (even without a fill) you write in it.
+    // A hidden private note asks for the password (it is locked, so not hit above).
+    const hidden = hit ? null : hitTestElement(this.scene, world, 4 / this.camera.zoom, true);
+    if (hidden && isConcealed(hidden)) {
+      this.revealListeners.forEach((listener) => listener(hidden.id));
+      return;
+    }
     const target = hit && isEditable(hit) ? hit : hit ? null : containerAt(this.scene, world);
     if (target) this.startEditing(target, false);
     else if (!hit) {
@@ -931,7 +974,7 @@ export class Engine {
 
   /** Groups the selection: from now on it is selected and moved together. */
   groupSelection(): boolean {
-    const elements = this.selectedElements().filter((el) => !el.locked);
+    const elements = this.selectedElements().filter((el) => !isLocked(el));
     if (elements.length < 2) return false;
     const groupId = createId();
     this.history.commit(new Map(elements.map((el) => [el.id, { ...el, groupId }])));
@@ -945,17 +988,19 @@ export class Engine {
     return true;
   }
 
-  /**
-   * Marks the selected notes as private, or not. A hidden one can't stop being private
-   * (its text must be seen first): the password is asked for instead.
-   */
-  setPrivateSelection(on: boolean): boolean {
-    const notes = this.selectedElements().filter((el): el is NoteElement => el.type === 'note');
+  /** The ids of the selected notes (to mark them as private). */
+  selectedNotes(): string[] {
+    return this.selectedElements()
+      .filter((el) => el.type === 'note')
+      .map((el) => el.id);
+  }
+
+  /** Marks these notes as private, or not (hidden ones don't change: they are locked). */
+  setPrivate(ids: string[], on: boolean): boolean {
+    const notes = ids
+      .map((id) => this.scene.get(id))
+      .filter((el): el is NoteElement => el?.type === 'note' && !el.concealed);
     if (notes.length === 0) return false;
-    if (!on && notes.some((el) => el.concealed)) {
-      this.revealListeners.forEach((listener) => listener());
-      return false;
-    }
     this.history.commit(
       new Map(
         notes.map((el) => [el.id, on ? { ...el, private: true } : { ...el, private: undefined }]),
@@ -989,7 +1034,7 @@ export class Engine {
   }
 
   flipSelection(axis: 'horizontal' | 'vertical'): boolean {
-    const elements = this.selectedElements().filter((el) => !el.locked);
+    const elements = this.selectedElements().filter((el) => !isLocked(el));
     if (elements.length === 0) return false;
     this.history.commit(flip(elements, axis));
     return true;
@@ -1072,6 +1117,13 @@ export class Engine {
     const world = screenToWorld(this.camera, local);
     // The menu also reaches locked elements (to be able to unlock them).
     const hit = hitTestElement(this.scene, world, 6 / this.camera.zoom, true);
+    // A hidden private note isn't selected (nothing changes it): its own menu.
+    if (hit && isConcealed(hit)) {
+      this.setSelection([]);
+      this.lastPointer = local;
+      this.contextMenuListener({ x: clientX, y: clientY, onElement: false, hiddenNote: hit.id });
+      return;
+    }
     if (hit && !this.selection.has(hit.id)) this.setSelection([hit.id]);
     if (!hit) this.setSelection([]);
     if (hit && !SELECTION_TOOLS.includes(this.tool)) this.toolRequest('select');
@@ -1486,6 +1538,13 @@ export class Engine {
     // Grab the corner of the sheet to turn the page (with any tool).
     if (e.button === 0 && !this.editing && !this.spaceHeld && this.tool !== 'hand') {
       const world = screenToWorld(this.camera, this.localPoint(e));
+      // A shown private note's open padlock hides it again.
+      const shown = this.privateBadgeUnder(world);
+      if (shown) {
+        e.preventDefault();
+        this.hideListeners.forEach((listener) => listener(shown));
+        return;
+      }
       // A link label leads to its page.
       const link = this.linkUnder(world);
       if (link) {

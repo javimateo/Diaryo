@@ -18,7 +18,8 @@ import {
 } from './crypto';
 import { forgetKeys, loadKeys, saveKeys } from './keystore';
 import {
-  applyPrivateKey,
+  applyPrivacy,
+  postLock,
   readLock,
   sealedHere,
   setUnlockedSecret,
@@ -135,7 +136,11 @@ async function follow(account: string, vault: VaultRecord, secret: Uint8Array<Ar
   }
   writeLock({ ...lock, vault: toData(vault), version: vault.version ?? 0, account, deviceKey });
   setUnlockedSecret(secret);
-  if (!same && db.sealing.privateKey) await applyPrivateKey(await privateKeyOf(secret));
+  // The private notes shown here go with the old key: they are hidden everywhere.
+  if (!same && db.sealing.privateKey) {
+    await applyPrivacy(null, []);
+    postLock({ type: 'privacy', key: null, shown: [] });
+  }
   return !same;
 }
 

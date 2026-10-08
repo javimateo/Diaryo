@@ -6,6 +6,7 @@ import { followLink } from './diaryActions';
 import { DesktopBridge } from '../desktop/bridge';
 import { isDesktop, notifyDeskSaved } from '../desktop/tauri';
 import { askToReveal, startPrivacy } from './privateActions';
+import { hideNotes } from '../cloud/lock';
 import { Updater } from '../desktop/updates';
 import { Engine } from '../engine/engine';
 import { getDB } from '../storage/db';
@@ -50,7 +51,9 @@ export function CanvasView() {
     const unsubscribeState = instance.subscribeState(setDoc);
     const unsubscribeEditing = instance.subscribeEditing(setEditing);
     // A hidden private note asks for the diary password (to see or edit it).
-    const unsubscribeReveal = instance.subscribeReveal(() => askToReveal());
+    const unsubscribeReveal = instance.subscribeReveal((id) => askToReveal([id]));
+    // Its open padlock hides a private note that is shown.
+    const unsubscribeHide = instance.subscribeHide((id) => void hideNotes([id]));
     instance.onToolRequest(setTool);
     instance.onContextMenu(openContextMenu);
     instance.onLinkOpen((pageId) => void followLink(pageId));
@@ -100,6 +103,7 @@ export function CanvasView() {
       unsubscribeState();
       unsubscribeEditing();
       unsubscribeReveal();
+      unsubscribeHide();
       stopPrivacy();
       diary.stop();
       setDiary(null);

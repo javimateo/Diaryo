@@ -2,6 +2,9 @@ import type { PaperStyle } from '../engine/book';
 import { useUI } from '../store/ui';
 import { pageName } from './LinkDialog';
 import { t } from '../i18n';
+import { useLock } from '../cloud/lockState';
+import { getDB, privateNoteIds } from '../storage/db';
+import { askToReveal } from './privateActions';
 
 /** Diary actions shared by the buttons and the shortcuts (with their toasts). */
 
@@ -68,6 +71,17 @@ export async function followLink(pageId: string) {
 }
 
 export async function deletePage(id: string) {
+  const { diary } = useUI.getState();
+  if (!diary) return;
+  // Hidden private notes can't go without the diary password: they are shown first.
+  await diary.flush();
+  const { shown } = useLock.getState();
+  const hidden = (await privateNoteIds(getDB(), id)).filter((note) => !shown.includes(note));
+  if (hidden.length > 0) askToReveal(hidden, () => void removePage(id));
+  else await removePage(id);
+}
+
+async function removePage(id: string) {
   const { diary, showToast } = useUI.getState();
   if (!diary) return;
   const stored = await diary.remove(id);

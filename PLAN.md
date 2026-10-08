@@ -496,17 +496,21 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
     - [ ] **D4. Post-its privados**: Ajustes → Privacidad pasa a tres niveles (nada,
           solo lo privado, todo el diario). Un post-it privado (menú contextual o paleta)
           guarda su texto y su enlace cifrados aparte con una llave del secreto del
-          diario, la misma en todos los dispositivos; se ve con un candado, en su sitio y
-          con su tamaño y color, y se puede mover o borrar oculto; verlo o editarlo pide
-          la contraseña, también con todo el diario abierto. «Mostrar lo privado» lo
-          enseña en todas las ventanas; se vuelve a ocultar a mano, a los 15 min, a la
-          hora o al minimizar. Viaja a la nube y a las copias `.diaryo` (también las
-          legibles) con el texto cifrado. Las miniaturas y el mini diario siempre lo
-          dibujan con candado; la búsqueda solo lo encuentra a la vista. Al quitar la
-          contraseña, se elige: dejarlos como post-its normales o borrarlos. Con la
-          contraseña de otra cuenta, su texto pasa a la llave nueva (si están ocultos,
-          pide mostrarlos antes). Tests en `sealing.test.ts`, `lock.test.ts` y
-          `sync.test.ts`.
+          diario, la misma en todos los dispositivos. **Cada uno se abre por separado**:
+          doble clic o «Mostrar este post-it» pide la contraseña y enseña solo ese; abrir
+          otro la vuelve a pedir. «Mostrar todo lo privado» es un atajo. El que está a la
+          vista lleva un candado abierto en la esquina: pulsarlo lo vuelve a bloquear; y
+          cada uno se oculta solo a los 15 min o a la hora (o todos al minimizar).
+          **Oculto, nada lo cambia**: cuenta como bloqueado (no se selecciona, mueve,
+          borra, ni con el borrador ni seleccionando todo); su menú solo lo muestra o lo
+          borra pidiendo la contraseña, y borrar una página con privados ocultos también
+          la pide. Viaja a la nube y a las copias `.diaryo` (también las legibles) con el
+          texto cifrado. Las miniaturas y el mini diario siempre lo dibujan con candado;
+          la búsqueda solo encuentra los que están a la vista. Al quitar la contraseña,
+          se elige: dejarlos como post-its normales o borrarlos. Con la contraseña de
+          otra cuenta, su texto pasa a la llave nueva (si están ocultos, pide mostrarlos
+          antes). Tests en `sealing.test.ts`, `lock.test.ts`, `sync.test.ts` y
+          `privateNotes.test.ts`.
       - [ ] Más adelante: **páginas privadas** (índice, mapa, miniaturas, pasar página).
     - [ ] **D2. Qué se ve en el escritorio**: la llave pasa a la ventana de la mesa
           (comprobar `BroadcastChannel` con una `CryptoKey` en WebView2; si no, por

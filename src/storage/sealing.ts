@@ -15,8 +15,8 @@ import type { NoteElement } from '../engine/elements';
  * in batches, and a half-done rewrite is just carried on.
  *
  * Private notes go further: their text and link are always kept in a `box` encrypted with
- * the private key (the same on every device, from the diary secret), and only read while
- * that key is here (the private notes are shown). Otherwise the note comes `concealed`,
+ * the private key (the same on every device, from the diary secret), and only read for the
+ * notes shown, one by one, while that key is here. Otherwise the note comes `concealed`,
  * with its box as it is.
  */
 
@@ -37,8 +37,10 @@ export interface Sealing {
   key: Uint8Array<ArrayBuffer> | null;
   /** Writes are sealed (the diary is encrypted, or being encrypted). */
   seal: boolean;
-  /** The private notes' key, while they are shown. */
+  /** The private notes' key, while some of them are shown. */
   privateKey?: Uint8Array | null;
+  /** Which private notes are shown (their ids): each one is opened on its own. */
+  shown?: ReadonlySet<string>;
 }
 
 /** The diary is encrypted and locked: nothing can be read or written without the key. */
@@ -167,8 +169,10 @@ function sealedTable(table: DBCoreTable, state: Sealing): DBCoreTable {
       if (!state.key) throw new LockedError();
       row = unseal(name, keyOf(row), row, state.key);
     }
-    if (notes && row && isPrivate(row.data))
-      row = { ...row, data: openNote(row.data, state.privateKey) };
+    if (notes && row && isPrivate(row.data)) {
+      const shown = !!state.shown?.has(row.data.id);
+      row = { ...row, data: openNote(row.data, shown ? state.privateKey : null) };
+    }
     return row;
   };
 

@@ -502,6 +502,14 @@ const isPrivateRow = (row: ElementRow) => row.data?.type === 'note' && row.data.
 /** How many private notes the diary has (shown or not). */
 export const countPrivateNotes = (db: DiaryoDB) => db.elements.filter(isPrivateRow).count();
 
+/** The private notes' ids: all of them, or a page's (hidden or not). */
+export async function privateNoteIds(db: DiaryoDB, pageId?: string): Promise<string[]> {
+  const rows = pageId
+    ? db.elements.where('pageId').equals(pageId).filter(isPrivateRow)
+    : db.elements.filter(isPrivateRow);
+  return (await rows.toArray()).map((row) => row.id);
+}
+
 /**
  * The private notes stop being private (`open`: they need to be shown, their text goes
  * in the clear) or are deleted. The other devices follow. Returns how many.

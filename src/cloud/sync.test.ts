@@ -211,6 +211,7 @@ describe('sync', () => {
     const { server, a, b } = setUp();
     const key = crypto.getRandomValues(new Uint8Array(32));
     a.db.sealing.privateKey = key;
+    a.db.sealing.shown = new Set(['n']);
     const note = {
       ...text('n', 'clave: 1234'),
       type: 'note',

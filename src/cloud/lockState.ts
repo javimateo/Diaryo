@@ -78,7 +78,8 @@ export const sealedHere = () => readLock()?.level === 'all';
  * - `status`: the whole diary is locked (the password is needed to open it), unlocked,
  *   or not encrypted (`off`, also with only the private notes).
  * - `level`: what is encrypted here.
- * - `revealed`: the private notes are shown.
+ * - `shown`: which private notes are shown (their ids: each one is opened on its own);
+ *   `revealed`: some are.
  * - `progress`: the share done while encrypting or decrypting the whole diary.
  */
 export type LockStatus = 'off' | 'locked' | 'unlocked';
@@ -86,6 +87,7 @@ export type LockStatus = 'off' | 'locked' | 'unlocked';
 interface LockState {
   status: LockStatus;
   level: LockLevel | 'off';
+  shown: readonly string[];
   revealed: boolean;
   progress: number | null;
 }
@@ -95,6 +97,7 @@ export const useLock = create<LockState>(() => {
   return {
     status: lock?.level === 'all' ? 'locked' : 'off',
     level: lock?.level ?? 'off',
+    shown: [],
     revealed: false,
     progress: null,
   };
@@ -117,12 +120,37 @@ export const handlePrivacy = (handler: PrivacyHandler | null) => {
   privacyHandler = handler;
 };
 
-/** Shows the private notes with their key, or hides them (null). */
-export async function applyPrivateKey(key: Uint8Array | null) {
+/**
+ * Shows these private notes, with their key; with none, the key goes too (it is only in
+ * memory while something is shown).
+ */
+export async function applyPrivacy(key: Uint8Array | null, shown: readonly string[]) {
+  const next = key ? shown : [];
   const apply = () => {
-    getDB().sealing.privateKey = key;
+    const sealing = getDB().sealing;
+    sealing.privateKey = next.length > 0 ? key : null;
+    sealing.shown = new Set(next);
   };
   if (privacyHandler) await privacyHandler(apply);
   else apply();
-  useLock.setState({ revealed: key !== null });
+  useLock.setState({ shown: next, revealed: next.length > 0 });
 }
+
+// ─── Between windows ────────────────────────────────────────────
+
+export type LockMessage =
+  /** A window that starts asks the others for what is unlocked. */
+  | { type: 'ask' }
+  /** The diary secret, from an unlocked window. */
+  | { type: 'secret'; secret: Uint8Array<ArrayBuffer> }
+  /** The lock changed (its level): it is read again. */
+  | { type: 'changed'; secret: Uint8Array<ArrayBuffer> | null }
+  /** Which private notes are shown now, and their key (null: none). */
+  | { type: 'privacy'; key: Uint8Array | null; shown: readonly string[] }
+  /** Lock everything now. */
+  | { type: 'lock' };
+
+/** The windows of the app (tabs, the desk on the desktop) tell each other, in memory. */
+export const lockChannel =
+  typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('diaryo-lock');
+export const postLock = (message: LockMessage) => lockChannel?.postMessage(message);

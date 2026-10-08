@@ -5,8 +5,9 @@ Optional, in Settings → Privacy, on three levels:
 - **Nothing**: the diary is saved readable on the device (IndexedDB, and the desktop's
   backups), as it always was; the cloud's encryption (see [cloud](cloud.md)) only
   protects what goes up.
-- **Only what is private**: the notes marked as private are encrypted, and need the
-  diary password to be seen, even with the rest of the diary open (see Private notes).
+- **Only what is private**: the notes marked as private are encrypted, and each one needs
+  the diary password to be seen or changed, even with the rest of the diary open (see
+  Private notes).
 - **The whole diary**: everything saved on the device is encrypted, and the app asks for
   the diary password when it opens. Private notes still ask for it again.
 
@@ -91,33 +92,42 @@ change for the other devices.
 A note marked as private (its context menu, or the command palette) keeps its text and
 its link in a `box`, encrypted with the **private key**: HKDF of the diary secret
 (`diaryo private`), the same on every device of the diary. Its size, place, color and
-style stay as they are, so it shows in its place with a padlock, and can be moved, styled,
-deleted or joined with arrows while hidden; seeing or editing its text asks for the
-password (double click, or "Show what is private").
+style stay as they are, so it shows in its place with a padlock.
 
+- **Each one opens on its own.** Double click (or "Show this note" in its menu) asks for
+  the diary password and shows only that note; the others stay hidden, and showing
+  another one asks again. "Show everything private" (the palette, Settings → Privacy)
+  shows them all at once. A note shown has an open padlock in its corner: a click there
+  hides it again.
+- **Hidden, nothing changes it.** It counts as locked (`isLocked` in
+  `src/engine/elements.ts`): it isn't selected, moved, styled, erased, deleted nor
+  joined with arrows, also with select all, the eraser or the lasso. Its own context menu
+  only shows it, or deletes it once the password is typed; deleting a page with hidden
+  private notes asks for it too.
 - In `src/storage/sealing.ts`, with the rest: a private note is always written with its
-  text in the box (`boxNote`), and read with it only while the private key is in memory;
-  otherwise it comes `concealed` (empty text, the box as it is). A note moved while hidden
-  keeps its box.
+  text in the box (`boxNote`), and read with it only if it is one of the notes shown
+  (`sealing.shown`) and the private key is in memory; otherwise it comes `concealed`
+  (empty text, the box as it is). The key is in memory only while some note is shown.
 - **It travels and is backed up with its text in the box**, even while shown
   (`privateForTransport`, in `readPath` and `dumpDiary`): the cloud's items and the
   `.diaryo` files (also readable ones) never carry it in the clear, and any device with
   the diary password opens it. A device without the password set (it came from the cloud)
   asks for the account's diary password the first time, and keeps it for them from then
   on.
-- **Shown and hidden**: showing them asks for the password and passes the key to every
-  window; hiding them (by hand, after 15 minutes or an hour, or on minimizing, as the
-  settings say) drops it. Either way each window saves what is pending, switches the key
-  and loads the page and the desk again, so undo starts again and can't bring a text
-  back (`applyPrivateKey` in `lockState.ts`, `startPrivacy` in `src/ui/privateActions.ts`).
+- **Shown and hidden** pass to every window (which notes, and the key, through the
+  `BroadcastChannel`). Each note hides again by itself some minutes after it was shown
+  (15 or 60, as the settings say), or all of them on minimizing. Either way each window
+  keeps the text being written, saves what is pending and loads the page and the desk
+  again, so undo starts again and can't bring a text back (`applyPrivacy` in
+  `lockState.ts`, `startPrivacy` in `src/ui/privateActions.ts`).
 - **Thumbnails and the mini diary** draw them with the padlock even while shown; search
-  only finds their text while shown.
+  only finds the text of the ones shown.
 - **Removing the password** with private notes asks first: keep them as normal notes
   (their text in the clear) or delete them; the other devices follow.
 - **Another account's password**: the first time with an account that had a diary of its
   own, its secret is another one, so the private notes' text goes into boxes with the new
-  key (`reboxPrivateNotes`). That needs the old secret: if the notes are hidden, unlocking
-  that cloud asks to show them first.
+  key (`reboxPrivateNotes`), and the ones shown are hidden. That needs the old secret: if
+  the notes are hidden, unlocking that cloud asks to show them first.
 
 ## Outside the database
 

@@ -9,7 +9,7 @@ import {
   newLockRecoveryCode,
   privateNotes,
   recoverDiary,
-  revealPrivate,
+  revealNotes,
 } from '../cloud/lock';
 import { useLock } from '../cloud/lockState';
 import { useUI, type LockDialogRequest, type LockView } from '../store/ui';
@@ -92,7 +92,8 @@ function Dialog({ request }: { request: LockDialogRequest }) {
     void (async () => {
       try {
         if (view === 'private' || view === 'all') {
-          const made = await enableLock(password, view);
+          const shows = view === 'private' && Array.isArray(request.notes) ? request.notes : [];
+          const made = await enableLock(password, view, shows);
           if (made) setShownCode(made);
           else finish(view === 'private' ? l.privateDone : l.enabled);
         } else if (view === 'down') {
@@ -102,10 +103,10 @@ function Dialog({ request }: { request: LockDialogRequest }) {
           await disableLock(password, 'off', release);
           finish(l.disabled);
         } else if (view === 'reveal') {
-          await revealPrivate(password);
+          await revealNotes(password, request.notes ?? 'all');
           finish(l.revealed);
         } else if (view === 'recover') {
-          await recoverDiary(code, password);
+          await recoverDiary(code, password, request.notes ?? 'all');
           finish(l.revealed);
         } else if (view === 'change') {
           await changeLockPassword(current, password);
@@ -123,12 +124,14 @@ function Dialog({ request }: { request: LockDialogRequest }) {
     })();
   };
 
+  // Showing a single private note (not all of them).
+  const one = Array.isArray(request.notes) && request.notes.length === 1;
   const titles: Record<View, string> = {
     private: l.privateTitle,
     all: l.enableTitle,
     down: l.downTitle,
     off: l.offTitle,
-    reveal: l.revealTitle,
+    reveal: one ? l.showThis : l.revealTitle,
     recover: v.recoverTitle,
     change: v.changeTitle,
     newCode: v.newCodeTitle,
@@ -138,7 +141,8 @@ function Dialog({ request }: { request: LockDialogRequest }) {
     all: fresh ? l.enableText : l.enableCloudText,
     down: l.downText,
     off: l.offText,
-    reveal: l.revealText,
+    reveal:
+      Array.isArray(request.notes) && request.notes.length === 1 ? l.revealOneText : l.revealText,
     recover: v.recoverText,
     change: '',
     newCode: v.newCodeText,

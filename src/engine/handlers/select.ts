@@ -1,6 +1,6 @@
 import { arrowEnd, arrowMidpoint, arrowStart, detachMoved, withEnds } from '../arrows';
 import { ROTATE_CURSOR } from '../cursors';
-import type { ArrowElement, SceneElement } from '../elements';
+import { isLocked, type ArrowElement, type SceneElement } from '../elements';
 import type { Vec } from '../math';
 import type { Changes } from '../scene';
 import { drawElementOutline } from '../render';
@@ -438,7 +438,7 @@ export class SelectHandler implements ToolHandler {
   private selectedArrow(): ArrowElement | null {
     const selected = this.selectedElements();
     const [el] = selected;
-    return selected.length === 1 && el.type === 'arrow' && !el.locked ? el : null;
+    return selected.length === 1 && el.type === 'arrow' && !isLocked(el) ? el : null;
   }
 
   private arrowPoints(arrow: ArrowElement): [ArrowPoint, Vec][] {
@@ -520,7 +520,7 @@ export class SelectHandler implements ToolHandler {
   private snapshot(): Changes {
     return new Map(
       this.selectedElements()
-        .filter((el) => !el.locked)
+        .filter((el) => !isLocked(el))
         .map((el) => [el.id, el]),
     );
   }
