@@ -252,10 +252,6 @@ export const es = {
     enableCloudText:
       'Se usa la contraseña del diario de tu nube, la misma en todas partes. Escríbela para continuar.',
     enable: 'Cifrar',
-    disableTitle: 'Quitar el cifrado',
-    disableText:
-      'El diario vuelve a guardarse legible en este dispositivo. Escribe la contraseña del diario para continuar.',
-    disable: 'Quitar el cifrado',
     encrypting: 'Cifrando el diario…',
     decrypting: 'Quitando el cifrado…',
     keepOpen: 'No cierres diaryo hasta que termine.',

@@ -902,10 +902,6 @@ export class Engine {
   }
 
   private startEditing(element: EditableElement, isNew: boolean) {
-    if (element.type === 'note' && element.concealed) {
-      this.revealListeners.forEach((listener) => listener(element.id));
-      return;
-    }
     this.finishEditing(false);
     this.setSelection([]);
     // A shape without text gets an empty one with the default style.
@@ -1400,7 +1396,12 @@ export class Engine {
 
   /** Selects, always adding the other members of each group. */
   private setSelection(ids: Iterable<string>) {
-    const next = new Set(ids);
+    // A hidden private note is never selected, not even with its group: nothing changes it.
+    const selectable = (id: string) => {
+      const el = this.scene.get(id);
+      return !el || !isConcealed(el);
+    };
+    const next = new Set([...ids].filter(selectable));
     const groups = new Set<string>();
     for (const id of next) {
       const groupId = this.scene.get(id)?.groupId;
@@ -1408,7 +1409,7 @@ export class Engine {
     }
     if (groups.size > 0) {
       for (const el of this.scene.all()) {
-        if (el.groupId && groups.has(el.groupId)) next.add(el.id);
+        if (el.groupId && groups.has(el.groupId) && !isConcealed(el)) next.add(el.id);
       }
     }
     const same =

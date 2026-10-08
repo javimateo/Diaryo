@@ -124,7 +124,7 @@ const isPrivate = (data: unknown): data is NoteElement =>
   (data as NoteElement | undefined)?.type === 'note' && (data as NoteElement).private === true;
 
 /** The private note as it is kept and travels: its text and link only in the box. */
-export function boxNote(note: NoteElement, privateKey: Uint8Array | null | undefined) {
+function boxNote(note: NoteElement, privateKey: Uint8Array | null | undefined) {
   if (note.concealed) return note;
   if (!privateKey) throw new LockedError();
   const content = encoder.encode(JSON.stringify({ text: note.text, link: note.link ?? null }));

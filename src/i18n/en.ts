@@ -242,10 +242,6 @@ export const en: Messages = {
     enableCloudText:
       "Your cloud diary's password is used, the same one everywhere. Type it to continue.",
     enable: 'Encrypt',
-    disableTitle: 'Stop encrypting',
-    disableText:
-      'The diary is saved readable on this device again. Type the diary password to continue.',
-    disable: 'Stop encrypting',
     encrypting: 'Encrypting the diary…',
     decrypting: 'Decrypting the diary…',
     keepOpen: "Don't close diaryo until it's done.",

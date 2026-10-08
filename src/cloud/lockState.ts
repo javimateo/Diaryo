@@ -33,7 +33,7 @@ export interface LockRecord {
   rewriting?: 'seal' | 'open';
 }
 
-export const LOCK_KEY = 'diaryo:lock';
+const LOCK_KEY = 'diaryo:lock';
 
 export function readLock(): LockRecord | null {
   const record = asRecord(readJSON(LOCK_KEY));
