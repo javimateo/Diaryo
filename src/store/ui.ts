@@ -80,11 +80,13 @@ export interface Settings {
   /** Desktop app: new versions install by themselves (while the diary is hidden). */
   autoUpdate: boolean;
   syncMode: SyncMode;
-  /** When the private notes are hidden again: on minimizing, or after some minutes. */
+  /** How long a private note stays shown (seconds) before it hides again by itself. */
   hidePrivate: HidePrivate;
+  /** All the private notes hide when the diary is put away (minimized, or to the tray). */
+  hidePrivateAway: boolean;
 }
 
-export type HidePrivate = 'minimize' | 15 | 60;
+export type HidePrivate = 30 | 60 | 300;
 
 const DEFAULT_SETTINGS: Settings = {
   language: DEFAULT_LANGUAGE,
@@ -92,7 +94,8 @@ const DEFAULT_SETTINGS: Settings = {
   turnSpeed: 'normal',
   autoUpdate: true,
   syncMode: 'auto',
-  hidePrivate: 15,
+  hidePrivate: 60,
+  hidePrivateAway: true,
 };
 
 export const THEME_KEY = 'diaryo:theme';
@@ -127,9 +130,10 @@ function loadSettings(): Settings {
   if (saved.syncMode === 'manual' || saved.syncMode === 'password') {
     settings.syncMode = saved.syncMode;
   }
-  if (saved.hidePrivate === 'minimize' || saved.hidePrivate === 60) {
+  if (saved.hidePrivate === 30 || saved.hidePrivate === 300) {
     settings.hidePrivate = saved.hidePrivate;
   }
+  if (saved.hidePrivateAway === false) settings.hidePrivateAway = false;
   return settings;
 }
 

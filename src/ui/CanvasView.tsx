@@ -71,7 +71,7 @@ export function CanvasView() {
       onDeskSaved: desktop ? notifyDeskSaved : undefined,
     });
     setDiary(diary);
-    const stopPrivacy = startPrivacy(diary);
+    const stopPrivacy = startPrivacy(diary, instance);
     // In the desktop app, as soon as today's page is there it connects with it.
     const bridge = desktop ? new DesktopBridge(instance, diary) : null;
     useUI.getState().setDesktopBridge(bridge);

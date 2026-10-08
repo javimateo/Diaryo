@@ -95,7 +95,8 @@ its link in a `box`, encrypted with the **private key**: HKDF of the diary secre
 style stay as they are, so it shows in its place with a padlock.
 
 - **Each one opens on its own.** Double click (or "Show this note" in its menu) asks for
-  the diary password and shows only that note; the others stay hidden, and showing
+  the diary password and shows only that note, also on the Windows desktop's desk (the
+  dialog opens right there, with the diary put away); the others stay hidden, and showing
   another one asks again. "Show everything private" (the palette, Settings → Privacy)
   shows them all at once. A note shown has an open padlock in its corner: a click there
   hides it again.
@@ -115,8 +116,13 @@ style stay as they are, so it shows in its place with a padlock.
   asks for the account's diary password the first time, and keeps it for them from then
   on.
 - **Shown and hidden** pass to every window (which notes, and the key, through the
-  `BroadcastChannel`). Each note hides again by itself some minutes after it was shown
-  (15 or 60, as the settings say), or all of them on minimizing. Either way each window
+  `BroadcastChannel`). Each note hides again by itself 30 seconds, a minute or five
+  minutes after it was shown, as the settings say (while it is being edited, it waits);
+  the diary's window and the desk's both count, as the desk's is never hidden and its
+  timers aren't slowed down (`startPrivacyTimers`). All of them hide when the diary is
+  put away, unless the settings say otherwise: minimized, another tab, or on the desktop
+  to the tray (its window is hidden then, not minimized: `diaryo://hidden`). Either way
+  each window
   keeps the text being written, saves what is pending and loads the page and the desk
   again, so undo starts again and can't bring a text back (`applyPrivacy` in
   `lockState.ts`, `startPrivacy` in `src/ui/privateActions.ts`).

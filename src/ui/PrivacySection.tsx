@@ -5,6 +5,7 @@ import { useUI, type HidePrivate, type LockView } from '../store/ui';
 import { Choice } from './Choice';
 import { lockDiaryNow } from './lockActions';
 import { SettingsRow } from './SettingsRow';
+import { Switch } from './Switch';
 import { useT } from './useT';
 
 type Level = LockLevel | 'off';
@@ -16,7 +17,7 @@ const CHANGES: Record<Level, Partial<Record<Level, LockView>>> = {
   all: { private: 'down', off: 'off' },
 };
 
-const HIDE_AFTER: HidePrivate[] = ['minimize', 15, 60];
+const HIDE_AFTER: HidePrivate[] = [30, 60, 300];
 
 /**
  * Settings → Privacy: what is encrypted on this device (nothing, only the private notes,
@@ -63,11 +64,18 @@ export function PrivacySection() {
               </button>
             )}
           </SettingsRow>
-          <SettingsRow label={l.hidePrivate}>
+          <SettingsRow label={l.hidePrivate} hint={l.hidePrivateHint}>
             <Choice
               options={HIDE_AFTER.map((id) => [id, l.hidePrivateOptions[id]])}
               value={settings.hidePrivate}
               onChange={(hidePrivate) => setSettings({ hidePrivate })}
+            />
+          </SettingsRow>
+          <SettingsRow label={l.hidePrivateAway} hint={l.hidePrivateAwayHint}>
+            <Switch
+              checked={settings.hidePrivateAway}
+              label={l.hidePrivateAway}
+              onChange={(hidePrivateAway) => setSettings({ hidePrivateAway })}
             />
           </SettingsRow>
         </>

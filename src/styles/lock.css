@@ -79,3 +79,13 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* On the Windows desktop, the dialog floats alone: the clicks around it reach the desktop. */
+:root[data-desk-layer] .dialog-backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+
+:root[data-desk-layer] .dialog {
+  pointer-events: auto;
+}

@@ -500,7 +500,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           doble clic o «Mostrar este post-it» pide la contraseña y enseña solo ese; abrir
           otro la vuelve a pedir. «Mostrar todo lo privado» es un atajo. El que está a la
           vista lleva un candado abierto en la esquina: pulsarlo lo vuelve a bloquear; y
-          cada uno se oculta solo a los 15 min o a la hora (o todos al minimizar).
+          cada uno se oculta solo a los 30 s, al minuto (por defecto) o a los 5 min de
+          abrirlo (mientras se edita, espera); además, todos al esconder el diario
+          (minimizarlo, otra pestaña, o a la bandeja en el escritorio), con un
+          interruptor. En la mesa del escritorio, el doble clic pide la contraseña allí
+          mismo, con el diario escondido.
           **Oculto, nada lo cambia**: cuenta como bloqueado (no se selecciona, mueve,
           borra, ni con el borrador ni seleccionando todo); su menú solo lo muestra o lo
           borra pidiendo la contraseña, y borrar una página con privados ocultos también
@@ -516,9 +520,8 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           (comprobar `BroadcastChannel` con una `CryptoKey` en WebView2; si no, por
           Rust en memoria). Mientras está bloqueado, por defecto la mesa se ve sin los
           privados (candado) y el mini diario muestra la portada; se puede elegir
-          (visible / sin privados / oculta). Abrir un privado desde la mesa (enseña la
-          ventana del diario y pide la contraseña); hoy la mesa los oculta y los enseña
-          cuando se muestran en el diario.
+          (visible / sin privados / oculta). Abrir un privado desde la mesa ya está
+          hecho en D4 (la contraseña se pide allí mismo).
     - [ ] **D3. Privacidad en la web** (ordenadores compartidos): bloquear tras X
           minutos sin uso o al ocultar la pestaña; al cerrar sesión, «dejarlo cifrado
           y bloqueado» además de dejarlo o quitarlo; opción «no mantener la sesión»
