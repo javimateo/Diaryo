@@ -5,7 +5,7 @@ import { serializeDiary } from '../storage/files';
 import { useUI } from '../store/ui';
 import { readDeskView, shareToday, writeDeskView, writeToday, type TodayCard } from './saved';
 import type { DesktopInfo, DesktopMode } from './settings';
-import { call, listen, onDeskChangedElsewhere } from './tauri';
+import { call, currentWindow, listen, onDeskChangedElsewhere } from './tauri';
 import { t } from '../i18n';
 import { sealCopy } from '../cloud/lock';
 import { sealedHere, useLock } from '../cloud/lockState';
@@ -49,6 +49,8 @@ export class DesktopBridge {
     if (this.stopped) return;
     useUI.getState().setDesktop(info);
     this.applyMode(info.mode);
+    // Opened from the lock screen, the window is already visible: no "shown" will come.
+    if (await (await currentWindow()).isVisible()) requestAnimationFrame(() => setAway(false));
     // The texts of the desktop side (the tray, the errors), in the same language.
     void call('set_language', { language: useUI.getState().settings.language });
 

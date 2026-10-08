@@ -85,7 +85,10 @@ change for the other devices.
   unlocking one opens the others; "Lock now" locks them all (each one starts again, so
   nothing stays in memory). Turning it on or off in one is told to the others.
 - **"Lock now"** (Settings → Privacy, and the command palette) saves what is pending and
-  starts the app again.
+  starts the app again. On the desktop it puts the diary away first: the password is
+  asked for when it is opened again (the shortcut, the tray), and Esc or a click around
+  the lock screen puts it away again. Opened from there, the diary shows at once (the
+  window was already visible, so no "shown" comes for it to fade in).
 
 ## Private notes
 
