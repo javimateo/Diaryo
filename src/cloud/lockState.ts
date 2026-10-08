@@ -31,6 +31,11 @@ export interface LockRecord {
   deviceKey: string | null;
   /** Encrypting or decrypting the whole diary was cut halfway: it goes on when unlocking. */
   rewriting?: 'seal' | 'open';
+  /**
+   * With the whole diary encrypted, the desk stays out of it and shows on the Windows
+   * desktop while the diary is locked (`clear`, the default), or not until it is opened.
+   */
+  desk?: 'clear' | 'sealed';
 }
 
 const LOCK_KEY = 'diaryo:lock';
@@ -50,6 +55,7 @@ export function readLock(): LockRecord | null {
   if (!ok) return null;
   const rewriting = record.rewriting === 'seal' || record.rewriting === 'open';
   return {
+    ...(record.desk === 'sealed' ? { desk: 'sealed' as const } : {}),
     level,
     vault: record.vault as VaultData,
     version: record.version as number,
@@ -74,6 +80,9 @@ export function writeLock(record: LockRecord | null) {
 /** The whole diary is encrypted here. */
 export const sealedHere = () => readLock()?.level === 'all';
 
+/** The whole diary is encrypted here, the desk too (it doesn't show while locked). */
+export const deskSealed = (lock = readLock()) => lock?.level === 'all' && lock.desk === 'sealed';
+
 /**
  * - `status`: the whole diary is locked (the password is needed to open it), unlocked,
  *   or not encrypted (`off`, also with only the private notes).
@@ -90,6 +99,8 @@ interface LockState {
   shown: readonly string[];
   revealed: boolean;
   progress: number | null;
+  /** The whole diary is encrypted, the desk too (it waits for the password). */
+  deskSealed: boolean;
 }
 
 export const useLock = create<LockState>(() => {
@@ -100,6 +111,7 @@ export const useLock = create<LockState>(() => {
     shown: [],
     revealed: false,
     progress: null,
+    deskSealed: deskSealed(lock),
   };
 });
 

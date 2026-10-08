@@ -597,6 +597,15 @@ export const es = {
     floatingDiaryHint: 'Aparece sobre el escritorio desde cualquier sitio. Esc lo esconde.',
     shortcutTaken: 'Otra app ya usa este atajo: elige otro.',
     deskLayer: 'Mesa en el escritorio',
+    deskPrivate: 'Post-its privados en el escritorio',
+    deskPrivateHint: 'En el diario siempre se ven con su candado.',
+    deskPrivateOptions: { lock: 'Con candado', hide: 'No se ven' },
+    deskLocked: 'La mesa con el diario bloqueado',
+    deskLockedHint:
+      'Visible: la mesa no se cifra con el resto del diario (sus post-its privados, sí).',
+    deskLockedOptions: { clear: 'Visible', sealed: 'Oculta hasta abrir' },
+    miniLocked: 'Mini diario con el diario bloqueado',
+    miniLockedOptions: { cover: 'Portada', hide: 'Oculto' },
     deskLayerHint:
       'Lo que hay en la mesa, sobre el fondo del escritorio. El atajo la enseña o la esconde.',
     autostart: 'Arrancar con Windows',

@@ -4,7 +4,14 @@ import { parseElement } from '../engine/clipboard';
 import type { PaperStyle } from '../engine/book';
 import type { SceneElement } from '../engine/elements';
 import { dayKey } from '../lib/dates';
-import { LockedError, privateForTransport, sealingMiddleware, type Sealing } from './sealing';
+import {
+  keptClear,
+  LockedError,
+  privateForTransport,
+  rowIsSealed,
+  sealingMiddleware,
+  type Sealing,
+} from './sealing';
 import {
   assetPath,
   elementPath,
@@ -554,6 +561,63 @@ export async function reboxPrivateNotes(db: DiaryoDB, from: Uint8Array, to: Uint
     });
   } finally {
     db.sealing.privateKey = before;
+  }
+}
+
+/** The images on the desk (they stay in the clear with it, see sealing.ts). */
+export async function deskAssetIds(db: DiaryoDB): Promise<Set<string>> {
+  const rows = await db.elements.where('pageId').equals(DESK_ID).toArray();
+  return new Set(rows.flatMap((row) => (row.data.type === 'image' ? [row.data.assetId] : [])));
+}
+
+/** The rows as IndexedDB keeps them (without the sealing): whether each one is sealed. */
+function sealedNow(db: DiaryoDB, table: string): Promise<Map<IDBValidKey, boolean>> {
+  return new Promise((resolve, reject) => {
+    const store = db.backendDB().transaction(table).objectStore(table);
+    const found = new Map<IDBValidKey, boolean>();
+    const request = store.openCursor();
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) return resolve(found);
+      found.set(cursor.primaryKey, rowIsSealed(cursor.value));
+      cursor.continue();
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * With the whole diary encrypted, the desk can stay out of it or go back in (see
+ * sealing.ts): its rows, its images and the fonts that aren't as they should be are
+ * written again (also an image that left the desk, sealed again). Needs the key.
+ */
+export async function matchDesk(db: DiaryoDB) {
+  const { sealing } = db;
+  sealing.deskAssets = await deskAssetIds(db);
+  if (!sealing.seal) return;
+  for (const table of [db.pages, db.elements, db.assets, db.fonts] as Table<
+    unknown,
+    IDBValidKey
+  >[]) {
+    const now = await sealedNow(db, table.name);
+    const wrong = [];
+    for (const [key, sealed] of now) {
+      const row = table.schema.primKey.keyPath
+        ? Object.fromEntries(
+            ([] as string[])
+              .concat(table.schema.primKey.keyPath as string | string[])
+              .map((field, i) => [field, Array.isArray(key) ? key[i] : key]),
+          )
+        : {};
+      if (sealed === keptClear(sealing, table.name, row)) wrong.push(key);
+    }
+    for (let start = 0; start < wrong.length; start += REWRITE_BATCH) {
+      const batch = wrong.slice(start, start + REWRITE_BATCH);
+      await db.transaction('rw', table, async () => {
+        const rows = (await table.bulkGet(batch)).filter((row) => row !== undefined);
+        await table.bulkPut(rows);
+      });
+    }
   }
 }
 

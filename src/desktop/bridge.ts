@@ -3,7 +3,7 @@ import type { Engine } from '../engine/engine';
 import { todayKey } from '../lib/dates';
 import { serializeDiary } from '../storage/files';
 import { useUI } from '../store/ui';
-import { readDeskView, writeDeskView, writeToday, type TodayCard } from './saved';
+import { readDeskView, shareToday, writeDeskView, writeToday, type TodayCard } from './saved';
 import type { DesktopInfo, DesktopMode } from './settings';
 import { call, listen, onDeskChangedElsewhere } from './tauri';
 import { t } from '../i18n';
@@ -193,17 +193,15 @@ export class DesktopBridge {
     this.todayTimer = window.setTimeout(async () => {
       try {
         const cover = useUI.getState().bookStyle.cover;
-        // With the diary encrypted here, today's page isn't left readable on disk: only
-        // its cover.
-        if (sealedHere()) {
-          this.todayShown = todayKey();
-          writeToday({ day: this.todayShown, image: '', pending: 0, cover });
-          return;
-        }
         const preview = await this.diary.todayPreview(TODAY_WIDTH);
         this.todayShown = preview.day;
         const card: TodayCard = { ...preview, cover };
-        writeToday(card);
+        // With the whole diary encrypted, today's page isn't left readable on disk: only
+        // its cover; the page itself goes to the desk's window in memory.
+        if (sealedHere()) {
+          writeToday({ ...card, image: '', pending: 0 });
+          shareToday(card);
+        } else writeToday(card);
       } catch (error) {
         console.error("Couldn't prepare the mini diary", error);
       }

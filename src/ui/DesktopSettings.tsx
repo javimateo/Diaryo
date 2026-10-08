@@ -13,6 +13,9 @@ import {
 import { shortcutFromEvent, shortcutKeys } from '../desktop/shortcuts';
 import { appVersion, isDesktop } from '../desktop/tauri';
 import { useUI } from '../store/ui';
+import { setDeskVisible } from '../cloud/lock';
+import { useLock } from '../cloud/lockState';
+import { Choice } from './Choice';
 import { SettingsRow } from './SettingsRow';
 import { Switch } from './Switch';
 import { formatTime } from '../i18n/dates';
@@ -60,6 +63,7 @@ export function DesktopSettings() {
             />
           </div>
         </SettingsRow>
+        {desktop.deskLayer && <DeskPrivacy />}
         <SettingsRow label={t.desktop.autostart} hint={t.desktop.autostartHint}>
           <Switch
             checked={desktop.autostart}
@@ -165,5 +169,48 @@ function ShortcutField({
         ? t.desktop.pressShortcut
         : shortcutKeys(shortcut, t.keys.space).map((key) => <kbd key={key}>{key}</kbd>)}
     </button>
+  );
+}
+
+/**
+ * What the Windows desktop shows of the diary: its private notes (with a padlock or not
+ * at all) and, with the whole diary encrypted and locked, the desk and the mini diary.
+ */
+function DeskPrivacy() {
+  const t = useT();
+  const d = t.desktop;
+  const level = useLock((s) => s.level);
+  const deskSealed = useLock((s) => s.deskSealed);
+  const settings = useUI((s) => s.settings);
+  const setSettings = useUI((s) => s.setSettings);
+  if (level === 'off') return null;
+  return (
+    <>
+      <SettingsRow label={d.deskPrivate} hint={d.deskPrivateHint}>
+        <Choice
+          options={(['lock', 'hide'] as const).map((id) => [id, d.deskPrivateOptions[id]])}
+          value={settings.deskPrivate}
+          onChange={(deskPrivate) => setSettings({ deskPrivate })}
+        />
+      </SettingsRow>
+      {level === 'all' && (
+        <>
+          <SettingsRow label={d.deskLocked} hint={d.deskLockedHint}>
+            <Choice
+              options={(['clear', 'sealed'] as const).map((id) => [id, d.deskLockedOptions[id]])}
+              value={deskSealed ? 'sealed' : 'clear'}
+              onChange={(next) => void setDeskVisible(next === 'clear')}
+            />
+          </SettingsRow>
+          <SettingsRow label={d.miniLocked}>
+            <Choice
+              options={(['cover', 'hide'] as const).map((id) => [id, d.miniLockedOptions[id]])}
+              value={settings.miniLocked}
+              onChange={(miniLocked) => setSettings({ miniLocked })}
+            />
+          </SettingsRow>
+        </>
+      )}
+    </>
   );
 }

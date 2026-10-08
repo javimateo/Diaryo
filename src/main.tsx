@@ -16,11 +16,13 @@ startLock();
 
 /**
  * The diary encrypted here and locked: nothing of it loads until it is opened. The desk
- * on the desktop shows nothing meanwhile (the diary's window passes it the key).
+ * on the desktop still shows (it is kept out of the encryption), unless the settings
+ * say it waits too (the diary's window passes it the key).
  */
 function Root() {
   const locked = useLock((s) => s.status === 'locked');
-  if (deskLayer) return locked ? null : <DeskLayer />;
+  const deskWaits = useLock((s) => s.status === 'locked' && s.deskSealed);
+  if (deskLayer) return deskWaits ? null : <DeskLayer />;
   return locked ? <LockScreen /> : <App />;
 }
 

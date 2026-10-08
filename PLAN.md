@@ -493,7 +493,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           solo enseña la portada. Tests: los de `storage`, el diario y la sincronización
           otra vez con todo cifrado (proyecto `sealed` de Vitest) y `lock.test.ts`.
           Probado en la app de escritorio. Falta probarlo contra un PocketBase real.
-    - [ ] **D4. Post-its privados**: Ajustes → Privacidad pasa a tres niveles (nada,
+    - [x] **D4. Post-its privados**: Ajustes → Privacidad pasa a tres niveles (nada,
           solo lo privado, todo el diario). Un post-it privado (menú contextual o paleta)
           guarda su texto y su enlace cifrados aparte con una llave del secreto del
           diario, la misma en todos los dispositivos. **Cada uno se abre por separado**:
@@ -517,12 +517,15 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           antes). Tests en `sealing.test.ts`, `lock.test.ts`, `sync.test.ts` y
           `privateNotes.test.ts`.
       - [ ] Más adelante: **páginas privadas** (índice, mapa, miniaturas, pasar página).
-    - [ ] **D2. Qué se ve en el escritorio**: la llave pasa a la ventana de la mesa
-          (comprobar `BroadcastChannel` con una `CryptoKey` en WebView2; si no, por
-          Rust en memoria). Mientras está bloqueado, por defecto la mesa se ve sin los
-          privados (candado) y el mini diario muestra la portada; se puede elegir
-          (visible / sin privados / oculta). Abrir un privado desde la mesa ya está
-          hecho en D4 (la contraseña se pide allí mismo).
+    - [ ] **D2. Qué se ve en el escritorio** (`docs/privacy.md`, «The Windows desktop»):
+          con «Todo el diario», la mesa queda fuera del cifrado por defecto y se ve (y se
+          usa) con el diario bloqueado: sus post-its normales, sus imágenes y las fuentes
+          se guardan legibles; sus privados siguen cifrados. En Ajustes → Escritorio se
+          elige «Visible» u «Oculta hasta abrir». El mini diario, con el diario abierto,
+          recibe la página de hoy en memoria (nunca en el disco); bloqueado, la portada u
+          oculto. Para cualquier nivel: los privados en el escritorio «Con candado» o «No
+          se ven». La llave llega a la mesa por `BroadcastChannel` (probado en WebView2) y
+          abrir un privado desde la mesa ya está hecho en D4.
     - [ ] **D3. Privacidad en la web** (ordenadores compartidos): bloquear tras X
           minutos sin uso o al ocultar la pestaña; al cerrar sesión, «dejarlo cifrado
           y bloqueado» además de dejarlo o quitarlo; opción «no mantener la sesión»

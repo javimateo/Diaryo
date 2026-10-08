@@ -139,6 +139,23 @@ style stay as they are, so it shows in its place with a padlock.
   key (`reboxPrivateNotes`), and the ones shown are hidden. That needs the old secret: if
   the notes are hidden, unlocking that cloud asks to show them first.
 
+## The Windows desktop
+
+The desk on the Windows desktop is another window (see [architecture](architecture.md)).
+
+- **With the whole diary encrypted, the desk stays out of it** by default, so it shows on
+  the desktop while the diary is locked, and can be used there (moving, writing, opening
+  a private note with its password). Its rows, its images and the fonts are written in
+  the clear (`keptClear` in `src/storage/sealing.ts`); its private notes keep their text
+  in their box. Settings → Desktop can put it back in the encryption ("Hidden until
+  opened": the desk waits for the password, as the rest). The lock record says which
+  (`desk`), and each time the diary is unlocked, or that setting changes, `matchDesk`
+  writes again the rows that aren't as they should (an image that left the desk is
+  sealed again then).
+- **Private notes on the desktop**: with their padlock, or not drawn there at all
+  (Settings → Desktop). Not drawn, they aren't loaded in the desk's window (nor touched:
+  only changes are saved); in the diary they always show with their padlock.
+
 ## Outside the database
 
 - With the whole diary encrypted, **desktop backups** (daily, and the ones before
@@ -147,8 +164,10 @@ style stay as they are, so it shows in its place with a padlock.
   a device with that diary unlocked, and anywhere else with the diary password or the
   recovery code of when it was made.
 - **"Save a copy"** asks: encrypted (the default) or readable.
-- **The desktop mini diary** only shows the cover: today's page isn't written to the
-  local storage.
+- **The desktop mini diary**: today's page isn't written to the local storage, only
+  its cover. With the diary open, the diary's window passes the page to the desk's in
+  memory (`shareToday` in `src/desktop/saved.ts`); locked, it shows the cover, or nothing,
+  as the settings say.
 - Only private notes encrypted: backups and copies are readable, with the private notes'
   text in their boxes.
 - Signing out and **removing the diary from the device** leaves a blank diary without

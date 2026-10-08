@@ -88,15 +88,17 @@ async function boot() {
   const keystore = await import('./keystore');
   lock.startLock();
   const db = storage.getDB();
-  const write = (text: string) =>
-    storage.saveChanges(db, storage.DESK_INFO, {
+  /** A note on a page of the diary (the desk may stay out of its encryption). */
+  const page = { id: 'pg', date: '2026-10-08', order: 1, title: '' };
+  const write = (text: string, on: { id: string } = page) =>
+    storage.saveChanges(db, on.id === storage.DESK_ID ? storage.DESK_INFO : page, {
       upserts: [note('n1', text)],
       deletes: [],
       assets: [],
       fonts: [],
     });
-  const read = async () => {
-    const [el] = (await storage.loadPage(db, storage.DESK_ID)).elements;
+  const read = async (on = page.id) => {
+    const [el] = (await storage.loadPage(db, on)).elements.filter((el) => el.id === 'n1');
     return (el as NoteElement | undefined)?.text;
   };
   /** A private note, and how it reads now (its text, or empty if hidden). */
@@ -490,5 +492,40 @@ describe('private notes', () => {
     await vi.waitFor(async () => expect(await second.readPrivate()).toBe(''));
     first.db.close();
     app = second;
+  });
+});
+
+describe('the desk on the Windows desktop, with the whole diary encrypted', () => {
+  const desk = { id: 'desk' };
+
+  it('shows while the diary is locked (out of its encryption), and can be used', async () => {
+    let a = await start();
+    await a.write('en la mesa', desk);
+    await a.write('en la página');
+    await a.lock.enableLock('contraseña larga', 'all');
+
+    a = await start();
+    expect(a.status()).toBe('locked');
+    expect(await a.read('desk')).toBe('en la mesa');
+    await expect(a.read()).rejects.toThrow('locked');
+    // Written on the desk while locked.
+    await a.write('cambiada sin abrir', desk);
+    expect(await a.read('desk')).toBe('cambiada sin abrir');
+  });
+
+  it('or waits for the password too, as the settings say', async () => {
+    let a = await start();
+    await a.write('en la mesa', desk);
+    await a.lock.enableLock('contraseña larga', 'all');
+    await a.lock.setDeskVisible(false);
+    expect(a.state.deskSealed()).toBe(true);
+
+    a = await start();
+    await expect(a.read('desk')).rejects.toThrow('locked');
+    await a.lock.unlockDiary('contraseña larga');
+    await a.lock.setDeskVisible(true);
+
+    a = await start();
+    expect(await a.read('desk')).toBe('en la mesa');
   });
 });
