@@ -1,68 +1,117 @@
-import { KeyRound, Lock, LockKeyhole } from 'lucide-react';
-import { readLock, useLock } from '../cloud/lockState';
-import { useUI } from '../store/ui';
+import { Eye, EyeOff, KeyRound, Lock, LockKeyhole } from 'lucide-react';
+import { hideNotes } from '../cloud/lock';
+import { readLock, useLock, type LockLevel } from '../cloud/lockState';
+import { useUI, type HidePrivate, type LockView } from '../store/ui';
 import { Choice } from './Choice';
 import { lockDiaryNow } from './lockActions';
 import { SettingsRow } from './SettingsRow';
+import { Switch } from './Switch';
 import { useT } from './useT';
 
-type Level = 'off' | 'all';
+type Level = LockLevel | 'off';
 
-/** Settings → Privacy: whether the diary is encrypted on this device, and its password. */
+/** From one level to another: what the dialog does. */
+const CHANGES: Record<Level, Partial<Record<Level, LockView>>> = {
+  off: { private: 'private', all: 'all' },
+  private: { all: 'all', off: 'off' },
+  all: { private: 'down', off: 'off' },
+};
+
+const HIDE_AFTER: HidePrivate[] = [30, 60, 300];
+
+/**
+ * Settings → Privacy: what is encrypted on this device (nothing, only the private notes,
+ * or the whole diary), showing the private notes, and the diary password.
+ */
 export function PrivacySection() {
   const t = useT();
   const l = t.lock;
-  const status = useLock((s) => s.status);
+  const level = useLock((s) => s.level);
+  const revealed = useLock((s) => s.revealed);
   const setLockDialog = useUI((s) => s.setLockDialog);
-  const level: Level = status === 'off' ? 'off' : 'all';
+  const settings = useUI((s) => s.settings);
+  const setSettings = useUI((s) => s.setSettings);
   // With the account's vault, the password and the code change in "Account and cloud".
-  const own = status !== 'off' && readLock()?.account === null;
+  const own = level !== 'off' && readLock()?.account === null;
 
   return (
     <section className="settings-section">
       <h3>{l.section}</h3>
       <SettingsRow label={l.level} hint={l.levelHints[level]}>
         <Choice
-          options={(['off', 'all'] as const).map((id) => [id, l.levels[id]])}
+          options={(['off', 'private', 'all'] as const).map((id) => [id, l.levels[id]])}
           value={level}
           onChange={(next) => {
-            if (next !== level) setLockDialog(next === 'all' ? 'enable' : 'disable');
+            const view = CHANGES[level][next];
+            if (view) setLockDialog({ view, fromSettings: true });
           }}
         />
       </SettingsRow>
-      {status !== 'off' && (
+      {level !== 'off' && (
         <>
-          <SettingsRow label={l.lockNow} hint={l.lockNowHint}>
-            <button type="button" className="settings-btn" onClick={() => void lockDiaryNow()}>
-              <Lock size={15} strokeWidth={1.75} /> {l.lockNow}
-            </button>
+          <SettingsRow label={l.privateRow}>
+            {revealed ? (
+              <button type="button" className="settings-btn" onClick={() => void hideNotes('all')}>
+                <EyeOff size={15} strokeWidth={1.75} /> {l.hide}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="settings-btn"
+                onClick={() => setLockDialog({ view: 'reveal', notes: 'all', fromSettings: true })}
+              >
+                <Eye size={15} strokeWidth={1.75} /> {l.show}
+              </button>
+            )}
           </SettingsRow>
-          {own ? (
-            <>
-              <SettingsRow label={t.vault.passwordRow}>
-                <button
-                  type="button"
-                  className="settings-btn"
-                  onClick={() => setLockDialog('change')}
-                >
-                  <LockKeyhole size={15} strokeWidth={1.75} /> {t.vault.change}
-                </button>
-              </SettingsRow>
-              <SettingsRow label={t.vault.codeRow}>
-                <button
-                  type="button"
-                  className="settings-btn"
-                  onClick={() => setLockDialog('newCode')}
-                >
-                  <KeyRound size={15} strokeWidth={1.75} /> {t.vault.newCode}
-                </button>
-              </SettingsRow>
-            </>
-          ) : (
-            <p className="settings-note">{l.cloudPassword}</p>
-          )}
+          <SettingsRow label={l.hidePrivate} hint={l.hidePrivateHint}>
+            <Choice
+              options={HIDE_AFTER.map((id) => [id, l.hidePrivateOptions[id]])}
+              value={settings.hidePrivate}
+              onChange={(hidePrivate) => setSettings({ hidePrivate })}
+            />
+          </SettingsRow>
+          <SettingsRow label={l.hidePrivateAway} hint={l.hidePrivateAwayHint}>
+            <Switch
+              checked={settings.hidePrivateAway}
+              label={l.hidePrivateAway}
+              onChange={(hidePrivateAway) => setSettings({ hidePrivateAway })}
+            />
+          </SettingsRow>
         </>
       )}
+      {level === 'all' && (
+        <SettingsRow label={l.lockNow} hint={l.lockNowHint}>
+          <button type="button" className="settings-btn" onClick={() => void lockDiaryNow()}>
+            <Lock size={15} strokeWidth={1.75} /> {l.lockNow}
+          </button>
+        </SettingsRow>
+      )}
+      {level !== 'off' &&
+        (own ? (
+          <>
+            <SettingsRow label={t.vault.passwordRow}>
+              <button
+                type="button"
+                className="settings-btn"
+                onClick={() => setLockDialog({ view: 'change', fromSettings: true })}
+              >
+                <LockKeyhole size={15} strokeWidth={1.75} /> {t.vault.change}
+              </button>
+            </SettingsRow>
+            <SettingsRow label={t.vault.codeRow}>
+              <button
+                type="button"
+                className="settings-btn"
+                onClick={() => setLockDialog({ view: 'newCode', fromSettings: true })}
+              >
+                <KeyRound size={15} strokeWidth={1.75} /> {t.vault.newCode}
+              </button>
+            </SettingsRow>
+          </>
+        ) : (
+          <p className="settings-note">{l.cloudPassword}</p>
+        ))}
     </section>
   );
 }

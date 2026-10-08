@@ -41,10 +41,17 @@ import {
   createId,
   DEFAULT_STYLES,
   type ArrowBinding,
+  concealNote,
   elementBounds,
+  isConcealed,
+  isLocked,
+  isPrivateNote,
+  privateBadge,
+  toLocal,
   type EditableElement,
   type ImageElement,
   NOTE_SIZE,
+  type NoteElement,
   type SceneElement,
   type ToolStyles,
 } from './elements';
@@ -171,6 +178,12 @@ export class Engine {
   private lastPointer: Vec | null = null;
   private editing: EditingState | null = null;
   private readonly editingListeners = new Set<EditingListener>();
+  /** Who shows a hidden private note (with the diary password), see `subscribeReveal`. */
+  private readonly revealListeners = new Set<(id: string) => void>();
+  /** Who hides a private note again (its open padlock was clicked). */
+  private readonly hideListeners = new Set<(id: string) => void>();
+  /** Who confirms deleting private notes (with the diary password), see `deleteSelection`. */
+  private readonly deleteListeners = new Set<(ids: string[], notes: string[]) => void>();
   /** The UI decides which tool is active; the engine can only ask for it. */
   private toolRequest: (tool: ToolId) => void = () => {};
   private contextMenuListener: (request: ContextMenuRequest) => void = () => {};
@@ -579,7 +592,8 @@ export class Engine {
 
   /** Thumbnail of another page (its double page in small), at that width. */
   spreadThumbnail(target: TurnTarget, width: number): string {
-    return this.renderSpread(target, width / (PAGE_WIDTH * 2)).toDataURL('image/webp', 0.85);
+    const concealed = { ...target, elements: concealPrivate(target.elements) };
+    return this.renderSpread(concealed, width / (PAGE_WIDTH * 2)).toDataURL('image/webp', 0.85);
   }
 
   /** Draws a double page (paper and content, without covers) for the turning sheet. */
@@ -645,7 +659,7 @@ export class Engine {
     this.setSelection(
       this.scene
         .all()
-        .filter((el) => !el.locked)
+        .filter((el) => !isLocked(el))
         .map((el) => el.id),
     );
   }
@@ -656,12 +670,30 @@ export class Engine {
 
   deleteSelection(): boolean {
     const ids = this.selectedElements()
-      .filter((el) => !el.locked)
+      .filter((el) => !isLocked(el))
       .map((el) => el.id);
     if (ids.length === 0 || this.gesture?.type === 'tool') return false;
+    // Private notes need the diary password first (the whole selection waits for it).
+    const notes = ids.filter((id) => isPrivateNote(this.scene.get(id)!));
+    if (notes.length > 0) {
+      this.deleteListeners.forEach((listener) => listener(ids, notes));
+      return true;
+    }
     const changes: Changes = new Map(ids.map((id) => [id, null]));
     this.setSelection([]);
     this.history.commit(changes);
+    return true;
+  }
+
+  /** Deletes these elements, if they can be (private notes, once the password was typed). */
+  deleteElements(ids: string[]): boolean {
+    const gone = ids.filter((id) => {
+      const el = this.scene.get(id);
+      return el && !isLocked(el);
+    });
+    if (gone.length === 0) return false;
+    this.setSelection([...this.selection].filter((id) => !gone.includes(id)));
+    this.history.commit(new Map(gone.map((id) => [id, null])));
     return true;
   }
 
@@ -675,7 +707,7 @@ export class Engine {
 
   /** Moves the selection a few screen pixels (keyboard arrows). */
   nudgeSelection(dx: number, dy: number): boolean {
-    const elements = this.selectedElements().filter((el) => !el.locked);
+    const elements = this.selectedElements().filter((el) => !isLocked(el));
     if (elements.length === 0 || this.gesture?.type === 'tool') return false;
     const { zoom } = this.camera;
     const moving = new Set(elements.map((el) => el.id));
@@ -796,6 +828,40 @@ export class Engine {
     return () => this.editingListeners.delete(listener);
   }
 
+  /** The user wants to see a private note whose text is hidden (to edit it, for example). */
+  subscribeReveal(listener: (id: string) => void): () => void {
+    this.revealListeners.add(listener);
+    return () => this.revealListeners.delete(listener);
+  }
+
+  /**
+   * The user deletes something with private notes in it (`notes`): nothing goes until the
+   * diary password is typed, and then `deleteElements` with all the `ids`.
+   */
+  subscribeDeletePrivate(listener: (ids: string[], notes: string[]) => void): () => void {
+    this.deleteListeners.add(listener);
+    return () => this.deleteListeners.delete(listener);
+  }
+
+  /** The user hides a private note that is shown (its open padlock). */
+  subscribeHide(listener: (id: string) => void): () => void {
+    this.hideListeners.add(listener);
+    return () => this.hideListeners.delete(listener);
+  }
+
+  /** The private note shown whose open padlock is under the point. */
+  private privateBadgeUnder(world: Vec): string | null {
+    const near = { minX: world.x - 1, minY: world.y - 1, maxX: world.x + 1, maxY: world.y + 1 };
+    const candidates = this.scene.search(near).sort((a, b) => b.z - a.z);
+    for (const el of candidates) {
+      if (el.type !== 'note' || !el.private || el.concealed) continue;
+      const badge = privateBadge(el);
+      const p = toLocal(el, world);
+      if (Math.hypot(p.x - badge.x, p.y - badge.y) <= badge.r * 1.3) return el.id;
+    }
+    return null;
+  }
+
   /** The UI learns that the engine wants to change the tool. */
   onToolRequest(listener: (tool: ToolId) => void) {
     this.toolRequest = listener;
@@ -876,6 +942,12 @@ export class Engine {
     const world = screenToWorld(this.camera, this.localPoint(e));
     const hit = hitTestElement(this.scene, world, 4 / this.camera.zoom);
     // Inside a shape (even without a fill) you write in it.
+    // A hidden private note asks for the password (it is locked, so not hit above).
+    const hidden = hit ? null : hitTestElement(this.scene, world, 4 / this.camera.zoom, true);
+    if (hidden && isConcealed(hidden)) {
+      this.revealListeners.forEach((listener) => listener(hidden.id));
+      return;
+    }
     const target = hit && isEditable(hit) ? hit : hit ? null : containerAt(this.scene, world);
     if (target) this.startEditing(target, false);
     else if (!hit) {
@@ -916,7 +988,7 @@ export class Engine {
 
   /** Groups the selection: from now on it is selected and moved together. */
   groupSelection(): boolean {
-    const elements = this.selectedElements().filter((el) => !el.locked);
+    const elements = this.selectedElements().filter((el) => !isLocked(el));
     if (elements.length < 2) return false;
     const groupId = createId();
     this.history.commit(new Map(elements.map((el) => [el.id, { ...el, groupId }])));
@@ -927,6 +999,27 @@ export class Engine {
     const elements = this.selectedElements().filter((el) => el.groupId);
     if (elements.length === 0) return false;
     this.history.commit(new Map(elements.map((el) => [el.id, { ...el, groupId: null }])));
+    return true;
+  }
+
+  /** The ids of the selected notes (to mark them as private). */
+  selectedNotes(): string[] {
+    return this.selectedElements()
+      .filter((el) => el.type === 'note')
+      .map((el) => el.id);
+  }
+
+  /** Marks these notes as private, or not (hidden ones don't change: they are locked). */
+  setPrivate(ids: string[], on: boolean): boolean {
+    const notes = ids
+      .map((id) => this.scene.get(id))
+      .filter((el): el is NoteElement => el?.type === 'note' && !el.concealed);
+    if (notes.length === 0) return false;
+    this.history.commit(
+      new Map(
+        notes.map((el) => [el.id, on ? { ...el, private: true } : { ...el, private: undefined }]),
+      ),
+    );
     return true;
   }
 
@@ -955,7 +1048,7 @@ export class Engine {
   }
 
   flipSelection(axis: 'horizontal' | 'vertical'): boolean {
-    const elements = this.selectedElements().filter((el) => !el.locked);
+    const elements = this.selectedElements().filter((el) => !isLocked(el));
     if (elements.length === 0) return false;
     this.history.commit(flip(elements, axis));
     return true;
@@ -1038,6 +1131,13 @@ export class Engine {
     const world = screenToWorld(this.camera, local);
     // The menu also reaches locked elements (to be able to unlock them).
     const hit = hitTestElement(this.scene, world, 6 / this.camera.zoom, true);
+    // A hidden private note isn't selected (nothing changes it): its own menu.
+    if (hit && isConcealed(hit)) {
+      this.setSelection([]);
+      this.lastPointer = local;
+      this.contextMenuListener({ x: clientX, y: clientY, onElement: false, hiddenNote: hit.id });
+      return;
+    }
     if (hit && !this.selection.has(hit.id)) this.setSelection([hit.id]);
     if (!hit) this.setSelection([]);
     if (hit && !SELECTION_TOOLS.includes(this.tool)) this.toolRequest('select');
@@ -1218,7 +1318,7 @@ export class Engine {
 
   /** Thumbnail of the whole page (always in the light theme), or null if it is empty. */
   thumbnail(width: number, height: number): string | null {
-    const elements = this.pageElements();
+    const elements = concealPrivate(this.pageElements());
     if (elements.length === 0) return null;
     // In the diary, the double page in small (paper, date and content in place).
     if (this.book) {
@@ -1314,7 +1414,12 @@ export class Engine {
 
   /** Selects, always adding the other members of each group. */
   private setSelection(ids: Iterable<string>) {
-    const next = new Set(ids);
+    // A hidden private note is never selected, not even with its group: nothing changes it.
+    const selectable = (id: string) => {
+      const el = this.scene.get(id);
+      return !el || !isConcealed(el);
+    };
+    const next = new Set([...ids].filter(selectable));
     const groups = new Set<string>();
     for (const id of next) {
       const groupId = this.scene.get(id)?.groupId;
@@ -1322,7 +1427,7 @@ export class Engine {
     }
     if (groups.size > 0) {
       for (const el of this.scene.all()) {
-        if (el.groupId && groups.has(el.groupId)) next.add(el.id);
+        if (el.groupId && groups.has(el.groupId) && !isConcealed(el)) next.add(el.id);
       }
     }
     const same =
@@ -1403,6 +1508,10 @@ export class Engine {
       selectionStyle: selectionStyle(this.selectedElements()),
       selectionGrouped: this.selectedElements().some((el) => el.groupId),
       selectionLocked: this.selection.size > 0 && this.selectedElements().every((el) => el.locked),
+      selectionPrivate: (() => {
+        const notes = this.selectedElements().filter((el) => el.type === 'note');
+        return notes.length === 0 ? null : notes.every((el) => el.private);
+      })(),
       hasLocked: this.scene.all().some((el) => el.locked),
       hasCopiedStyle: this.copiedStyle !== null,
       selectionHasLink: this.selectedElements().some((el) => el.link),
@@ -1448,6 +1557,13 @@ export class Engine {
     // Grab the corner of the sheet to turn the page (with any tool).
     if (e.button === 0 && !this.editing && !this.spaceHeld && this.tool !== 'hand') {
       const world = screenToWorld(this.camera, this.localPoint(e));
+      // A shown private note's open padlock hides it again.
+      const shown = this.privateBadgeUnder(world);
+      if (shown) {
+        e.preventDefault();
+        this.hideListeners.forEach((listener) => listener(shown));
+        return;
+      }
       // A link label leads to its page.
       const link = this.linkUnder(world);
       if (link) {
@@ -1955,3 +2071,7 @@ export class Engine {
     this.cleanups.push(() => target.removeEventListener(type, listener, options));
   }
 }
+
+/** Thumbnails never show a private note's text, even while it can be seen. */
+const concealPrivate = (elements: SceneElement[]) =>
+  elements.map((el) => (el.type === 'note' && el.private ? concealNote(el) : el));

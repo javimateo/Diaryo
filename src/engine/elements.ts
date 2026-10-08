@@ -233,6 +233,43 @@ export interface NoteElement extends BoxElement {
   font: string;
   align: TextAlign;
   valign: VerticalAlign;
+  /**
+   * Private: its text (and link) are encrypted apart and need the diary password to be
+   * seen (docs/privacy.md). Where they can't be read, `concealed` is set, the text is
+   * empty and `box` carries them encrypted, as they are.
+   */
+  private?: boolean;
+  concealed?: boolean;
+  box?: string;
+}
+
+/**
+ * Locked: nothing changes it (it isn't selected, moved, erased or deleted). A private note
+ * whose text is hidden counts as locked too, until the diary password shows it.
+ */
+export const isLocked = (el: SceneElement) =>
+  el.locked || (el.type === 'note' && el.concealed === true);
+
+/** A private note, shown or not: deleting it needs the diary password. */
+export const isPrivateNote = (el: SceneElement): el is NoteElement =>
+  el.type === 'note' && el.private === true;
+
+/** A hidden private note (its text can't be seen here). */
+export const isConcealed = (el: SceneElement): el is NoteElement =>
+  el.type === 'note' && el.concealed === true;
+
+/**
+ * The open padlock in the corner of a private note that is shown (element coordinates):
+ * a click there hides it again.
+ */
+export function privateBadge(el: NoteElement) {
+  const r = Math.min(el.width, el.height) * 0.075;
+  return { x: el.width - r * 1.8, y: el.height - r * 1.8, r };
+}
+
+/** A private note, as it shows where its text can't be seen (thumbnails, locked). */
+export function concealNote(el: NoteElement): NoteElement {
+  return { ...el, text: '', link: null, concealed: true };
 }
 
 export interface ImageElement extends BoxElement {

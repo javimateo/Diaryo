@@ -2,15 +2,22 @@ import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { NoteElement } from '../engine/elements';
 import {
+  countPrivateNotes,
+  DESK_ID,
   DESK_INFO,
   DiaryoDB,
+  dumpDiary,
   listTexts,
   loadPage,
+  releasePrivateNotes,
+  replaceDiary,
   rewriteDiary,
   saveChanges,
   updatePage,
   type PageInfo,
 } from './db';
+import { parseBackup, serializeDiary } from './files';
+import { elementPath, readPath } from './tracking';
 import { LockedError, newSealingKey, rowIsSealed } from './sealing';
 
 const info: PageInfo = { id: 'p1', date: '2026-10-07', order: 1, title: '' };
@@ -199,5 +206,118 @@ describe('the diary encrypted on the device', () => {
     expect((await raw('elements')).some(rowIsSealed)).toBe(false);
     const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id);
     expect((await loadPage(db, 'p1')).elements.sort(byId)).toMatchObject(notes.sort(byId));
+  });
+});
+
+describe('private notes', () => {
+  const secretNote = () => ({ ...note('p', 'clave del banco: 1234'), private: true, link: 'p9' });
+
+  it('keep their text apart, readable only with the private key and when shown', async () => {
+    fresh();
+    const key = newSealingKey();
+    db.sealing.privateKey = key;
+    db.sealing.shown = new Set(['p']);
+    await saveChanges(db, DESK_INFO, {
+      upserts: [secretNote(), note('n', 'a la vista')],
+      deletes: [],
+      assets: [],
+      fonts: [],
+    });
+    expect(await storedText('elements', '1234')).toBe(false);
+    expect(await storedText('elements', 'a la vista')).toBe(true);
+    expect((await loadPage(db, DESK_ID)).elements.find((el) => el.id === 'p')).toMatchObject({
+      text: 'clave del banco: 1234',
+      link: 'p9',
+      private: true,
+    });
+
+    // Hidden: the same note, without its text, and out of search.
+    db.sealing.privateKey = null;
+    const hidden = (await loadPage(db, DESK_ID)).elements.find((el) => el.id === 'p');
+    expect(hidden).toMatchObject({ text: '', link: null, private: true, concealed: true });
+    expect((await listTexts(db)).map((entry) => entry.text)).toEqual(['a la vista']);
+
+    // Moved while hidden: its text stays.
+    await saveChanges(db, DESK_INFO, {
+      upserts: [{ ...hidden!, x: 500 }],
+      deletes: [],
+      assets: [],
+      fonts: [],
+    });
+    db.sealing.privateKey = key;
+    expect((await loadPage(db, DESK_ID)).elements.find((el) => el.id === 'p')).toMatchObject({
+      x: 500,
+      text: 'clave del banco: 1234',
+    });
+    // Not shown, it stays hidden even with the key.
+    db.sealing.shown = new Set();
+    expect((await loadPage(db, DESK_ID)).elements.find((el) => el.id === 'p')).toMatchObject({
+      concealed: true,
+    });
+    // Another key doesn't open it.
+    db.sealing.shown = new Set(['p']);
+    db.sealing.privateKey = newSealingKey();
+    expect((await loadPage(db, DESK_ID)).elements.find((el) => el.id === 'p')).toMatchObject({
+      concealed: true,
+    });
+  });
+
+  it("can't be written shown without the key", async () => {
+    fresh();
+    await expect(
+      saveChanges(db, DESK_INFO, { upserts: [secretNote()], deletes: [], assets: [], fonts: [] }),
+    ).rejects.toBeInstanceOf(LockedError);
+  });
+
+  it('travel and go into backups with their text encrypted, even while shown', async () => {
+    fresh();
+    db.sealing.privateKey = newSealingKey();
+    await saveChanges(db, DESK_INFO, {
+      upserts: [secretNote()],
+      deletes: [],
+      assets: [],
+      fonts: [],
+    });
+    const travelled = await readPath(db, elementPath(DESK_ID, 'p'));
+    expect(JSON.stringify(travelled)).not.toContain('1234');
+    expect(travelled).toMatchObject({ concealed: true, private: true });
+    const backup = serializeDiary(await dumpDiary(db));
+    expect(backup).not.toContain('1234');
+
+    // Opened in another diary with the same key, it reads.
+    const key = db.sealing.privateKey;
+    db.close();
+    await db.delete();
+    fresh();
+    db.sealing.privateKey = key;
+    db.sealing.shown = new Set(['p']);
+    const parsed = parseBackup(backup);
+    if (parsed?.kind !== 'diary') throw new Error('not a diary');
+    await replaceDiary(db, parsed.diary);
+    expect((await loadPage(db, DESK_ID)).elements[0]).toMatchObject({
+      text: 'clave del banco: 1234',
+    });
+  });
+
+  it('stop being private (shown) or go, and the other devices follow', async () => {
+    fresh();
+    db.sealing.privateKey = newSealingKey();
+    db.sealing.shown = new Set(['p', 'q']);
+    await saveChanges(db, DESK_INFO, {
+      upserts: [secretNote(), { ...secretNote(), id: 'q' }],
+      deletes: [],
+      assets: [],
+      fonts: [],
+    });
+    expect(await countPrivateNotes(db)).toBe(2);
+    const key = db.sealing.privateKey;
+    db.sealing.privateKey = null;
+    await expect(releasePrivateNotes(db, 'open')).rejects.toBeInstanceOf(LockedError);
+    db.sealing.privateKey = key;
+    await db.tracked.clear();
+    expect(await releasePrivateNotes(db, 'open')).toBe(2);
+    expect(await storedText('elements', '1234')).toBe(true);
+    expect(await countPrivateNotes(db)).toBe(0);
+    expect(await db.tracked.count()).toBe(2);
   });
 });

@@ -207,6 +207,40 @@ describe('sync', () => {
     expect((await listPages(b.db))[0].title).toBe('Viaje');
   });
 
+  it("a private note travels with its text encrypted, and a device that can't read it keeps it", async () => {
+    const { server, a, b } = setUp();
+    const key = crypto.getRandomValues(new Uint8Array(32));
+    a.db.sealing.privateKey = key;
+    a.db.sealing.shown = new Set(['n']);
+    const note = {
+      ...text('n', 'clave: 1234'),
+      type: 'note',
+      height: 220,
+      variant: 'plain',
+      color: 'yellow',
+      textColor: null,
+      valign: 'top',
+      rotation: 0,
+      opacity: 1,
+      groupId: null,
+      locked: false,
+      private: true,
+    } as unknown as TextElement;
+    await save(a.db, 'p1', [note]);
+    await a.push();
+    expect(JSON.stringify(server.items)).not.toContain('1234');
+
+    // Without the key: hidden; moved there, it keeps its text.
+    await b.pull();
+    const [hidden] = await b.elements('p1');
+    expect(hidden.data).toMatchObject({ concealed: true, text: '' });
+    await save(b.db, 'p1', [{ ...hidden.data, x: 300 } as TextElement]);
+    await b.push();
+    await a.pull();
+    const [moved] = await a.elements('p1');
+    expect(moved.data).toMatchObject({ x: 300, text: 'clave: 1234', private: true });
+  });
+
   it('keeps everything encrypted and opaque on the server', async () => {
     const { server, a } = setUp();
     await save(a.db, 'page-name-here', [text('element-name-here', 'mi secreto')]);

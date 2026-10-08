@@ -5,6 +5,8 @@ import type { PageMeta } from '../diary/pages';
 import { followLink } from './diaryActions';
 import { DesktopBridge } from '../desktop/bridge';
 import { isDesktop, notifyDeskSaved } from '../desktop/tauri';
+import { askToReveal, deletePrivate, startPrivacy } from './privateActions';
+import { hideNotes } from '../cloud/lock';
 import { Updater } from '../desktop/updates';
 import { Engine } from '../engine/engine';
 import { getDB } from '../storage/db';
@@ -48,6 +50,12 @@ export function CanvasView() {
     const unsubscribeCamera = instance.subscribe((camera) => setZoom(camera.zoom));
     const unsubscribeState = instance.subscribeState(setDoc);
     const unsubscribeEditing = instance.subscribeEditing(setEditing);
+    // A hidden private note asks for the diary password (to see or edit it).
+    const unsubscribeReveal = instance.subscribeReveal((id) => askToReveal([id]));
+    // Its open padlock hides a private note that is shown.
+    const unsubscribeHide = instance.subscribeHide((id) => void hideNotes([id]));
+    // Deleting private notes asks for the diary password.
+    const unsubscribeDelete = instance.subscribeDeletePrivate(deletePrivate);
     instance.onToolRequest(setTool);
     instance.onContextMenu(openContextMenu);
     instance.onLinkOpen((pageId) => void followLink(pageId));
@@ -65,6 +73,7 @@ export function CanvasView() {
       onDeskSaved: desktop ? notifyDeskSaved : undefined,
     });
     setDiary(diary);
+    const stopPrivacy = startPrivacy(diary, instance);
     // In the desktop app, as soon as today's page is there it connects with it.
     const bridge = desktop ? new DesktopBridge(instance, diary) : null;
     useUI.getState().setDesktopBridge(bridge);
@@ -95,6 +104,10 @@ export function CanvasView() {
       unsubscribeCamera();
       unsubscribeState();
       unsubscribeEditing();
+      unsubscribeReveal();
+      unsubscribeHide();
+      unsubscribeDelete();
+      stopPrivacy();
       diary.stop();
       setDiary(null);
       instance.destroy();

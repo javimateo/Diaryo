@@ -42,10 +42,22 @@ export interface VaultDialogRequest {
   once?: boolean;
 }
 /**
- * What the dialog of the diary encrypted on the device does: turn it on or off, or (without
- * an account) change its password or make a new recovery code.
+ * What the dialog of the diary password on the device does: set it for the private notes
+ * or the whole diary, lower that (to only the private notes, or nothing), show the
+ * private notes, or (without an account) change the password or make a new code.
  */
-export type LockView = 'enable' | 'disable' | 'change' | 'newCode';
+export type LockView =
+  'private' | 'all' | 'down' | 'off' | 'reveal' | 'delete' | 'change' | 'newCode';
+
+export interface LockDialogRequest {
+  view: LockView;
+  /** The private notes to show (their ids), or all of them. */
+  notes?: readonly string[] | 'all';
+  /** What to do once it is done (marking the selected notes as private). */
+  then?: () => void;
+  /** Opened from the settings, which come back when it closes. */
+  fromSettings?: boolean;
+}
 
 /** With the diary encrypted: saving a copy (encrypted or readable) or opening an encrypted one. */
 export type CopyPrivacy = { kind: 'save' } | { kind: 'open'; backup: SealedBackup };
@@ -69,7 +81,13 @@ export interface Settings {
   /** Desktop app: new versions install by themselves (while the diary is hidden). */
   autoUpdate: boolean;
   syncMode: SyncMode;
+  /** How long a private note stays shown (seconds) before it hides again by itself. */
+  hidePrivate: HidePrivate;
+  /** All the private notes hide when the diary is put away (minimized, or to the tray). */
+  hidePrivateAway: boolean;
 }
+
+export type HidePrivate = 30 | 60 | 300;
 
 const DEFAULT_SETTINGS: Settings = {
   language: DEFAULT_LANGUAGE,
@@ -77,6 +95,8 @@ const DEFAULT_SETTINGS: Settings = {
   turnSpeed: 'normal',
   autoUpdate: true,
   syncMode: 'auto',
+  hidePrivate: 60,
+  hidePrivateAway: true,
 };
 
 export const THEME_KEY = 'diaryo:theme';
@@ -111,6 +131,10 @@ function loadSettings(): Settings {
   if (saved.syncMode === 'manual' || saved.syncMode === 'password') {
     settings.syncMode = saved.syncMode;
   }
+  if (saved.hidePrivate === 30 || saved.hidePrivate === 300) {
+    settings.hidePrivate = saved.hidePrivate;
+  }
+  if (saved.hidePrivateAway === false) settings.hidePrivateAway = false;
   return settings;
 }
 
@@ -194,7 +218,7 @@ interface UIState {
   /** The diary password and the recovery code of the cloud diary. */
   vaultDialog: VaultDialogRequest | null;
   /** Opened from the settings, which come back when it closes. */
-  lockDialog: LockView | null;
+  lockDialog: LockDialogRequest | null;
   copyPrivacy: CopyPrivacy | null;
   /** Map view: all the pages at a glance. */
   mapOpen: boolean;
@@ -232,7 +256,7 @@ interface UIState {
   setPendingCopy: (copy: DiaryDump | null) => void;
   setAccountDialog: (request: AccountDialogRequest | null) => void;
   setVaultDialog: (request: VaultDialogRequest | null) => void;
-  setLockDialog: (view: LockView | null) => void;
+  setLockDialog: (request: LockDialogRequest | null) => void;
   setCopyPrivacy: (copy: CopyPrivacy | null) => void;
   setMapOpen: (open: boolean) => void;
   setPaletteOpen: (open: boolean) => void;
@@ -258,6 +282,7 @@ export const useUI = create<UIState>()((set, get) => ({
     selectionStyle: null,
     selectionGrouped: false,
     selectionLocked: false,
+    selectionPrivate: null,
     hasLocked: false,
     hasCopiedStyle: false,
     selectionHasLink: false,
@@ -351,7 +376,9 @@ export const useUI = create<UIState>()((set, get) => ({
   setLockDialog: (lockDialog) =>
     set((state) => ({
       lockDialog,
-      settingsOpen: lockDialog ? false : state.settingsOpen || state.lockDialog !== null,
+      settingsOpen: lockDialog
+        ? false
+        : state.settingsOpen || Boolean(state.lockDialog?.fromSettings),
     })),
   setCopyPrivacy: (copyPrivacy) => set({ copyPrivacy }),
   setMapOpen: (mapOpen) => {

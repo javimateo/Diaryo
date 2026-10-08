@@ -184,17 +184,71 @@ export const es = {
       exists: 'Ya hay un diario en la nube de esta cuenta: desbloquéalo con su contraseña.',
       changed:
         'La contraseña o la clave de recuperación acaban de cambiar en otro dispositivo: vuelve a intentarlo con la actual.',
+      privateHidden:
+        'Antes muestra tus post-its privados (Ajustes → Privacidad): su texto tiene que pasar a la contraseña del diario de esta cuenta.',
     },
   },
 
   lock: {
     section: 'Privacidad',
     level: 'Qué se cifra en este dispositivo',
-    levels: { off: 'Nada', all: 'Todo el diario' },
+    levels: { off: 'Nada', private: 'Solo lo privado', all: 'Todo el diario' },
     levelHints: {
       off: 'Como hasta ahora: el diario se guarda legible en este dispositivo.',
+      private:
+        'Los post-its marcados como privados se cifran y piden la contraseña del diario para verse.',
       all: 'Todo lo guardado aquí va cifrado, y pide la contraseña del diario al abrirlo.',
     },
+    privateTitle: 'Contraseña para lo privado',
+    privateText:
+      'Los post-its privados se cifran con la contraseña del diario. Si la olvidas, solo la clave de recuperación los abre: nadie más puede.',
+    privateCloudText:
+      'Se usa la contraseña del diario de tu nube, la misma en todas partes. Escríbela para continuar.',
+    privateDone: 'Contraseña puesta: lo privado se cifra en este dispositivo',
+    downTitle: 'Cifrar solo lo privado',
+    downText:
+      'El diario vuelve a guardarse legible en este dispositivo, salvo los post-its privados. Escribe la contraseña del diario para continuar.',
+    down: 'Cifrar solo lo privado',
+    downDone: 'Ya solo se cifra lo privado',
+    offTitle: 'Quitar la contraseña del diario',
+    offText:
+      'Ya no se cifrará nada en este dispositivo. Escribe la contraseña del diario para continuar.',
+    offNotes: (count: number) =>
+      count === 1
+        ? 'Tienes un post-it privado. ¿Qué hacemos con él?'
+        : `Tienes ${count} post-its privados. ¿Qué hacemos con ellos?`,
+    keepNotes: (count: number) =>
+      count === 1 ? 'Dejarlo como un post-it normal' : 'Dejarlos como post-its normales',
+    keepNotesHint: 'Su texto se queda en el diario, sin cifrar.',
+    deleteNotes: (count: number) => (count === 1 ? 'Borrarlo' : 'Borrarlos'),
+    deleteNotesHint: (count: number) =>
+      count === 1
+        ? 'Desaparece de este diario, también en tus otros dispositivos.'
+        : 'Desaparecen de este diario, también en tus otros dispositivos.',
+    off: 'Quitar la contraseña',
+    revealTitle: 'Mostrar lo privado',
+    revealText: 'Escribe la contraseña del diario para ver todos los post-its privados.',
+    revealOneText: 'Escribe la contraseña del diario para ver este post-it.',
+    showThis: 'Mostrar este post-it',
+    deleteTitle: (count: number) =>
+      count === 1 ? 'Borrar un post-it privado' : `Borrar ${count} post-its privados`,
+    deleteText: (count: number) =>
+      count === 1
+        ? 'Es privado: escribe la contraseña del diario para borrarlo.'
+        : 'Son privados: escribe la contraseña del diario para borrarlos.',
+    delete: 'Borrar',
+    hideThis: 'Ocultar este post-it',
+    reveal: 'Mostrar',
+    revealed: 'Lo privado está a la vista',
+    hidden: 'Lo privado vuelve a estar oculto',
+    hidePrivate: 'Volver a ocultar lo privado',
+    hidePrivateOptions: { 30: 'A los 30 s', 60: 'Al minuto', 300: 'A los 5 min' },
+    hidePrivateHint: 'Cada post-it, desde que lo abres. Mientras lo editas, espera.',
+    hidePrivateAway: 'Ocultar todo al esconder el diario',
+    hidePrivateAwayHint: 'Al minimizarlo, cambiar de pestaña o guardarlo en la bandeja.',
+    privateRow: 'Post-its privados',
+    show: 'Mostrar todo',
+    hide: 'Ocultar todo',
     lockNow: 'Bloquear ahora',
     lockNowHint: 'Cierra el diario: hará falta la contraseña para volver a abrirlo.',
     cloudPassword:
@@ -205,15 +259,11 @@ export const es = {
     enableCloudText:
       'Se usa la contraseña del diario de tu nube, la misma en todas partes. Escríbela para continuar.',
     enable: 'Cifrar',
-    disableTitle: 'Quitar el cifrado',
-    disableText:
-      'El diario vuelve a guardarse legible en este dispositivo. Escribe la contraseña del diario para continuar.',
-    disable: 'Quitar el cifrado',
     encrypting: 'Cifrando el diario…',
     decrypting: 'Quitando el cifrado…',
     keepOpen: 'No cierres diaryo hasta que termine.',
     enabled: 'Diario cifrado en este dispositivo',
-    disabled: 'El diario ya no está cifrado en este dispositivo',
+    disabled: 'Ya no se cifra nada en este dispositivo',
     codeText:
       'Si olvidas la contraseña del diario, esta clave es la única forma de volver a abrirlo. Solo se muestra ahora.',
     file: (code: string, date: string) =>
@@ -776,6 +826,10 @@ export const es = {
     flipV: 'Voltear en vertical',
     lock: 'Bloquear',
     lockDiary: 'Bloquear el diario',
+    showPrivate: 'Mostrar todo lo privado',
+    hidePrivate: 'Ocultar todo lo privado',
+    markPrivate: 'Marcar como privado',
+    unmarkPrivate: 'Dejar de ser privado',
     unlock: 'Desbloquear',
     copyPng: 'Copiar como imagen',
     imageCopied: 'Imagen copiada',
@@ -816,6 +870,7 @@ export const es = {
   /** Other words that find each command in the palette. */
   commandKeywords: {
     lockDiary: 'contraseña cerrar privacidad cifrar',
+    private: 'privado post-it contraseña secreto ver',
     newPage: 'hoja añadir crear',
     turn: 'pasar hoja',
     turnBack: 'pasar hoja volver',

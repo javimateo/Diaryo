@@ -1,14 +1,20 @@
-# The diary encrypted on the device
+# The diary password on the device
 
-Optional. Without it, the diary is saved readable on the device (IndexedDB, and the
-desktop's backups), as it always was; the cloud's encryption (see [cloud](cloud.md)) only
-protects what goes up. With it, what is saved on the device is encrypted too, and the
-app asks for the diary password when it opens.
+Optional, in Settings → Privacy, on three levels:
 
-It protects the diary **at rest**: someone with the computer, its disk or a copy of the
-browser's profile can't read it. It doesn't protect a diary that is open (whoever uses
-the app then sees it), the system's memory (swap, hibernation) or what the browser
-itself keeps besides the database.
+- **Nothing**: the diary is saved readable on the device (IndexedDB, and the desktop's
+  backups), as it always was; the cloud's encryption (see [cloud](cloud.md)) only
+  protects what goes up.
+- **Only what is private**: the notes marked as private are encrypted, and each one needs
+  the diary password to be seen or changed, even with the rest of the diary open (see
+  Private notes).
+- **The whole diary**: everything saved on the device is encrypted, and the app asks for
+  the diary password when it opens. Private notes still ask for it again.
+
+The whole diary encrypted protects it **at rest**: someone with the computer, its disk or
+a copy of the browser's profile can't read it. Private notes protect their text from
+whoever uses the app while it is open too. Neither protects the system's memory (swap,
+hibernation) or what the browser itself keeps besides the database.
 
 ## One diary password
 
@@ -28,12 +34,12 @@ password and one code for the whole diary, on every device.
   tried against the cloud's vault). The first time with an account that had a diary of
   its own, unlocking its cloud wraps the device's key with that account's secret: from
   then on, the password here is that account's (the app says so).
-- With the diary encrypted, the cloud's keys aren't kept on disk (`diaryo-keys`): they
-  come from the secret each time the diary is unlocked.
+- With the whole diary encrypted, the cloud's keys aren't kept on disk (`diaryo-keys`):
+  they come from the secret each time the diary is unlocked.
 
 All of it is in `src/cloud/lock.ts` (the actions) and `src/cloud/lockState.ts` (what is
-kept: `diaryo:lock` in the local storage, with the vault, its version, the account and the
-wrapped key; and the secret, only in memory).
+kept: `diaryo:lock` in the local storage, with the level, the vault, its version, the
+account and the wrapped key; and the secret, only in memory).
 
 Losing both the password and the recovery code means losing the diary on this device,
 and the cloud's copy too (it is encrypted with the same secret). The devices where it is
@@ -81,15 +87,69 @@ change for the other devices.
 - **"Lock now"** (Settings → Privacy, and the command palette) saves what is pending and
   starts the app again.
 
+## Private notes
+
+A note marked as private (its context menu, or the command palette) keeps its text and
+its link in a `box`, encrypted with the **private key**: HKDF of the diary secret
+(`diaryo private`), the same on every device of the diary. Its size, place, color and
+style stay as they are, so it shows in its place with a padlock.
+
+- **Each one opens on its own.** Double click (or "Show this note" in its menu) asks for
+  the diary password and shows only that note, also on the Windows desktop's desk (the
+  dialog opens right there, with the diary put away); the others stay hidden, and showing
+  another one asks again. "Show everything private" (the palette, Settings → Privacy)
+  shows them all at once. A note shown has an open padlock in its corner: a click there
+  hides it again.
+- **Hidden, nothing changes it.** It counts as locked (`isLocked` in
+  `src/engine/elements.ts`): it isn't selected (not even with its group), moved, styled,
+  erased, deleted nor joined with arrows, also with select all, the eraser or the lasso.
+  Its own context menu only shows it, or deletes it.
+- **Deleting a private note always asks for the password**, shown or hidden: deleting
+  (or cutting) a selection with one waits for it (`subscribeDeletePrivate` in the
+  engine), the eraser skips them, and so does deleting a page that has them. Once gone,
+  they are hidden again, so the key doesn't stay in memory for them. Copying a shown one
+  copies its text, in the clear.
+- In `src/storage/sealing.ts`, with the rest: a private note is always written with its
+  text in the box (`boxNote`), and read with it only if it is one of the notes shown
+  (`sealing.shown`) and the private key is in memory; otherwise it comes `concealed`
+  (empty text, the box as it is). The key is in memory only while some note is shown.
+- **It travels and is backed up with its text in the box**, even while shown
+  (`privateForTransport`, in `readPath` and `dumpDiary`): the cloud's items and the
+  `.diaryo` files (also readable ones) never carry it in the clear, and any device with
+  the diary password opens it. A device without the password set (it came from the cloud)
+  asks for the account's diary password the first time, and keeps it for them from then
+  on.
+- **Shown and hidden** pass to every window (which notes, and the key, through the
+  `BroadcastChannel`). Each note hides again by itself 30 seconds, a minute or five
+  minutes after it was shown, as the settings say (while it is being edited, it waits);
+  the diary's window and the desk's both count, as the desk's is never hidden and its
+  timers aren't slowed down (`startPrivacyTimers`). All of them hide when the diary is
+  put away, unless the settings say otherwise: minimized, another tab, or on the desktop
+  to the tray (its window is hidden then, not minimized: `diaryo://hidden`). Either way
+  each window
+  keeps the text being written, saves what is pending and loads the page and the desk
+  again, so undo starts again and can't bring a text back (`applyPrivacy` in
+  `lockState.ts`, `startPrivacy` in `src/ui/privateActions.ts`).
+- **Thumbnails and the mini diary** draw them with the padlock even while shown; search
+  only finds the text of the ones shown.
+- **Removing the password** with private notes asks first: keep them as normal notes
+  (their text in the clear) or delete them; the other devices follow.
+- **Another account's password**: the first time with an account that had a diary of its
+  own, its secret is another one, so the private notes' text goes into boxes with the new
+  key (`reboxPrivateNotes`), and the ones shown are hidden. That needs the old secret: if
+  the notes are hidden, unlocking that cloud asks to show them first.
+
 ## Outside the database
 
-- **Desktop backups** (daily, and the ones before replacing the diary) are encrypted
-  too: a `diaryo/sealed` file with the backup sealed with the device's key, plus the vault
+- With the whole diary encrypted, **desktop backups** (daily, and the ones before
+  replacing the diary) are encrypted too: a `diaryo/sealed` file with the backup sealed with the device's key, plus the vault
   and the wrapped key (`serializeSealed` in `src/storage/files.ts`). It opens at once on
   a device with that diary unlocked, and anywhere else with the diary password or the
   recovery code of when it was made.
 - **"Save a copy"** asks: encrypted (the default) or readable.
 - **The desktop mini diary** only shows the cover: today's page isn't written to the
   local storage.
+- Only private notes encrypted: backups and copies are readable, with the private notes'
+  text in their boxes.
 - Signing out and **removing the diary from the device** leaves a blank diary without
   encryption.

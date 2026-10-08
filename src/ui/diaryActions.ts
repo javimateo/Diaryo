@@ -2,6 +2,8 @@ import type { PaperStyle } from '../engine/book';
 import { useUI } from '../store/ui';
 import { pageName } from './LinkDialog';
 import { t } from '../i18n';
+import { getDB, privateNoteIds } from '../storage/db';
+import { askToDelete } from './privateActions';
 
 /** Diary actions shared by the buttons and the shortcuts (with their toasts). */
 
@@ -68,6 +70,16 @@ export async function followLink(pageId: string) {
 }
 
 export async function deletePage(id: string) {
+  const { diary } = useUI.getState();
+  if (!diary) return;
+  // Private notes don't go without the diary password.
+  await diary.flush();
+  const notes = await privateNoteIds(getDB(), id);
+  if (notes.length > 0) askToDelete(notes, () => void removePage(id));
+  else await removePage(id);
+}
+
+async function removePage(id: string) {
   const { diary, showToast } = useUI.getState();
   if (!diary) return;
   const stored = await diary.remove(id);

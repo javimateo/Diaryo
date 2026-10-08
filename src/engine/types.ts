@@ -120,6 +120,8 @@ export interface EngineState {
   selectionGrouped: boolean;
   /** Everything selected is locked. */
   selectionLocked: boolean;
+  /** Whether the selected notes are all private (null: no note is selected). */
+  selectionPrivate: boolean | null;
   /** Something on the page is locked. */
   hasLocked: boolean;
   /** There is a copied style ready to paste. */
@@ -136,6 +138,8 @@ export interface ContextMenuRequest {
   y: number;
   /** It was on an element (already selected) or on an empty spot. */
   onElement: boolean;
+  /** It was on a hidden private note (not selected): its id. */
+  hiddenNote?: string;
 }
 
 /** Text or note open in the editor. */

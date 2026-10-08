@@ -22,7 +22,7 @@ import {
   NOTE_PADDING_RATIO,
   type TextLayout,
 } from './text';
-import type { TextAlign } from './elements';
+import { privateBadge, type TextAlign } from './elements';
 
 export interface RenderContext {
   mode: ThemeMode;
@@ -173,7 +173,8 @@ function drawNote(
   applyElementTransform(ctx, el);
   drawNoteBody(ctx, el, rc.mode, rc.pixelScale);
 
-  if (rc.editingId !== el.id) {
+  if (el.concealed) drawLock(ctx, el, noteInk(el, rc.mode));
+  else if (rc.editingId !== el.id) {
     const layout = noteTextLayout(el);
     ctx.save();
     ctx.translate(layout.x, layout.y);
@@ -188,6 +189,57 @@ function drawNote(
   }
   // Pin, tape or clip go on top of the text.
   drawNoteDecoration(ctx, el, rc.mode, rc.pixelScale);
+  if (el.private && !el.concealed) drawOpenLock(ctx, el, noteInk(el, rc.mode));
+  ctx.restore();
+}
+
+/** A padlock in the middle of a private note whose text can't be seen. */
+function drawLock(ctx: CanvasRenderingContext2D, el: NoteElement, color: string) {
+  const size = Math.min(el.width, el.height) * 0.2;
+  const cx = el.width / 2;
+  const cy = el.height / 2;
+  const body = { w: size, h: size * 0.78 };
+  const top = cy - body.h * 0.2;
+  ctx.save();
+  ctx.globalAlpha *= 0.55;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = size * 0.12;
+  ctx.beginPath();
+  ctx.arc(cx, top, size * 0.3, Math.PI, 0);
+  ctx.lineTo(cx + size * 0.3, top + size * 0.05);
+  ctx.moveTo(cx - size * 0.3, top + size * 0.05);
+  ctx.lineTo(cx - size * 0.3, top);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.roundRect(cx - body.w / 2, top + size * 0.05, body.w, body.h, size * 0.12);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** A private note that is shown: an open padlock in its corner, to hide it again. */
+function drawOpenLock(ctx: CanvasRenderingContext2D, el: NoteElement, color: string) {
+  const { x, y, r } = privateBadge(el);
+  ctx.save();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  const size = r * 1.1;
+  const top = y - size * 0.1;
+  ctx.globalAlpha *= 0.75;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = size * 0.13;
+  ctx.lineCap = 'round';
+  // The shackle, open: only its left side goes down into the body.
+  ctx.beginPath();
+  ctx.moveTo(x - size * 0.3, top);
+  ctx.arc(x, top - size * 0.12, size * 0.3, Math.PI * 0.95, Math.PI * 1.95);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.roundRect(x - size * 0.4, top, size * 0.8, size * 0.6, size * 0.12);
+  ctx.fill();
   ctx.restore();
 }
 

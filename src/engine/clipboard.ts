@@ -192,7 +192,17 @@ function parseNote(v: Raw): NoteElement | null {
     color: v.color,
     textColor: isColor(v.textColor) ? v.textColor : null,
     valign: VALIGNS.includes(v.valign as VerticalAlign) ? (v.valign as VerticalAlign) : 'top',
+    ...privacy(v),
   };
+}
+
+/** A private note keeps its mark, and its encrypted text where it can't be read. */
+function privacy(v: Raw): Partial<NoteElement> {
+  if (v.private !== true) return {};
+  if (v.concealed !== true) return { private: true };
+  return typeof v.box === 'string'
+    ? { private: true, concealed: true, box: v.box, text: '', link: null }
+    : {};
 }
 
 function parseImage(v: Raw, hasAsset: (id: string) => boolean): ImageElement | null {

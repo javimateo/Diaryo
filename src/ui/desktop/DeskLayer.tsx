@@ -5,6 +5,8 @@ import { Engine } from '../../engine/engine';
 import { useUI } from '../../store/ui';
 import { readCanvasTheme } from '../canvasTheme';
 import { TextEditor } from '../TextEditor';
+import { LockDialog } from '../LockDialog';
+import { askToReveal, deletePrivate, startPrivacyTimers } from '../privateActions';
 import { MiniDiary } from './MiniDiary';
 
 /**
@@ -19,6 +21,7 @@ export function DeskLayer() {
   const updateAreas = useCallback(() => controllerRef.current?.sendAreas(), []);
   const engine = useUI((s) => s.engine);
   const theme = useUI((s) => s.theme);
+  const lockDialog = useUI((s) => s.lockDialog);
 
   useEffect(() => {
     document.documentElement.toggleAttribute('data-desk-layer', true);
@@ -26,16 +29,25 @@ export function DeskLayer() {
       { scene: sceneRef.current!, overlay: overlayRef.current! },
       { deskLayer: true },
     );
-    const controller = new DeskLayerController(
-      instance,
-      () => miniRef.current?.getBoundingClientRect() ?? null,
+    const controller = new DeskLayerController(instance, () =>
+      [miniRef.current, document.querySelector('.vault-dialog')]
+        .filter((el): el is Element => el !== null)
+        .map((el) => el.getBoundingClientRect()),
     );
+    // A hidden private note asks for the diary password right here (the diary may be put
+    // away); the ones shown hide again by themselves, as in the diary.
+    const stopReveal = instance.subscribeReveal((id) => askToReveal([id]));
+    const stopDelete = instance.subscribeDeletePrivate(deletePrivate);
+    const stopTimers = startPrivacyTimers(instance);
     controllerRef.current = controller;
     useUI.getState().setEngine(instance);
     // Development only: access from the console for debugging.
     if (import.meta.env.DEV) Object.assign(window, { diaryo: instance });
     void controller.start();
     return () => {
+      stopReveal();
+      stopDelete();
+      stopTimers();
       controller.stop();
       controllerRef.current = null;
       instance.destroy();
@@ -47,12 +59,16 @@ export function DeskLayer() {
     engine?.setTheme(readCanvasTheme(theme));
   }, [engine, theme]);
 
+  // The dialog takes the mouse while it is open.
+  useEffect(updateAreas, [updateAreas, lockDialog]);
+
   return (
     <div className="app">
       <canvas ref={sceneRef} className="canvas" aria-hidden />
       <canvas ref={overlayRef} className="canvas" />
       <TextEditor />
       <MiniDiary ref={miniRef} onChange={updateAreas} desktop={isDesktop()} />
+      <LockDialog />
     </div>
   );
 }

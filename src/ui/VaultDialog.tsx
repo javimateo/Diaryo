@@ -14,6 +14,7 @@ import { WrongSecretError } from '../cloud/crypto';
 import {
   changeVaultPassword,
   hasOwnVault,
+  PrivateHiddenError,
   recover,
   replaceRecoveryCode,
   setUpVault,
@@ -76,6 +77,7 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
       return setError(view === 'recover' ? v.errors.wrongCode : v.errors.wrongPassword);
     }
     if (e instanceof VaultChangedError) return setError(v.errors.changed);
+    if (e instanceof PrivateHiddenError) return setError(v.errors.privateHidden);
     if (e instanceof VaultExistsError) {
       go('unlock');
       return setError(v.errors.exists);
@@ -110,7 +112,7 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
     if (choosing && password !== repeat) return setError(v.errors.mismatch);
     if (view === 'create' && ownVault) {
       void run(async () => {
-        await setUpVault(null);
+        await setUpVault(password);
         finish(v.ready);
       });
     } else if (view === 'create') {
@@ -238,7 +240,7 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
               autoFocus: true,
               autoComplete: 'current-password',
             })}
-          {(view === 'unlock' || view === 'newCode') &&
+          {(view === 'unlock' || view === 'newCode' || (view === 'create' && ownVault)) &&
             field(v.password, password, setPassword, {
               autoFocus: true,
               autoComplete: 'current-password',

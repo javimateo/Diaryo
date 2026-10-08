@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ContextMenuRequest } from '../engine/engine';
 import { useUI } from '../store/ui';
+import { askToReveal, deletePrivate, markPrivate } from './privateActions';
+import { hideNotes } from '../cloud/lock';
 import { copySelection, cutSelection, pasteFromClipboard } from './clipboard';
 import { t } from '../i18n';
 
@@ -70,119 +72,146 @@ function Menu({ request, onClose }: { request: ContextMenuRequest; onClose: () =
   if (!engine) return null;
 
   const { contextMenu: m, commands: c } = t();
-  const entries: Entry[] = request.onElement
+  // A hidden private note: nothing changes it without the diary password.
+  const hidden = request.hiddenNote;
+  const entries: Entry[] = hidden
     ? [
-        { label: m.cut, shortcut: 'Ctrl+X', run: () => void cutSelection() },
-        { label: m.copy, shortcut: 'Ctrl+C', run: () => void copySelection() },
-        { label: m.paste, shortcut: 'Ctrl+V', run: () => void pasteFromClipboard() },
-        'divider',
-        {
-          label: m.copyPng,
-          shortcut: 'Shift+Alt+C',
-          run: async () => {
-            const ok = await engine.copySelectionAsPng();
-            showToast(ok ? c.imageCopied : c.imageCopyFailed);
-          },
-        },
-        'divider',
-        { label: m.copyStyle, shortcut: 'Ctrl+Alt+C', run: () => engine.copyStyle() },
-        {
-          label: m.pasteStyle,
-          shortcut: 'Ctrl+Alt+V',
-          disabled: !doc.hasCopiedStyle,
-          run: () => engine.pasteStyle(),
-        },
-        'divider',
-        {
-          label: c.group,
-          shortcut: 'Ctrl+G',
-          disabled: doc.selectionCount < 2,
-          run: () => engine.groupSelection(),
-        },
-        {
-          label: c.ungroup,
-          shortcut: 'Ctrl+Shift+G',
-          disabled: !doc.selectionGrouped,
-          run: () => engine.ungroupSelection(),
-        },
-        'divider',
-        {
-          label: c.front,
-          shortcut: 'Ctrl+Shift+↑',
-          run: () => engine.arrangeSelection('front'),
-        },
-        {
-          label: m.forward,
-          shortcut: 'Ctrl+↑',
-          run: () => engine.arrangeSelection('forward'),
-        },
-        {
-          label: m.backward,
-          shortcut: 'Ctrl+↓',
-          run: () => engine.arrangeSelection('backward'),
-        },
-        {
-          label: c.back,
-          shortcut: 'Ctrl+Shift+↓',
-          run: () => engine.arrangeSelection('back'),
-        },
-        'divider',
-        {
-          label: c.flipH,
-          shortcut: 'Shift+H',
-          run: () => engine.flipSelection('horizontal'),
-        },
-        {
-          label: c.flipV,
-          shortcut: 'Shift+V',
-          run: () => engine.flipSelection('vertical'),
-        },
-        'divider',
-        {
-          label: doc.selectionHasLink ? c.changeLink : c.addLink,
-          run: () => useUI.getState().setLinkDialogOpen(true),
-        },
-        ...(doc.selectionHasLink
-          ? [{ label: c.unlink, run: () => engine.setSelectionLink(null) }]
-          : []),
-        'divider',
-        { label: c.duplicate, shortcut: 'Ctrl+D', run: () => engine.duplicateSelection() },
-        {
-          label: doc.selectionLocked ? c.unlock : c.lock,
-          shortcut: 'Ctrl+Shift+L',
-          run: () => engine.toggleLockSelection(),
-        },
+        { label: t().lock.showThis, run: () => askToReveal([hidden]) },
+        { label: c.showPrivate, run: () => askToReveal('all') },
         'divider',
         {
           label: m.delete,
-          shortcut: t().keys.delete,
           danger: true,
-          disabled: doc.selectionLocked,
-          run: () => engine.deleteSelection(),
+          run: () => deletePrivate([hidden]),
         },
       ]
-    : [
-        { label: m.paste, shortcut: 'Ctrl+V', run: () => void pasteFromClipboard() },
-        'divider',
-        {
-          label: c.selectAll,
-          shortcut: 'Ctrl+A',
-          disabled: doc.isEmpty,
-          run: () => {
-            engine.selectAll();
-            useUI.getState().setTool('select');
+    : request.onElement
+      ? [
+          { label: m.cut, shortcut: 'Ctrl+X', run: () => void cutSelection() },
+          { label: m.copy, shortcut: 'Ctrl+C', run: () => void copySelection() },
+          { label: m.paste, shortcut: 'Ctrl+V', run: () => void pasteFromClipboard() },
+          'divider',
+          {
+            label: m.copyPng,
+            shortcut: 'Shift+Alt+C',
+            run: async () => {
+              const ok = await engine.copySelectionAsPng();
+              showToast(ok ? c.imageCopied : c.imageCopyFailed);
+            },
           },
-        },
-        { label: c.fit, shortcut: 'Shift+1', run: () => engine.zoomToFit() },
-        {
-          label: c.unlockAll,
-          disabled: !doc.hasLocked,
-          run: () => {
-            engine.unlockAll();
-            useUI.getState().setTool('select');
+          'divider',
+          { label: m.copyStyle, shortcut: 'Ctrl+Alt+C', run: () => engine.copyStyle() },
+          {
+            label: m.pasteStyle,
+            shortcut: 'Ctrl+Alt+V',
+            disabled: !doc.hasCopiedStyle,
+            run: () => engine.pasteStyle(),
           },
-        },
-      ];
+          'divider',
+          {
+            label: c.group,
+            shortcut: 'Ctrl+G',
+            disabled: doc.selectionCount < 2,
+            run: () => engine.groupSelection(),
+          },
+          {
+            label: c.ungroup,
+            shortcut: 'Ctrl+Shift+G',
+            disabled: !doc.selectionGrouped,
+            run: () => engine.ungroupSelection(),
+          },
+          'divider',
+          {
+            label: c.front,
+            shortcut: 'Ctrl+Shift+↑',
+            run: () => engine.arrangeSelection('front'),
+          },
+          {
+            label: m.forward,
+            shortcut: 'Ctrl+↑',
+            run: () => engine.arrangeSelection('forward'),
+          },
+          {
+            label: m.backward,
+            shortcut: 'Ctrl+↓',
+            run: () => engine.arrangeSelection('backward'),
+          },
+          {
+            label: c.back,
+            shortcut: 'Ctrl+Shift+↓',
+            run: () => engine.arrangeSelection('back'),
+          },
+          'divider',
+          {
+            label: c.flipH,
+            shortcut: 'Shift+H',
+            run: () => engine.flipSelection('horizontal'),
+          },
+          {
+            label: c.flipV,
+            shortcut: 'Shift+V',
+            run: () => engine.flipSelection('vertical'),
+          },
+          'divider',
+          {
+            label: doc.selectionHasLink ? c.changeLink : c.addLink,
+            run: () => useUI.getState().setLinkDialogOpen(true),
+          },
+          ...(doc.selectionHasLink
+            ? [{ label: c.unlink, run: () => engine.setSelectionLink(null) }]
+            : []),
+          'divider',
+          { label: c.duplicate, shortcut: 'Ctrl+D', run: () => engine.duplicateSelection() },
+          {
+            label: doc.selectionLocked ? c.unlock : c.lock,
+            shortcut: 'Ctrl+Shift+L',
+            run: () => engine.toggleLockSelection(),
+          },
+          ...(doc.selectionPrivate === null
+            ? []
+            : doc.selectionPrivate
+              ? [
+                  {
+                    label: t().lock.hideThis,
+                    run: () => void hideNotes(engine.selectedNotes()),
+                  },
+                  {
+                    label: c.unmarkPrivate,
+                    run: () => engine.setPrivate(engine.selectedNotes(), false),
+                  },
+                ]
+              : [{ label: c.markPrivate, run: () => void markPrivate(engine.selectedNotes()) }]),
+          'divider',
+          {
+            label: m.delete,
+            shortcut: t().keys.delete,
+            danger: true,
+            disabled: doc.selectionLocked,
+            run: () => engine.deleteSelection(),
+          },
+        ]
+      : [
+          { label: m.paste, shortcut: 'Ctrl+V', run: () => void pasteFromClipboard() },
+          'divider',
+          {
+            label: c.selectAll,
+            shortcut: 'Ctrl+A',
+            disabled: doc.isEmpty,
+            run: () => {
+              engine.selectAll();
+              useUI.getState().setTool('select');
+            },
+          },
+          { label: c.fit, shortcut: 'Shift+1', run: () => engine.zoomToFit() },
+          {
+            label: c.unlockAll,
+            disabled: !doc.hasLocked,
+            run: () => {
+              engine.unlockAll();
+              useUI.getState().setTool('select');
+            },
+          },
+        ];
 
   return createPortal(
     <div

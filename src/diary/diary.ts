@@ -466,6 +466,15 @@ export class Diary {
     return this.run(() => this.showChanges(applied));
   }
 
+  /**
+   * Loads the open page and the desk again, as saved (the private notes were shown or
+   * hidden). What was pending must be saved first; undo starts again.
+   */
+  reloadShown(): Promise<void> {
+    const pages = new Set([DESK_ID, ...(this.current ? [this.current.id] : [])]);
+    return this.run(() => this.showChanges({ pages, assets: false }));
+  }
+
   private async showChanges(applied: AppliedChanges) {
     if (applied.pages.size === 0 && !applied.assets) return;
     if (applied.pages.has(DESK_ID) || applied.assets) {

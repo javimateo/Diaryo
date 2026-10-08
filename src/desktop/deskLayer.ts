@@ -1,6 +1,8 @@
 import { bookBoundsWith } from '../engine/book';
 import { isEditableTarget } from '../engine/dom';
 import type { Engine, ScreenRect } from '../engine/engine';
+import { hideNotes } from '../cloud/lock';
+import { handlePrivacy } from '../cloud/lockState';
 import { Autosave, type SaveStatus } from '../storage/autosave';
 import { DESK_ID, DESK_INFO, getDB, listPages, loadPage } from '../storage/db';
 import { loadThemePreference, SETTINGS_KEY, THEME_KEY, useUI } from '../store/ui';
@@ -27,8 +29,11 @@ export class DeskLayerController {
 
   constructor(
     private readonly engine: Engine,
-    /** What is on top of the canvas and also takes the mouse (the mini diary). */
-    private readonly extraArea: () => DOMRect | null,
+    /**
+     * What is on top of the canvas and also takes the mouse (the mini diary, the dialog
+     * that asks for the diary password).
+     */
+    private readonly extraAreas: () => DOMRect[],
   ) {
     this.autosave = new Autosave(this.db, engine, () => DESK_INFO, this.onStatus, false);
   }
@@ -45,6 +50,18 @@ export class DeskLayerController {
       }),
     );
     this.listenWindow();
+    // The private notes shown or hidden (from the diary's window): the desk loads again.
+    handlePrivacy(async (apply) => {
+      this.engine.finishEditing(false);
+      await this.autosave.flush();
+      apply();
+      await this.reload();
+    });
+    this.cleanups.push(
+      () => handlePrivacy(null),
+      // Its open padlock hides a private note shown here too.
+      engine.subscribeHide((id) => void hideNotes([id])),
+    );
 
     await this.frameBook();
     await this.autosave.start();
@@ -74,8 +91,9 @@ export class DeskLayerController {
     this.frame = requestAnimationFrame(() => {
       this.frame = 0;
       const areas: ScreenRect[] = this.engine.hitAreas();
-      const extra = this.extraArea();
-      if (extra) areas.push({ x: extra.x, y: extra.y, width: extra.width, height: extra.height });
+      for (const extra of this.extraAreas()) {
+        areas.push({ x: extra.x, y: extra.y, width: extra.width, height: extra.height });
+      }
       const key = JSON.stringify(areas);
       if (key === this.sentAreas) return;
       this.sentAreas = key;

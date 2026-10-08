@@ -343,3 +343,22 @@ export async function unwrapDeviceKey(secret: Uint8Array<ArrayBuffer>, wrapped: 
     throw new WrongSecretError();
   });
 }
+
+/**
+ * The private notes' key (see storage/sealing.ts), from the diary secret: the same on
+ * every device of the diary. Raw bytes: the cipher there is synchronous.
+ */
+export async function privateKeyOf(secret: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
+  const base = await subtle().importKey('raw', secret, 'HKDF', false, ['deriveBits']);
+  const bits = await subtle().deriveBits(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new Uint8Array(0),
+      info: encoder.encode('diaryo private'),
+    },
+    base,
+    256,
+  );
+  return new Uint8Array(bits);
+}

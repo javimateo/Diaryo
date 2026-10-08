@@ -4,7 +4,7 @@ import { parseElement } from '../engine/clipboard';
 import type { PaperStyle } from '../engine/book';
 import type { SceneElement } from '../engine/elements';
 import { dayKey } from '../lib/dates';
-import { sealingMiddleware, type Sealing } from './sealing';
+import { LockedError, privateForTransport, sealingMiddleware, type Sealing } from './sealing';
 import {
   assetPath,
   elementPath,
@@ -347,7 +347,8 @@ export async function dumpDiary(db: DiaryoDB): Promise<DiaryDump> {
     const byPage = new Map<string, ElementRow[]>();
     for (const row of elements) {
       const list = byPage.get(row.pageId) ?? [];
-      list.push(row);
+      // In a backup, a private note's text stays encrypted (even in a readable one).
+      list.push({ ...row, data: privateForTransport(row.data, db.sealing) as SceneElement });
       byPage.set(row.pageId, list);
     }
     const assetIds = [
@@ -494,6 +495,66 @@ export async function listTexts(db: DiaryoDB): Promise<TextEntry[]> {
     entries.push({ pageId: row.pageId, elementId: row.id, type: row.data.type, text });
   });
   return entries;
+}
+
+const isPrivateRow = (row: ElementRow) => row.data?.type === 'note' && row.data.private === true;
+
+/** How many private notes the diary has (shown or not). */
+export const countPrivateNotes = (db: DiaryoDB) => db.elements.filter(isPrivateRow).count();
+
+/** The private notes' ids: all of them, or a page's (hidden or not). */
+export async function privateNoteIds(db: DiaryoDB, pageId?: string): Promise<string[]> {
+  const rows = pageId
+    ? db.elements.where('pageId').equals(pageId).filter(isPrivateRow)
+    : db.elements.filter(isPrivateRow);
+  return (await rows.toArray()).map((row) => row.id);
+}
+
+/**
+ * The private notes stop being private (`open`: they need to be shown, their text goes
+ * in the clear) or are deleted. The other devices follow. Returns how many.
+ */
+export async function releasePrivateNotes(db: DiaryoDB, how: 'open' | 'delete') {
+  return db.transaction('rw', [db.elements, db.tracked], async () => {
+    const rows = await db.elements.filter(isPrivateRow).toArray();
+    const keys = rows.map((row) => [row.pageId, row.id] as [string, string]);
+    if (how === 'delete') await db.elements.bulkDelete(keys);
+    else {
+      if (rows.some((row) => row.data.type === 'note' && row.data.concealed)) {
+        throw new LockedError();
+      }
+      await db.elements.bulkPut(
+        rows.map((row) => ({ ...row, data: { ...row.data, private: undefined } })),
+      );
+    }
+    await touch(
+      db,
+      rows.map((row) => elementPath(row.pageId, row.id)),
+    );
+    return rows.length;
+  });
+}
+
+/**
+ * The private notes' text goes from one key to another (the diary's password became
+ * another diary's, see cloud/vault.ts). The other devices follow.
+ */
+export async function reboxPrivateNotes(db: DiaryoDB, from: Uint8Array, to: Uint8Array) {
+  const before = db.sealing.privateKey;
+  try {
+    db.sealing.privateKey = from;
+    const rows = await db.elements.filter(isPrivateRow).toArray();
+    db.sealing.privateKey = to;
+    await db.transaction('rw', [db.elements, db.tracked], async () => {
+      await db.elements.bulkPut(rows);
+      await touch(
+        db,
+        rows.map((row) => elementPath(row.pageId, row.id)),
+      );
+    });
+  } finally {
+    db.sealing.privateKey = before;
+  }
 }
 
 const REWRITE_BATCH = 100;

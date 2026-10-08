@@ -8,7 +8,7 @@ import type { DesktopInfo, DesktopMode } from './settings';
 import { call, listen, onDeskChangedElsewhere } from './tauri';
 import { t } from '../i18n';
 import { sealCopy } from '../cloud/lock';
-import { readLock, useLock } from '../cloud/lockState';
+import { sealedHere, useLock } from '../cloud/lockState';
 
 /** How often the diary is backed up if there were changes (besides when hiding it or quitting). */
 const BACKUP_EVERY = 30 * 60 * 1000;
@@ -195,7 +195,7 @@ export class DesktopBridge {
         const cover = useUI.getState().bookStyle.cover;
         // With the diary encrypted here, today's page isn't left readable on disk: only
         // its cover.
-        if (readLock()) {
+        if (sealedHere()) {
           this.todayShown = todayKey();
           writeToday({ day: this.todayShown, image: '', pending: 0, cover });
           return;

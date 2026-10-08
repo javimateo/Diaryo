@@ -48,3 +48,44 @@
   background: var(--accent);
   transition: width 200ms var(--ease);
 }
+
+/* Removing the password with private notes: keep them as normal notes or delete them. */
+.lock-release {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+.lock-release legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.lock-release .open-copy-option {
+  width: 100%;
+  margin: 0;
+}
+
+.lock-release input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lock-release .open-copy-option:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* On the Windows desktop, the dialog floats alone: the clicks around it reach the desktop. */
+:root[data-desk-layer] .dialog-backdrop {
+  background: transparent;
+  pointer-events: none;
+}
+
+:root[data-desk-layer] .dialog {
+  pointer-events: auto;
+}

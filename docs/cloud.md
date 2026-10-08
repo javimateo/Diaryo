@@ -64,16 +64,17 @@ keeps the vault and the device's keys.
   (`diaryo-keys`), as non-extractable `CryptoKey`s: the app can use them, not read
   them (their bytes are still on disk). The desktop app does the same in its webview.
   Signing out forgets them. When the app starts, the kept keys are checked against the
-  vault. With the diary encrypted on the device ([privacy](privacy.md)), they aren't
-  kept: they come from the same diary password each time it is unlocked.
+  vault. With the whole diary encrypted on the device ([privacy](privacy.md)), they
+  aren't kept: they come from the same diary password each time it is unlocked.
 
 Losing both the password and the recovery code means losing the cloud copy: the local
 diaries and `.diaryo` files stay readable on the devices that have them, unless they are
 encrypted there too (with the same password, see [privacy](privacy.md)).
 
-The diary encrypted on a device uses this same password and recovery code: its vault is
-this one (a copy kept on the device), or, without an account, one of the device's own
-that goes up as it is when the cloud is set up.
+The diary password on a device (for its private notes, or the whole diary encrypted
+there) is this same password and recovery code: its vault is this one (a copy kept on the
+device), or, without an account, one of the device's own that goes up as it is when the
+cloud is set up.
 
 **Later**: unlocking with the device's biometrics (Windows Hello, Touch ID, the phone's
 fingerprint) instead of typing the password on each new device, through WebAuthn's PRF
@@ -92,6 +93,10 @@ One **item** per thing that can change on its own:
 The keys are deterministic (every device computes the same one) and opaque (the server
 can't tell which page anything belongs to, nor how pages relate). The encrypted content
 carries its path, so a device knows what an item is.
+
+A **private note**'s text and link go encrypted apart inside its element, with a key that
+only the diary password gives ([privacy](privacy.md)): a device where they aren't shown
+gets the note without them, and keeps them as they came.
 
 **Not synced**: each page's view (zoom and position) and its thumbnail. The view is each
 device's own; thumbnails are drawn again on each device (a page that changed there gets
