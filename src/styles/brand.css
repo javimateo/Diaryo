@@ -77,6 +77,66 @@
   position: relative;
 }
 
+/* Search is the most used action: it says so, with its shortcut. */
+.search-btn {
+  display: inline-flex;
+  gap: 8px;
+  width: auto;
+  padding: 0 9px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.search-btn kbd {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.file-menu .icon-btn[data-active] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.menu-heading {
+  margin: 6px 10px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.menu-choice {
+  padding: 2px 4px 4px;
+}
+
+.menu-choice .segmented-group .text-option {
+  flex: 1 1 auto;
+  padding: 0 6px;
+  font-size: 12.5px;
+}
+
+/* Between the phone layout and ~900 px the brand would reach the tools: only icons. */
+@media (max-width: 900px) {
+  .search-label,
+  .save-status-text {
+    display: none;
+  }
+
+  .search-btn {
+    width: 36px;
+    padding: 0;
+  }
+}
+
+/* Narrower still, the brand is only its mark. */
+@media (max-width: 760px) {
+  .brand-name {
+    display: none;
+  }
+}
+
 .dropdown {
   position: absolute;
   top: calc(100% + 10px);

@@ -33,7 +33,6 @@ export const es = {
   },
 
   account: {
-    section: 'Cuenta y nube',
     intro:
       'Opcional. Sincroniza tu diario entre el ordenador, la web y el móvil. Se cifra en tu dispositivo: nadie más puede leerlo. Sin cuenta, todo sigue igual.',
     google: 'Continuar con Google',
@@ -190,7 +189,6 @@ export const es = {
   },
 
   lock: {
-    section: 'Privacidad',
     level: 'Qué se cifra en este dispositivo',
     levels: { off: 'Nada', private: 'Solo lo privado', all: 'Todo el diario' },
     levelHints: {
@@ -247,6 +245,7 @@ export const es = {
     hidePrivateAway: 'Ocultar todo al esconder el diario',
     hidePrivateAwayHint: 'Al minimizarlo, cambiar de pestaña o guardarlo en la bandeja.',
     privateRow: 'Post-its privados',
+    privateAll: 'Todos a la vez',
     show: 'Mostrar todo',
     hide: 'Ocultar todo',
     autoLock: 'Bloquear solo',
@@ -257,6 +256,7 @@ export const es = {
       desktop ? 'Al minimizarlo o mandarlo a la bandeja.' : 'Al cambiar de pestaña o minimizarlo.',
     lockNow: 'Bloquear ahora',
     lockNowHint: 'Cierra el diario: hará falta la contraseña para volver a abrirlo.',
+    lockGroup: 'Bloqueo',
     cloudPassword:
       'Es la contraseña del diario de tu nube: se cambia en «Cuenta y nube», y cambia en los dos sitios.',
     enableTitle: 'Cifrar el diario en este dispositivo',
@@ -462,10 +462,11 @@ export const es = {
 
   topBar: {
     search: 'Buscar y comandos',
-    theme: (dark: boolean) => `Tema ${dark ? 'claro' : 'oscuro'}`,
     settings: 'Ajustes',
     menu: 'Menú',
-    menuTip: 'Imágenes, copias y exportar',
+    menuTip: 'Imágenes, copias, tema y atajos',
+    searchLabel: 'Buscar',
+    copies: 'Copias',
     savedWhere: (desktop: boolean) =>
       `Todo se guarda solo ${desktop ? 'en esta app' : 'en este navegador'}.`,
     saveCopy: 'Guardar una copia del diario',
@@ -476,23 +477,30 @@ export const es = {
 
   settings: {
     title: 'Ajustes',
-    appearance: 'Apariencia',
+    sections: {
+      general: 'General',
+      look: 'Aspecto del diario',
+      desktop: 'Escritorio',
+      privacy: 'Privacidad',
+      account: 'Cuenta y nube',
+      data: 'Copias y datos',
+      help: 'Ayuda',
+    },
+    back: 'Volver a los ajustes',
+    onWindows: 'En Windows',
+    more: 'Más opciones',
     language: 'Idioma',
     theme: 'Tema',
     themes: { light: 'Claro', dark: 'Oscuro', system: 'Como el sistema' },
-    bookLook: 'Aspecto del diario',
-    diary: 'Diario',
     weekStart: 'La semana empieza en',
     monday: 'Lunes',
     sunday: 'Domingo',
     turnPage: 'Pasar página',
     turnPageHint: 'Con los botones, el teclado o al ir a otro día.',
     turnSpeeds: { normal: 'Con animación', fast: 'Rápido', off: 'Sin animación' },
-    help: 'Ayuda',
     shortcuts: 'Atajos de teclado',
     shortcutsHint: 'También con ? en cualquier momento.',
     showShortcuts: 'Ver atajos',
-    storage: 'Guardado',
     savedWhere: (desktop: boolean, size: string | null) =>
       `Todo se guarda solo ${desktop ? 'en esta app' : 'en este navegador'}` +
       (size ? ` y ahora ocupa ${size}.` : '.'),
@@ -505,6 +513,14 @@ export const es = {
     backup: 'Copia de seguridad',
     backupHint: 'Un archivo con todo el diario, para guardarlo aparte.',
     saveCopy: 'Guardar una copia',
+    openCopy: 'Abrir una copia',
+    openCopyHint: 'Reemplazar tu diario por la copia, o combinarlos.',
+    open: 'Abrir',
+    about: 'Acerca de diaryo',
+    website: 'La web de diaryo',
+    websiteUrl: 'https://diaryo.javiermateo.dev/',
+    source: 'El código, en GitHub',
+    sourceUrl: 'https://github.com/javimateo/Diaryo',
   },
 
   /** Names of keys and gestures (in the help and in shortcuts). */
@@ -603,7 +619,6 @@ export const es = {
   },
 
   desktop: {
-    title: 'Escritorio',
     floatingDiary: 'Diario flotante',
     floatingDiaryHint: 'Aparece sobre el escritorio desde cualquier sitio. Esc lo esconde.',
     shortcutTaken: 'Otra app ya usa este atajo: elige otro.',
@@ -889,6 +904,16 @@ export const es = {
 
   /** Other words that find each command in the palette. */
   commandKeywords: {
+    /** Each page of the settings. */
+    settingsSections: {
+      general: 'idioma tema semana pasar página arrancar actualizar',
+      look: 'hoja papel tapas encuadernación mesa portada',
+      desktop: 'diario flotante atajo mesa escritorio windows',
+      privacy: 'contraseña cifrar bloquear clave recuperación privado',
+      account: 'cuenta nube sesión sincronizar email espacio',
+      data: 'copia seguridad backup guardar abrir espacio navegador',
+      help: 'atajos teclas web código privacidad condiciones',
+    },
     lockDiary: 'contraseña cerrar privacidad cifrar',
     private: 'privado post-it contraseña secreto ver',
     newPage: 'hoja añadir crear',

@@ -1,37 +1,183 @@
 /* Settings */
 
 .settings-dialog {
-  width: min(560px, 100%);
-  max-height: min(86vh, 760px);
+  width: min(900px, 100%);
+  height: min(86vh, 660px);
+  overflow: hidden;
 }
 
-.settings-body {
-  padding: 0 22px 22px;
-  overflow-y: auto;
-}
-
-.settings-section {
-  padding: 10px 0 14px;
+.settings-dialog .dialog-header {
+  gap: 4px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--surface-border);
 }
 
-.settings-section:last-child {
-  border-bottom: 0;
+.settings-dialog h2 {
+  flex: 1;
 }
 
-.settings-section > h3 {
-  margin: 6px 0 8px;
-  font-size: 11px;
+/* The back arrow and the page's name in the header are only for phones (below). */
+.settings-back,
+.settings-title-page {
+  display: none;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 224px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 10px;
+  overflow-y: auto;
+  border-right: 1px solid var(--surface-border);
+  background: color-mix(in srgb, var(--canvas-bg) 30%, var(--surface));
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-nav-item:hover {
+  background: var(--hover);
+}
+
+.settings-nav-item[aria-current='page'] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.settings-nav-item span {
+  flex: 1;
+}
+
+.settings-nav-more {
+  display: none;
+  color: var(--text-muted);
+}
+
+.settings-body {
+  padding: 20px 30px 26px;
+  overflow-y: auto;
+}
+
+/* The page's name, in Lora like the brand. */
+.settings-page-title {
+  margin: 0 0 10px;
+  font-family: 'Lora Variable', Georgia, serif;
+  font-size: 23px;
   font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* A group of rows inside a page, with its small heading. */
+.settings-group {
+  margin-top: 14px;
+}
+
+.settings-group > h4 {
+  margin: 6px 0 4px;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
-/* Inside the settings, the diary look doesn't get its own divider. */
-.settings-section .book-style {
+/* What is rarely needed, folded at the end of a page. */
+.settings-more {
+  margin-top: 14px;
+}
+
+.settings-more > summary {
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.settings-body .book-style {
   padding: 0;
   border-bottom: 0;
+}
+
+.settings-about {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+/* A phone: the list of pages, or one page with a back arrow. */
+@media (max-width: 640px) {
+  .settings-dialog {
+    height: 100%;
+    max-height: none;
+  }
+
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-nav {
+    padding: 4px 0;
+    border-right: 0;
+    background: none;
+  }
+
+  .settings-nav-item {
+    min-height: 54px;
+    padding: 0 18px;
+    border-radius: 0;
+    font-size: 15px;
+  }
+
+  .settings-nav-item[aria-current='page'] {
+    background: none;
+    color: var(--text);
+    font-weight: inherit;
+  }
+
+  .settings-nav-item > svg:first-child {
+    color: var(--accent-text);
+  }
+
+  .settings-nav-more {
+    display: block;
+  }
+
+  .settings-body {
+    padding: 8px 18px 22px;
+  }
+
+  .settings-dialog[data-view='list'] .settings-body,
+  .settings-dialog[data-view='page'] .settings-nav,
+  .settings-dialog[data-view='page'] .settings-title-list,
+  .settings-dialog[data-view='page'] .settings-page-title {
+    display: none;
+  }
+
+  .settings-dialog[data-view='page'] .settings-back,
+  .settings-dialog[data-view='page'] .settings-title-page {
+    display: flex;
+  }
 }
 
 .settings-row {

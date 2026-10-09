@@ -25,7 +25,6 @@ export const en: Messages = {
   },
 
   account: {
-    section: 'Account and cloud',
     intro:
       "Optional. Syncs your diary between your computer, the web and your phone. It's encrypted on your device: nobody else can read it. Without an account, nothing changes.",
     google: 'Continue with Google',
@@ -180,7 +179,6 @@ export const en: Messages = {
   },
 
   lock: {
-    section: 'Privacy',
     level: 'What is encrypted on this device',
     levels: { off: 'Nothing', private: 'Only what is private', all: 'The whole diary' },
     levelHints: {
@@ -249,6 +247,8 @@ export const en: Messages = {
         : 'When the tab changes or it is minimized.',
     lockNow: 'Lock now',
     lockNowHint: 'Closes the diary: the password is needed to open it again.',
+    lockGroup: 'Locking',
+    privateAll: 'All at once',
     cloudPassword:
       "It's your cloud diary's password: change it in “Account and cloud”, and it changes in both places.",
     enableTitle: 'Encrypt the diary on this device',
@@ -449,10 +449,11 @@ export const en: Messages = {
 
   topBar: {
     search: 'Search and commands',
-    theme: (dark) => `${dark ? 'Light' : 'Dark'} theme`,
     settings: 'Settings',
     menu: 'Menu',
-    menuTip: 'Images, backups and export',
+    menuTip: 'Images, backups, theme and shortcuts',
+    searchLabel: 'Search',
+    copies: 'Backups',
     savedWhere: (desktop) =>
       `Everything is saved automatically ${desktop ? 'in this app' : 'in this browser'}.`,
     saveCopy: 'Save a copy of the diary',
@@ -463,23 +464,30 @@ export const en: Messages = {
 
   settings: {
     title: 'Settings',
-    appearance: 'Appearance',
+    sections: {
+      general: 'General',
+      look: 'Diary look',
+      desktop: 'Desktop',
+      privacy: 'Privacy',
+      account: 'Account and cloud',
+      data: 'Backups and data',
+      help: 'Help',
+    },
+    back: 'Back to the settings',
+    onWindows: 'On Windows',
+    more: 'More options',
     language: 'Language',
     theme: 'Theme',
     themes: { light: 'Light', dark: 'Dark', system: 'Same as the system' },
-    bookLook: 'Diary look',
-    diary: 'Diary',
     weekStart: 'Week starts on',
     monday: 'Monday',
     sunday: 'Sunday',
     turnPage: 'Page turning',
     turnPageHint: 'With the buttons, the keyboard or when going to another day.',
     turnSpeeds: { normal: 'Animated', fast: 'Fast', off: 'No animation' },
-    help: 'Help',
     shortcuts: 'Keyboard shortcuts',
     shortcutsHint: 'Also with ? at any time.',
     showShortcuts: 'See shortcuts',
-    storage: 'Storage',
     savedWhere: (desktop, size) =>
       `Everything is saved automatically ${desktop ? 'in this app' : 'in this browser'}` +
       (size ? ` and it now takes ${size}.` : '.'),
@@ -492,6 +500,14 @@ export const en: Messages = {
     backup: 'Backup',
     backupHint: 'A file with the whole diary, to keep somewhere else.',
     saveCopy: 'Save a copy',
+    openCopy: 'Open a copy',
+    openCopyHint: 'Replace your diary with the copy, or combine them.',
+    open: 'Open',
+    about: 'About diaryo',
+    website: "diaryo's website",
+    websiteUrl: 'https://diaryo.javiermateo.dev/en/',
+    source: 'The code, on GitHub',
+    sourceUrl: 'https://github.com/javimateo/Diaryo',
   },
 
   keys: {
@@ -589,7 +605,6 @@ export const en: Messages = {
   },
 
   desktop: {
-    title: 'Desktop',
     floatingDiary: 'Floating diary',
     floatingDiaryHint: 'Appears over the desktop from anywhere. Esc hides it.',
     shortcutTaken: 'Another app already uses this shortcut: pick another one.',
@@ -872,6 +887,15 @@ export const en: Messages = {
   },
 
   commandKeywords: {
+    settingsSections: {
+      general: 'language theme week page turning startup update',
+      look: 'paper sheet cover binding desk',
+      desktop: 'floating diary shortcut desk windows',
+      privacy: 'password encrypt lock recovery key private',
+      account: 'account cloud session sync email space',
+      data: 'backup copy save open storage browser',
+      help: 'shortcuts keys website code privacy terms',
+    },
     lockDiary: 'password close privacy encrypt',
     private: 'private note password secret see',
     newPage: 'sheet add create',

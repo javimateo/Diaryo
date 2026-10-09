@@ -277,7 +277,7 @@ function warnAboutSpace({ used, quota }: { used: number; quota: number }) {
   writeText(warnedKey(account.id), String(reached));
   useUI.getState().showToast(t().sync.spaceWarning(Math.round(share * 100)), {
     label: t().sync.seeSpace,
-    run: () => useUI.getState().setSettingsOpen(true),
+    run: () => useUI.getState().setSettingsOpen(true, 'account'),
   });
 }
 

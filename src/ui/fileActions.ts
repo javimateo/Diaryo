@@ -52,6 +52,19 @@ export async function saveCopy(diary: Diary, readable?: boolean) {
 export const openCopy = async (engine: Engine, file: File) =>
   openCopyText(engine, await file.text());
 
+/** Opens the file picker to open a backup of the diary. */
+export function pickCopy() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = `${FILE_EXTENSION},application/json`;
+  input.onchange = () => {
+    const file = input.files?.[0];
+    const { engine } = useUI.getState();
+    if (file && engine) void openCopy(engine, file);
+  };
+  input.click();
+}
+
 /** Opens a backup's text (an encrypted one, once opened, comes here again). */
 export async function openCopyText(engine: Engine, text: string) {
   const { showToast } = useUI.getState();

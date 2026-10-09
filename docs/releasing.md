@@ -51,7 +51,7 @@ The desktop app (`src/desktop/updates.ts`) checks
 `https://github.com/javimateo/Diaryo/releases/latest/download/latest.json` twenty
 seconds after starting and every six hours.
 
-- **Update automatically** on (the default, in Settings → Desktop): the new version
+- **Update automatically** on (the default, in Settings → General): the new version
   downloads in the background and installs the next time the diary is hidden. The
   pending changes and a backup are saved first; the installer shows a small progress bar
   and reopens diaryo.

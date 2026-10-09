@@ -240,12 +240,12 @@ change with it (and their date).
   quota; the vault; the encrypted items. With Google, only the email and Google's id for
   the account: its name and picture aren't copied (`1790900002_privacy.js`). PocketBase's
   request logs (with the IP) last 5 days.
-- **Downloading the data** (Settings → Account and cloud → Your data): a JSON with what the
+- **Downloading the data** (Settings → Account and cloud → More options → Your data): a JSON with what the
   server knows about the account (`accountData` in `src/cloud/account.ts`): email, dates,
   plan, space used, how it signs in, how many items and when the vault was made. Not the
   items: they are only the diary encrypted, and its readable copy is the usual `.diaryo`
   backup ("Save a copy").
-- **Deleting the account** (Settings → Account and cloud, typing the email to confirm):
+- **Deleting the account** (Settings → Account and cloud → More options, typing the email to confirm):
   the user deletes their own record, and its vault and items go with it (cascade). This
   device signs out and forgets the keys; the local diary stays, and so does each other
   device's (they find out on their next session renewal, like any ended session). There
