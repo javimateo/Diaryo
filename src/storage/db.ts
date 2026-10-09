@@ -111,6 +111,16 @@ export class DiaryoDB extends Dexie {
 export const DESK_ID = 'desk';
 export const DESK_INFO: PageInfo = { id: DESK_ID, date: '0000-01-01', order: 0, title: '' };
 
+/**
+ * The cover: what is stuck on the closed diary's front cover. One more page too (backups,
+ * the cloud), out of the index and the search. Its thumbnail is the cover as an image.
+ */
+export const COVER_ID = 'cover';
+export const COVER_INFO: PageInfo = { id: COVER_ID, date: '0000-01-01', order: 0, title: '' };
+
+/** Pages that aren't a day of the diary. */
+const special = (id: string) => id === DESK_ID || id === COVER_ID;
+
 export interface LoadedPage {
   elements: SceneElement[];
   assets: AssetRow[];
@@ -209,9 +219,14 @@ export async function saveChanges(db: DiaryoDB, info: PageInfo, save: PendingSav
   });
 }
 
-/** All the saved pages (without their elements or the desk). */
+/** All the saved pages (without their elements, the desk or the cover). */
 export async function listPages(db: DiaryoDB): Promise<PageRow[]> {
-  return (await db.pages.toArray()).filter((page) => page.id !== DESK_ID);
+  return (await db.pages.toArray()).filter((page) => !special(page.id));
+}
+
+/** The cover as an image, or null (readable even with the diary locked: see sealing.ts). */
+export async function coverImage(db: DiaryoDB): Promise<string | null> {
+  return (await db.pages.get(COVER_ID))?.thumbnail ?? null;
 }
 
 /** Changes a page's data (title, thumbnail…). Creates it if it didn't exist yet. */
@@ -323,7 +338,7 @@ export async function pruneEmptyPages(db: DiaryoDB, keep?: string): Promise<stri
     const pages = await db.pages.toArray();
     const removed: string[] = [];
     for (const page of pages) {
-      if (page.id === keep || page.id === DESK_ID || page.title || page.bookmark || page.paper) {
+      if (page.id === keep || special(page.id) || page.title || page.bookmark || page.paper) {
         continue;
       }
       const count = await db.elements.where('pageId').equals(page.id).count();
@@ -464,7 +479,7 @@ export interface PageLink {
   to: string;
 }
 
-/** Which pages link to which (without repeats and without counting the desk). */
+/** Which pages link to which (without repeats and without counting the desk or the cover). */
 export async function listLinks(db: DiaryoDB): Promise<PageLink[]> {
   const rows = await db.elements.filter((row) => typeof row.data?.link === 'string').toArray();
   const seen = new Set<string>();
@@ -472,7 +487,7 @@ export async function listLinks(db: DiaryoDB): Promise<PageLink[]> {
   for (const row of rows) {
     const to = row.data.link!;
     const key = `${row.pageId}>${to}`;
-    if (row.pageId === DESK_ID || to === row.pageId || seen.has(key)) continue;
+    if (special(row.pageId) || to === row.pageId || seen.has(key)) continue;
     seen.add(key);
     links.push({ from: row.pageId, to });
   }
@@ -497,6 +512,8 @@ function rowText(data: SceneElement | undefined): string {
 export async function listTexts(db: DiaryoDB): Promise<TextEntry[]> {
   const entries: TextEntry[] = [];
   await db.elements.each((row) => {
+    // The cover isn't a page to go to.
+    if (row.pageId === COVER_ID) return;
     const text = rowText(row.data);
     if (typeof text !== 'string' || !text.trim()) return;
     entries.push({ pageId: row.pageId, elementId: row.id, type: row.data.type, text });

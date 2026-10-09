@@ -49,6 +49,7 @@ import { MATERIALS } from '../engine/cover';
 import { DESKS } from '../engine/desk';
 import { exportPng, pickCopy, saveCopy } from './fileActions';
 import { SETTINGS_SECTIONS, useUI } from '../store/ui';
+import { COVER_ID } from '../storage/db';
 import {
   addPage,
   deletePage,
@@ -404,6 +405,20 @@ export function getCommands(): Command[] {
             keywords: kw.private,
             run: () => askToReveal('all'),
           }),
+    state.diaryState.current?.id === COVER_ID
+      ? {
+          id: 'done-cover',
+          label: c.doneCover,
+          icon: BookOpen,
+          run: () => void diary?.closeCover(),
+        }
+      : {
+          id: 'edit-cover',
+          label: c.editCover,
+          icon: BookOpen,
+          keywords: kw.editCover,
+          run: () => void diary?.editCover(),
+        },
     useLock.getState().status === 'unlocked' && {
       id: 'lock-diary',
       label: c.lockDiary,

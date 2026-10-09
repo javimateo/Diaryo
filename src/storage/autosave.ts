@@ -72,6 +72,8 @@ export class Autosave {
      * notes out). What isn't loaded is never touched: only changes are saved.
      */
     private readonly shows: (el: SceneElement) => boolean = () => true,
+    /** The diary is closed: the page is its front cover (see isOnPage). */
+    private readonly closed = false,
   ) {}
 
   /** Loads the page into the engine and starts saving its changes. */
@@ -91,7 +93,7 @@ export class Autosave {
       this.listen();
       // Whatever was drawn outside the book before the desk existed moves to it.
       if (this.desk) {
-        const outside = page.elements.filter((el) => !isOnPage(elementBounds(el)));
+        const outside = page.elements.filter((el) => !isOnPage(elementBounds(el), this.closed));
         for (const el of page.elements) {
           if (!outside.includes(el)) this.desk.onPage.set(el.id, true);
         }
@@ -125,7 +127,8 @@ export class Autosave {
       const el = this.engine.scene.get(id);
       // If it moves from the desk to the page (or the other way round), it leaves the
       // other one.
-      const toDesk = !!el && !!desk && belongsToDesk(desk, id, isOnPage(elementBounds(el)));
+      const toDesk =
+        !!el && !!desk && belongsToDesk(desk, id, isOnPage(elementBounds(el), this.closed));
       if (!el) desk?.onPage.delete(id);
       if (el && toDesk && desk) {
         deskUpserts.push(el);

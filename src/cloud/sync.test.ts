@@ -2,6 +2,8 @@ import 'fake-indexeddb/auto';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ImageElement, StrokeElement, TextElement } from '../engine/elements';
 import {
+  COVER_ID,
+  COVER_INFO,
   deletePage,
   DiaryoDB,
   cleanUpDiary,
@@ -277,6 +279,25 @@ describe('sync', () => {
       camera: { x: 9, y: 9, zoom: 1 },
     });
     expect(await dirtyPaths(a.db)).toEqual([]);
+  });
+
+  it('takes the cover across (each device draws its own picture of it), out of the index', async () => {
+    const { a, b } = setUp();
+    await saveChanges(a.db, COVER_INFO, {
+      upserts: [text('t', 'Mi diario')],
+      deletes: [],
+      assets: [],
+      fonts: [],
+    });
+    await updatePage(a.db, COVER_INFO, { thumbnail: 'data:image/webp;base64,AAAA' });
+    await a.push();
+
+    const applied = await b.pull();
+    // The diary redraws the cover's picture when it sees it among what arrived.
+    expect([...applied.pages]).toEqual([COVER_ID]);
+    expect((await b.elements(COVER_ID)).map((r) => r.id)).toEqual(['t']);
+    expect((await b.db.pages.get(COVER_ID))?.thumbnail).toBeNull();
+    expect(await listPages(b.db)).toEqual([]);
   });
 
   it('takes deletions across, and what was deleted does not come back', async () => {

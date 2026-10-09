@@ -563,8 +563,28 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       - [x] **1. Motor**: el diario cerrado (`closed`): solo la tapa delantera, con su
             material, color y goma por encima; lo pegado se recorta en su borde; ahí no
             se pasan páginas.
-      - [ ] **2. Diario y guardado**: la página `cover` (como `desk`), editar y «Listo»,
-            su imagen, siempre en claro con sus fotos, copias y nube.
+      - [x] **2. Diario y guardado**: la página `cover` (como `desk`, fuera del índice,
+            de la búsqueda y del mapa). «Editar la portada» (Ctrl K) cierra el diario;
+            «Listo» vuelve a la página que estaba abierta. La mesa sigue alrededor: lo que
+            sale de la tapa va a la mesa, como con el libro abierto. Su imagen (520 px,
+            WebP) se guarda al cerrarla, al cambiar las tapas y cuando llega de otro
+            dispositivo (cada uno dibuja la suya). **Solo esa imagen queda en claro**
+            (`sealing.ts`); lo pegado en la portada se cifra como todo, porque solo se
+            edita con el diario abierto. Viaja en copias y nube como una página más.
+      - [ ] **Antes de la fase 3, herramientas para componer** (decidido en octubre de
+            2026; valen para todo el diario y las plantillas las usarán):
+        - [x] **Guías al colocar**: al mover, los bordes y el centro de la selección se
+              pegan a los de lo que hay alrededor y a los de la página (o la tapa); al
+              redimensionar, el borde que se arrastra (una foto estirada hasta el borde
+              de un post-it se queda en él). Lo de la página solo se pega a la página y
+              lo de la mesa a la mesa. Se ve la línea guía; con Ctrl, sin guías
+              (Alt ya es «desde el centro»). `src/engine/snap.ts`, con tests.
+        - [ ] **Texto**: negrita, cursiva y subrayado (para todo el texto del
+              elemento) y 8 letras libres más: Playfair Display, Merriweather, Dancing
+              Script, Amatic SC, Kalam, Shadows Into Light, Pacifico y Space Mono.
+        - [ ] **Marcos para las fotos**: ninguno, polaroid, borde blanco, esquinas
+              redondeadas; con sombra suave.
+        - [ ] **Más tapas y mesas** (texturas generadas, sin imágenes).
       - [ ] **3. Ajustes**: el grupo «Portada», las plantillas y Ctrl K.
       - [ ] **4. Dónde se ve**: la pantalla de bloqueo y el mini diario bloqueado.
       - [ ] **5. Abrir con la portada**.

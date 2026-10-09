@@ -1,6 +1,8 @@
 import { arrowEnd, arrowMidpoint, arrowStart, detachMoved, withEnds } from '../arrows';
 import { ROTATE_CURSOR } from '../cursors';
-import { isLocked, type ArrowElement, type SceneElement } from '../elements';
+import { elementBounds, isLocked, type ArrowElement, type SceneElement } from '../elements';
+import { unionBounds, type Bounds } from '../geometry';
+import { guidesFor, snapMove, snapValue, type Guide, type SnapTargets } from '../snap';
 import type { Vec } from '../math';
 import type { Changes } from '../scene';
 import { drawElementOutline } from '../render';
@@ -39,6 +41,10 @@ const MIN_SCALE = 0.01;
 const ARROW_HANDLE = 6;
 /** Below this curve (screen px) the arrow becomes straight again. */
 const STRAIGHT_SNAP = 8;
+/** How close (screen px) an edge or center must come to stick to a guide. */
+const GUIDE_SNAP = 6;
+/** How far (screen px) the guide lines go past the boxes they join. */
+const GUIDE_OVERHANG = 8;
 
 type ArrowPoint = 'start' | 'end' | 'bend';
 
@@ -46,8 +52,15 @@ type State =
   | { type: 'idle' }
   /** Button pressed on something; it isn't known yet whether it is a click or a drag. */
   | { type: 'pending'; start: PointerInput; onClick: (() => void) | null }
-  | { type: 'move'; start: Vec; originals: Changes }
-  | { type: 'resize'; handle: ResizeHandle; box: Box; originals: Changes }
+  | { type: 'move'; start: Vec; originals: Changes; targets: SnapTargets; guides: Guide[] }
+  | {
+      type: 'resize';
+      handle: ResizeHandle;
+      box: Box;
+      originals: Changes;
+      targets: SnapTargets;
+      guides: Guide[];
+    }
   | { type: 'rotate'; box: Box; startAngle: number; delta: number; originals: Changes }
   | { type: 'marquee'; start: Vec; current: Vec; base: Set<string> }
   | { type: 'lasso'; points: Vec[]; base: Set<string>; additive: boolean }
@@ -93,7 +106,15 @@ export class SelectHandler implements ToolHandler {
         return;
       }
       if (handle) {
-        this.state = { type: 'resize', handle, box, originals: this.snapshot() };
+        const originals = this.snapshot();
+        this.state = {
+          type: 'resize',
+          handle,
+          box,
+          originals,
+          targets: this.snapTargets(originals),
+          guides: [],
+        };
         return;
       }
     }
@@ -155,7 +176,14 @@ export class SelectHandler implements ToolHandler {
         const dx = input.screen.x - state.start.screen.x;
         const dy = input.screen.y - state.start.screen.y;
         if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
-        const move: State = { type: 'move', start: state.start.world, originals: this.snapshot() };
+        const originals = this.snapshot();
+        const move: State = {
+          type: 'move',
+          start: state.start.world,
+          originals,
+          targets: this.snapTargets(originals),
+          guides: [],
+        };
         this.state = move;
         this.move(move, input);
         return;
@@ -297,6 +325,10 @@ export class SelectHandler implements ToolHandler {
       drawSelectionBox(g, box, zoom, ctx.colors, !transforming);
     }
 
+    if ((state.type === 'move' || state.type === 'resize') && state.guides.length > 0) {
+      this.drawGuides(g, state.guides);
+    }
+
     if (state.type === 'marquee') {
       const x = Math.min(state.start.x, state.current.x);
       const y = Math.min(state.start.y, state.current.y);
@@ -337,9 +369,27 @@ export class SelectHandler implements ToolHandler {
     let dx = input.world.x - state.start.x;
     let dy = input.world.y - state.start.y;
     // Shift: only horizontally or vertically.
+    let lockX = false;
+    let lockY = false;
     if (input.shiftKey) {
-      if (Math.abs(dx) > Math.abs(dy)) dy = 0;
-      else dx = 0;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        dy = 0;
+        lockY = true;
+      } else {
+        dx = 0;
+        lockX = true;
+      }
+    }
+    state.guides = [];
+    const from = boundsOf(state.originals);
+    if (from && !input.ctrlKey) {
+      // The edges and center stick to what is around (only along the free axis with Shift).
+      const tolerance = GUIDE_SNAP / this.ctx.camera.zoom;
+      const moved = shifted(from, dx, dy);
+      const snap = snapMove(moved, state.targets, tolerance);
+      if (!lockX) dx += snap.dx;
+      if (!lockY) dy += snap.dy;
+      state.guides = guidesFor(shifted(from, dx, dy), state.targets, tolerance / 20);
     }
     this.ctx.preview(this.mapOriginals(state.originals, (el) => translateElement(el, dx, dy)));
   }
@@ -351,7 +401,16 @@ export class SelectHandler implements ToolHandler {
   private resize(state: Extract<State, { type: 'resize' }>, input: PointerInput) {
     const { box, handle } = state;
     const d = HANDLE_DIRECTIONS[handle];
-    const p = toBox(box, input.world);
+    // The dragged edges follow the pointer: on an upright frame, they stick to the guides.
+    const guided = box.rotation === 0 && !input.ctrlKey;
+    const tolerance = GUIDE_SNAP / this.ctx.camera.zoom;
+    const world = guided
+      ? {
+          x: d.x === 0 ? input.world.x : snapValue(input.world.x, state.targets, 'x', tolerance),
+          y: d.y === 0 ? input.world.y : snapValue(input.world.y, state.targets, 'y', tolerance),
+        }
+      : input.world;
+    const p = toBox(box, world);
     const w = box.width / 2;
     const h = box.height / 2;
     const anchor = input.altKey ? { x: 0, y: 0 } : { x: -d.x * w, y: -d.y * h };
@@ -374,9 +433,19 @@ export class SelectHandler implements ToolHandler {
     }
     sx = limitScale(sx);
     sy = limitScale(sy);
-    this.ctx.preview(
-      this.mapOriginals(state.originals, (el) => scaleElement(el, box, anchor, sx, sy)),
+    const changes = this.mapOriginals(state.originals, (el) =>
+      scaleElement(el, box, anchor, sx, sy),
     );
+    this.ctx.preview(changes);
+    state.guides = [];
+    const now = guided && boundsOf(changes);
+    if (now) {
+      // Guides only for the edges that moved (both, from the center with Alt).
+      state.guides = guidesFor(now, state.targets, tolerance / 20, {
+        x: sx === 1 ? [] : moving(d.x, now.minX, now.maxX, input.altKey),
+        y: sy === 1 ? [] : moving(d.y, now.minY, now.maxY, input.altKey),
+      });
+    }
   }
 
   private rotate(state: Extract<State, { type: 'rotate' }>, input: PointerInput) {
@@ -418,6 +487,43 @@ export class SelectHandler implements ToolHandler {
   }
 
   // ─── Utilities ──────────────────────────────────────────────
+
+  /**
+   * What the dragged elements can stick to: what is on the page sticks to the page (its
+   * elements and edges), and what is on the desk to the desk. Mixing them, everything
+   * would keep jumping to the other side's lines. Arrows don't count.
+   */
+  private snapTargets(dragged: Changes): SnapTargets {
+    const { ctx } = this;
+    const onDesk = [...dragged.keys()].every((id) => ctx.isOnDesk(id));
+    const boxes: Bounds[] = onDesk ? [] : [...ctx.pageAreas];
+    for (const el of ctx.scene.all()) {
+      if (dragged.has(el.id) || el.type === 'arrow' || ctx.isOnDesk(el.id) !== onDesk) continue;
+      boxes.push(elementBounds(el));
+    }
+    return { boxes };
+  }
+
+  /** Guide lines: thin, across the boxes they join and a little beyond. */
+  private drawGuides(g: CanvasRenderingContext2D, guides: Guide[]) {
+    const zoom = this.ctx.camera.zoom;
+    const over = GUIDE_OVERHANG / zoom;
+    g.save();
+    g.strokeStyle = this.ctx.colors.accent;
+    g.lineWidth = 1 / zoom;
+    g.beginPath();
+    for (const guide of guides) {
+      if (guide.axis === 'x') {
+        g.moveTo(guide.at, guide.from - over);
+        g.lineTo(guide.at, guide.to + over);
+      } else {
+        g.moveTo(guide.from - over, guide.at);
+        g.lineTo(guide.to + over, guide.at);
+      }
+    }
+    g.stroke();
+    g.restore();
+  }
 
   private selectedElements(): SceneElement[] {
     const result: SceneElement[] = [];
@@ -546,3 +652,25 @@ export class SelectHandler implements ToolHandler {
 const ratio = (a: number, b: number) => (Math.abs(b) < 1e-9 ? 1 : a / b);
 
 const limitScale = (s: number) => (Math.abs(s) < MIN_SCALE ? (Math.sign(s) || 1) * MIN_SCALE : s);
+
+/** The box around some elements (as they are in `changes`), or null. */
+function boundsOf(changes: Changes): Bounds | null {
+  let all: Bounds | null = null;
+  for (const el of changes.values()) {
+    if (!el) continue;
+    const b = elementBounds(el);
+    all = all ? unionBounds(all, b) : b;
+  }
+  return all;
+}
+
+const shifted = (b: Bounds, dx: number, dy: number): Bounds => ({
+  minX: b.minX + dx,
+  minY: b.minY + dy,
+  maxX: b.maxX + dx,
+  maxY: b.maxY + dy,
+});
+
+/** Which edges of a resized box moved: the dragged side's, or both from the center. */
+const moving = (dir: number, min: number, max: number, fromCenter: boolean) =>
+  fromCenter ? [min, max] : dir > 0 ? [max] : dir < 0 ? [min] : [min, max];

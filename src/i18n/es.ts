@@ -460,6 +460,13 @@ export const es = {
     closeTip: 'Cerrar — diaryo sigue junto al reloj',
   },
 
+  /** Editing the closed diary's cover. */
+  cover: {
+    title: 'Portada',
+    hint: 'Se ve con el diario bloqueado: no pongas nada privado',
+    done: 'Listo',
+  },
+
   topBar: {
     search: 'Buscar y comandos',
     settings: 'Ajustes',
@@ -582,6 +589,7 @@ export const es = {
     scaleFree: 'Escalar sin mantener proporción',
     scaleFromCenter: 'Escalar desde el centro',
     rotateSnap: 'Girar de 15 en 15°',
+    noGuides: 'Colocar sin pegarse a las guías',
     group: 'Agrupar / desagrupar',
     bringForward: 'Traer adelante / enviar atrás',
     bringToFront: 'Al frente / al fondo',
@@ -868,6 +876,8 @@ export const es = {
     flipV: 'Voltear en vertical',
     lock: 'Bloquear',
     lockDiary: 'Bloquear el diario',
+    editCover: 'Editar la portada',
+    doneCover: 'Terminar la portada',
     showPrivate: 'Mostrar todo lo privado',
     hidePrivate: 'Ocultar todo lo privado',
     markPrivate: 'Marcar como privado',
@@ -922,6 +932,7 @@ export const es = {
       help: 'atajos teclas web código privacidad condiciones',
     },
     lockDiary: 'contraseña cerrar privacidad cifrar',
+    editCover: 'tapa portada cubierta fotos personalizar decorar',
     private: 'privado post-it contraseña secreto ver',
     newPage: 'hoja añadir crear',
     turn: 'pasar hoja',

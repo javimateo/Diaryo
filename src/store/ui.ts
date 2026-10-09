@@ -450,6 +450,8 @@ export const useUI = create<UIState>()((set, get) => ({
     writeJSON(BOOK_KEY, bookStyle);
     set({ bookStyle });
     get().diary?.refreshBook();
+    // The cover's picture wears the covers too.
+    void get().diary?.refreshCover();
   },
   setDiaryOpen: (diaryOpen) => {
     // When opening the index, the current page's thumbnail is brought up to date.
