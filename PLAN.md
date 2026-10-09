@@ -463,7 +463,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             alguien que sepa: sobre todo si la LSSI pide el domicilio o el NIF del
             responsable (ahora solo están el nombre y el email).
       - [ ] **C8. Pagos** (más adelante).
-  - [ ] **D. Privacidad del diario**, después de la nube: el cifrado y la contraseña
+  - [x] **D. Privacidad del diario**, después de la nube: el cifrado y la contraseña
         dependen de cómo se sincronice. Decidido (octubre de 2026):
     - **Una sola contraseña del diario**, la misma en el dispositivo y en la nube, con
       la misma clave de recuperación (también sin cuenta: se muestra siempre al ponerla).
@@ -492,7 +492,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           diarias, y «Guardar una copia» pregunta cifrada o legible); el mini diario
           solo enseña la portada. Tests: los de `storage`, el diario y la sincronización
           otra vez con todo cifrado (proyecto `sealed` de Vitest) y `lock.test.ts`.
-          Probado en la app de escritorio. Falta probarlo contra un PocketBase real.
+          Probado en la app de escritorio y contra un PocketBase local (dos dispositivos).
     - [x] **D4. Post-its privados**: Ajustes → Privacidad pasa a tres niveles (nada,
           solo lo privado, todo el diario). Un post-it privado (menú contextual o paleta)
           guarda su texto y su enlace cifrados aparte con una llave del secreto del
@@ -526,7 +526,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           oculto. Para cualquier nivel: los privados en el escritorio «Con candado» o «No
           se ven». La llave llega a la mesa por `BroadcastChannel` (probado en WebView2) y
           abrir un privado desde la mesa ya está hecho en D4.
-    - [ ] **D3. Ordenadores compartidos** (`docs/privacy.md`): con «Todo el diario»,
+    - [x] **D3. Ordenadores compartidos** (`docs/privacy.md`): con «Todo el diario»,
           «Bloquear solo» tras 5, 15 o 60 min sin usarlo (por defecto, nunca) y
           «Bloquear al esconderlo» (otra pestaña, minimizar o la bandeja), como «Bloquear
           ahora». Al cerrar sesión, una tercera opción: «Dejarlo cifrado y bloqueado» (si
