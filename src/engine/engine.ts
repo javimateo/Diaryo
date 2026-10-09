@@ -23,6 +23,7 @@ import {
   drawBinding,
   isOnPage,
   tabAt,
+  traceClosedCover,
   drawBook,
   PAGE_HEIGHT,
   PAGE_WIDTH,
@@ -1254,7 +1255,9 @@ export class Engine {
   pageElements(): SceneElement[] {
     const all = this.scene.all();
     const desk = this.deskIds;
-    return this.book ? all.filter((el) => !desk.has(el.id) && isOnPage(elementBounds(el))) : all;
+    const book = this.book;
+    if (!book) return all;
+    return all.filter((el) => !desk.has(el.id) && isOnPage(elementBounds(el), book.closed));
   }
 
   /**
@@ -1586,7 +1589,8 @@ export class Engine {
         if (!tab.current) this.bookTabListener(tab.pageId);
         return;
       }
-      if (this.book && this.pageTurner.grab(world, this.camera.zoom)) {
+      // A closed diary has no sheets to turn.
+      if (this.book && !this.book.closed && this.pageTurner.grab(world, this.camera.zoom)) {
         e.preventDefault();
         try {
           this.overlayCanvas.setPointerCapture(e.pointerId);
@@ -1808,7 +1812,8 @@ export class Engine {
   private updateHover(e: PointerEvent) {
     const handler = this.activeHandler;
     // Near the corner of a sheet, it lifts and can be grabbed.
-    const canTurn = !!this.book && !this.editing && !this.spaceHeld && this.tool !== 'hand';
+    const canTurn =
+      !!this.book && !this.book.closed && !this.editing && !this.spaceHeld && this.tool !== 'hand';
     if (canTurn) this.pageTurner.setScale(this.dpr * this.camera.zoom);
     const world = screenToWorld(this.camera, this.localPoint(e));
     const onCorner = this.pageTurner.hover(canTurn ? world : null, this.camera.zoom);
@@ -1925,6 +1930,12 @@ export class Engine {
 
     this.applyWorldTransform(ctx);
     if (book) drawBook(ctx, book, this.theme.mode, pixelScale);
+    // On the closed diary, what is stuck on the cover ends at its edge, like on a real one.
+    if (book?.closed) {
+      ctx.save();
+      traceClosedCover(ctx);
+      ctx.clip();
+    }
     const handler = this.activeHandler;
     const editing = this.editing?.element ?? null;
     const rc: RenderContext = {
@@ -1942,6 +1953,7 @@ export class Engine {
     if (editing && editing.type !== 'text') drawElement(ctx, editing, rc);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
+    if (book?.closed) ctx.restore();
     if (book) drawBinding(ctx, book, pixelScale);
     // Link labels, always on top (and the same size on screen).
     for (const badge of this.visibleBadges()) {
