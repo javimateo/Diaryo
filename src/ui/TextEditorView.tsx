@@ -15,6 +15,13 @@ interface Props {
   theme: ThemeMode;
 }
 
+/** The keys that, with Ctrl, put the whole text in bold, italic or underlined. */
+const STYLE_KEYS: Record<string, 'bold' | 'italic' | 'underline'> = {
+  KeyB: 'bold',
+  KeyI: 'italic',
+  KeyU: 'underline',
+};
+
 /**
  * Text editor: a <textarea> placed exactly over the text or note being edited, with the
  * same font, size and rotation. Meanwhile the canvas doesn't draw that text, so it looks
@@ -81,6 +88,9 @@ export function TextEditorView({ engine, editing, theme }: Props) {
     fontSize: box.fontSize * zoom,
     lineHeight: LINE_HEIGHT,
     fontFamily: fonts.stack(box.font),
+    fontWeight: box.bold ? 700 : 400,
+    fontStyle: box.italic ? 'italic' : undefined,
+    textDecoration: box.underline ? 'underline' : undefined,
     textAlign: box.align,
     color: box.color,
     opacity: el.opacity,
@@ -106,6 +116,14 @@ export function TextEditorView({ engine, editing, theme }: Props) {
         if (e.key === 'Escape' || (e.key === 'Enter' && (e.ctrlKey || e.metaKey))) {
           e.preventDefault();
           engine.finishEditing();
+          return;
+        }
+        // Ctrl B, I, U: the whole text in bold, italic or underlined (only while writing:
+        // otherwise Ctrl B opens the index).
+        const flag = (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && STYLE_KEYS[e.code];
+        if (flag) {
+          e.preventDefault();
+          engine.updateEditingStyle({ [flag]: !box[flag] });
           return;
         }
         const { value, selectionStart: start, selectionEnd: end } = e.currentTarget;

@@ -56,6 +56,7 @@ import {
   NOTE_SIZE,
   type NoteElement,
   type SceneElement,
+  type TextStyleFlags,
   type ToolStyles,
 } from './elements';
 import { unionBounds, type Bounds } from './geometry';
@@ -1099,6 +1100,7 @@ export class Engine {
         color: el.color,
         size: el.fontSize * zoom,
         font: el.font,
+        ...flagPatch(el),
         align: el.align,
       });
     }
@@ -1109,6 +1111,7 @@ export class Engine {
         noteTextColor: el.textColor,
         size: el.fontSize * zoom,
         font: el.font,
+        ...flagPatch(el),
         align: el.align,
         valign: el.valign,
       });
@@ -2136,3 +2139,10 @@ export class Engine {
 /** Thumbnails never show a private note's text, even while it can be seen. */
 const concealPrivate = (elements: SceneElement[]) =>
   elements.map((el) => (el.type === 'note' && el.private ? concealNote(el) : el));
+
+/** An element's bold, italic and underline as a style change (off ones too, to copy them). */
+const flagPatch = (el: TextStyleFlags): StylePatch => ({
+  bold: !!el.bold,
+  italic: !!el.italic,
+  underline: !!el.underline,
+});

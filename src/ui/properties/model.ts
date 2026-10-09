@@ -4,6 +4,7 @@ import {
   type Roughness,
   type SizedKind,
   type TextAlign,
+  type TextStyleFlags,
   type ToolStyles,
   type VerticalAlign,
 } from '../../engine/elements';
@@ -45,6 +46,8 @@ export interface PanelModel {
   /** Font size of the text inside shapes (screen px). */
   labelSize?: number | null;
   font?: string | null;
+  /** Bold, italic and underline of the whole text (on only if every text has it). */
+  textStyle?: TextStyleFlags;
   align?: TextAlign | null;
   valign?: VerticalAlign | null;
   opacity: number;
@@ -64,6 +67,12 @@ function toolPatch(tool: keyof ToolStyles, patch: StylePatch): Record<string, un
   if (patch.opacity !== undefined) out.opacity = patch.opacity;
   if (patch.font !== undefined) out.font = patch.font;
   if (patch.align !== undefined) out.align = patch.align;
+  // New texts and notes come out in bold, italic or underlined if the tool is set so.
+  if (tool === 'text' || tool === 'note') {
+    for (const key of ['bold', 'italic', 'underline'] as const) {
+      if (patch[key] !== undefined) out[key] = patch[key] || undefined;
+    }
+  }
   if (tool === 'arrow') {
     for (const key of ['color', 'roughness', 'startHead', 'endHead'] as const) {
       if (patch[key] !== undefined && patch[key] !== null) out[key] = patch[key];
@@ -115,6 +124,7 @@ export function usePanelModel(): PanelModel | null {
         colors: [ink(t().props.color, el.color)],
         labelSize: label.fontSize * zoom,
         font: label.font,
+        textStyle: flags(label),
         align: label.align,
         valign: label.valign,
         opacity: el.opacity,
@@ -127,6 +137,7 @@ export function usePanelModel(): PanelModel | null {
           colors: [noteFill(el.color), noteText(el.textColor ?? 'auto')],
           size: { label: t().props.fontSize, kind: 'text', value: el.fontSize * zoom },
           font: el.font,
+          textStyle: flags(el),
           align: el.align,
           valign: el.valign,
           opacity: el.opacity,
@@ -136,6 +147,7 @@ export function usePanelModel(): PanelModel | null {
           colors: [ink(t().props.color, el.color)],
           size: { label: t().props.fontSize, kind: 'text', value: el.fontSize * zoom },
           font: el.font,
+          textStyle: flags(el),
           align: el.align,
           opacity: el.opacity,
           apply,
@@ -157,6 +169,7 @@ export function usePanelModel(): PanelModel | null {
       colors: [ink(t().props.color, s.color)],
       size: { label: t().props.fontSize, kind: 'text', value: s.size },
       font: s.font,
+      textStyle: flags(s),
       align: s.align,
       opacity: s.opacity,
       apply: toTool('text'),
@@ -191,6 +204,7 @@ export function usePanelModel(): PanelModel | null {
       colors: [noteFill(s.color), noteText(s.textColor ?? 'auto')],
       size: { label: t().props.fontSize, kind: 'text', value: s.size },
       font: s.font,
+      textStyle: flags(s),
       align: s.align,
       valign: s.valign,
       opacity: s.opacity,
@@ -232,6 +246,7 @@ export function usePanelModel(): PanelModel | null {
           ? selection.labelSize * zoom
           : undefined,
       font: selection.hasText ? selection.font : undefined,
+      textStyle: selection.hasText ? flags(selection) : undefined,
       align: selection.hasText ? selection.align : undefined,
       valign: selection.hasNotes || selection.hasLabels ? selection.valign : undefined,
       opacity: selection.opacity,
@@ -240,6 +255,12 @@ export function usePanelModel(): PanelModel | null {
   }
   return null;
 }
+
+const flags = ({ bold, italic, underline }: TextStyleFlags): TextStyleFlags => ({
+  bold: !!bold,
+  italic: !!italic,
+  underline: !!underline,
+});
 
 const ink = (label: string, value: Color | null): ColorModel => ({
   label,

@@ -579,9 +579,15 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
               de un post-it se queda en él). Lo de la página solo se pega a la página y
               lo de la mesa a la mesa. Se ve la línea guía; con Ctrl, sin guías
               (Alt ya es «desde el centro»). `src/engine/snap.ts`, con tests.
-        - [ ] **Texto**: negrita, cursiva y subrayado (para todo el texto del
-              elemento) y 8 letras libres más: Playfair Display, Merriweather, Dancing
-              Script, Amatic SC, Kalam, Shadows Into Light, Pacifico y Space Mono.
+        - [x] **Texto**: negrita, cursiva y subrayado para todo el texto (textos,
+              post-its y etiquetas de las formas), en el panel («Estilo del texto»: N,
+              K, S) y, al escribir, Ctrl B, Ctrl I y Ctrl U (fuera de la escritura, Ctrl
+              B sigue abriendo el índice). Las herramientas los recuerdan y «copiar
+              estilo» los lleva. El subrayado se dibuja a mano (el lienzo no lo tiene).
+              8 letras libres más: Playfair Display, Merriweather, Dancing Script, Amatic
+              SC, Kalam, Shadows Into Light, Pacifico y Space Mono; con su negrita y
+              cursiva propias donde las hay (también las de antes). La parte web de la
+              app pasa de 2,1 a 5,3 MB.
         - [ ] **Marcos para las fotos**: ninguno, polaroid, borde blanco, esquinas
               redondeadas; con sombra suave.
         - [ ] **Más tapas y mesas** (texturas generadas, sin imágenes).

@@ -1,6 +1,6 @@
 import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { clampSize, SIZE_RANGES, type SizedKind } from '../../engine/elements';
+import { clampSize, SIZE_RANGES, type SizedKind, type TextStyleFlags } from '../../engine/elements';
 import { fonts } from '../../engine/fonts';
 import {
   COLOR_IDS,
@@ -284,6 +284,42 @@ export function FontButton({
         </Popover>
       )}
     </>
+  );
+}
+
+const TEXT_STYLE_KEYS = { bold: 'B', italic: 'I', underline: 'U' } as const;
+
+/**
+ * Bold, italic and underline: three buttons that turn on and off on their own (for the
+ * whole text), each one drawn as it does.
+ */
+export function TextStyleToggles({
+  value,
+  onChange,
+}: {
+  value: TextStyleFlags;
+  onChange: (patch: TextStyleFlags) => void;
+}) {
+  const t = useT();
+  return (
+    <div className="segmented-group text-style" role="group" aria-label={t.props.textStyle}>
+      {(['bold', 'italic', 'underline'] as const).map((key) => (
+        <button
+          key={key}
+          type="button"
+          className="icon-btn"
+          data-style={key}
+          data-active={value[key] || undefined}
+          aria-pressed={!!value[key]}
+          aria-label={t.props[key]}
+          data-tip={`${t.props[key]} — Ctrl ${TEXT_STYLE_KEYS[key]}`}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => onChange({ [key]: !value[key] })}
+        >
+          {t.props.styleKeys[key]}
+        </button>
+      ))}
+    </div>
   );
 }
 

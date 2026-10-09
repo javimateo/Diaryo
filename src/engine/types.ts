@@ -79,6 +79,10 @@ export interface SelectionStyle {
   /** There are texts or notes: the font and alignment can be changed. */
   hasText: boolean;
   font: string | null;
+  /** Bold, italic and underline: on only if every text has it. */
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
   align: TextAlign | null;
   /** Vertical alignment (notes and text inside shapes). */
   valign: VerticalAlign | null;
