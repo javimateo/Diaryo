@@ -12,7 +12,7 @@ export interface LinkLabel {
 const HEIGHT = 22;
 const PADDING = 8;
 const FONT_SIZE = 12.5;
-const FONT = `600 ${FONT_SIZE}px "Inter Variable", system-ui, sans-serif`;
+const FONT = `600 ${FONT_SIZE}px "Nunito Sans Variable", system-ui, sans-serif`;
 /** Offset above the top right corner (it leaves that corner's handle free). */
 const LIFT = 10;
 const OUTSET = 4;

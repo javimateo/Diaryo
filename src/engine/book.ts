@@ -119,6 +119,8 @@ const LINE_SPACING = 40;
 const FIRST_LINE = TOP + 150;
 const GRID_SPACING = 32;
 const HAND_FONT = '"Caveat Variable", "Segoe Print", cursive';
+/** The "today" label: the brand's terracotta, dark enough for white text. */
+const TODAY_COLOR = '#b8573f';
 
 export const DEFAULT_BOOK_STYLE: BookStyle = {
   paper: 'lines',
@@ -330,7 +332,7 @@ export function drawBook(
     const width = ctx.measureText(spread.labels.today).width + 36;
     ctx.beginPath();
     ctx.roundRect(x, dateY - 40, width, 48, 24);
-    ctx.fillStyle = '#e9785f';
+    ctx.fillStyle = TODAY_COLOR;
     ctx.fill();
     ctx.fillStyle = '#ffffff';
     ctx.fillText(spread.labels.today, x + 18, dateY - 5);

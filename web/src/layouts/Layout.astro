@@ -6,6 +6,7 @@ import '../styles/global.css';
 import { homeHref, legalHref, otherLang, texts, type Lang, type LegalPage } from '../i18n';
 import { latestDownload } from '../release';
 import { SITE } from '../site';
+import { BrandMark } from '@app/ui/BrandMark';
 
 interface Props {
   lang: Lang;
@@ -60,7 +61,7 @@ const installer = (await latestDownload()).url;
   </head>
   <body>
     <header class="site-header wrap">
-      <a class="brand" href={home}><span class="dot" aria-hidden="true"></span>{SITE.name}</a>
+      <a class="brand" href={home}><BrandMark size={28} />{SITE.name}</a>
       <nav class="links">
         <a href={`${home}#features`}>{t.nav.features}</a>
         <a href={`${home}#download`}>{t.nav.download}</a>
@@ -209,17 +210,12 @@ const installer = (await latestDownload()).url;
     display: flex;
     align-items: center;
     gap: 10px;
-    font-weight: 700;
-    font-size: 22px;
+    font-family: var(--font-title);
+    font-weight: 600;
+    font-size: 24px;
+    letter-spacing: -0.02em;
     color: var(--text);
     text-decoration: none;
-  }
-
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--accent);
   }
 
   .links {
@@ -264,6 +260,7 @@ const installer = (await latestDownload()).url;
     min-height: 44px;
     padding: 10px 18px;
     font-size: 15px;
+    white-space: nowrap;
   }
 
   .narrow {
@@ -283,7 +280,10 @@ const installer = (await latestDownload()).url;
     .brand {
       margin-right: auto;
     }
+  }
 
+  /* With the links still in the header, the full "Download for Windows" doesn't fit. */
+  @media (max-width: 1040px) {
     .wide {
       display: none;
     }

@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from 'react';
 import { exportPng, openCopy, saveCopy } from './fileActions';
 import { FILE_EXTENSION } from '../storage/files';
 import { WindowControls } from './desktop/WindowControls';
+import { BrandMark } from './BrandMark';
 import { useUI } from '../store/ui';
 import { useSync } from './cloudSync';
 import { relativeTime } from './relativeTime';
@@ -31,7 +32,8 @@ export function Brand() {
   const Icon = status === 'saved' ? Check : status === 'error' ? CloudAlert : LoaderCircle;
   return (
     <div className="brand">
-      diaryo
+      <BrandMark />
+      <span className="brand-name">diaryo</span>
       <span className="save-status" data-status={status} role="status">
         <Icon size={13} strokeWidth={2} />
         {t.status[status]}

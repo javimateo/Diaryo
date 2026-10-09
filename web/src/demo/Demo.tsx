@@ -39,14 +39,14 @@ const THEMES: Record<ThemeMode, EngineTheme> = {
     mode: 'light',
     background: '#e7e2d8',
     dots: '#c4bdb1',
-    accent: '#5b5bd6',
+    accent: '#b8573f',
     handleFill: '#ffffff',
   },
   dark: {
     mode: 'dark',
     background: '#131210',
     dots: '#34322e',
-    accent: '#8b8cf5',
+    accent: '#e3876c',
     handleFill: '#262522',
   },
 };

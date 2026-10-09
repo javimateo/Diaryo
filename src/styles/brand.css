@@ -1,11 +1,23 @@
 /* ─── Brand, hints and toasts ────────────────────────────────── */
 
 .brand {
-  padding: 8px 4px;
-  font-size: 17px;
-  font-weight: 650;
-  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  padding: 6px 4px;
   pointer-events: none;
+}
+
+.brand-mark {
+  flex: none;
+  margin-right: 8px;
+}
+
+/* The name is set in Lora, like the website's titles. */
+.brand-name {
+  font-family: 'Lora Variable', Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 /* On wood, cork or linen, the name and the status go in a pill so they are easy to read. */
@@ -18,17 +30,6 @@
   background: color-mix(in srgb, var(--surface) 82%, transparent);
   box-shadow: var(--shadow);
   backdrop-filter: blur(8px);
-}
-
-.brand::before {
-  content: '';
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  vertical-align: 2px;
 }
 
 .hint {
@@ -62,7 +63,7 @@
 }
 
 .save-status[data-status='error'] {
-  color: #e03131;
+  color: var(--danger);
   opacity: 1;
 }
 

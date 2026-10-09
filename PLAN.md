@@ -544,8 +544,14 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         necesitaría la nube de C) e importar/exportar calendarios (.ics, Google Calendar).
   - [ ] **G. Marca y diseño**, lo último antes de publicar la 1.0.0 (con maqueta antes de
         cada cambio):
-    - [ ] **Marca**: logo, icono, colores y tipografía coherentes en la app, la web y el
-          instalador.
+    - [x] **Marca**: logo, icono, colores y tipografía coherentes en la app, la web y el
+          instalador. Elegida la dirección «Cuaderno» (octubre de 2026) entre tres
+          maquetas: el cuaderno terracota con goma es el símbolo (app, bandeja, favicon,
+          instalador con imagen lateral y de cabecera; a 16 y 24 px, sin el trazo de la
+          tapa); el índigo se retira y el acento es el terracota de la tapa; el nombre en
+          Lora y la interfaz en Nunito Sans, como la web; borrar y los errores pasan a un
+          carmesí que no se confunde con el terracota. Cómo regenerar el icono, en
+          `docs/releasing.md`.
     - [ ] **Portada del diario editable**: que cada uno personalice la suya (no solo el
           color). Es también lo que enseña el mini diario cuando el diario está
           bloqueado (D2).
@@ -554,7 +560,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           borrar o de empezar en blanco.
     - [ ] **Mejorar la web**: qué es diaryo, capturas o vídeo, descargas, la nube.
     - [ ] **Ventana de ajustes**: ha crecido demasiado y es densa; reorganizarla
-          (secciones o pestañas, lo avanzado aparte) para que se encuentre todo.
+          (secciones o pestañas, lo avanzado aparte) para que se encuentre todo. También
+          los botones de arriba a la derecha (buscar, menú, tema, ajustes): maqueta
+          propuesta con siete secciones (General, Aspecto del diario, Escritorio,
+          Privacidad, Cuenta y nube, Copias y datos, Ayuda), «Buscar» con su nombre y el
+          tema dentro del menú.
     - [ ] **Explicar mejor las funciones**: ayuda dentro de la app y en la web (atajos,
           gestos, para qué sirve cada herramienta).
 

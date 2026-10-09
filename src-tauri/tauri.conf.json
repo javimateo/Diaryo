@@ -64,7 +64,9 @@
     "windows": {
       "nsis": {
         "installMode": "currentUser",
-        "languages": ["Spanish", "English"]
+        "languages": ["Spanish", "English"],
+        "headerImage": "installer/header.bmp",
+        "sidebarImage": "installer/sidebar.bmp"
       }
     }
   }
