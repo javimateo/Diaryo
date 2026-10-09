@@ -20,6 +20,7 @@ import { exportPng, pickCopy, saveCopy } from './fileActions';
 import { FILE_EXTENSION } from '../storage/files';
 import { WindowControls } from './desktop/WindowControls';
 import { BrandMark } from './BrandMark';
+import { COVER_ID } from '../storage/db';
 import { useUI, type ThemePreference } from '../store/ui';
 import { useLock } from '../cloud/lockState';
 import { Choice } from './Choice';
@@ -32,6 +33,20 @@ export function Brand() {
   const t = useT();
   const status = useUI((s) => s.saveStatus);
   const widget = useUI((s) => s.desktop?.mode === 'widget');
+  const cover = useUI((s) => s.diaryState.current?.id === COVER_ID);
+  const diary = useUI((s) => s.diary);
+  if (cover) {
+    // Dressing up the cover: what it is, and the way back.
+    return (
+      <div className="brand cover-bar">
+        <strong data-tip={t.cover.hint}>{t.cover.title}</strong>
+        <span className="cover-bar-hint">{t.cover.hint}</span>
+        <button type="button" className="cover-bar-done" onClick={() => void diary?.closeCover()}>
+          {t.cover.done}
+        </button>
+      </div>
+    );
+  }
   const Icon = status === 'saved' ? Check : status === 'error' ? CloudAlert : LoaderCircle;
   return (
     <div className="brand">

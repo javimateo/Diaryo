@@ -7,6 +7,41 @@
   pointer-events: none;
 }
 
+/* Dressing up the cover: its name, a warning and the way back. */
+.cover-bar {
+  gap: 10px;
+  padding: 5px 5px 5px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  pointer-events: auto;
+}
+
+.cover-bar-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Narrower, the warning stays in the name's tip: the tools need the room. */
+@media (max-width: 1200px) {
+  .cover-bar-hint {
+    display: none;
+  }
+}
+
+.cover-bar-done {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .brand-mark {
   flex: none;
   margin-right: 8px;

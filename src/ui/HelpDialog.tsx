@@ -45,6 +45,7 @@ function shortcutLists(t: Messages, desktop: DesktopInfo | null) {
     [h.scaleFree, [['Shift', k.corner]]],
     [h.scaleFromCenter, [['Alt', k.handle]]],
     [h.rotateSnap, [['Shift', k.rotate]]],
+    [h.noGuides, [['Ctrl', k.drag]]],
     [
       h.group,
       [

@@ -59,7 +59,15 @@ encrypted, in `sealed`.
 | `fonts`    | `id`                         | Its name and file                            |
 | `tracked`  | Everything (paths and times) | — (ids and times, as the cloud's are opaque) |
 
-So which days have pages shows, not what they say. The cipher is XChaCha20-Poly1305
+So which days have pages shows, not what they say.
+
+**The cover's picture** is the one exception: the `pages` row `cover` (whose thumbnail is
+the closed diary's cover as an image) is always in the clear, because the lock screen and
+the locked mini diary show it. What is stuck on the cover (its elements and images) is
+sealed like everything else: the cover is only edited with the diary open. The cover
+editor says so ("it shows while the diary is locked").
+
+The cipher is XChaCha20-Poly1305
 (`@noble/ciphers`), with a random nonce per row, bound to the table and the row's key (a
 row moved elsewhere doesn't open). It is synchronous on purpose: Web Crypto is
 asynchronous, and waiting for it inside an IndexedDB transaction closes the transaction.

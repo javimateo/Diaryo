@@ -6,6 +6,8 @@ import type { Engine } from '../engine/engine';
 import type { TurnDirection, TurnTarget } from '../engine/pageTurn';
 import { Autosave, type Desk, type SaveStatus } from '../storage/autosave';
 import {
+  COVER_ID,
+  COVER_INFO,
   deletePage,
   DESK_ID,
   dumpDiary,
@@ -79,6 +81,20 @@ const TURN_DURATION = { normal: 720, fast: 380 };
 const LAST_PAGE_KEY = 'diaryo:last-page';
 /** Thumbnail: the double page at this width (the height follows its proportions). */
 export const THUMBNAIL_SIZE = { width: 360, height: 246 };
+/** The cover's picture, at this width (the lock screen shows it at about half). */
+export const COVER_IMAGE_WIDTH = 520;
+
+/** The cover, open to dress it up (it is never in the index nor saved as the last page). */
+const coverPage = (): PageMeta => ({
+  id: COVER_ID,
+  date: COVER_INFO.date,
+  order: 0,
+  title: '',
+  thumbnail: null,
+  thumbnailSpread: true,
+  bookmark: null,
+  updatedAt: 0,
+});
 
 const toMeta = (row: PageRow): PageMeta => ({
   id: row.id,
@@ -126,6 +142,8 @@ export class Diary {
   private readonly desk: Desk = { ids: new Set(), onPage: new Map() };
   /** Elements of other pages, loaded to draw them when turning the page. */
   private readonly loaded = new Map<string, Promise<SceneElement[]>>();
+  /** While the cover is open: the page to go back to. */
+  private beforeCover: PageMeta | null = null;
 
   constructor(
     private readonly db: DiaryoDB,
@@ -196,7 +214,8 @@ export class Diary {
   turn(direction: 1 | -1): Promise<boolean> {
     return this.run(async () => {
       const current = this.current;
-      if (!current) return false;
+      // The closed diary has no pages to turn.
+      if (!current || current.id === COVER_ID) return false;
       const target = this.neighborsOf(current)[direction === 1 ? 'next' : 'prev'];
       if (!target) return false;
       await this.open(target, direction);
@@ -240,6 +259,48 @@ export class Diary {
       if (current && current.date === today && this.isEmpty && !current.title) return;
       await this.openAnimated(newPage(today));
     });
+  }
+
+  /** Closes the diary to dress up its cover (with the usual tools). */
+  editCover() {
+    return this.run(async () => {
+      const current = this.current;
+      if (!current || current.id === COVER_ID) return;
+      this.beforeCover = current;
+      await this.open(coverPage(), 0);
+    });
+  }
+
+  /** Done with the cover: back to the page that was open (or today's). */
+  closeCover() {
+    return this.run(async () => {
+      if (this.current?.id !== COVER_ID) return;
+      const back = this.beforeCover;
+      this.beforeCover = null;
+      const today = todayKey();
+      const still = back && (this.pages.find((p) => p.id === back.id) ?? back);
+      await this.open(still ?? this.lastOfDay(today) ?? newPage(today), 0);
+    });
+  }
+
+  /**
+   * Draws the cover's picture again (its look changed, or what is stuck on it arrived from
+   * another device) and saves it.
+   */
+  refreshCover() {
+    return this.run(async () => {
+      if (this.current?.id === COVER_ID) return this.saveCover(this.engine.pageElements());
+      const { elements } = await this.targetFor(coverPage());
+      await this.engine.assets.whenReady(
+        elements.flatMap((el) => (el.type === 'image' ? [el.assetId] : [])),
+      );
+      await this.saveCover(elements);
+    });
+  }
+
+  private async saveCover(elements: SceneElement[]) {
+    const image = this.engine.coverImage(this.spreadFor(coverPage()), elements, COVER_IMAGE_WIDTH);
+    await updatePage(this.db, COVER_INFO, { thumbnail: image, thumbnailSpread: true });
   }
 
   // ─── Editing pages ────────────────────────────────────────────
@@ -405,7 +466,7 @@ export class Diary {
   /** Updates the open page's thumbnail (to see it up to date in the index). */
   refreshThumbnail() {
     const current = this.current;
-    if (!current || this.isEmpty) return;
+    if (!current || this.isEmpty || current.id === COVER_ID) return;
     this.upsert({ ...current, thumbnail: this.renderThumbnail(), thumbnailSpread: true });
   }
 
@@ -482,9 +543,15 @@ export class Diary {
       this.hooks.onDeskSaved?.();
     }
     this.loaded.clear();
+    // The cover's picture is each device's own: it is drawn here with what arrived.
+    if (applied.pages.has(COVER_ID) && this.current?.id !== COVER_ID) {
+      const { elements } = await this.targetFor(coverPage());
+      await this.saveCover(elements);
+    }
     this.pages = (await listPages(this.db)).map(toMeta);
     const current = this.current;
-    const stillThere = current && this.pages.find((p) => p.id === current.id);
+    const stillThere =
+      current && (current.id === COVER_ID ? current : this.pages.find((p) => p.id === current.id));
     // A blank page is open and that day's page was made on another device: that one.
     const arrived = current && arrivedInstead(this.pages, current, this.isEmpty, applied.pages);
     if (current && arrived) await this.openInstead(current, arrived);
@@ -593,14 +660,17 @@ export class Diary {
     if (target.id === this.blankToday?.id) this.blankToday = null;
     this.current = target;
     this.refreshBook();
-    writeLastPage(target.id);
+    const cover = target.id === COVER_ID;
+    if (!cover) writeLastPage(target.id);
     const autosave = new Autosave(
       this.db,
       this.engine,
-      () => toInfo(this.current ?? target),
+      () => (cover ? COVER_INFO : toInfo(this.current ?? target)),
       this.hooks.onStatus,
       false,
       this.desk,
+      undefined,
+      cover,
     );
     this.autosave = autosave;
     await autosave.start();
@@ -654,6 +724,18 @@ export class Diary {
         current: p.id === page.id,
       }));
     const style = this.hooks.bookStyle();
+    if (page.id === COVER_ID) {
+      return {
+        tabs: [],
+        style,
+        date: '',
+        title: '',
+        today: false,
+        labels: t().book,
+        pageNumber: 0,
+        closed: true,
+      };
+    }
     return {
       tabs,
       style: page.paper ? { ...style, paper: page.paper } : style,
@@ -669,7 +751,7 @@ export class Diary {
   private async targetFor(page: PageMeta): Promise<TurnTarget> {
     let elements = this.loaded.get(page.id);
     if (!elements) {
-      const saved = this.pages.some((p) => p.id === page.id);
+      const saved = page.id === COVER_ID || this.pages.some((p) => p.id === page.id);
       elements = saved
         ? loadPage(this.db, page.id).then((data) => {
             // Its images, without saving them again.
@@ -704,6 +786,8 @@ export class Diary {
     // What was loaded for this page is no longer valid: it may have changed while it was
     // open.
     this.loaded.delete(page.id);
+    // The cover is kept even bare (its picture shows while locked), out of the index.
+    if (page.id === COVER_ID) return this.saveCover(this.engine.pageElements());
     if (this.engine.pageElements().length === 0 && !page.title && !page.bookmark && !page.paper) {
       await deletePage(this.db, page.id);
       this.pages = this.pages.filter((p) => p.id !== page.id);
@@ -716,6 +800,7 @@ export class Diary {
 
   private async saveThumbnail() {
     const page = this.current;
+    if (page?.id === COVER_ID) return this.saveCover(this.engine.pageElements());
     if (!page || this.engine.pageElements().length === 0) return;
     const thumbnail = this.renderThumbnail();
     await updatePage(this.db, toInfo(page), { thumbnail, thumbnailSpread: true });
@@ -738,8 +823,9 @@ export class Diary {
   private emit() {
     const current = this.current;
     let pages = this.pages;
-    // The open page shows in the index as soon as it has something (or a title).
-    if (current) {
+    // The open page shows in the index as soon as it has something (or a title); the
+    // cover, never.
+    if (current && current.id !== COVER_ID) {
       const listed = pages.some((p) => p.id === current.id);
       const keep = !this.isEmpty || !!current.title || !!current.bookmark || !!current.paper;
       if (!listed && keep) pages = [...pages, current];

@@ -20,7 +20,9 @@ import {
 } from './arrange';
 import {
   bookBounds,
+  CLOSED_COVER,
   drawBinding,
+  PAGES,
   isOnPage,
   tabAt,
   traceClosedCover,
@@ -595,6 +597,36 @@ export class Engine {
   spreadThumbnail(target: TurnTarget, width: number): string {
     const concealed = { ...target, elements: concealPrivate(target.elements) };
     return this.renderSpread(concealed, width / (PAGE_WIDTH * 2)).toDataURL('image/webp', 0.85);
+  }
+
+  /**
+   * The closed diary's cover as an image, at that width: the board, what is stuck on it
+   * (ending at its edge) and the elastic on top.
+   */
+  coverImage(book: BookSpread, elements: SceneElement[], width: number): string {
+    const closed = { ...book, closed: true };
+    const bounds = bookBounds(closed);
+    const scale = width / (bounds.maxX - bounds.minX);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(width);
+    canvas.height = Math.round((bounds.maxY - bounds.minY) * scale);
+    const ctx = canvas.getContext('2d')!;
+    ctx.setTransform(scale, 0, 0, scale, -bounds.minX * scale, -bounds.minY * scale);
+    drawBook(ctx, closed, 'light', scale);
+    ctx.save();
+    traceClosedCover(ctx);
+    ctx.clip();
+    const rc: RenderContext = {
+      mode: 'light',
+      pixelScale: scale,
+      assets: this.assets,
+      editingId: null,
+    };
+    for (const el of concealPrivate([...elements].sort((a, b) => a.z - b.z)))
+      drawElement(ctx, el, rc);
+    ctx.restore();
+    drawBinding(ctx, closed, scale);
+    return canvas.toDataURL('image/webp', 0.85);
   }
 
   /** Draws a double page (paper and content, without covers) for the turning sheet. */
@@ -1294,8 +1326,11 @@ export class Engine {
     this.cancelGesture();
     this.finishEditing(false);
     this.setSelection([]);
-    // In the diary, what is on the desk stays: only what is inside the book changes.
-    const leaving = this.book ? this.pageElements() : this.scene.all();
+    // In the diary, what is on the desk stays: only the page's elements change (by what
+    // they are, not where: the book may have just closed or opened).
+    const leaving = this.book
+      ? this.scene.all().filter((el) => !this.deskIds.has(el.id))
+      : this.scene.all();
     const changes: Changes = new Map(leaving.map((el) => [el.id, null]));
     for (const el of elements) changes.set(el.id, el);
     const notify = this.scene.onChange;
@@ -1322,6 +1357,8 @@ export class Engine {
   /** Thumbnail of the whole page (always in the light theme), or null if it is empty. */
   thumbnail(width: number, height: number): string | null {
     const elements = concealPrivate(this.pageElements());
+    // The closed diary: its cover, also when nothing is stuck on it yet.
+    if (this.book?.closed) return this.coverImage(this.book, elements, width);
     if (elements.length === 0) return null;
     // In the diary, the double page in small (paper, date and content in place).
     if (this.book) {
@@ -1457,6 +1494,12 @@ export class Engine {
         return engine.styles;
       },
       noteSize: this.noteSize,
+      get pageAreas() {
+        const book = engine.book;
+        if (!book) return [];
+        return book.closed ? [CLOSED_COVER] : [PAGES.left, PAGES.right];
+      },
+      isOnDesk: (id) => engine.deskIds.has(id),
       get mode() {
         return engine.theme.mode;
       },
@@ -1805,6 +1848,7 @@ export class Engine {
       time: e.timeStamp,
       shiftKey: e.shiftKey,
       altKey: e.altKey,
+      ctrlKey: e.ctrlKey || e.metaKey,
     };
   }
 
@@ -1930,12 +1974,6 @@ export class Engine {
 
     this.applyWorldTransform(ctx);
     if (book) drawBook(ctx, book, this.theme.mode, pixelScale);
-    // On the closed diary, what is stuck on the cover ends at its edge, like on a real one.
-    if (book?.closed) {
-      ctx.save();
-      traceClosedCover(ctx);
-      ctx.clip();
-    }
     const handler = this.activeHandler;
     const editing = this.editing?.element ?? null;
     const rc: RenderContext = {
@@ -1944,9 +1982,20 @@ export class Engine {
       assets: this.assets,
       editingId: editing?.id ?? null,
     };
-    for (const el of this.scene.search(this.visibleBounds())) {
+    const visible = this.scene.search(this.visibleBounds());
+    // On the closed diary, the desk around it as usual, and what is stuck on the cover
+    // ending at its edge, like on a real one.
+    const closed = !!book?.closed;
+    const desk = closed ? visible.filter((el) => this.deskIds.has(el.id)) : [];
+    for (const el of desk) drawElement(ctx, el, rc, handler?.elementOpacity?.(el.id) ?? 1);
+    if (closed) {
+      ctx.save();
+      traceClosedCover(ctx);
+      ctx.clip();
+    }
+    for (const el of visible) {
       // What is being edited is drawn in its current version (it may have grown).
-      if (el.id === editing?.id) continue;
+      if (el.id === editing?.id || (closed && this.deskIds.has(el.id))) continue;
       drawElement(ctx, el, rc, handler?.elementOpacity?.(el.id) ?? 1);
     }
     // Notes and shapes (the editor draws the text); a loose text is only the editor.

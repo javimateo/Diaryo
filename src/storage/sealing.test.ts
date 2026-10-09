@@ -3,10 +3,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { ImageElement, NoteElement } from '../engine/elements';
 import {
   countPrivateNotes,
+  COVER_ID,
+  COVER_INFO,
+  coverImage,
   DESK_ID,
   DESK_INFO,
   DiaryoDB,
   dumpDiary,
+  listPages,
   listTexts,
   loadPage,
   matchDesk,
@@ -380,5 +384,42 @@ describe('the desk out of the diary encryption', () => {
     await matchDesk(db);
     expect(Object.values(await sealedRows('elements')).every(Boolean)).toBe(true);
     expect(await sealedRows('fonts')).toEqual({ f: true });
+  });
+});
+
+describe('the cover', () => {
+  it('shows its picture while locked; what is stuck on it stays sealed and out of sight', async () => {
+    fresh();
+    seal(db);
+    await saveChanges(db, COVER_INFO, {
+      upserts: [note('c', 'Diario de Lucía')],
+      deletes: [],
+      assets: [],
+      fonts: [],
+    });
+    await updatePage(db, COVER_INFO, { thumbnail: 'data:image/webp;base64,COVER' });
+    await saveChanges(db, info, {
+      upserts: [note('m', 'hoy')],
+      deletes: [],
+      assets: [],
+      fonts: [],
+    });
+
+    const sealed = Object.fromEntries(
+      (await raw('pages')).map((row) => [row.id, rowIsSealed(row)]),
+    );
+    expect(sealed).toEqual({ [COVER_ID]: false, p1: true });
+    expect(await storedText('elements', 'Lucía')).toBe(false);
+
+    // Locked: the picture reads, what is on the cover doesn't.
+    const key = db.sealing.key;
+    db.sealing.key = null;
+    expect(await coverImage(db)).toBe('data:image/webp;base64,COVER');
+    await expect(loadPage(db, COVER_ID)).rejects.toBeInstanceOf(LockedError);
+
+    // It isn't a page of the index nor something to find.
+    db.sealing.key = key;
+    expect((await listPages(db)).map((page) => page.id)).toEqual(['p1']);
+    expect((await listTexts(db)).map((entry) => entry.elementId)).toEqual(['m']);
   });
 });

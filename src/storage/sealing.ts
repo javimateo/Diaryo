@@ -18,6 +18,9 @@ import type { NoteElement } from '../engine/elements';
  * the diary is locked. Then its rows, its images and the fonts are written in the clear
  * (its private notes keep their text in their box, below).
  *
+ * The cover's row (its picture: the lock screen and the mini diary show it) is always in
+ * the clear. What is stuck on it is sealed like the rest: it is only edited when unlocked.
+ *
  * Private notes go further: their text and link are always kept in a `box` encrypted with
  * the private key (the same on every device, from the diary secret), and only read for the
  * notes shown, one by one, while that key is here. Otherwise the note comes `concealed`,
@@ -51,11 +54,13 @@ export interface Sealing {
   deskAssets?: Set<string>;
 }
 
-/** The desk's id (as in db.ts, which imports this file). */
+/** The desk's and the cover's ids (as in db.ts, which imports this file). */
 const DESK = 'desk';
+const COVER = 'cover';
 
-/** With the desk out of the diary's encryption, the rows that stay in the clear. */
+/** The rows that stay in the clear: the cover's, and the desk's when it is out. */
 export function keptClear(state: Sealing, table: string, row: Record<string, unknown>) {
+  if (table === 'pages' && row.id === COVER) return true;
   if (!state.deskClear) return false;
   if (table === 'elements') return row.pageId === DESK;
   if (table === 'pages') return row.id === DESK;

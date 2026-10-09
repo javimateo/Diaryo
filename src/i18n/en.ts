@@ -447,6 +447,12 @@ export const en: Messages = {
     closeTip: 'Close — diaryo stays next to the clock',
   },
 
+  cover: {
+    title: 'Cover',
+    hint: 'It shows while the diary is locked: put nothing private on it',
+    done: 'Done',
+  },
+
   topBar: {
     search: 'Search and commands',
     settings: 'Settings',
@@ -568,6 +574,7 @@ export const en: Messages = {
     scaleFree: 'Scale without keeping proportions',
     scaleFromCenter: 'Scale from the center',
     rotateSnap: 'Rotate in 15° steps',
+    noGuides: 'Place without sticking to the guides',
     group: 'Group / ungroup',
     bringForward: 'Bring forward / send backward',
     bringToFront: 'Bring to front / send to back',
@@ -852,6 +859,8 @@ export const en: Messages = {
     flipV: 'Flip vertically',
     lock: 'Lock',
     lockDiary: 'Lock the diary',
+    editCover: 'Edit the cover',
+    doneCover: 'Finish the cover',
     showPrivate: 'Show everything private',
     hidePrivate: 'Hide everything private',
     markPrivate: 'Mark as private',
@@ -904,6 +913,7 @@ export const en: Messages = {
       help: 'shortcuts keys website code privacy terms',
     },
     lockDiary: 'password close privacy encrypt',
+    editCover: 'cover front photos personalize decorate',
     private: 'private note password secret see',
     newPage: 'sheet add create',
     turn: 'turn sheet',
