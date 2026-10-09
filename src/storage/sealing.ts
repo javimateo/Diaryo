@@ -14,6 +14,10 @@ import type { NoteElement } from '../engine/elements';
  * Sealed and plain rows are both read: turning encryption on or off rewrites the diary
  * in batches, and a half-done rewrite is just carried on.
  *
+ * The desk can stay out of it (`deskClear`): it shows on the Windows desktop even while
+ * the diary is locked. Then its rows, its images and the fonts are written in the clear
+ * (its private notes keep their text in their box, below).
+ *
  * Private notes go further: their text and link are always kept in a `box` encrypted with
  * the private key (the same on every device, from the diary secret), and only read for the
  * notes shown, one by one, while that key is here. Otherwise the note comes `concealed`,
@@ -41,6 +45,22 @@ export interface Sealing {
   privateKey?: Uint8Array | null;
   /** Which private notes are shown (their ids): each one is opened on its own. */
   shown?: ReadonlySet<string>;
+  /** The desk isn't encrypted with the rest (it shows while the diary is locked). */
+  deskClear?: boolean;
+  /** The images on the desk (kept in the clear with it). */
+  deskAssets?: Set<string>;
+}
+
+/** The desk's id (as in db.ts, which imports this file). */
+const DESK = 'desk';
+
+/** With the desk out of the diary's encryption, the rows that stay in the clear. */
+export function keptClear(state: Sealing, table: string, row: Record<string, unknown>) {
+  if (!state.deskClear) return false;
+  if (table === 'elements') return row.pageId === DESK;
+  if (table === 'pages') return row.id === DESK;
+  if (table === 'assets') return !!state.deskAssets?.has(row.id as string);
+  return table === 'fonts';
 }
 
 /** The diary is encrypted and locked: nothing can be read or written without the key. */
@@ -179,7 +199,12 @@ function sealedTable(table: DBCoreTable, state: Sealing): DBCoreTable {
   const write = (value: Record<string, unknown>) => {
     let row = value;
     if (notes && isPrivate(row.data)) row = { ...row, data: boxNote(row.data, state.privateKey) };
-    if (!state.seal) return row;
+    // An image put on the desk stays in the clear with it (it is written after the element).
+    const data = row.data as { type?: string; assetId?: string } | undefined;
+    if (notes && row.pageId === DESK && data?.type === 'image' && data.assetId) {
+      (state.deskAssets ??= new Set()).add(data.assetId);
+    }
+    if (!state.seal || keptClear(state, name, row)) return row;
     if (!state.key) throw new LockedError();
     return seal(name, keyOf(row), row, state.key);
   };

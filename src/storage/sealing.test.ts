@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { NoteElement } from '../engine/elements';
+import type { ImageElement, NoteElement } from '../engine/elements';
 import {
   countPrivateNotes,
   DESK_ID,
@@ -9,6 +9,7 @@ import {
   dumpDiary,
   listTexts,
   loadPage,
+  matchDesk,
   releasePrivateNotes,
   replaceDiary,
   rewriteDiary,
@@ -319,5 +320,65 @@ describe('private notes', () => {
     expect(await storedText('elements', '1234')).toBe(true);
     expect(await countPrivateNotes(db)).toBe(0);
     expect(await db.tracked.count()).toBe(2);
+  });
+});
+
+describe('the desk out of the diary encryption', () => {
+  const picture = (id: string, assetId: string): ImageElement => ({
+    id,
+    type: 'image',
+    z: 1,
+    x: 0,
+    y: 0,
+    rotation: 0,
+    opacity: 1,
+    groupId: null,
+    locked: false,
+    assetId,
+    width: 10,
+    height: 10,
+  });
+  const asset = (id: string) => ({ id, src: `data:image/png;base64,${id.toUpperCase()}` });
+  const sealedRows = async (table: string) =>
+    Object.fromEntries(
+      (await raw(table)).map((row) => [String(row.id), rowIsSealed(row)] as const),
+    );
+
+  it('keeps the desk, its images and the fonts in the clear; the rest sealed', async () => {
+    fresh();
+    seal(db);
+    db.sealing.deskClear = true;
+    await saveChanges(db, DESK_INFO, {
+      upserts: [note('n', 'en la mesa'), picture('i', 'mesa')],
+      deletes: [],
+      assets: [asset('mesa')],
+      fonts: [{ id: 'f', name: 'Mi letra', src: 'data:font/woff2;base64,AAAA' }],
+    });
+    await saveChanges(db, info, {
+      upserts: [note('m', 'en la página'), picture('j', 'pagina')],
+      deletes: [],
+      assets: [asset('pagina')],
+      fonts: [],
+    });
+    expect(await sealedRows('pages')).toEqual({ desk: false, p1: true });
+    expect(await sealedRows('elements')).toEqual({ n: false, i: false, m: true, j: true });
+    expect(await sealedRows('assets')).toEqual({ mesa: false, pagina: true });
+    expect(await sealedRows('fonts')).toEqual({ f: false });
+
+    // Locked, the desk still reads.
+    const key = db.sealing.key;
+    db.sealing.key = null;
+    expect((await loadPage(db, DESK_ID)).elements.map((el) => el.id).sort()).toEqual(['i', 'n']);
+    await expect(loadPage(db, 'p1')).rejects.toBeInstanceOf(LockedError);
+
+    // The image leaves the desk: once matched, it is sealed again; the desk can go in too.
+    db.sealing.key = key;
+    await saveChanges(db, DESK_INFO, { upserts: [], deletes: ['i'], assets: [], fonts: [] });
+    await matchDesk(db);
+    expect(await sealedRows('assets')).toEqual({ mesa: true, pagina: true });
+    db.sealing.deskClear = false;
+    await matchDesk(db);
+    expect(Object.values(await sealedRows('elements')).every(Boolean)).toBe(true);
+    expect(await sealedRows('fonts')).toEqual({ f: true });
   });
 });

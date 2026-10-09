@@ -196,8 +196,20 @@ export function LockScreen() {
     recover: v.recoverTitle,
     forgot: l.forgotTitle,
   };
+  // On the desktop the locked diary can be put away again (Esc, or a click around it).
+  const putAway = () => {
+    if (isDesktop() && !busy) void call('hide_window');
+  };
   return (
-    <div className="lock-screen">
+    <div
+      className="lock-screen"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) putAway();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') putAway();
+      }}
+    >
       <WindowDragRegion />
       {windowMode && (
         <div className="layer top-right">

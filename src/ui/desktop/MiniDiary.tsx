@@ -1,6 +1,8 @@
 import { LockKeyhole } from 'lucide-react';
 import { forwardRef, useEffect, useRef, useState, type PointerEvent } from 'react';
-import { readToday, TODAY_KEY, type TodayCard } from '../../desktop/saved';
+import { onSharedToday, readToday, TODAY_KEY, type TodayCard } from '../../desktop/saved';
+import { useLock } from '../../cloud/lockState';
+import { useUI } from '../../store/ui';
 import { call, emit } from '../../desktop/tauri';
 import { asRecord, readJSON, writeJSON } from '../../lib/saved';
 import { useT } from '../useT';
@@ -38,7 +40,18 @@ async function openToday() {
 export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desktop: boolean }>(
   function MiniDiary({ onChange, desktop }, ref) {
     const t = useT();
-    const [card, setCard] = useState<TodayCard | null>(readToday);
+    const [saved, setCard] = useState<TodayCard | null>(readToday);
+    // With the whole diary encrypted: today's page in memory while it is open; locked, the
+    // cover or nothing, as the settings say.
+    const [shared, setShared] = useState<TodayCard | null>(null);
+    const sealed = useLock((s) => s.level === 'all');
+    const locked = useLock((s) => s.status === 'locked');
+    const hideLocked = useUI((s) => s.settings.miniLocked === 'hide');
+    useEffect(() => onSharedToday(setShared), []);
+    const card =
+      sealed && !locked && shared && saved && shared.day === saved.day
+        ? { ...shared, cover: saved.cover }
+        : saved;
     const [place, setPlace] = useState<Place>(readPlace);
     const drag = useRef<{ x: number; y: number; from: Place; moved: boolean } | null>(null);
 
@@ -53,7 +66,7 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
     // Wherever it is (and when the image loads), it takes the mouse there.
     useEffect(onChange, [onChange, card, place]);
 
-    if (!card) return null;
+    if (!card || (sealed && locked && hideLocked)) return null;
 
     const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
       if (e.button !== 0) return;

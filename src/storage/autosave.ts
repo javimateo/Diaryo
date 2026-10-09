@@ -67,6 +67,11 @@ export class Autosave {
     private readonly restoreCamera = true,
     /** In the diary: whatever ends up outside the book is saved on the desk. */
     private readonly desk: Desk | null = null,
+    /**
+     * What is loaded into the engine (the desk on the Windows desktop may leave the private
+     * notes out). What isn't loaded is never touched: only changes are saved.
+     */
+    private readonly shows: (el: SceneElement) => boolean = () => true,
   ) {}
 
   /** Loads the page into the engine and starts saving its changes. */
@@ -81,7 +86,8 @@ export class Autosave {
       }
       if (this.stopped) return false;
       for (const asset of page.assets) this.engine.assets.add(asset.src, asset.id, false);
-      this.engine.loadPage(page.elements, this.restoreCamera ? page.camera : null);
+      const shown = page.elements.filter(this.shows);
+      this.engine.loadPage(shown, this.restoreCamera ? page.camera : null);
       this.listen();
       // Whatever was drawn outside the book before the desk existed moves to it.
       if (this.desk) {

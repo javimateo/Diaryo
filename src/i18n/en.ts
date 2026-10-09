@@ -581,6 +581,15 @@ export const en: Messages = {
     floatingDiaryHint: 'Appears over the desktop from anywhere. Esc hides it.',
     shortcutTaken: 'Another app already uses this shortcut: pick another one.',
     deskLayer: 'Desk on the desktop',
+    deskPrivate: 'Private notes on the desktop',
+    deskPrivateHint: 'In the diary they always show with their padlock.',
+    deskPrivateOptions: { lock: 'With a padlock', hide: 'Not shown' },
+    deskLocked: 'The desk with the diary locked',
+    deskLockedHint:
+      "Shown: the desk isn't encrypted with the rest of the diary (its private notes are).",
+    deskLockedOptions: { clear: 'Shown', sealed: 'Hidden until opened' },
+    miniLocked: 'Mini diary with the diary locked',
+    miniLockedOptions: { cover: 'Cover', hide: 'Hidden' },
     deskLayerHint:
       "What's on the desk, over the desktop wallpaper. The shortcut shows or hides it.",
     autostart: 'Start with Windows',

@@ -85,6 +85,10 @@ export interface Settings {
   hidePrivate: HidePrivate;
   /** All the private notes hide when the diary is put away (minimized, or to the tray). */
   hidePrivateAway: boolean;
+  /** The private notes on the Windows desktop: with their padlock, or not drawn at all. */
+  deskPrivate: 'lock' | 'hide';
+  /** The desktop mini diary while the whole diary is locked: its cover, or nothing. */
+  miniLocked: 'cover' | 'hide';
 }
 
 export type HidePrivate = 30 | 60 | 300;
@@ -97,6 +101,8 @@ const DEFAULT_SETTINGS: Settings = {
   syncMode: 'auto',
   hidePrivate: 60,
   hidePrivateAway: true,
+  deskPrivate: 'lock',
+  miniLocked: 'cover',
 };
 
 export const THEME_KEY = 'diaryo:theme';
@@ -135,6 +141,8 @@ function loadSettings(): Settings {
     settings.hidePrivate = saved.hidePrivate;
   }
   if (saved.hidePrivateAway === false) settings.hidePrivateAway = false;
+  if (saved.deskPrivate === 'hide') settings.deskPrivate = 'hide';
+  if (saved.miniLocked === 'hide') settings.miniLocked = 'hide';
   return settings;
 }
 

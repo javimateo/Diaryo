@@ -1,6 +1,8 @@
 import {
   countPrivateNotes,
+  deskAssetIds,
   getDB,
+  matchDesk,
   privateNoteIds,
   releasePrivateNotes,
   rewriteDiary,
@@ -24,6 +26,7 @@ import {
 } from './crypto';
 import {
   applyPrivacy,
+  deskSealed,
   lockChannel,
   postLock,
   readLock,
@@ -67,8 +70,9 @@ const accountId = () => useAccount.getState().account?.id ?? null;
 function applyRecord(lock: LockRecord | null) {
   const db = getDB();
   db.sealing.seal = lock?.level === 'all' && lock.rewriting !== 'open';
+  db.sealing.deskClear = lock?.level === 'all' && !deskSealed(lock);
   const status = lock?.level !== 'all' ? 'off' : db.sealing.key ? 'unlocked' : 'locked';
-  useLock.setState({ level: lock?.level ?? 'off', status });
+  useLock.setState({ level: lock?.level ?? 'off', status, deskSealed: deskSealed(lock) });
 }
 
 // ─── Between windows ────────────────────────────────────────────
@@ -109,6 +113,12 @@ function onMessage(message: LockMessage) {
 export function startLock() {
   const lock = readLock();
   applyRecord(lock);
+  // The desk's images stay in the clear with it (its rows are readable without the key).
+  if (getDB().sealing.deskClear) {
+    void deskAssetIds(getDB())
+      .then((ids) => (getDB().sealing.deskAssets = ids))
+      .catch(() => undefined);
+  }
   if (lockChannel) lockChannel.onmessage = (e: MessageEvent<LockMessage>) => onMessage(e.data);
   if (lock) post({ type: 'ask' });
 }
@@ -149,6 +159,8 @@ async function open(lock: LockRecord, secret: Uint8Array<ArrayBuffer>, resume: b
   setUnlockedSecret(secret);
   if (resume && lock.rewriting) await rewrite(lock.rewriting);
   applyRecord(readLock());
+  // The desk out of the encryption or in it, as it should (only in the window unlocked).
+  if (resume) await matchDesk(getDB());
   await takeDeviceSecret(secret).catch(() => undefined);
 }
 
@@ -311,12 +323,26 @@ export async function enableLock(
   const key = newSealingKey();
   writeLock({ ...lock, level, deviceKey: await wrapDeviceKey(secret, key), rewriting: 'seal' });
   db.sealing.key = key;
+  db.sealing.deskAssets = await deskAssetIds(db);
   applyRecord(readLock());
   post({ type: 'changed', secret });
   await forgetKeptKeys();
   await takeDeviceSecret(secret).catch(() => undefined);
   await rewrite('seal');
   return code;
+}
+
+/**
+ * With the whole diary encrypted: the desk shows on the Windows desktop while it is locked
+ * (kept out of the encryption), or not until it is opened. Needs it unlocked.
+ */
+export async function setDeskVisible(visible: boolean) {
+  const lock = readLock();
+  if (lock?.level !== 'all') return;
+  writeLock({ ...lock, desk: visible ? undefined : 'sealed' });
+  applyRecord(readLock());
+  await matchDesk(getDB());
+  post({ type: 'changed', secret: null });
 }
 
 /** How many private notes there are (to ask what happens to them). */

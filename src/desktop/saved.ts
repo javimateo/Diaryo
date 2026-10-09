@@ -56,3 +56,34 @@ export function readToday(): TodayCard | null {
 }
 
 export const writeToday = (card: TodayCard) => writeJSON(TODAY_KEY, card);
+
+/**
+ * With the whole diary encrypted, today's page isn't written to the local storage (only
+ * its cover): the diary's window passes it to the desk's in memory. A window that starts
+ * asks for the last one.
+ */
+type TodayMessage = { type: 'today'; card: TodayCard } | { type: 'ask' };
+
+const todayChannel =
+  typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('diaryo-today');
+let sharedToday: TodayCard | null = null;
+const todayListeners = new Set<(card: TodayCard) => void>();
+
+if (todayChannel) {
+  todayChannel.onmessage = ({ data }: MessageEvent<TodayMessage>) => {
+    if (data.type === 'ask' && sharedToday) {
+      todayChannel.postMessage({ type: 'today', card: sharedToday } satisfies TodayMessage);
+    } else if (data.type === 'today') todayListeners.forEach((listener) => listener(data.card));
+  };
+}
+
+export function shareToday(card: TodayCard) {
+  sharedToday = card;
+  todayChannel?.postMessage({ type: 'today', card } satisfies TodayMessage);
+}
+
+export function onSharedToday(listener: (card: TodayCard) => void): () => void {
+  todayListeners.add(listener);
+  todayChannel?.postMessage({ type: 'ask' } satisfies TodayMessage);
+  return () => todayListeners.delete(listener);
+}
