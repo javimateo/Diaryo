@@ -1,7 +1,12 @@
-<!-- The installer's welcome and finish pages (NSIS sidebar, 164x314): the diary's cover. -->
+<!-- The installer's welcome and finish pages (NSIS sidebar, 164x314): the notebook on the desk. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="164" height="314" viewBox="0 0 164 314">
-  <rect width="164" height="314" fill="#b8573f"/>
-  <rect x="10" y="10" width="144" height="294" rx="10" fill="none" stroke="#f8e6dc" stroke-opacity=".5" stroke-width="2" stroke-dasharray="9 7"/>
-  <rect x="128" y="0" width="10" height="314" fill="#2a2724"/>
-  <path d="M38 132c8-21 17-32 24-29s-9 24 0 24 12-17 19-17" fill="none" stroke="#f8e6dc" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="164" height="314" fill="#f3ece2"/>
+  <svg x="22" y="70" width="120" height="120" viewBox="0 0 64 64">
+    <rect x="14.5" y="8.5" width="40" height="49" rx="7" fill="#efe3cc"/>
+    <rect x="14.5" y="8.5" width="40" height="49" rx="7" fill="none" stroke="#d9c7a6" stroke-width="1"/>
+    <rect x="9.5" y="6" width="41" height="52" rx="8" fill="#9c4532"/>
+    <rect x="9.5" y="6" width="41" height="50" rx="8" fill="#b8573f"/>
+    <rect x="41" y="3.5" width="4.5" height="57" rx="2.25" fill="#2a2724"/>
+    <path d="M17.5 39c3-8 6.5-12 9-11s-3.5 9 0 9 4.5-6.5 7-6.5" fill="none" stroke="#f8e6dc" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
 </svg>

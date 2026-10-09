@@ -3,7 +3,7 @@ import { call, isDesktop } from '../desktop/tauri';
 import { useT } from './useT';
 
 /** A page of the website: a new tab on the web, the browser on the desktop. */
-function WebsiteLink({ href, children }: { href: string; children: string }) {
+export function WebsiteLink({ href, children }: { href: string; children: string }) {
   const open = (event: MouseEvent) => {
     if (!isDesktop()) return;
     event.preventDefault();

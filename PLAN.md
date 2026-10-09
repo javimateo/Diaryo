@@ -559,12 +559,22 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           se puede hacer (dibujo, post-its, conexiones, páginas, la mesa…), fácil de
           borrar o de empezar en blanco.
     - [ ] **Mejorar la web**: qué es diaryo, capturas o vídeo, descargas, la nube.
-    - [ ] **Ventana de ajustes**: ha crecido demasiado y es densa; reorganizarla
-          (secciones o pestañas, lo avanzado aparte) para que se encuentre todo. También
-          los botones de arriba a la derecha (buscar, menú, tema, ajustes): maqueta
-          propuesta con siete secciones (General, Aspecto del diario, Escritorio,
-          Privacidad, Cuenta y nube, Copias y datos, Ayuda), «Buscar» con su nombre y el
-          tema dentro del menú.
+    - [x] **Ventana de ajustes**: ha crecido demasiado y es densa; reorganizarla
+          (secciones o pestañas, lo avanzado aparte) para que se encuentre todo. Hecho
+          (octubre de 2026): siete páginas a la izquierda (General, Aspecto del diario,
+          Escritorio solo en Windows, Privacidad, Cuenta y nube, Copias y datos, Ayuda),
+          con grupos dentro; en el móvil, la lista y «atrás». Arrancar y actualizar pasan
+          a General; las copias automáticas, a Copias y datos (con «Abrir una copia»);
+          tus datos y borrar la cuenta, plegados en «Más opciones»; la web, el código y
+          las páginas legales, en Ayuda. Se abre en la última página vista, la nube
+          lleva a «Cuenta y nube» y Ctrl K tiene un comando por página. La contraseña
+          del diario de la nube sigue en «Cuenta y nube» (va con la sincronización):
+          Privacidad lleva hasta allí.
+    - [x] **Botones de arriba a la derecha**: «Buscar» con su nombre y Ctrl K; el menú ≡
+          por grupos (insertar imagen; copias y exportar; el tema, que deja de ser un
+          botón suelto; bloquear el diario; atajos); ajustes aparte. Por debajo de 900 px
+          «Buscar» y «Guardado» quedan en icono, y por debajo de 760 el nombre en su
+          símbolo, para no montarse sobre las herramientas.
     - [ ] **Explicar mejor las funciones**: ayuda dentro de la app y en la web (atajos,
           gestos, para qué sirve cada herramienta).
 

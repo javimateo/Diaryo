@@ -1,23 +1,51 @@
-import { Check, Download, Keyboard, ShieldCheck, X } from 'lucide-react';
+import {
+  Archive,
+  BookOpen,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CircleHelp,
+  Cloud,
+  Download,
+  FolderOpen,
+  Keyboard,
+  Lock,
+  Monitor,
+  ShieldCheck,
+  SlidersHorizontal,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { TurnSpeed } from '../diary/diary';
-import { saveCopy } from './fileActions';
-import { useUI, type ThemePreference } from '../store/ui';
+import { pickCopy, saveCopy } from './fileActions';
+import { SETTINGS_SECTIONS, useUI, type SettingsSection, type ThemePreference } from '../store/ui';
 import { isDesktop } from '../desktop/tauri';
 import { BookStyleSection } from './BookStyleSection';
-import { DesktopSettings } from './DesktopSettings';
+import { DesktopBackups, DesktopRows, DesktopStartRows } from './DesktopSettings';
 import { Choice } from './Choice';
 import { SettingsRow } from './SettingsRow';
 import { useT } from './useT';
 import { LANGUAGES, type Language } from '../i18n';
 import { AccountSection } from './AccountSection';
 import { PrivacySection } from './PrivacySection';
+import { LegalLinks, WebsiteLink } from './LegalLinks';
 import { formatBytes } from './formatBytes';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 const TURN_SPEEDS: TurnSpeed[] = ['normal', 'fast', 'off'];
 
-/** Settings: account, appearance, diary look, behaviour and storage. */
+const ICONS: Record<SettingsSection, LucideIcon> = {
+  general: SlidersHorizontal,
+  look: BookOpen,
+  desktop: Monitor,
+  privacy: Lock,
+  account: Cloud,
+  data: Archive,
+  help: CircleHelp,
+};
+
+/** Settings: a page per section, chosen on the left (on a phone, a list first). */
 export function SettingsDialog() {
   const open = useUI((s) => s.settingsOpen);
   if (!open) return null;
@@ -27,11 +55,15 @@ export function SettingsDialog() {
 function Settings() {
   const t = useT();
   const setOpen = useUI((s) => s.setSettingsOpen);
-  const themePreference = useUI((s) => s.themePreference);
-  const setThemePreference = useUI((s) => s.setThemePreference);
-  const settings = useUI((s) => s.settings);
-  const setSettings = useUI((s) => s.setSettings);
+  const section = useUI((s) => s.settingsSection);
+  const setSection = useUI((s) => s.setSettingsSection);
+  const desktop = useUI((s) => s.desktop !== null);
+  // On a phone only the list or one page fits: a page when it was opened on one.
+  const [showing, setShowing] = useState(() => useUI.getState().settingsDirect);
   const close = () => setOpen(false);
+  const sections = SETTINGS_SECTIONS.filter((id) => id !== 'desktop' || desktop);
+  const current = sections.includes(section) ? section : 'general';
+  const names = t.settings.sections;
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -52,92 +84,127 @@ function Settings() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
+        data-view={showing ? 'page' : 'list'}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => {
           if (!(e.target instanceof HTMLInputElement)) e.preventDefault();
         }}
       >
         <header className="dialog-header">
-          <h2 id="settings-title">{t.settings.title}</h2>
+          <button
+            type="button"
+            className="icon-btn settings-back"
+            aria-label={t.settings.back}
+            onClick={() => setShowing(false)}
+          >
+            <ChevronLeft size={20} strokeWidth={1.75} />
+          </button>
+          <h2 id="settings-title">
+            <span className="settings-title-list">{t.settings.title}</span>
+            <span className="settings-title-page">{names[current]}</span>
+          </h2>
           <button type="button" className="icon-btn" aria-label={t.common.close} onClick={close}>
             <X size={18} strokeWidth={1.75} />
           </button>
         </header>
-        <div className="settings-body" data-scrollable>
-          <AccountSection />
-
-          <PrivacySection />
-
-          <section className="settings-section">
-            <h3>{t.settings.appearance}</h3>
-            <SettingsRow label={t.settings.language}>
-              <Choice
-                options={Object.entries(LANGUAGES) as [Language, string][]}
-                value={settings.language}
-                onChange={(language) => setSettings({ language })}
-              />
-            </SettingsRow>
-            <SettingsRow label={t.settings.theme}>
-              <Choice
-                options={THEMES.map((id) => [id, t.settings.themes[id]])}
-                value={themePreference}
-                onChange={(value) => setThemePreference(value)}
-              />
-            </SettingsRow>
-          </section>
-
-          <section className="settings-section">
-            <h3>{t.settings.bookLook}</h3>
-            <BookStyleSection />
-          </section>
-
-          <section className="settings-section">
-            <h3>{t.settings.diary}</h3>
-            <SettingsRow label={t.settings.weekStart}>
-              <Choice
-                options={[
-                  [1, t.settings.monday],
-                  [0, t.settings.sunday],
-                ]}
-                value={settings.weekStart}
-                onChange={(weekStart) => setSettings({ weekStart })}
-              />
-            </SettingsRow>
-            <SettingsRow label={t.settings.turnPage} hint={t.settings.turnPageHint}>
-              <Choice
-                options={TURN_SPEEDS.map((id) => [id, t.settings.turnSpeeds[id]])}
-                value={settings.turnSpeed}
-                onChange={(turnSpeed) => setSettings({ turnSpeed })}
-              />
-            </SettingsRow>
-          </section>
-
-          <DesktopSettings />
-
-          <Storage />
-
-          <section className="settings-section">
-            <h3>{t.settings.help}</h3>
-            <SettingsRow label={t.settings.shortcuts} hint={t.settings.shortcutsHint}>
-              <button
-                type="button"
-                className="settings-btn"
-                onClick={() => {
-                  setOpen(false);
-                  useUI.getState().setHelpOpen(true);
-                }}
-              >
-                <Keyboard size={15} strokeWidth={1.75} /> {t.settings.showShortcuts}
-              </button>
-            </SettingsRow>
-          </section>
+        <div className="settings-layout">
+          <nav className="settings-nav" aria-label={t.settings.title}>
+            {sections.map((id) => {
+              const Icon = ICONS[id];
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className="settings-nav-item"
+                  aria-current={id === current ? 'page' : undefined}
+                  onClick={() => {
+                    setSection(id);
+                    setShowing(true);
+                  }}
+                >
+                  <Icon size={17} strokeWidth={1.75} />
+                  <span>{names[id]}</span>
+                  <ChevronRight size={18} strokeWidth={1.75} className="settings-nav-more" />
+                </button>
+              );
+            })}
+          </nav>
+          {/* Keyed by the page, so each one starts scrolled to the top. */}
+          <div key={current} className="settings-body" data-scrollable>
+            <h3 className="settings-page-title">{names[current]}</h3>
+            <Page id={current} />
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/** Where and how much is saved, and how to protect it. */
+function Page({ id }: { id: SettingsSection }) {
+  switch (id) {
+    case 'general':
+      return <General />;
+    case 'look':
+      return <BookStyleSection />;
+    case 'desktop':
+      return <DesktopRows />;
+    case 'privacy':
+      return <PrivacySection />;
+    case 'account':
+      return <AccountSection />;
+    case 'data':
+      return <Storage />;
+    case 'help':
+      return <Help />;
+  }
+}
+
+/** Language, theme and how the diary behaves (and on Windows, starting and updating). */
+function General() {
+  const t = useT();
+  const themePreference = useUI((s) => s.themePreference);
+  const setThemePreference = useUI((s) => s.setThemePreference);
+  const settings = useUI((s) => s.settings);
+  const setSettings = useUI((s) => s.setSettings);
+  return (
+    <>
+      <SettingsRow label={t.settings.language}>
+        <Choice
+          options={Object.entries(LANGUAGES) as [Language, string][]}
+          value={settings.language}
+          onChange={(language) => setSettings({ language })}
+        />
+      </SettingsRow>
+      <SettingsRow label={t.settings.theme}>
+        <Choice
+          options={THEMES.map((id) => [id, t.settings.themes[id]])}
+          value={themePreference}
+          onChange={(value) => setThemePreference(value)}
+        />
+      </SettingsRow>
+      <SettingsRow label={t.settings.weekStart}>
+        <Choice
+          options={[
+            [1, t.settings.monday],
+            [0, t.settings.sunday],
+          ]}
+          value={settings.weekStart}
+          onChange={(weekStart) => setSettings({ weekStart })}
+        />
+      </SettingsRow>
+      <SettingsRow label={t.settings.turnPage} hint={t.settings.turnPageHint}>
+        <Choice
+          options={TURN_SPEEDS.map((id) => [id, t.settings.turnSpeeds[id]])}
+          value={settings.turnSpeed}
+          onChange={(turnSpeed) => setSettings({ turnSpeed })}
+        />
+      </SettingsRow>
+      <DesktopStartRows />
+    </>
+  );
+}
+
+/** Where and how much is saved, how to protect it, and the backups. */
 function Storage() {
   const t = useT();
   const diary = useUI((s) => s.diary);
@@ -162,8 +229,7 @@ function Storage() {
   };
 
   return (
-    <section className="settings-section">
-      <h3>{t.settings.storage}</h3>
+    <>
       <p className="settings-note">
         {t.settings.savedWhere(desktop, usage === null ? null : formatBytes(usage))}
       </p>
@@ -190,6 +256,42 @@ function Storage() {
           <Download size={15} strokeWidth={1.75} /> {t.settings.saveCopy}
         </button>
       </SettingsRow>
-    </section>
+      <SettingsRow label={t.settings.openCopy} hint={t.settings.openCopyHint}>
+        <button type="button" className="settings-btn" onClick={pickCopy}>
+          <FolderOpen size={15} strokeWidth={1.75} /> {t.settings.open}
+        </button>
+      </SettingsRow>
+      <DesktopBackups />
+    </>
+  );
+}
+
+/** The shortcuts, and about diaryo: the website, the code and the legal pages. */
+function Help() {
+  const t = useT();
+  const s = t.settings;
+  return (
+    <>
+      <SettingsRow label={s.shortcuts} hint={s.shortcutsHint}>
+        <button
+          type="button"
+          className="settings-btn"
+          onClick={() => {
+            useUI.getState().setSettingsOpen(false);
+            useUI.getState().setHelpOpen(true);
+          }}
+        >
+          <Keyboard size={15} strokeWidth={1.75} /> {s.showShortcuts}
+        </button>
+      </SettingsRow>
+      <section className="settings-group">
+        <h4>{s.about}</h4>
+        <div className="account-legal-links settings-about">
+          <WebsiteLink href={s.websiteUrl}>{s.website}</WebsiteLink>
+          <WebsiteLink href={s.sourceUrl}>{s.source}</WebsiteLink>
+        </div>
+        <LegalLinks />
+      </section>
+    </>
   );
 }

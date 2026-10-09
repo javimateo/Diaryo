@@ -47,9 +47,8 @@ import {
 import { BINDINGS, PAPER_COLORS, PAPER_STYLES, type PaperColor } from '../engine/book';
 import { MATERIALS } from '../engine/cover';
 import { DESKS } from '../engine/desk';
-import { exportPng, openCopy, saveCopy } from './fileActions';
-import { FILE_EXTENSION } from '../storage/files';
-import { useUI } from '../store/ui';
+import { exportPng, pickCopy, saveCopy } from './fileActions';
+import { SETTINGS_SECTIONS, useUI } from '../store/ui';
 import {
   addPage,
   deletePage,
@@ -93,19 +92,6 @@ export interface Command {
    * return doesn't matter).
    */
   run: () => CommandPrompt | boolean | void;
-}
-
-/** Opens the file picker to open a backup of the diary. */
-function pickBackup() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = `${FILE_EXTENSION},application/json`;
-  input.onchange = () => {
-    const file = input.files?.[0];
-    const { engine } = useUI.getState();
-    if (file && engine) void openCopy(engine, file);
-  };
-  input.click();
 }
 
 /** Everything that can be done from the palette, depending on the current state of the app. */
@@ -433,6 +419,13 @@ export function getCommands(): Command[] {
       keywords: kw.settings,
       run: () => state.setSettingsOpen(true),
     },
+    ...SETTINGS_SECTIONS.filter((id) => id !== 'desktop' || state.desktop).map((id) => ({
+      id: `settings-${id}`,
+      label: `${c.settings} · ${t().settings.sections[id]}`,
+      icon: Settings,
+      keywords: kw.settingsSections[id],
+      run: () => state.setSettingsOpen(true, id),
+    })),
     {
       id: 'help',
       label: c.shortcuts,
@@ -529,7 +522,7 @@ export function getCommands(): Command[] {
       label: c.openCopy,
       icon: FolderOpen,
       keywords: kw.openCopy,
-      run: pickBackup,
+      run: pickCopy,
     },
     {
       id: 'export-png',

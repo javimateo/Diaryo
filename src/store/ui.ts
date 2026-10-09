@@ -64,6 +64,18 @@ export type CopyPrivacy = { kind: 'save' } | { kind: 'open'; backup: SealedBacku
 
 /** The chosen theme: light, dark or the system one (and it follows it). */
 export type ThemePreference = Theme | 'system';
+/** The pages of the settings window. */
+export type SettingsSection =
+  'general' | 'look' | 'desktop' | 'privacy' | 'account' | 'data' | 'help';
+export const SETTINGS_SECTIONS: SettingsSection[] = [
+  'general',
+  'look',
+  'desktop',
+  'privacy',
+  'account',
+  'data',
+  'help',
+];
 
 /**
  * How the cloud diary syncs on this device: by itself, only when asked, or only when
@@ -222,6 +234,10 @@ interface UIState {
   themePreference: ThemePreference;
   settings: Settings;
   settingsOpen: boolean;
+  /** The settings page shown (the last one seen, while the app is open). */
+  settingsSection: SettingsSection;
+  /** Opened on a given page: on a phone it shows that page instead of the list. */
+  settingsDirect: boolean;
   helpOpen: boolean;
   saveStatus: SaveStatus;
   diary: Diary | null;
@@ -265,7 +281,9 @@ interface UIState {
   setSettings: (patch: Partial<Settings>) => void;
   /** Reads the saved settings again (another window changed them). */
   reloadSettings: () => void;
-  setSettingsOpen: (open: boolean) => void;
+  /** Opens or closes the settings; with a page, opens on it. */
+  setSettingsOpen: (open: boolean, section?: SettingsSection) => void;
+  setSettingsSection: (section: SettingsSection) => void;
   setHelpOpen: (open: boolean) => void;
   setSaveStatus: (status: SaveStatus) => void;
   setDiary: (diary: Diary | null) => void;
@@ -313,6 +331,8 @@ export const useUI = create<UIState>()((set, get) => ({
   themePreference: initialPreference,
   settings: initialSettings,
   settingsOpen: false,
+  settingsSection: 'general',
+  settingsDirect: false,
   helpOpen: false,
   saveStatus: 'loading',
   diary: null,
@@ -371,7 +391,14 @@ export const useUI = create<UIState>()((set, get) => ({
     writeJSON(SETTINGS_KEY, settings);
     set({ settings });
   },
-  setSettingsOpen: (settingsOpen) => set({ settingsOpen, contextMenu: null }),
+  setSettingsOpen: (settingsOpen, section) =>
+    set((state) => ({
+      settingsOpen,
+      settingsSection: section ?? state.settingsSection,
+      settingsDirect: Boolean(section),
+      contextMenu: null,
+    })),
+  setSettingsSection: (settingsSection) => set({ settingsSection }),
   setHelpOpen: (helpOpen) => set({ helpOpen }),
   setSaveStatus: (saveStatus) => set({ saveStatus }),
   setDiary: (diary) => set({ diary }),

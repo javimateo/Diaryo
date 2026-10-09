@@ -35,7 +35,6 @@ import { signOutOfDevice, syncNow, useSync } from './cloudSync';
 import { relativeTime } from './relativeTime';
 import { formatBytes } from './formatBytes';
 import { GoogleButton } from './GoogleButton';
-import { LegalLinks } from './LegalLinks';
 import { lockDiaryNow } from './lockActions';
 import { SettingsRow } from './SettingsRow';
 import { Switch } from './Switch';
@@ -85,8 +84,7 @@ export function AccountSection() {
 
   if (!account) {
     return (
-      <section className="settings-section">
-        <h3>{t.account.section}</h3>
+      <>
         <p className="settings-note account-intro">{t.account.intro}</p>
         <div className="account-start">
           <GoogleButton
@@ -100,7 +98,7 @@ export function AccountSection() {
           </button>
         </div>
         <KeepSessionRow />
-      </section>
+      </>
     );
   }
 
@@ -117,8 +115,7 @@ export function AccountSection() {
   };
 
   return (
-    <section className="settings-section">
-      <h3>{t.account.section}</h3>
+    <>
       <div className="account-card">
         <span className="account-avatar" aria-hidden>
           {account.email.charAt(0).toUpperCase()}
@@ -221,8 +218,11 @@ export function AccountSection() {
       <VaultRows />
       <SyncRows />
       <KeepSessionRow />
-      <DataRows />
-    </section>
+      <details className="settings-more">
+        <summary>{t.settings.more}</summary>
+        <DataRows />
+      </details>
+    </>
   );
 }
 
@@ -351,7 +351,6 @@ function DataRows() {
           </div>
         </form>
       )}
-      <LegalLinks />
     </>
   );
 }
