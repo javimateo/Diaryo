@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   bookBounds,
+  CLOSED_COVER,
   DEFAULT_BOOK_STYLE,
+  isOnPage,
   PAGE_WIDTH,
   tabAt,
   tabRects,
@@ -52,5 +54,31 @@ describe('tabs of the important pages', () => {
     const left = bookBounds(spread([tab('a', 'left')]));
     expect(right.maxX).toBeGreaterThan(plain.maxX);
     expect(right).toEqual(left);
+  });
+});
+
+describe('the closed diary', () => {
+  const box = (cx: number, cy: number) => ({
+    minX: cx - 10,
+    minY: cy - 10,
+    maxX: cx + 10,
+    maxY: cy + 10,
+  });
+  const closed = { ...spread([]), closed: true };
+
+  it('its page is the front cover: the far side of the open book is outside it', () => {
+    expect(isOnPage(box(0, 0), true)).toBe(true);
+    expect(isOnPage(box(-PAGE_WIDTH + 20, 0))).toBe(true);
+    expect(isOnPage(box(-PAGE_WIDTH + 20, 0), true)).toBe(false);
+    expect(isOnPage(box(CLOSED_COVER.maxX - 5, CLOSED_COVER.maxY - 5), true)).toBe(true);
+  });
+
+  it('is framed around its cover, narrower than the open book', () => {
+    const bounds = bookBounds(closed);
+    const open = bookBounds(spread([]));
+    expect(bounds.minX).toBeLessThanOrEqual(CLOSED_COVER.minX);
+    expect(bounds.maxX).toBeGreaterThanOrEqual(CLOSED_COVER.maxX);
+    expect(bounds.minY).toBeLessThan(CLOSED_COVER.minY);
+    expect(bounds.maxX - bounds.minX).toBeLessThan((open.maxX - open.minX) / 1.8);
   });
 });

@@ -554,7 +554,20 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           `docs/releasing.md`.
     - [ ] **Portada del diario editable**: que cada uno personalice la suya (no solo el
           color). Es también lo que enseña el mini diario cuando el diario está
-          bloqueado (D2).
+          bloqueado (D2). Decidido (octubre de 2026): la portada es un lienzo más, sobre
+          la tapa cerrada, con las herramientas de siempre (fotos, texto, dibujo,
+          post-its); seis plantillas para empezar (en blanco, grabado, dorado, etiqueta,
+          fotos con solo el marco, tiza); se guarda sin cifrar, como la mesa, porque se ve
+          con el diario bloqueado (y lo avisa); «Abrir con la portada» al arrancar,
+          encendido por defecto, con una imagen ya hecha y nunca en el diario flotante.
+      - [x] **1. Motor**: el diario cerrado (`closed`): solo la tapa delantera, con su
+            material, color y goma por encima; lo pegado se recorta en su borde; ahí no
+            se pasan páginas.
+      - [ ] **2. Diario y guardado**: la página `cover` (como `desk`), editar y «Listo»,
+            su imagen, siempre en claro con sus fotos, copias y nube.
+      - [ ] **3. Ajustes**: el grupo «Portada», las plantillas y Ctrl K.
+      - [ ] **4. Dónde se ve**: la pantalla de bloqueo y el mini diario bloqueado.
+      - [ ] **5. Abrir con la portada**.
     - [ ] **Diario de demostración**: al empezar, una plantilla o demo que enseñe lo que
           se puede hacer (dibujo, post-its, conexiones, páginas, la mesa…), fácil de
           borrar o de empezar en blanco.
@@ -569,7 +582,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           las páginas legales, en Ayuda. Se abre en la última página vista, la nube
           lleva a «Cuenta y nube» y Ctrl K tiene un comando por página. La contraseña
           del diario de la nube sigue en «Cuenta y nube» (va con la sincronización):
-          Privacidad lleva hasta allí.
+          Privacidad lleva hasta allí. Al final de cada página, «Volver a como venía»
+          restablece sus valores (con «Deshacer»); en Privacidad, solo el bloqueo y los
+          post-its privados, nunca lo que se cifra ni la contraseña.
     - [x] **Botones de arriba a la derecha**: «Buscar» con su nombre y Ctrl K; el menú ≡
           por grupos (insertar imagen; copias y exportar; el tema, que deja de ser un
           botón suelto; bloquear el diario; atajos); ajustes aparte. Por debajo de 900 px

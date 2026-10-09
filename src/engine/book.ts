@@ -85,6 +85,8 @@ export interface BookSpread {
   /** Tabs of the important pages, in diary order. */
   tabs: BookTab[];
   labels: BookLabels;
+  /** The diary closed: only its front cover, to dress it up (the cover being edited). */
+  closed?: boolean;
 }
 
 /** Size of each page in world units (proportions similar to A5). */
@@ -141,22 +143,55 @@ export const PAGES = {
 } satisfies Record<string, Bounds>;
 
 /**
+ * The face of the closed diary's front cover: one board as tall as the open book's,
+ * centered (its thickness shows below it).
+ */
+const CLOSED_HALF = (PAGE_WIDTH + COVER_OUT - RING_GAP) / 2;
+export const CLOSED_COVER: Bounds = {
+  minX: -CLOSED_HALF,
+  minY: TOP - COVER_OUT,
+  maxX: CLOSED_HALF,
+  maxY: BOTTOM + COVER_OUT - COVER_THICKNESS,
+};
+/** Corners of the closed cover: soft at the spine (left), round outside. */
+const CLOSED_RADII = [6, COVER_RADIUS, COVER_RADIUS, 6];
+
+/**
  * Does it belong to the page (inside the book) or to the desk (outside, shared by the
  * whole diary)? The element's center counts: taking something out of the book moves it to
- * the desk.
+ * the desk. With the diary closed, the page is its front cover.
  */
-export function isOnPage(bounds: Bounds): boolean {
+export function isOnPage(bounds: Bounds, closed = false): boolean {
   const cx = (bounds.minX + bounds.maxX) / 2;
   const cy = (bounds.minY + bounds.maxY) / 2;
-  return cx >= -PAGE_WIDTH && cx <= PAGE_WIDTH && cy >= TOP && cy <= BOTTOM;
+  const page = closed
+    ? CLOSED_COVER
+    : { minX: -PAGE_WIDTH, maxX: PAGE_WIDTH, minY: TOP, maxY: BOTTOM };
+  return cx >= page.minX && cx <= page.maxX && cy >= page.minY && cy <= page.maxY;
 }
 
 /**
  * The whole open book, with the covers (and room for the tabs on both sides if there is
- * any: that way the framing doesn't change when a tab moves to the other side).
+ * any: that way the framing doesn't change when a tab moves to the other side). Closed,
+ * its front cover with the elastic that wraps it.
  */
 export function bookBounds(spread?: BookSpread | null): Bounds {
+  if (spread?.closed) {
+    return {
+      minX: CLOSED_COVER.minX,
+      minY: CLOSED_COVER.minY - ELASTIC_PEEK,
+      maxX: CLOSED_COVER.maxX,
+      maxY: CLOSED_COVER.maxY + COVER_THICKNESS + ELASTIC_PEEK,
+    };
+  }
   return bookBoundsWith(!!spread?.tabs.length);
+}
+
+/** Traces the closed cover's face (to clip what is stuck on it). */
+export function traceClosedCover(ctx: CanvasRenderingContext2D) {
+  const c = CLOSED_COVER;
+  ctx.beginPath();
+  ctx.roundRect(c.minX, c.minY, c.maxX - c.minX, c.maxY - c.minY, CLOSED_RADII);
 }
 
 /** The whole open book, with room for the tabs if there are any. */
@@ -302,6 +337,10 @@ export function drawBook(
 ) {
   const c = COLORS[mode];
   const { style } = spread;
+  if (spread.closed) {
+    drawCovers(ctx, style, mode, pixelScale, true);
+    return;
+  }
 
   if (!pagesOnly) {
     // The tabs and the elastic come out from under the covers.
@@ -353,9 +392,15 @@ export function drawBook(
   ctx.textAlign = 'left';
 }
 
-/** Loop of the elastic band (it goes behind the back cover and shows at the top and bottom). */
-function drawElastic(ctx: CanvasRenderingContext2D, pixelScale: number) {
-  const x = PAGE_WIDTH + COVER_OUT - ELASTIC_INSET;
+/**
+ * Loop of the elastic band. Open, it goes behind the back cover and shows at the top and
+ * bottom; closed, it crosses the front cover (`x` is where).
+ */
+function drawElastic(
+  ctx: CanvasRenderingContext2D,
+  pixelScale: number,
+  x = PAGE_WIDTH + COVER_OUT - ELASTIC_INSET,
+) {
   const top = TOP - COVER_OUT - ELASTIC_PEEK;
   const height = PAGE_HEIGHT + (COVER_OUT + ELASTIC_PEEK) * 2;
   ctx.save();
@@ -403,7 +448,7 @@ export const coverColor = (style: BookStyle) =>
 
 /**
  * Covers: with rings they are two boards separated at the spine; sewn, a single cover
- * with its cloth spine. They have thickness (their darker edge shows at the bottom and
+ * with its cloth spine; closed, only the front board. They have thickness (their darker edge shows at the bottom and
  * outside), the grain of their material, a soft light and, if leather, stitching along
  * the border. They cast a two-layer shadow: one close to the book and a diffuse one.
  */
@@ -412,6 +457,7 @@ function drawCovers(
   style: BookStyle,
   mode: ThemeMode,
   pixelScale: number,
+  closed = false,
 ) {
   // Cover tones (at night, a bit more muted, like the rest of the diary).
   const night = mode === 'dark' ? 0.78 : 1;
@@ -422,12 +468,14 @@ function drawCovers(
   const top = TOP - COVER_OUT;
   const bottom = BOTTOM + COVER_OUT;
   const r = COVER_RADIUS;
-  const boards: { minX: number; maxX: number; radii: number[] }[] = rings
-    ? [
-        { minX: -outer, maxX: -RING_GAP, radii: [r, 4, 4, r] },
-        { minX: RING_GAP, maxX: outer, radii: [4, r, r, 4] },
-      ]
-    : [{ minX: -outer, maxX: outer, radii: [r, r, r, r] }];
+  const boards: { minX: number; maxX: number; radii: number[] }[] = closed
+    ? [{ minX: CLOSED_COVER.minX, maxX: CLOSED_COVER.maxX, radii: CLOSED_RADII }]
+    : rings
+      ? [
+          { minX: -outer, maxX: -RING_GAP, radii: [r, 4, 4, r] },
+          { minX: RING_GAP, maxX: outer, radii: [4, r, r, 4] },
+        ]
+      : [{ minX: -outer, maxX: outer, radii: [r, r, r, r] }];
   const trace = (inset = 0, lift = 0) => {
     ctx.beginPath();
     for (const b of boards) {
@@ -470,7 +518,7 @@ function drawCovers(
   trace(0, COVER_THICKNESS);
   ctx.clip();
   // Cloth spine (sewn): a slightly darker strip with its folds.
-  if (!rings) {
+  if (!rings && !closed) {
     ctx.fillStyle = tone(-0.14);
     ctx.fillRect(-SPINE_STRIP, top, SPINE_STRIP * 2, bottom - top);
     ctx.lineWidth = hairline(2, pixelScale);
@@ -817,6 +865,11 @@ function ringPositions(): number[] {
 
 /** Binding above the content: rings or stitching on the spine. */
 export function drawBinding(ctx: CanvasRenderingContext2D, spread: BookSpread, pixelScale: number) {
+  if (spread.closed) {
+    // Closed, the elastic goes over what is stuck on the cover.
+    if (spread.style.elastic) drawElastic(ctx, pixelScale, CLOSED_COVER.maxX - ELASTIC_INSET);
+    return;
+  }
   if (spread.style.binding === 'sewn') {
     // Thread in the central fold.
     ctx.strokeStyle = 'rgba(120, 100, 80, 0.55)';
