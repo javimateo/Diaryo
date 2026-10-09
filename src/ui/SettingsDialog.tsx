@@ -145,7 +145,12 @@ function Page({ id }: { id: SettingsSection }) {
     case 'general':
       return <General />;
     case 'look':
-      return <BookStyleSection />;
+      return (
+        <>
+          <ThemeRow />
+          <BookStyleSection />
+        </>
+      );
     case 'desktop':
       return <DesktopRows />;
     case 'privacy':
@@ -162,8 +167,6 @@ function Page({ id }: { id: SettingsSection }) {
 /** Language, theme and how the diary behaves (and on Windows, starting and updating). */
 function General() {
   const t = useT();
-  const themePreference = useUI((s) => s.themePreference);
-  const setThemePreference = useUI((s) => s.setThemePreference);
   const settings = useUI((s) => s.settings);
   const setSettings = useUI((s) => s.setSettings);
   return (
@@ -175,13 +178,7 @@ function General() {
           onChange={(language) => setSettings({ language })}
         />
       </SettingsRow>
-      <SettingsRow label={t.settings.theme}>
-        <Choice
-          options={THEMES.map((id) => [id, t.settings.themes[id]])}
-          value={themePreference}
-          onChange={(value) => setThemePreference(value)}
-        />
-      </SettingsRow>
+      <ThemeRow />
       <SettingsRow label={t.settings.weekStart}>
         <Choice
           options={[
@@ -201,6 +198,22 @@ function General() {
       </SettingsRow>
       <DesktopStartRows />
     </>
+  );
+}
+
+/** Light, dark or the system's: in General and, with the rest of the look, in the diary's. */
+function ThemeRow() {
+  const t = useT();
+  const themePreference = useUI((s) => s.themePreference);
+  const setThemePreference = useUI((s) => s.setThemePreference);
+  return (
+    <SettingsRow label={t.settings.theme}>
+      <Choice
+        options={THEMES.map((id) => [id, t.settings.themes[id]])}
+        value={themePreference}
+        onChange={setThemePreference}
+      />
+    </SettingsRow>
   );
 }
 
