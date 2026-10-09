@@ -521,6 +521,13 @@ export const es = {
     websiteUrl: 'https://diaryo.javiermateo.dev/',
     source: 'El código, en GitHub',
     sourceUrl: 'https://github.com/javimateo/Diaryo',
+    restoreRow: 'Volver a como venía',
+    restoreHint: 'Lo de este apartado vuelve a sus valores de siempre. Se puede deshacer.',
+    restoreHintPrivacy:
+      'Bloqueo y post-its privados vuelven a sus valores de siempre; lo que se cifra y la contraseña no cambian. Se puede deshacer.',
+    restore: 'Restablecer',
+    restored: 'Apartado restablecido',
+    undo: 'Deshacer',
   },
 
   /** Names of keys and gestures (in the help and in shortcuts). */
