@@ -95,7 +95,7 @@
 
 .settings-group > h4 {
   margin: 6px 0 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -109,7 +109,7 @@
 
 .settings-more > summary {
   padding: 8px 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -120,9 +120,37 @@
   border-bottom: 0;
 }
 
+/* The diary look is shared with the index's narrow panel; here there is room to read it. */
+.settings-body .book-style h3 {
+  margin-top: 14px;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--text-muted) 65%, var(--text));
+}
+
+.settings-body .style-tile {
+  font-size: 13px;
+  color: color-mix(in srgb, var(--text-muted) 65%, var(--text));
+}
+
+.settings-body .text-option {
+  font-size: 14px;
+}
+
+.settings-body .book-style-row {
+  font-size: 15px;
+}
+
+.settings-body .book-style-note {
+  font-size: 13.5px;
+}
+
+.settings-body .style-grid {
+  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+}
+
 .settings-about {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* A phone: the list of pages, or one page with a back arrow. */
@@ -194,12 +222,13 @@
   flex-direction: column;
   gap: 1px;
   min-width: 0;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .settings-label small {
-  font-size: 12px;
-  color: var(--text-muted);
+  font-size: 13.5px;
+  /* Darker than the muted grey: these explanations are meant to be read. */
+  color: color-mix(in srgb, var(--text-muted) 65%, var(--text));
 }
 
 .settings-row .segmented-group {
@@ -207,12 +236,13 @@
 }
 
 .settings-row .text-option {
-  padding: 0 10px;
+  padding: 0 11px;
+  font-size: 14px;
 }
 
 .settings-note {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
 }
 
@@ -226,7 +256,7 @@
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 120ms var(--ease);
@@ -246,7 +276,7 @@
   flex: none;
   align-items: center;
   gap: 5px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: #3f9a5e;
 }
