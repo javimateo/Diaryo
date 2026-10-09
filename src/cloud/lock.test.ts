@@ -15,6 +15,7 @@ const fake = vi.hoisted(() => {
     record: null as { id: string; email: string; verified: boolean } | null,
     vault: null as Record<string, unknown> | null,
     online: true,
+    keepSession: true,
   };
   const offline = () => Promise.reject(new TypeError('Failed to fetch'));
   const pb = {
@@ -52,7 +53,12 @@ const fake = vi.hoisted(() => {
   };
 });
 
-vi.mock('./client', () => ({ pb: fake.pb, CLOUD_URL: 'http://cloud.test', SESSION_KEY: 's' }));
+vi.mock('./client', () => ({
+  pb: fake.pb,
+  CLOUD_URL: 'http://cloud.test',
+  SESSION_KEY: 's',
+  keepsSession: () => fake.state.keepSession,
+}));
 
 const note = (id: string, text: string): NoteElement => ({
   id,
@@ -148,6 +154,7 @@ beforeEach(() => {
   fake.state.record = null;
   fake.state.vault = null;
   fake.state.online = true;
+  fake.state.keepSession = true;
 });
 
 afterEach(async () => {
@@ -527,5 +534,20 @@ describe('the desk on the Windows desktop, with the whole diary encrypted', () =
 
     a = await start();
     expect(await a.read('desk')).toBe('en la mesa');
+  });
+});
+
+describe('the session not kept in this browser (a shared computer)', () => {
+  it("doesn't keep the cloud's keys on disk either", async () => {
+    const other = await (await import('./crypto')).createVault('la de la nube', 1000);
+    fake.state.vault = { ...other.vault, id: 'v1', version: 1 };
+    fake.state.record = { id: 'ana', email: 'ana@diaryo.test', verified: true };
+    fake.state.keepSession = false;
+    const a = await start();
+    await a.vault.checkVault();
+    expect(a.account.useAccount.getState().vault).toBe('locked');
+    await a.vault.unlock('la de la nube');
+    expect(a.account.useAccount.getState().vault).toBe('unlocked');
+    expect(await a.keystore.loadKeys('ana')).toBeNull();
   });
 });

@@ -142,6 +142,22 @@ style stay as they are, so it shows in its place with a padlock.
   key (`reboxPrivateNotes`), and the ones shown are hidden. That needs the old secret: if
   the notes are hidden, unlocking that cloud asks to show them first.
 
+## Shared computers
+
+- **Locking by itself** (Settings → Privacy, with the whole diary encrypted): after 5,
+  15 or 60 minutes without using it (pointer, keys, wheel), and, with "Lock when put
+  away", when the tab changes or it is minimized (on the desktop, also to the tray). It
+  is "Lock now" done for the user (`src/ui/autoLock.ts`). Off by default.
+- **Signing out, "Leave it encrypted and locked"**: the diary stays on the device, but
+  the whole diary is encrypted first if it wasn't (with the cloud's diary password),
+  and locked once signed out. It opens offline with that password (its vault is kept
+  on the device) or the recovery code.
+- **"Keep the session in this browser"** (Settings → Account and cloud, web only), on by
+  default. Off, the session lives in the tab's storage (`sessionStorage`, `TabAuthStore`
+  in `src/cloud/client.ts`) and the cloud's keys only in memory: closing the tab signs
+  out, and another tab asks to sign in. The local copy of the diary stays: for that,
+  the option above, or "Remove it from here".
+
 ## The Windows desktop
 
 The desk on the Windows desktop is another window (see [architecture](architecture.md)).

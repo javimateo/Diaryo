@@ -1,7 +1,8 @@
 import { Eye, EyeOff, KeyRound, Lock, LockKeyhole } from 'lucide-react';
 import { hideNotes } from '../cloud/lock';
 import { readLock, useLock, type LockLevel } from '../cloud/lockState';
-import { useUI, type HidePrivate, type LockView } from '../store/ui';
+import { isDesktop } from '../desktop/tauri';
+import { useUI, type AutoLock, type HidePrivate, type LockView } from '../store/ui';
 import { Choice } from './Choice';
 import { lockDiaryNow } from './lockActions';
 import { SettingsRow } from './SettingsRow';
@@ -18,6 +19,7 @@ const CHANGES: Record<Level, Partial<Record<Level, LockView>>> = {
 };
 
 const HIDE_AFTER: HidePrivate[] = [30, 60, 300];
+const AUTO_LOCK: AutoLock[] = [0, 5, 15, 60];
 
 /**
  * Settings → Privacy: what is encrypted on this device (nothing, only the private notes,
@@ -81,11 +83,27 @@ export function PrivacySection() {
         </>
       )}
       {level === 'all' && (
-        <SettingsRow label={l.lockNow} hint={l.lockNowHint}>
-          <button type="button" className="settings-btn" onClick={() => void lockDiaryNow()}>
-            <Lock size={15} strokeWidth={1.75} /> {l.lockNow}
-          </button>
-        </SettingsRow>
+        <>
+          <SettingsRow label={l.autoLock} hint={l.autoLockHint}>
+            <Choice
+              options={AUTO_LOCK.map((id) => [id, l.autoLockOptions[id]])}
+              value={settings.autoLock}
+              onChange={(autoLock) => setSettings({ autoLock })}
+            />
+          </SettingsRow>
+          <SettingsRow label={l.lockAway} hint={l.lockAwayHint(isDesktop())}>
+            <Switch
+              checked={settings.lockAway}
+              label={l.lockAway}
+              onChange={(lockAway) => setSettings({ lockAway })}
+            />
+          </SettingsRow>
+          <SettingsRow label={l.lockNow} hint={l.lockNowHint}>
+            <button type="button" className="settings-btn" onClick={() => void lockDiaryNow()}>
+              <Lock size={15} strokeWidth={1.75} /> {l.lockNow}
+            </button>
+          </SettingsRow>
+        </>
       )}
       {level !== 'off' &&
         (own ? (

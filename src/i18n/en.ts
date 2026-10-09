@@ -239,6 +239,14 @@ export const en: Messages = {
     privateRow: 'Private notes',
     show: 'Show all',
     hide: 'Hide all',
+    autoLock: 'Lock by itself',
+    autoLockHint: 'After a while without using the diary.',
+    autoLockOptions: { 0: 'Never', 5: '5 min', 15: '15 min', 60: '1 h' },
+    lockAway: 'Lock when put away',
+    lockAwayHint: (desktop: boolean) =>
+      desktop
+        ? 'When it is minimized or sent to the tray.'
+        : 'When the tab changes or it is minimized.',
     lockNow: 'Lock now',
     lockNowHint: 'Closes the diary: the password is needed to open it again.',
     cloudPassword:
@@ -326,6 +334,11 @@ export const en: Messages = {
     leaveKeepHint: "You keep writing without an account; it doesn't sync.",
     leaveKeepPendingHint: 'The changes stay here and go up when you sign in again.',
     leaveRemove: 'Remove it from here',
+    leaveLock: 'Leave it encrypted and locked',
+    leaveLockHint: 'It stays here, but only opens with the diary password.',
+    keepSession: 'Keep the session in this browser',
+    keepSessionHint:
+      "Off: the session and the diary's keys only last while this tab is open. For shared computers.",
     leaveSyncRemove: 'Sync and remove it from here',
     leaveRemoveHint: (desktop: boolean) =>
       'A blank diary opens. Yours stays in the cloud and comes back when you sign in.' +

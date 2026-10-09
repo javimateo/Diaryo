@@ -24,7 +24,9 @@ In the app (`src/cloud/account.ts`, Settings → Account and cloud):
 
 - The session is kept in the device's local storage (`diaryo:cloud-session`). A token
   lasts 30 days; the app renews it when it starts and every 12 hours, so it only expires
-  after a month without opening the app.
+  after a month without opening the app. On the web it can be kept only while the tab is
+  open instead (a shared computer, see [privacy](privacy.md)); then the cloud's keys
+  aren't kept on disk either.
 - **Google** on the web opens a popup; on the desktop, the system browser (the
   `open_sign_in` command, which only opens `accounts.google.com`). Either way the server
   tells the app through its realtime connection when Google is done.

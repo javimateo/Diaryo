@@ -89,7 +89,13 @@ export interface Settings {
   deskPrivate: 'lock' | 'hide';
   /** The desktop mini diary while the whole diary is locked: its cover, or nothing. */
   miniLocked: 'cover' | 'hide';
+  /** The whole diary locks after these minutes without using it (0: never). */
+  autoLock: AutoLock;
+  /** The whole diary locks when it is put away (another tab, minimized, the tray). */
+  lockAway: boolean;
 }
+
+export type AutoLock = 0 | 5 | 15 | 60;
 
 export type HidePrivate = 30 | 60 | 300;
 
@@ -103,6 +109,8 @@ const DEFAULT_SETTINGS: Settings = {
   hidePrivateAway: true,
   deskPrivate: 'lock',
   miniLocked: 'cover',
+  autoLock: 0,
+  lockAway: false,
 };
 
 export const THEME_KEY = 'diaryo:theme';
@@ -143,6 +151,10 @@ function loadSettings(): Settings {
   if (saved.hidePrivateAway === false) settings.hidePrivateAway = false;
   if (saved.deskPrivate === 'hide') settings.deskPrivate = 'hide';
   if (saved.miniLocked === 'hide') settings.miniLocked = 'hide';
+  if (saved.autoLock === 5 || saved.autoLock === 15 || saved.autoLock === 60) {
+    settings.autoLock = saved.autoLock;
+  }
+  if (saved.lockAway === true) settings.lockAway = true;
   return settings;
 }
 

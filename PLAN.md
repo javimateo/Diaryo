@@ -517,7 +517,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           antes). Tests en `sealing.test.ts`, `lock.test.ts`, `sync.test.ts` y
           `privateNotes.test.ts`.
       - [ ] Más adelante: **páginas privadas** (índice, mapa, miniaturas, pasar página).
-    - [ ] **D2. Qué se ve en el escritorio** (`docs/privacy.md`, «The Windows desktop»):
+    - [x] **D2. Qué se ve en el escritorio** (`docs/privacy.md`, «The Windows desktop»):
           con «Todo el diario», la mesa queda fuera del cifrado por defecto y se ve (y se
           usa) con el diario bloqueado: sus post-its normales, sus imágenes y las fuentes
           se guardan legibles; sus privados siguen cifrados. En Ajustes → Escritorio se
@@ -526,10 +526,13 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           oculto. Para cualquier nivel: los privados en el escritorio «Con candado» o «No
           se ven». La llave llega a la mesa por `BroadcastChannel` (probado en WebView2) y
           abrir un privado desde la mesa ya está hecho en D4.
-    - [ ] **D3. Privacidad en la web** (ordenadores compartidos): bloquear tras X
-          minutos sin uso o al ocultar la pestaña; al cerrar sesión, «dejarlo cifrado
-          y bloqueado» además de dejarlo o quitarlo; opción «no mantener la sesión»
-          (hoy dura 30 días y se renueva sola).
+    - [ ] **D3. Ordenadores compartidos** (`docs/privacy.md`): con «Todo el diario»,
+          «Bloquear solo» tras 5, 15 o 60 min sin usarlo (por defecto, nunca) y
+          «Bloquear al esconderlo» (otra pestaña, minimizar o la bandeja), como «Bloquear
+          ahora». Al cerrar sesión, una tercera opción: «Dejarlo cifrado y bloqueado» (si
+          no lo estaba, se cifra con la contraseña del diario de la nube). En la web,
+          «Mantener la sesión en este navegador»: apagado, la sesión vive en el
+          `sessionStorage` de la pestaña y las llaves de la nube solo en memoria.
   - [ ] **E. macOS**: Tauri compila para macOS casi sin cambios; lo que es solo de
         Windows (la mesa en el escritorio, `windows-sys`) necesita su versión o quedarse
         fuera al principio. Para distribuirlo hace falta la cuenta de desarrollador de
