@@ -130,9 +130,11 @@ pub fn show_mode(app: AppHandle, mode: Mode) {
     window::show(&app, mode);
 }
 
+/// Hides the diary. `shows` is the showing the page's request comes from (after a fade):
+/// if it was shown again meanwhile, it stays.
 #[tauri::command]
-pub fn hide_window(app: AppHandle) {
-    window::hide_now(&app);
+pub fn hide_window(app: AppHandle, shows: Option<u32>) {
+    window::hide_if_current(&app, shows);
 }
 
 /// The page's language: the texts of this side (the tray, the errors) follow it.

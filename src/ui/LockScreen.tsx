@@ -261,7 +261,9 @@ function useLockedWindow() {
           applyMode(mode);
           void call('frontend_ready');
         }),
-        listen('diaryo://closing', () => void call('hide_window')),
+        // Shown in a mode it may have missed (it was loading): it catches up.
+        listen<DesktopMode>('diaryo://shown', (mode) => applyMode(mode)),
+        listen<number>('diaryo://closing', (shows) => void call('hide_window', { shows })),
         listen('diaryo://quit', () => void call('quit_app')),
       ]);
       cleanups.push(...unlisten);

@@ -83,7 +83,10 @@ change for the other devices.
 - **Several windows** (tabs, the desk on the Windows desktop): they share the secret
   through a `BroadcastChannel`, only in memory. One that starts locked asks for it;
   unlocking one opens the others; "Lock now" locks them all (each one starts again, so
-  nothing stays in memory). Turning it on or off in one is told to the others.
+  nothing stays in memory). The desk on the desktop locks in place instead, so it doesn't
+  disappear for a moment: the keys leave its memory, its private notes hide, and it keeps
+  showing (or waits, as the settings say). Turning it on or off in one is told to the
+  others.
 - **"Lock now"** (Settings → Privacy, and the command palette) saves what is pending and
   starts the app again. On the desktop it puts the diary away first: the password is
   asked for when it is opened again (the shortcut, the tray), and Esc or a click around

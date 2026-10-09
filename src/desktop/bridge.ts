@@ -83,14 +83,16 @@ export class DesktopBridge {
         this.applyMode(mode);
         void call('frontend_ready');
       }),
-      // The window is already visible: the floating diary fades in.
-      listen('diaryo://shown', () => {
+      // The window is already visible: the floating diary fades in. It comes with the mode
+      // it is shown in: if a change of mode was missed, the page catches up first.
+      listen<DesktopMode>('diaryo://shown', (mode) => {
         this.closing = false;
+        if (mode && isWidgetLook() !== (mode === 'widget')) this.applyMode(mode);
         requestAnimationFrame(() => setAway(false));
       }),
       // Put the floating diary away (with the shortcut or when switching to another app):
       // first, the fade.
-      listen('diaryo://closing', () => void this.hide()),
+      listen<number>('diaryo://closing', (shows) => void this.hide(shows)),
       // When hidden, whatever changed is backed up. The floating diary goes back to the
       // pinned view: it will open like that next time.
       listen('diaryo://hidden', () => {
@@ -124,13 +126,16 @@ export class DesktopBridge {
     return useUI.getState().desktop?.mode;
   }
 
-  /** Puts the diary away: the floating one, with a fade before hiding the window. */
-  async hide() {
+  /**
+   * Puts the diary away: the floating one, with a fade before hiding the window. `shows`
+   * is the showing the desktop side asked from: shown again meanwhile, it stays.
+   */
+  async hide(shows?: number) {
     if (this.mode !== 'widget') return call('hide_window');
     this.closing = true;
     setAway(true);
     await new Promise((resolve) => window.setTimeout(resolve, FADE));
-    if (this.closing) await call('hide_window');
+    if (this.closing) await call('hide_window', { shows });
     this.closing = false;
   }
 
@@ -211,6 +216,9 @@ export class DesktopBridge {
   }
 }
 
+/** The page looks like the floating diary (transparent, over the desktop). */
+const isWidgetLook = () => document.documentElement.hasAttribute('data-widget');
+
 /** The floating diary isn't visible yet (or is going away): that way it fades in. */
 function setAway(away: boolean, instant = false) {
   const root = document.documentElement;
@@ -225,8 +233,11 @@ function setAway(away: boolean, instant = false) {
 
 const bridge = () => useUI.getState().desktopBridge;
 
-/** Hides the diary (it stays in the tray, ready for the shortcut). */
-export const hideDesktop = () => bridge()?.hide() ?? Promise.resolve();
+/**
+ * Hides the diary (it stays in the tray, ready for the shortcut). Without the bridge (the
+ * locked diary shows only its lock screen), straight away.
+ */
+export const hideDesktop = () => bridge()?.hide() ?? call('hide_window');
 
 /** Saves today's backup even if nothing changed. */
 export async function backupDesktop() {

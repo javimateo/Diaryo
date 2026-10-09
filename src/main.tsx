@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './fonts';
 import './styles/global.css';
 import { App } from './App';
-import { startLock } from './cloud/lock';
+import { lockInPlace, startLock } from './cloud/lock';
 import { useLock } from './cloud/lockState';
 import { call, isDesktop } from './desktop/tauri';
 import { DeskLayer } from './ui/desktop/DeskLayer';
@@ -14,8 +14,10 @@ import { LockScreen } from './ui/LockScreen';
 const deskLayer = new URLSearchParams(location.search).get('capa') === 'mesa';
 if (deskLayer) document.documentElement.toggleAttribute('data-desk-layer', true);
 
-// Before anything reads the diary: whether it is encrypted on this device.
+// Before anything reads the diary: whether it is encrypted on this device. The desk locks
+// without starting again.
 startLock();
+if (deskLayer) lockInPlace();
 
 /**
  * The diary encrypted here and locked: nothing of it loads until it is opened. The desk

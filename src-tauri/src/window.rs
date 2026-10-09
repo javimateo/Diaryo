@@ -185,8 +185,9 @@ fn reveal(app: &AppHandle) {
         let _ = window.unminimize();
         let _ = window.set_focus();
         state.shows.fetch_add(1, Ordering::SeqCst);
-        // The page fades it in.
-        let _ = app.emit("diaryo://shown", ());
+        // The page fades it in, in the mode it is shown in: if it missed a change of mode
+        // (it was loading, for example), it catches up now.
+        let _ = app.emit("diaryo://shown", state.mode());
     }
 }
 
@@ -202,7 +203,9 @@ pub fn hide(app: &AppHandle) {
         return;
     }
     let shows = state.shows.load(Ordering::SeqCst);
-    let _ = app.emit("diaryo://closing", ());
+    // With which showing it goes: if it is shown again meanwhile, the page's late request to
+    // hide it is ignored (`hide_if_current`).
+    let _ = app.emit("diaryo://closing", shows);
     let app = app.clone();
     std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(500));
@@ -210,6 +213,15 @@ pub fn hide(app: &AppHandle) {
             hide_now(&app);
         }
     });
+}
+
+/// Hides the diary, unless it was shown again since `shows` (the page asked when the fade
+/// of an earlier showing ended).
+pub fn hide_if_current(app: &AppHandle, shows: Option<u32>) {
+    let current = app.state::<Windowing>().shows.load(Ordering::SeqCst);
+    if shows.is_none_or(|shows| shows == current) {
+        hide_now(app);
+    }
 }
 
 /// Hides the diary right away (it stays in the tray, ready for the shortcut) and tells
