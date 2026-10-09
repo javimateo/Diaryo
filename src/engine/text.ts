@@ -9,17 +9,28 @@ import { DEFAULT_FONT, fonts } from './fonts';
 const REF = 100;
 export const LINE_HEIGHT = 1.25;
 
-export const fontAt = (px: number, font: string = DEFAULT_FONT) =>
-  `400 ${px}px ${fonts.stack(font)}`;
+/** How the letters look: the font and, for the whole text, bold and italic. */
+export interface TextFace {
+  font: string;
+  bold?: boolean;
+  italic?: boolean;
+}
+
+/** A font without its own bold or italic gets one made up by the browser. */
+export const fontAt = (px: number, face: TextFace = { font: DEFAULT_FONT }) =>
+  `${face.italic ? 'italic ' : ''}${face.bold ? 700 : 400} ${px}px ${fonts.stack(face.font)}`;
+
+const faceKey = (face: TextFace) => `${face.font}|${face.bold ? 'b' : ''}${face.italic ? 'i' : ''}`;
 
 /** Inner margin of a note relative to its width. */
 export const NOTE_PADDING_RATIO = 0.08;
 
 let measureCtx: CanvasRenderingContext2D | null = null;
 
-function measurer(font: string): CanvasRenderingContext2D {
+function measurer(face: TextFace): CanvasRenderingContext2D {
   if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d')!;
-  measureCtx.font = fontAt(REF, font);
+  fonts.loadStyle(face.font, !!face.bold, !!face.italic);
+  measureCtx.font = fontAt(REF, face);
   return measureCtx;
 }
 
@@ -30,15 +41,16 @@ interface Metrics {
 
 const metricsCache = new Map<string, Metrics>();
 
-function fontMetrics(font: string): Metrics {
-  let metrics = metricsCache.get(font);
+function fontMetrics(face: TextFace): Metrics {
+  const key = faceKey(face);
+  let metrics = metricsCache.get(key);
   if (!metrics) {
-    const m = measurer(font).measureText('Hg');
+    const m = measurer(face).measureText('Hg');
     metrics = {
       ascent: m.fontBoundingBoxAscent ?? REF * 0.97,
       descent: m.fontBoundingBoxDescent ?? REF * 0.24,
     };
-    metricsCache.set(font, metrics);
+    metricsCache.set(key, metrics);
   }
   return metrics;
 }
@@ -79,15 +91,15 @@ export function clearTextCache() {
 export function layoutText(
   text: string,
   fontSize: number,
-  font: string,
+  face: TextFace,
   maxWidth?: number,
 ): TextLayout {
   const k = fontSize / REF;
   const maxRef = maxWidth === undefined ? undefined : maxWidth / k;
-  const key = `${font}|${maxRef === undefined ? '-' : maxRef.toFixed(2)}|${text}`;
+  const key = `${faceKey(face)}|${maxRef === undefined ? '-' : maxRef.toFixed(2)}|${text}`;
   let entry = cache.get(key);
   if (!entry) {
-    const ctx = measurer(font);
+    const ctx = measurer(face);
     const lines: string[] = [];
     const paragraphs: number[] = [];
     const starts: boolean[] = [];
@@ -164,25 +176,39 @@ const ALIGN_FACTOR: Record<TextAlign, number> = { left: 0, center: 0.5, right: 1
 export function drawTextBlock(
   ctx: CanvasRenderingContext2D,
   layout: TextLayout,
-  options: { fontSize: number; font: string; color: string; align: TextAlign; boxWidth: number },
+  options: {
+    fontSize: number;
+    face: TextFace;
+    color: string;
+    align: TextAlign;
+    boxWidth: number;
+    underline?: boolean;
+  },
 ) {
-  const { fontSize, font, color, align, boxWidth } = options;
+  const { fontSize, face, color, align, boxWidth, underline } = options;
   const k = fontSize / REF;
-  const { ascent, descent } = fontMetrics(font);
+  const { ascent, descent } = fontMetrics(face);
   const lineHeight = REF * LINE_HEIGHT;
   const baseline = (lineHeight - (ascent + descent)) / 2 + ascent;
   const factor = ALIGN_FACTOR[align];
   ctx.save();
   ctx.scale(k, k);
-  ctx.font = fontAt(REF, font);
+  ctx.font = fontAt(REF, face);
   ctx.fillStyle = color;
   ctx.textBaseline = 'alphabetic';
+  // The canvas has no underline: a line under the letters, as thick as a stroke of them.
+  const underlineFrom = (x: number, y: number, text: string) => {
+    const lead = ctx.measureText(text.slice(0, text.length - text.trimStart().length)).width;
+    const width = ctx.measureText(text.trim()).width;
+    if (width > 0) ctx.fillRect(x + lead, y + REF * 0.1, width, REF * (face.bold ? 0.075 : 0.055));
+  };
   layout.lines.forEach((line, i) => {
     const x = ((boxWidth - layout.lineWidths[i]) * factor) / k;
     const y = i * lineHeight + baseline;
     const task = layout.starts[i] ? TASK.exec(line) : null;
     if (!task) {
       ctx.fillText(line, x, y);
+      if (underline) underlineFrom(x, y, line);
       return;
     }
     // Task: the checkbox in place of "[ ]" and the rest, struck through and softer if
@@ -210,6 +236,7 @@ export function drawTextBlock(
     // Same with "[ ]" as with "[x]": the text doesn't move when ticking the task.
     const restX = box.after;
     ctx.fillText(rest, restX, y);
+    if (underline) underlineFrom(restX, y, rest);
     if (checked && rest.trim()) {
       const lead = ctx.measureText(rest.slice(0, rest.length - rest.trimStart().length)).width;
       const width = ctx.measureText(rest.trim()).width;
@@ -253,14 +280,14 @@ export interface TaskBox {
 /** The checkboxes of a text block, in its coordinates (the same as `drawTextBlock`). */
 export function taskBoxes(
   layout: TextLayout,
-  options: { fontSize: number; font: string; align: TextAlign; boxWidth: number },
+  options: { fontSize: number; face: TextFace; align: TextAlign; boxWidth: number },
 ): TaskBox[] {
-  const { fontSize, font, align, boxWidth } = options;
+  const { fontSize, face, align, boxWidth } = options;
   const k = fontSize / REF;
-  const { ascent, descent } = fontMetrics(font);
+  const { ascent, descent } = fontMetrics(face);
   const lineHeight = REF * LINE_HEIGHT;
   const baseline = (lineHeight - (ascent + descent)) / 2 + ascent;
-  const ctx = measurer(font);
+  const ctx = measurer(face);
   const boxes: TaskBox[] = [];
   layout.lines.forEach((line, i) => {
     const task = layout.starts[i] ? TASK.exec(line) : null;

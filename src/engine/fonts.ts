@@ -28,6 +28,34 @@ export const BUILTIN_FONTS: FontDef[] = [
     category: 'mono',
   },
   { id: 'lilita-one', name: 'Lilita One', family: '"Lilita One"', category: 'display' },
+  { id: 'kalam', name: 'Kalam', family: '"Kalam"', category: 'hand' },
+  {
+    id: 'shadows-into-light',
+    name: 'Shadows Into Light',
+    family: '"Shadows Into Light"',
+    category: 'hand',
+  },
+  {
+    id: 'dancing-script',
+    name: 'Dancing Script',
+    family: '"Dancing Script Variable"',
+    category: 'hand',
+  },
+  {
+    id: 'playfair-display',
+    name: 'Playfair Display',
+    family: '"Playfair Display Variable"',
+    category: 'serif',
+  },
+  {
+    id: 'merriweather',
+    name: 'Merriweather',
+    family: '"Merriweather Variable"',
+    category: 'serif',
+  },
+  { id: 'amatic-sc', name: 'Amatic SC', family: '"Amatic SC"', category: 'display' },
+  { id: 'pacifico', name: 'Pacifico', family: '"Pacifico"', category: 'display' },
+  { id: 'space-mono', name: 'Space Mono', family: '"Space Mono"', category: 'mono' },
 ];
 
 const FALLBACK = 'system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -88,6 +116,25 @@ class FontRegistry {
       this.pending.set(id, promise);
     }
     return promise;
+  }
+
+  /**
+   * Its bold or italic (their own files, for most fonts): loaded the first time they are
+   * drawn, and then the listeners know (to measure and redraw with them).
+   */
+  loadStyle(id: string, bold: boolean, italic: boolean): void {
+    if (!bold && !italic) return;
+    const key = `${id}|${bold ? 'b' : ''}${italic ? 'i' : ''}`;
+    if (this.loaded.has(key) || this.pending.has(key)) return;
+    const promise = document.fonts
+      .load(`${italic ? 'italic ' : ''}${bold ? 700 : 400} 100px ${this.get(id).family}`, 'AaÑñ')
+      .catch(() => [])
+      .then(() => {
+        this.loaded.add(key);
+        this.pending.delete(key);
+        this.emit();
+      });
+    this.pending.set(key, promise);
   }
 
   /** Registers a font uploaded by the user. Returns its id. */

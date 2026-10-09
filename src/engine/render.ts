@@ -22,7 +22,7 @@ import {
   NOTE_PADDING_RATIO,
   type TextLayout,
 } from './text';
-import { privateBadge, type TextAlign } from './elements';
+import { privateBadge, type TextAlign, type TextStyleFlags } from './elements';
 
 export interface RenderContext {
   mode: ThemeMode;
@@ -80,7 +80,7 @@ export interface NoteTextLayout extends TextLayout {
 export function noteTextLayout(el: NoteElement): NoteTextLayout {
   const pad = notePadding(el);
   const boxWidth = el.width - pad * 2;
-  const layout = layoutText(el.text, el.fontSize, el.font, boxWidth);
+  const layout = layoutText(el.text, el.fontSize, el, boxWidth);
   const free = Math.max(0, el.height - pad * 2 - layout.height);
   const offset = el.valign === 'middle' ? free / 2 : el.valign === 'bottom' ? free : 0;
   return { ...layout, x: pad, y: pad + offset, boxWidth };
@@ -99,16 +99,32 @@ export interface EditorBox {
   height: number;
   fontSize: number;
   font: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
   align: TextAlign;
   color: string;
 }
+
+const flagsOf = ({ bold, italic, underline }: TextStyleFlags) => ({ bold, italic, underline });
 
 export function editorBox(el: EditableElement, mode: ThemeMode): EditorBox {
   const text = textOf(el);
   if (el.type === 'text') {
     const { fontSize, font, align } = el;
     const color = resolveColor(el.color, mode);
-    return { text, x: 0, y: 0, width: el.width, height: el.height, fontSize, font, align, color };
+    return {
+      text,
+      x: 0,
+      y: 0,
+      width: el.width,
+      height: el.height,
+      fontSize,
+      font,
+      ...flagsOf(el),
+      align,
+      color,
+    };
   }
   if (el.type === 'note') {
     const l = noteTextLayout(el);
@@ -122,6 +138,7 @@ export function editorBox(el: EditableElement, mode: ThemeMode): EditorBox {
       height,
       fontSize,
       font,
+      ...flagsOf(el),
       align,
       color: noteInk(el, mode),
     };
@@ -137,6 +154,7 @@ export function editorBox(el: EditableElement, mode: ThemeMode): EditorBox {
     height: Math.max(l.height, label.fontSize * LINE_HEIGHT),
     fontSize: label.fontSize,
     font: label.font,
+    ...flagsOf(label),
     align: label.align,
     color: resolveColor(el.color, mode),
   };
@@ -152,9 +170,10 @@ function drawText(
   ctx.save();
   ctx.globalAlpha = opacity;
   applyElementTransform(ctx, el);
-  drawTextBlock(ctx, layoutText(el.text, el.fontSize, el.font, el.wrap ? el.width : undefined), {
+  drawTextBlock(ctx, layoutText(el.text, el.fontSize, el, el.wrap ? el.width : undefined), {
     fontSize: el.fontSize,
-    font: el.font,
+    face: el,
+    underline: el.underline,
     color: resolveColor(el.color, rc.mode),
     align: el.align,
     boxWidth: el.width,
@@ -180,7 +199,8 @@ function drawNote(
     ctx.translate(layout.x, layout.y);
     drawTextBlock(ctx, layout, {
       fontSize: el.fontSize,
-      font: el.font,
+      face: el,
+      underline: el.underline,
       color: noteInk(el, rc.mode),
       align: el.align,
       boxWidth: layout.boxWidth,
@@ -291,7 +311,8 @@ function drawLabel(
   ctx.translate(layout.x, layout.y);
   drawTextBlock(ctx, layout, {
     fontSize: label.fontSize,
-    font: label.font,
+    face: label,
+    underline: label.underline,
     color: resolveColor(el.color, rc.mode),
     align: label.align,
     boxWidth: layout.boxWidth,

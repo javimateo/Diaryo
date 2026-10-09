@@ -55,7 +55,7 @@ export interface LabelLayout extends TextLayout {
 export function labelLayout(el: ContainerElement, label: Label): LabelLayout {
   const area = containerArea(el);
   const boxWidth = Math.max(area.maxX - area.minX, label.fontSize);
-  const layout = layoutText(label.text, label.fontSize, label.font, boxWidth);
+  const layout = layoutText(label.text, label.fontSize, label, boxWidth);
   const height = Math.max(layout.height, label.fontSize * LINE_HEIGHT);
   const free = area.maxY - area.minY - height;
   const offset = label.valign === 'middle' ? free / 2 : label.valign === 'bottom' ? free : 0;

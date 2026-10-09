@@ -59,6 +59,9 @@ function textProps(v: Raw) {
   return {
     font: typeof v.font === 'string' ? v.font : DEFAULT_FONT,
     align: ALIGNS.includes(v.align as TextAlign) ? (v.align as TextAlign) : 'left',
+    ...(v.bold === true && { bold: true }),
+    ...(v.italic === true && { italic: true }),
+    ...(v.underline === true && { underline: true }),
   };
 }
 

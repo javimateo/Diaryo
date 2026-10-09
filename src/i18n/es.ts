@@ -802,6 +802,12 @@ export const es = {
     roughnessNames: ['Limpio', 'A mano', 'Muy a mano'],
     labelSize: 'Tamaño del texto',
     font: 'Fuente',
+    textStyle: 'Estilo del texto',
+    bold: 'Negrita',
+    italic: 'Cursiva',
+    underline: 'Subrayado',
+    /** The letter on each button (as in Spanish word processors). */
+    styleKeys: { bold: 'N', italic: 'K', underline: 'S' },
     align: 'Alineación',
     left: 'Izquierda',
     center: 'Centro',

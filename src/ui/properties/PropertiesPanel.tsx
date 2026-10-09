@@ -13,7 +13,14 @@ import { type TextAlign, type VerticalAlign } from '../../engine/elements';
 import { resolveColor, resolveNoteColor, type Color, type NoteFill } from '../../engine/palette';
 import { NOTE_VARIANTS } from '../../engine/notes';
 import type { StylePatch } from '../../engine/restyle';
-import { ColorRow, FontButton, Section, Segmented, SizeControls } from './controls';
+import {
+  ColorRow,
+  FontButton,
+  Section,
+  Segmented,
+  SizeControls,
+  TextStyleToggles,
+} from './controls';
 import { LinkSection } from './LinkSection';
 import { refocusEditor, usePanelModel, type ColorModel } from './model';
 import { FILL_STYLES, HEADS, ROUGHNESS, VARIANT_ICONS } from './options';
@@ -72,7 +79,7 @@ export function PropertiesPanel() {
     );
   }
   const { noteVariant, colors, size, fillStyle, roughness, labelSize, heads } = model;
-  const { font, align, valign, opacity, apply } = model;
+  const { font, textStyle, align, valign, opacity, apply } = model;
 
   return (
     <aside
@@ -206,6 +213,11 @@ export function PropertiesPanel() {
       {font !== undefined && (
         <Section title={t.props.font}>
           <FontButton value={font} onChange={(value) => apply({ font: value })} />
+        </Section>
+      )}
+      {textStyle !== undefined && (
+        <Section title={t.props.textStyle}>
+          <TextStyleToggles value={textStyle} onChange={(patch) => apply(patch)} />
         </Section>
       )}
       {align !== undefined && (

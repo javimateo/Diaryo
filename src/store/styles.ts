@@ -53,6 +53,16 @@ function textStyle(raw: Raw): TextStyle {
     opacity: opacityOf(raw, d.opacity),
     font: fontOf(raw, d.font),
     align: ALIGNS.includes(raw?.align as TextAlign) ? (raw!.align as TextAlign) : d.align,
+    ...flagsOf(raw),
+  };
+}
+
+/** Bold, italic and underline remembered by the text and note tools (only when on). */
+function flagsOf(raw: Raw) {
+  return {
+    ...(raw?.bold === true && { bold: true }),
+    ...(raw?.italic === true && { italic: true }),
+    ...(raw?.underline === true && { underline: true }),
   };
 }
 
@@ -71,6 +81,7 @@ function noteStyle(raw: Raw): NoteStyle {
       ? (raw!.valign as VerticalAlign)
       : d.valign,
     opacity: opacityOf(raw, d.opacity),
+    ...flagsOf(raw),
   };
 }
 

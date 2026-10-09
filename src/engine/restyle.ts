@@ -7,6 +7,7 @@ import type {
   Roughness,
   SceneElement,
   TextAlign,
+  TextStyleFlags,
   VerticalAlign,
 } from './elements';
 import type { NoteVariant } from './notes';
@@ -34,6 +35,10 @@ export interface StylePatch {
   fillStyle?: FillStyle;
   roughness?: Roughness;
   font?: string;
+  /** The whole text in bold, italic or underlined (texts, notes and shape labels). */
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
   align?: TextAlign;
   valign?: VerticalAlign;
   opacity?: number;
@@ -86,8 +91,10 @@ function restyle(el: SceneElement, patch: StylePatch, zoom: number): SceneElemen
         fontSize: world ?? el.fontSize,
         font: patch.font ?? el.font,
         align: patch.align ?? el.align,
+        ...flags(el, patch),
       };
-      return world !== undefined || patch.font ? fitText(next) : next;
+      const remeasure = world !== undefined || patch.font || touchesWidth(patch);
+      return remeasure ? fitText(next) : next;
     }
     case 'note':
       return fitNote({
@@ -100,6 +107,7 @@ function restyle(el: SceneElement, patch: StylePatch, zoom: number): SceneElemen
         font: patch.font ?? el.font,
         align: patch.align ?? el.align,
         valign: patch.valign ?? el.valign,
+        ...flags(el, patch),
       });
     case 'image':
       return { ...el, opacity };
@@ -124,8 +132,21 @@ function restyleLabel(label: Label | null, patch: StylePatch, zoom: number): Lab
     font: patch.font ?? label.font,
     align: patch.align ?? label.align,
     valign: patch.valign ?? label.valign,
+    ...flags(label, patch),
   };
 }
+
+/**
+ * Bold, italic and underline after the change: true while on, undefined when off (all
+ * three always set, so turning one off overrides the element's).
+ */
+function flags(current: TextStyleFlags, patch: StylePatch): TextStyleFlags {
+  const on = (key: keyof TextStyleFlags) => (patch[key] ?? current[key]) || undefined;
+  return { bold: on('bold'), italic: on('italic'), underline: on('underline') };
+}
+
+/** Bold and italic change how wide the letters are (underline doesn't). */
+const touchesWidth = (patch: StylePatch) => patch.bold !== undefined || patch.italic !== undefined;
 
 /**
  * Key to merge consecutive changes in the history: dragging a slider or the color picker

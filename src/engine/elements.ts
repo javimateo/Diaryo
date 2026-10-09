@@ -19,7 +19,14 @@ export type ShapeKind = 'rect' | 'ellipse';
 export type Roughness = 0 | 1 | 2;
 
 /** Text inside a shape (the shape acts as a container). It uses the stroke color. */
-export interface Label {
+/** The whole text's style (each one absent when off: older elements have none). */
+export interface TextStyleFlags {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+}
+
+export interface Label extends TextStyleFlags {
   text: string;
   /** In world units. */
   fontSize: number;
@@ -40,12 +47,12 @@ export interface StrokeStyle {
   opacity: number;
 }
 
-export interface TextStyle extends StrokeStyle {
+export interface TextStyle extends StrokeStyle, TextStyleFlags {
   font: string;
   align: TextAlign;
 }
 
-export interface NoteStyle {
+export interface NoteStyle extends TextStyleFlags {
   variant: NoteVariant;
   color: NoteFill;
   /** Text color; null = automatic dark ink. */
@@ -206,7 +213,7 @@ interface BoxElement extends BaseElement {
   height: number;
 }
 
-export interface TextElement extends BoxElement {
+export interface TextElement extends BoxElement, TextStyleFlags {
   type: 'text';
   text: string;
   /** In world units. */
@@ -221,7 +228,7 @@ export interface TextElement extends BoxElement {
   wrap: boolean;
 }
 
-export interface NoteElement extends BoxElement {
+export interface NoteElement extends BoxElement, TextStyleFlags {
   type: 'note';
   /** Sticky note style: plain, with a pin, tape, clip… */
   variant: NoteVariant;

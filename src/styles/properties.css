@@ -135,6 +135,27 @@
   box-shadow: var(--shadow);
 }
 
+/* Bold, italic and underline: wide buttons, each letter drawn as its style. */
+.text-style .icon-btn {
+  flex: 1;
+  width: auto;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 16px;
+}
+
+.text-style [data-style='bold'] {
+  font-weight: 800;
+}
+
+.text-style [data-style='italic'] {
+  font-style: italic;
+}
+
+.text-style [data-style='underline'] {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .font-button {
   display: flex;
   align-items: center;
