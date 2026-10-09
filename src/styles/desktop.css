@@ -82,7 +82,7 @@
 }
 
 .shortcut-field[data-error] {
-  border-color: #e03131;
+  border-color: var(--danger);
 }
 
 .settings-buttons {

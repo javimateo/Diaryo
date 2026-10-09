@@ -42,7 +42,7 @@
 .account-primary {
   border: 0;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 :root[data-theme='dark'] .account-primary {
@@ -226,13 +226,8 @@
 }
 
 .account-error {
-  background: rgba(200, 60, 50, 0.1);
-  color: #b2382e;
-}
-
-:root[data-theme='dark'] .account-error {
-  background: rgba(240, 110, 100, 0.14);
-  color: #f2a29b;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
 }
 
 .account-notice {
@@ -563,21 +558,18 @@
 /* Deleting the account */
 
 .settings-btn[data-danger] {
-  color: #c92a2a;
+  color: var(--danger);
 }
 
+/* The light theme's crimson in both themes: white text needs a dark enough background. */
 .settings-btn[data-danger-fill] {
-  border-color: #c92a2a;
-  background: #c92a2a;
+  border-color: #c2255c;
+  background: #c2255c;
   color: #ffffff;
 }
 
 .settings-btn[data-danger-fill]:hover:not(:disabled) {
-  background: #b02525;
-}
-
-:root[data-theme='dark'] .settings-btn[data-danger] {
-  color: #ff8787;
+  background: #a61e4d;
 }
 
 .account-delete {

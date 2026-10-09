@@ -1,0 +1,7 @@
+<!-- The installer's welcome and finish pages (NSIS sidebar, 164x314): the diary's cover. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="314" viewBox="0 0 164 314">
+  <rect width="164" height="314" fill="#b8573f"/>
+  <rect x="10" y="10" width="144" height="294" rx="10" fill="none" stroke="#f8e6dc" stroke-opacity=".5" stroke-width="2" stroke-dasharray="9 7"/>
+  <rect x="128" y="0" width="10" height="314" fill="#2a2724"/>
+  <path d="M38 132c8-21 17-32 24-29s-9 24 0 24 12-17 19-17" fill="none" stroke="#f8e6dc" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

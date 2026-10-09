@@ -82,3 +82,24 @@ Signing options, as reviewed in September 2026:
   a cloud HSM): available to individuals.
 
 None removes the warning at once: SmartScreen reputation still builds with downloads.
+
+## The icon and the installer images
+
+The mark (the terracotta notebook) is drawn in `src-tauri/icons/icon.svg`; the same drawing
+is `src/ui/BrandMark.tsx` (the app and the website) and the two `favicon.svg`. After
+changing it, regenerate every size, and give the `.ico` the simpler drawing
+(`icon-small.svg`, without the stroke on the cover) for 16 and 24 px, where the full one
+blurs:
+
+```bash
+npx tauri icon src-tauri/icons/icon.svg
+npx tauri icon src-tauri/icons/icon-small.svg -o <a temporary folder>
+node src-tauri/icons/build-ico.mjs <that folder>/icon.ico
+```
+
+`tauri icon` also writes Android and iOS icons: delete them, the app doesn't use them.
+
+The installer's images are `src-tauri/installer/sidebar.svg` (164×314, the welcome and
+finish pages) and `header.svg` (150×57, the other pages). NSIS only takes 24-bit BMP:
+export each SVG at its exact size to PNG (for example with a browser's screenshot) and save
+it as `.bmp` next to it.

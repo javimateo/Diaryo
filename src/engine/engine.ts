@@ -164,7 +164,7 @@ export class Engine {
     mode: 'light',
     background: '#faf9f6',
     dots: '#cdc8bf',
-    accent: '#5b5bd6',
+    accent: '#b8573f',
     handleFill: '#ffffff',
   };
   private styles: ToolStyles = DEFAULT_STYLES;

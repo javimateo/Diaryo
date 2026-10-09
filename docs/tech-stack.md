@@ -62,16 +62,16 @@ license, all of them permissive and compatible with that.
 All bundled with [Fontsource](https://fontsource.org) (self-hosted: nothing is loaded
 from third-party servers) and under the [SIL Open Font License 1.1](https://openfontlicense.org).
 
-| Font                                                                                                | Where                                       |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| [Inter](https://rsms.me/inter/)                                                                     | The app's interface; one of the text fonts  |
-| [Caveat](https://fonts.google.com/specimen/Caveat)                                                  | Handwriting: the diary's dates, the website |
-| [Nunito](https://fonts.google.com/specimen/Nunito)                                                  | Text font                                   |
-| [Lora](https://fonts.google.com/specimen/Lora)                                                      | Text font; the website's titles             |
-| [JetBrains Mono](https://www.jetbrains.com/lp/mono/)                                                | Text font (monospace)                       |
-| [Patrick Hand](https://fonts.google.com/specimen/Patrick+Hand), [Comic Neue](https://comicneue.com) | Handwriting-like text fonts                 |
-| [Lilita One](https://fonts.google.com/specimen/Lilita+One)                                          | Display text font                           |
-| [Nunito Sans](https://fonts.google.com/specimen/Nunito+Sans)                                        | The website's body text                     |
+| Font                                                                                                | Where                                        |
+| --------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| [Inter](https://rsms.me/inter/)                                                                     | One of the text fonts                        |
+| [Caveat](https://fonts.google.com/specimen/Caveat)                                                  | Handwriting: the diary's dates, the website  |
+| [Nunito](https://fonts.google.com/specimen/Nunito)                                                  | Text font                                    |
+| [Lora](https://fonts.google.com/specimen/Lora)                                                      | Text font; the name and the website's titles |
+| [JetBrains Mono](https://www.jetbrains.com/lp/mono/)                                                | Text font (monospace)                        |
+| [Patrick Hand](https://fonts.google.com/specimen/Patrick+Hand), [Comic Neue](https://comicneue.com) | Handwriting-like text fonts                  |
+| [Lilita One](https://fonts.google.com/specimen/Lilita+One)                                          | Display text font                            |
+| [Nunito Sans](https://fonts.google.com/specimen/Nunito+Sans)                                        | The interface of the app and the website     |
 
 ## Development tools
 

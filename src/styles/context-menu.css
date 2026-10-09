@@ -44,7 +44,7 @@
 }
 
 .menu-item[data-danger] {
-  color: #e03131;
+  color: var(--danger);
 }
 
 .menu-divider {
