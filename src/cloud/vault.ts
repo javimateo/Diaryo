@@ -1,7 +1,7 @@
 import { ClientResponseError } from 'pocketbase';
 import { countPrivateNotes, getDB, reboxPrivateNotes } from '../storage/db';
 import { useAccount } from './account';
-import { pb } from './client';
+import { keepsSession, pb } from './client';
 import {
   changePassword,
   createVault,
@@ -89,12 +89,15 @@ async function save(vault: VaultRecord, next: VaultData): Promise<VaultRecord> {
 }
 
 /**
- * With the whole diary encrypted on this device (lockState.ts), the keys aren't kept on
- * disk: they come from the diary password each time it is unlocked.
+ * The keys aren't kept on disk with the whole diary encrypted on this device
+ * (lockState.ts: they come from the diary password each time it is unlocked), nor when
+ * the session isn't kept in this browser (client.ts).
  */
+const keysOnDisk = () => !sealedHere() && keepsSession();
+
 async function keep(account: string, next: DiaryKeys) {
   keys = next;
-  if (!sealedHere()) await saveKeys(account, next);
+  if (keysOnDisk()) await saveKeys(account, next);
   setVault('unlocked');
 }
 
@@ -153,7 +156,7 @@ export async function takeDeviceSecret(secret: Uint8Array<ArrayBuffer>) {
 /** The diary isn't encrypted here any more: the cloud's keys are kept on disk again. */
 export async function keepKeysOnDevice() {
   const account = accountId();
-  if (account && keys && useAccount.getState().vault === 'unlocked') {
+  if (account && keys && keysOnDisk() && useAccount.getState().vault === 'unlocked') {
     await saveKeys(account, keys);
   }
 }
@@ -173,9 +176,8 @@ export async function checkVault() {
     return setVault('unknown');
   }
   const lock = readLock();
-  const sealed = lock?.level === 'all';
   // The keys kept on disk or, from the diary password typed here, the ones in memory.
-  const stored = sealed ? null : await loadKeys(account).catch(() => null);
+  const stored = keysOnDisk() ? await loadKeys(account).catch(() => null) : null;
   const kept = stored ?? keys;
   if (kept) {
     keys = kept;
@@ -193,7 +195,7 @@ export async function checkVault() {
     return setVault('none');
   }
   if (kept && (await keysMatch(vault, kept))) {
-    if (!sealed && !stored) await saveKeys(account, kept).catch(() => undefined);
+    if (keysOnDisk() && !stored) await saveKeys(account, kept).catch(() => undefined);
     // The password may have changed on another device: the copy here follows.
     const secret = unlockedSecret();
     if (lock && secret && (lock.account !== account || (vault.version ?? 0) > lock.version)) {

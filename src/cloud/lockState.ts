@@ -160,7 +160,9 @@ export type LockMessage =
   /** Which private notes are shown now, and their key (null: none). */
   | { type: 'privacy'; key: Uint8Array | null; shown: readonly string[] }
   /** Lock everything now. */
-  | { type: 'lock' };
+  | { type: 'lock' }
+  /** Every window starts again (the diary was deleted from this device). */
+  | { type: 'restart' };
 
 /** The windows of the app (tabs, the desk on the desktop) tell each other, in memory. */
 export const lockChannel =

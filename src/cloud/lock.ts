@@ -102,8 +102,29 @@ function onMessage(message: LockMessage) {
   } else if (message.type === 'privacy') {
     void applyPrivacy(message.key, message.shown);
   } else if (message.type === 'lock') {
+    if (lockingInPlace) void lockHere();
+    else location.reload();
+  } else if (message.type === 'restart') {
     location.reload();
   }
+}
+
+/**
+ * The desk on the Windows desktop locks without starting again (it would disappear for
+ * a moment): the keys leave its memory, its private notes hide, and it keeps showing, or
+ * waits for the password too if the settings say so (main.tsx).
+ */
+let lockingInPlace = false;
+export const lockInPlace = () => {
+  lockingInPlace = true;
+};
+
+async function lockHere() {
+  // Shown private notes hide first (what is pending is saved while the keys are here).
+  await applyPrivacy(null, []);
+  getDB().sealing.key = null;
+  setUnlockedSecret(null);
+  applyRecord(readLock());
 }
 
 /**
@@ -412,7 +433,7 @@ export async function eraseDiary() {
   await getDB().delete();
   writeLock(null);
   await forgetKeptKeys();
-  post({ type: 'lock' });
+  post({ type: 'restart' });
   location.reload();
 }
 

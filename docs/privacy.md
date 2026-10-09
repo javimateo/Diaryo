@@ -83,7 +83,10 @@ change for the other devices.
 - **Several windows** (tabs, the desk on the Windows desktop): they share the secret
   through a `BroadcastChannel`, only in memory. One that starts locked asks for it;
   unlocking one opens the others; "Lock now" locks them all (each one starts again, so
-  nothing stays in memory). Turning it on or off in one is told to the others.
+  nothing stays in memory). The desk on the desktop locks in place instead, so it doesn't
+  disappear for a moment: the keys leave its memory, its private notes hide, and it keeps
+  showing (or waits, as the settings say). Turning it on or off in one is told to the
+  others.
 - **"Lock now"** (Settings → Privacy, and the command palette) saves what is pending and
   starts the app again. On the desktop it puts the diary away first: the password is
   asked for when it is opened again (the shortcut, the tray), and Esc or a click around
@@ -141,6 +144,22 @@ style stay as they are, so it shows in its place with a padlock.
   own, its secret is another one, so the private notes' text goes into boxes with the new
   key (`reboxPrivateNotes`), and the ones shown are hidden. That needs the old secret: if
   the notes are hidden, unlocking that cloud asks to show them first.
+
+## Shared computers
+
+- **Locking by itself** (Settings → Privacy, with the whole diary encrypted): after 5,
+  15 or 60 minutes without using it (pointer, keys, wheel), and, with "Lock when put
+  away", when the tab changes or it is minimized (on the desktop, also to the tray). It
+  is "Lock now" done for the user (`src/ui/autoLock.ts`). Off by default.
+- **Signing out, "Leave it encrypted and locked"**: the diary stays on the device, but
+  the whole diary is encrypted first if it wasn't (with the cloud's diary password),
+  and locked once signed out. It opens offline with that password (its vault is kept
+  on the device) or the recovery code.
+- **"Keep the session in this browser"** (Settings → Account and cloud, web only), on by
+  default. Off, the session lives in the tab's storage (`sessionStorage`, `TabAuthStore`
+  in `src/cloud/client.ts`) and the cloud's keys only in memory: closing the tab signs
+  out, and another tab asks to sign in. The local copy of the diary stays: for that,
+  the option above, or "Remove it from here".
 
 ## The Windows desktop
 

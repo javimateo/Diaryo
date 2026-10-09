@@ -3,6 +3,7 @@ import {
   Eraser,
   HardDrive,
   KeyRound,
+  Lock,
   LockKeyhole,
   LockKeyholeOpen,
   LogOut,
@@ -21,6 +22,8 @@ import {
   resendVerification,
   useAccount,
 } from '../cloud/account';
+import { keepsSession, setKeepSession } from '../cloud/client';
+import { useLock } from '../cloud/lockState';
 import { forgetDevice } from '../cloud/vault';
 import { datedName } from '../storage/files';
 import { isDesktop } from '../desktop/tauri';
@@ -33,7 +36,9 @@ import { relativeTime } from './relativeTime';
 import { formatBytes } from './formatBytes';
 import { GoogleButton } from './GoogleButton';
 import { LegalLinks } from './LegalLinks';
+import { lockDiaryNow } from './lockActions';
 import { SettingsRow } from './SettingsRow';
+import { Switch } from './Switch';
 import { useT } from './useT';
 
 /** The settings' "Account and cloud": sign in, or the account and signing out. */
@@ -64,6 +69,18 @@ export function AccountSection() {
     }
   };
 
+  /**
+   * Signing out leaving the diary here, but encrypted and locked: the whole diary is
+   * encrypted first if it isn't (with the cloud's diary password), then it is locked.
+   */
+  const leaveLocked = () => {
+    const signOutAndLock = async () => {
+      if (await signOutOfDevice(false)) void lockDiaryNow();
+    };
+    if (useLock.getState().level === 'all') void signOutAndLock();
+    else useUI.getState().setLockDialog({ view: 'all', then: () => void signOutAndLock() });
+  };
+
   const signInDialog = () => setAccountDialog({ view: 'signIn', fromSettings: true });
 
   if (!account) {
@@ -82,6 +99,7 @@ export function AccountSection() {
             {t.account.signInOrUp}
           </button>
         </div>
+        <KeepSessionRow />
       </section>
     );
   }
@@ -147,6 +165,18 @@ export function AccountSection() {
             type="button"
             className="open-copy-option"
             disabled={removing}
+            onClick={leaveLocked}
+          >
+            <Lock size={20} strokeWidth={1.75} aria-hidden />
+            <span>
+              <strong>{t.sync.leaveLock}</strong>
+              <small>{t.sync.leaveLockHint}</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            className="open-copy-option"
+            disabled={removing}
             onClick={() => void leave(true)}
           >
             {pending > 0 ? (
@@ -190,8 +220,27 @@ export function AccountSection() {
       )}
       <VaultRows />
       <SyncRows />
+      <KeepSessionRow />
       <DataRows />
     </section>
+  );
+}
+
+/**
+ * On the web: keeping the session in this browser, or only while the tab is open (a
+ * shared computer). Changing it starts the app again.
+ */
+function KeepSessionRow() {
+  const t = useT();
+  if (isDesktop()) return null;
+  return (
+    <SettingsRow label={t.sync.keepSession} hint={t.sync.keepSessionHint}>
+      <Switch
+        checked={keepsSession()}
+        label={t.sync.keepSession}
+        onChange={(keep) => void setKeepSession(keep)}
+      />
+    </SettingsRow>
   );
 }
 

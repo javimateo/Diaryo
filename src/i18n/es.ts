@@ -249,6 +249,12 @@ export const es = {
     privateRow: 'Post-its privados',
     show: 'Mostrar todo',
     hide: 'Ocultar todo',
+    autoLock: 'Bloquear solo',
+    autoLockHint: 'Tras un rato sin usar el diario.',
+    autoLockOptions: { 0: 'Nunca', 5: '5 min', 15: '15 min', 60: '1 h' },
+    lockAway: 'Bloquear al esconderlo',
+    lockAwayHint: (desktop: boolean) =>
+      desktop ? 'Al minimizarlo o mandarlo a la bandeja.' : 'Al cambiar de pestaña o minimizarlo.',
     lockNow: 'Bloquear ahora',
     lockNowHint: 'Cierra el diario: hará falta la contraseña para volver a abrirlo.',
     cloudPassword:
@@ -337,6 +343,11 @@ export const es = {
     leaveKeepHint: 'Sigues escribiendo sin cuenta; no se sincroniza.',
     leaveKeepPendingHint: 'Los cambios se quedan aquí y suben cuando vuelvas a entrar.',
     leaveRemove: 'Quitarlo de aquí',
+    leaveLock: 'Dejarlo cifrado y bloqueado',
+    leaveLockHint: 'Se queda aquí, pero solo se abre con la contraseña del diario.',
+    keepSession: 'Mantener la sesión en este navegador',
+    keepSessionHint:
+      'Apagado: la sesión y las llaves del diario solo duran mientras esté abierta esta pestaña. Para ordenadores compartidos.',
     leaveSyncRemove: 'Sincronizar y quitarlo de aquí',
     leaveRemoveHint: (desktop: boolean) =>
       'Se abre un diario en blanco. El tuyo sigue en la nube y vuelve al entrar.' +

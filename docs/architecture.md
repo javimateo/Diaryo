@@ -103,6 +103,12 @@ The Rust side (`src-tauri/src`) owns what a web page can't do:
 | `settings.rs`, `state.rs`, `commands.rs` | Desktop settings and the commands the page can call                                                                                                         |
 | `texts.rs`                               | The desktop side's texts in both languages                                                                                                                  |
 
+The window and the floating diary are the same window: the desktop side decides which
+one it is and tells the page, and every time it shows the window it says the mode again,
+so a page that missed a change (it was loading) catches up. A request to hide it after
+the floating diary's fade carries the showing it came from, and is ignored if the window
+was shown again meanwhile.
+
 On the TypeScript side, `desktop/tauri.ts` wraps Tauri (imported only on the desktop, so
 the web build doesn't load it), `desktop/bridge.ts` connects the diary with the window
 modes and backups, `desktop/deskLayer.ts` drives the desk window, and

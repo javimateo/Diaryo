@@ -6,6 +6,7 @@ import { LockDialog } from './ui/LockDialog';
 import { CopyPrivacyDialog } from './ui/CopyPrivacyDialog';
 import { FirstSyncDialog } from './ui/FirstSyncDialog';
 import { startSync } from './ui/cloudSync';
+import { startAutoLock } from './ui/autoLock';
 import { startAccount } from './ui/accountActions';
 import { CanvasView } from './ui/CanvasView';
 import { CommandPalette } from './ui/CommandPalette';
@@ -35,6 +36,7 @@ export function App() {
   useDeskBackground();
   useEffect(startAccount, []);
   useEffect(startSync, []);
+  useEffect(startAutoLock, []);
   const isEmpty = useUI((s) => s.doc.isEmpty);
   const loaded = useUI((s) => s.saveStatus !== 'loading');
 

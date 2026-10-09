@@ -61,6 +61,7 @@ import {
 import { backupDesktop, hideDesktop, quitDesktop, showDesktopMode } from '../desktop/bridge';
 import { openBackupDir } from '../desktop/settings';
 import { shortcutKeys } from '../desktop/shortcuts';
+import { isConcealed } from '../engine/elements';
 import { TOOLS } from './toolDefs';
 import { useLock } from '../cloud/lockState';
 import { lockDiaryNow } from './lockActions';
@@ -400,7 +401,8 @@ export function getCommands(): Command[] {
       checked: themePreference === 'system',
       run: () => state.setThemePreference('system'),
     },
-    useLock.getState().level !== 'off' &&
+    // Also without the password set here, if hidden ones came from the cloud.
+    (useLock.getState().level !== 'off' || engine.scene.all().some(isConcealed)) &&
       (useLock.getState().revealed
         ? {
             id: 'hide-private',
