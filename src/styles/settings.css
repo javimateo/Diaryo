@@ -103,6 +103,13 @@
 }
 
 /* What is rarely needed, folded at the end of a page. */
+/* "Restore", apart at the end of each page. */
+.settings-restore {
+  margin-top: 22px;
+  padding-top: 8px;
+  border-top: 1px solid var(--surface-border);
+}
+
 .settings-more {
   margin-top: 14px;
 }

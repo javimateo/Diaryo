@@ -111,7 +111,7 @@ export type AutoLock = 0 | 5 | 15 | 60;
 
 export type HidePrivate = 30 | 60 | 300;
 
-const DEFAULT_SETTINGS: Settings = {
+export const DEFAULT_SETTINGS: Settings = {
   language: DEFAULT_LANGUAGE,
   weekStart: 1,
   turnSpeed: 'normal',

@@ -11,6 +11,7 @@ import {
   Keyboard,
   Lock,
   Monitor,
+  RotateCcw,
   ShieldCheck,
   SlidersHorizontal,
   X,
@@ -21,6 +22,7 @@ import type { TurnSpeed } from '../diary/diary';
 import { pickCopy, saveCopy } from './fileActions';
 import { SETTINGS_SECTIONS, useUI, type SettingsSection, type ThemePreference } from '../store/ui';
 import { isDesktop } from '../desktop/tauri';
+import { useLock } from '../cloud/lockState';
 import { BookStyleSection } from './BookStyleSection';
 import { DesktopBackups, DesktopRows, DesktopStartRows } from './DesktopSettings';
 import { Choice } from './Choice';
@@ -31,6 +33,7 @@ import { AccountSection } from './AccountSection';
 import { PrivacySection } from './PrivacySection';
 import { LegalLinks, WebsiteLink } from './LegalLinks';
 import { formatBytes } from './formatBytes';
+import { canReset, resetSection } from './settingsReset';
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
 const TURN_SPEEDS: TurnSpeed[] = ['normal', 'fast', 'off'];
@@ -58,6 +61,8 @@ function Settings() {
   const section = useUI((s) => s.settingsSection);
   const setSection = useUI((s) => s.setSettingsSection);
   const desktop = useUI((s) => s.desktop !== null);
+  // Privacy has something to restore only with something encrypted (see canReset).
+  useLock((s) => s.level);
   // On a phone only the list or one page fits: a page when it was opened on one.
   const [showing, setShowing] = useState(() => useUI.getState().settingsDirect);
   const close = () => setOpen(false);
@@ -133,6 +138,24 @@ function Settings() {
           <div key={current} className="settings-body" data-scrollable>
             <h3 className="settings-page-title">{names[current]}</h3>
             <Page id={current} />
+            {canReset(current) && (
+              <section className="settings-group settings-restore">
+                <SettingsRow
+                  label={t.settings.restoreRow}
+                  hint={
+                    current === 'privacy' ? t.settings.restoreHintPrivacy : t.settings.restoreHint
+                  }
+                >
+                  <button
+                    type="button"
+                    className="settings-btn"
+                    onClick={() => resetSection(current)}
+                  >
+                    <RotateCcw size={15} strokeWidth={1.75} /> {t.settings.restore}
+                  </button>
+                </SettingsRow>
+              </section>
+            )}
           </div>
         </div>
       </div>

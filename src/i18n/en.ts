@@ -508,6 +508,13 @@ export const en: Messages = {
     websiteUrl: 'https://diaryo.javiermateo.dev/en/',
     source: 'The code, on GitHub',
     sourceUrl: 'https://github.com/javimateo/Diaryo',
+    restoreRow: 'Back to how it came',
+    restoreHint: 'Everything in this section goes back to its usual values. It can be undone.',
+    restoreHintPrivacy:
+      'Locking and private notes go back to their usual values; what is encrypted and the password stay. It can be undone.',
+    restore: 'Restore',
+    restored: 'Section restored',
+    undo: 'Undo',
   },
 
   keys: {
