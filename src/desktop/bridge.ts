@@ -112,6 +112,23 @@ export class DesktopBridge {
       listen<DesktopInfo>('diaryo://info', (next) => useUI.getState().setDesktop(next)),
     ]);
     this.cleanups.push(...unlisten);
+    // Safety net: whenever the window comes forward (also from the taskbar, which doesn't
+    // go through "shown"), the page takes the desktop side's mode and shows itself. A
+    // missed event used to leave a shown window with an invisible page.
+    const onForward = () => {
+      if (document.visibilityState !== 'visible' || this.closing) return;
+      void call<DesktopInfo>('desktop_info').then((info) => {
+        if (this.closing || this.stopped) return;
+        if (isWidgetLook() !== (info.mode === 'widget')) this.applyMode(info.mode);
+        requestAnimationFrame(() => setAway(false));
+      });
+    };
+    window.addEventListener('focus', onForward);
+    document.addEventListener('visibilitychange', onForward);
+    this.cleanups.push(
+      () => window.removeEventListener('focus', onForward),
+      () => document.removeEventListener('visibilitychange', onForward),
+    );
     if (this.stopped) return this.stop();
     // The window can be shown now (with today's page loaded).
     void call('frontend_ready');
