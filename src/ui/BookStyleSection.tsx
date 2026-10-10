@@ -8,9 +8,9 @@ import {
   type PaperColor,
   type PaperStyle,
 } from '../engine/book';
-import { MATERIALS } from '../engine/cover';
+import { MATERIALS, OWN_COLORS } from '../engine/cover';
 import { DESKS } from '../engine/desk';
-import { textureImage } from '../engine/textures';
+import { texturePreview } from '../engine/textures';
 import { useUI } from '../store/ui';
 import { setPagePaper } from './diaryActions';
 import { Switch } from './Switch';
@@ -129,22 +129,35 @@ export function BookStyleSection() {
       </div>
 
       <h3>{t.bookStyle.cover}</h3>
-      <div className="segmented-group wide" role="group" aria-label={t.bookStyle.coverMaterial}>
-        {MATERIALS.map((id) => (
-          <button
-            key={id}
-            type="button"
-            className="icon-btn text-option"
-            data-active={style.material === id || undefined}
-            aria-pressed={style.material === id}
-            onClick={() => setBookStyle({ material: id })}
-          >
-            {catalog.materials[id]}
-          </button>
-        ))}
+      <div className="style-grid" role="group" aria-label={t.bookStyle.coverMaterial}>
+        {MATERIALS.map((id) => {
+          const image = id === 'plain' ? null : texturePreview({ kind: 'cover', material: id }, 96);
+          return (
+            <button
+              key={id}
+              type="button"
+              className="style-tile"
+              data-active={style.material === id || undefined}
+              aria-pressed={style.material === id}
+              onClick={() => setBookStyle({ material: id })}
+            >
+              <span
+                className="cover-preview"
+                data-painted={id === 'marbled' || undefined}
+                style={
+                  {
+                    '--cover': OWN_COLORS[id] ?? style.cover,
+                    backgroundImage: image ? `url(${image})` : undefined,
+                  } as CSSProperties
+                }
+              />
+              <span>{catalog.materials[id]}</span>
+            </button>
+          );
+        })}
       </div>
-      {style.material === 'kraft' ? (
-        <p className="book-style-note">{t.bookStyle.kraftNote}</p>
+      {OWN_COLORS[style.material] ? (
+        <p className="book-style-note">{t.bookStyle.ownColorNote}</p>
       ) : (
         <div className="swatch-grid cover-colors">
           {COVER_COLORS.map((color, i) => (
@@ -175,7 +188,9 @@ export function BookStyleSection() {
       <div className="style-grid">
         {DESKS.map((desk) => {
           const image =
-            desk === 'plain' ? null : textureImage({ kind: 'desk', style: desk, mode: theme });
+            desk === 'plain'
+              ? null
+              : texturePreview({ kind: 'desk', style: desk, mode: theme }, 128);
           return (
             <button
               key={desk}

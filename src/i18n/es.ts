@@ -704,8 +704,12 @@ export const es = {
     bindings: { rings: 'Anillas', sewn: 'Cosido' } satisfies Record<Binding, string>,
     materials: {
       leather: 'Cuero',
+      suede: 'Ante',
       cloth: 'Tela',
+      canvas: 'Lona',
+      denim: 'Vaquero',
       kraft: 'Cartón',
+      marbled: 'Marmolado',
       plain: 'Lisa',
     } satisfies Record<CoverMaterial, string>,
     /** Cover colors, in the order of `COVER_COLORS`. */
@@ -715,6 +719,10 @@ export const es = {
       wood: 'Madera',
       cork: 'Corcho',
       linen: 'Lino',
+      walnut: 'Nogal',
+      marble: 'Mármol',
+      felt: 'Fieltro',
+      concrete: 'Hormigón',
     } satisfies Record<DeskStyle, string>,
     noteVariants: {
       plain: 'Lisa',
@@ -762,7 +770,7 @@ export const es = {
     binding: 'Encuadernación',
     cover: 'Tapas',
     coverMaterial: 'Material de las tapas',
-    kraftNote: 'El cartón tiene su propio color.',
+    ownColorNote: 'Tiene su propio color.',
     elastic: 'Goma elástica',
     desk: 'Mesa',
   },
