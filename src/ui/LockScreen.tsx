@@ -6,6 +6,7 @@ import { eraseDiary, recoverDiary, unlockDiary } from '../cloud/lock';
 import { readLock, useLock } from '../cloud/lockState';
 import type { DesktopInfo, DesktopMode } from '../desktop/settings';
 import { call, isDesktop, listen } from '../desktop/tauri';
+import { coverImage, getDB } from '../storage/db';
 import { useUI } from '../store/ui';
 import { WindowControls, WindowDragRegion } from './desktop/WindowControls';
 import { LockProgress } from './LockDialog';
@@ -37,6 +38,7 @@ export function LockScreen() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [erasing, setErasing] = useState(false);
+  const cover = useCoverPicture();
 
   const go = (next: View) => {
     setView(next);
@@ -218,25 +220,46 @@ export function LockScreen() {
           </div>
         </div>
       )}
-      <div
-        className="dialog account-dialog vault-dialog lock-card"
-        role="dialog"
-        aria-labelledby="lock-screen-title"
-      >
-        <header className="dialog-header">
-          <h2 id="lock-screen-title" className="vault-title">
-            {view === 'unlock' ? (
-              <LockKeyhole size={18} strokeWidth={1.75} aria-hidden />
-            ) : (
-              <KeyRound size={18} strokeWidth={1.75} aria-hidden />
-            )}
-            {titles[view]}
-          </h2>
-        </header>
-        <div className="account-body">{body}</div>
+      <div className="lock-stage">
+        {cover && <img className="lock-cover" src={cover} alt="" draggable={false} />}
+        <div
+          className="dialog account-dialog vault-dialog lock-card"
+          role="dialog"
+          aria-labelledby="lock-screen-title"
+        >
+          <header className="dialog-header">
+            <h2 id="lock-screen-title" className="vault-title">
+              {view === 'unlock' ? (
+                <LockKeyhole size={18} strokeWidth={1.75} aria-hidden />
+              ) : (
+                <KeyRound size={18} strokeWidth={1.75} aria-hidden />
+              )}
+              {titles[view]}
+            </h2>
+          </header>
+          <div className="account-body">{body}</div>
+        </div>
       </div>
     </div>
   );
+}
+
+/**
+ * The diary's cover, closed: the one picture of it kept readable while it is locked (see
+ * sealing.ts), so the diary is recognised without showing anything inside.
+ */
+function useCoverPicture(): string | null {
+  const [picture, setPicture] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    coverImage(getDB())
+      .then((image) => live && setPicture(image))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+  return picture;
 }
 
 /**

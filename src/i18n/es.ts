@@ -699,6 +699,7 @@ export const es = {
     openLabel: 'Abrir el diario en la página de hoy',
     today: 'Hoy',
     tasks: (n: number) => `Hoy · ${n} ${n === 1 ? 'tarea' : 'tareas'}`,
+    locked: 'Bloqueado',
   },
 
   /** Names of what can be chosen: papers, colors, covers, desks, notes and fonts. */

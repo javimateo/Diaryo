@@ -1,4 +1,4 @@
-import { StrictMode, useEffect } from 'react';
+import { StrictMode, useCallback, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import './fonts';
 import './styles/global.css';
@@ -7,6 +7,7 @@ import { lockInPlace, startLock } from './cloud/lock';
 import { useLock } from './cloud/lockState';
 import { call, isDesktop } from './desktop/tauri';
 import { DeskLayer } from './ui/desktop/DeskLayer';
+import { MiniDiary } from './ui/desktop/MiniDiary';
 import { LockScreen } from './ui/LockScreen';
 
 // In the desktop app, the desk on the Windows desktop is another window. It is
@@ -31,12 +32,21 @@ function Root() {
   return locked ? <LockScreen /> : <App />;
 }
 
-/** The desk waits for the password: nothing shows, and no click is taken from the desktop. */
+/**
+ * The desk waits for the password: none of it shows. The mini diary does, with the cover
+ * (its picture is never encrypted), unless the settings hide it; only it takes clicks
+ * from the desktop.
+ */
 function DeskWaiting() {
-  useEffect(() => {
-    if (isDesktop()) void call('set_desk_areas', { areas: [] });
+  const mini = useRef<HTMLDivElement>(null);
+  const sendAreas = useCallback(() => {
+    if (!isDesktop()) return;
+    const box = mini.current?.getBoundingClientRect();
+    const areas = box ? [{ x: box.x, y: box.y, width: box.width, height: box.height }] : [];
+    void call('set_desk_areas', { areas });
   }, []);
-  return null;
+  useEffect(sendAreas, [sendAreas]);
+  return <MiniDiary ref={mini} onChange={sendAreas} desktop={isDesktop()} />;
 }
 
 createRoot(document.getElementById('root')!).render(

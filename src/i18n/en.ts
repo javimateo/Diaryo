@@ -682,6 +682,7 @@ export const en: Messages = {
     openLabel: "Open the diary on today's page",
     today: 'Today',
     tasks: (n) => `Today · ${n} ${n === 1 ? 'task' : 'tasks'}`,
+    locked: 'Locked',
   },
 
   catalog: {

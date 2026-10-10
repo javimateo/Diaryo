@@ -613,7 +613,14 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             cinta como marcos de foto: todo se cambia después), la abre y avisa con
             «Deshacer». También en Ctrl K. `src/engine/coverTemplates.ts`, con tests.
             «Abrir con la portada» va con la fase 5.
-      - [ ] **4. Dónde se ve**: la pantalla de bloqueo y el mini diario bloqueado.
+      - [x] **4. Dónde se ve**: la pantalla de bloqueo enseña la portada junto a la
+            tarjeta de la contraseña (encima y más pequeña en el móvil; en ventanas bajas,
+            como el diario flotante, solo la tarjeta). El mini diario del escritorio,
+            bloqueado, es la portada cerrada con «Bloqueado» y «Abrir» (antes, un
+            rectángulo del color de la tapa con un candado, que queda si aún no hay
+            portada). La imagen viaja con la tarjeta de hoy, que ya se guardaba en claro.
+            Con la mesa «Oculta hasta abrir», el mini diario sale igual (solo la mesa
+            espera).
       - [ ] **5. Abrir con la portada**.
     - [ ] **Diario de demostración**: al empezar, una plantilla o demo que enseñe lo que
           se puede hacer (dibujo, post-its, conexiones, páginas, la mesa…), fácil de
