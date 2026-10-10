@@ -1,9 +1,11 @@
+import { IMAGE_FRAMES } from './elements';
 import type {
   ArrowBinding,
   ArrowElement,
   ArrowHead,
   FillStyle,
   ImageElement,
+  ImageFrame,
   Label,
   NoteElement,
   Roughness,
@@ -211,7 +213,13 @@ function privacy(v: Raw): Partial<NoteElement> {
 function parseImage(v: Raw, hasAsset: (id: string) => boolean): ImageElement | null {
   const b = parseBox(v);
   if (!b || typeof v.assetId !== 'string' || !hasAsset(v.assetId)) return null;
-  return { ...b, type: 'image', assetId: v.assetId };
+  return {
+    ...b,
+    type: 'image',
+    assetId: v.assetId,
+    ...(IMAGE_FRAMES.includes(v.frame as ImageFrame) && { frame: v.frame as ImageFrame }),
+    ...(v.shadow === true && { shadow: true }),
+  };
 }
 
 function parseAssets(value: unknown): Record<string, string> {

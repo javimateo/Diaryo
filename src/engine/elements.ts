@@ -279,10 +279,18 @@ export function concealNote(el: NoteElement): NoteElement {
   return { ...el, text: '', link: null, concealed: true };
 }
 
+/** A photo's frame: drawn inside its box (changing it doesn't move or resize it). */
+export type ImageFrame = 'polaroid' | 'border' | 'rounded';
+export const IMAGE_FRAMES: ImageFrame[] = ['polaroid', 'border', 'rounded'];
+
 export interface ImageElement extends BoxElement {
   type: 'image';
   /** Reference to the image in the asset store (shared between copies). */
   assetId: string;
+  /** Absent: no frame (as before). */
+  frame?: ImageFrame;
+  /** A soft shadow under it. */
+  shadow?: boolean;
 }
 
 export interface ShapeElement extends BoxElement {

@@ -1,6 +1,7 @@
 import {
   type ArrowHead,
   type FillStyle,
+  type ImageFrame,
   type Roughness,
   type SizedKind,
   type TextAlign,
@@ -46,6 +47,8 @@ export interface PanelModel {
   /** Font size of the text inside shapes (screen px). */
   labelSize?: number | null;
   font?: string | null;
+  /** Photos: their frame (null if they differ) and whether they all have a shadow. */
+  image?: { frame: ImageFrame | 'none' | null; shadow: boolean };
   /** Bold, italic and underline of the whole text (on only if every text has it). */
   textStyle?: TextStyleFlags;
   align?: TextAlign | null;
@@ -247,6 +250,7 @@ export function usePanelModel(): PanelModel | null {
           : undefined,
       font: selection.hasText ? selection.font : undefined,
       textStyle: selection.hasText ? flags(selection) : undefined,
+      image: selection.hasImages ? { frame: selection.frame, shadow: selection.shadow } : undefined,
       align: selection.hasText ? selection.align : undefined,
       valign: selection.hasNotes || selection.hasLabels ? selection.valign : undefined,
       opacity: selection.opacity,

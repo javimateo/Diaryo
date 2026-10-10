@@ -1,6 +1,13 @@
 import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { clampSize, SIZE_RANGES, type SizedKind, type TextStyleFlags } from '../../engine/elements';
+import {
+  clampSize,
+  IMAGE_FRAMES,
+  SIZE_RANGES,
+  type ImageFrame,
+  type SizedKind,
+  type TextStyleFlags,
+} from '../../engine/elements';
 import { fonts } from '../../engine/fonts';
 import {
   COLOR_IDS,
@@ -317,6 +324,39 @@ export function TextStyleToggles({
           onClick={() => onChange({ [key]: !value[key] })}
         >
           {t.props.styleKeys[key]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const FRAMES = ['none', ...IMAGE_FRAMES] as const;
+
+/** A photo's frame: each option drawn as a little framed photo. */
+export function FrameTiles({
+  value,
+  onChange,
+}: {
+  value: ImageFrame | 'none' | null;
+  onChange: (frame: ImageFrame | 'none') => void;
+}) {
+  const t = useT();
+  return (
+    <div className="frame-tiles" role="group" aria-label={t.props.frame}>
+      {FRAMES.map((frame) => (
+        <button
+          key={frame}
+          type="button"
+          className="frame-tile"
+          data-active={value === frame || undefined}
+          aria-pressed={value === frame}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => onChange(frame)}
+        >
+          <span className="frame-preview" data-frame={frame}>
+            <i />
+          </span>
+          {t.props.frames[frame]}
         </button>
       ))}
     </div>

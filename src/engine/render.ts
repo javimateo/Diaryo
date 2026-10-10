@@ -1,3 +1,4 @@
+import { coverCrop, photoArea, ROUNDED_RADIUS } from './frames';
 import { arrowPath } from './arrowGeometry';
 import type { AssetStore } from './assets';
 import { isClosedStroke, labelLayout, textOf } from './containers';
@@ -329,15 +330,54 @@ function drawImage(
   ctx.save();
   ctx.globalAlpha = opacity;
   applyElementTransform(ctx, el);
+  const { width, height, frame } = el;
+  const short = Math.min(width, height);
+  const radius = frame === 'rounded' ? ROUNDED_RADIUS * short : 0;
+  const outline = () => {
+    ctx.beginPath();
+    ctx.roundRect(0, 0, width, height, radius);
+  };
+  // The paper of the frame (or, for the shadow, the photo's own shape) goes first.
+  if (el.shadow || frame === 'polaroid' || frame === 'border') {
+    ctx.save();
+    if (el.shadow) {
+      ctx.shadowColor = 'rgba(40, 22, 8, 0.32)';
+      ctx.shadowBlur = short * 0.07 * rc.pixelScale;
+      ctx.shadowOffsetY = short * 0.025 * rc.pixelScale;
+    }
+    ctx.fillStyle = frame === 'polaroid' ? '#fbf8f1' : '#ffffff';
+    outline();
+    ctx.fill();
+    ctx.restore();
+  }
   const image = rc.assets.image(el.assetId);
+  const area = photoArea(width, height, frame);
+  ctx.save();
+  if (radius > 0) {
+    outline();
+    ctx.clip();
+  }
   if (image) {
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(image, 0, 0, el.width, el.height);
+    // The photo fills its place cropped, never stretched (also without a frame).
+    const crop = coverCrop(image.naturalWidth, image.naturalHeight, area);
+    ctx.drawImage(
+      image,
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height,
+      area.x,
+      area.y,
+      area.width,
+      area.height,
+    );
   } else {
     // While loading, a gap of the same size.
     ctx.fillStyle = rc.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
-    ctx.fillRect(0, 0, el.width, el.height);
+    ctx.fillRect(area.x, area.y, area.width, area.height);
   }
+  ctx.restore();
   ctx.restore();
 }
 
