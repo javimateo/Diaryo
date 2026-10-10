@@ -20,7 +20,9 @@ import {
   Segmented,
   SizeControls,
   TextStyleToggles,
+  FrameTiles,
 } from './controls';
+import { Switch } from '../Switch';
 import { LinkSection } from './LinkSection';
 import { refocusEditor, usePanelModel, type ColorModel } from './model';
 import { FILL_STYLES, HEADS, ROUGHNESS, VARIANT_ICONS } from './options';
@@ -79,7 +81,7 @@ export function PropertiesPanel() {
     );
   }
   const { noteVariant, colors, size, fillStyle, roughness, labelSize, heads } = model;
-  const { font, textStyle, align, valign, opacity, apply } = model;
+  const { font, textStyle, image, align, valign, opacity, apply } = model;
 
   return (
     <aside
@@ -244,6 +246,19 @@ export function PropertiesPanel() {
               />
             )}
           </div>
+        </Section>
+      )}
+      {image && (
+        <Section title={t.props.frame}>
+          <FrameTiles value={image.frame} onChange={(frame) => apply({ frame })} />
+          <label className="frame-shadow">
+            {t.props.shadow}
+            <Switch
+              checked={image.shadow}
+              label={t.props.shadow}
+              onChange={(shadow) => apply({ shadow })}
+            />
+          </label>
         </Section>
       )}
       <Section title={t.props.opacity}>

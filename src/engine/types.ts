@@ -3,6 +3,7 @@ import type {
   ArrowHead,
   EditableElement,
   FillStyle,
+  ImageFrame,
   Roughness,
   SizedKind,
   TextAlign,
@@ -86,6 +87,10 @@ export interface SelectionStyle {
   align: TextAlign | null;
   /** Vertical alignment (notes and text inside shapes). */
   valign: VerticalAlign | null;
+  /** There are photos: their frame (common one or null) and whether all have a shadow. */
+  hasImages: boolean;
+  frame: ImageFrame | 'none' | null;
+  shadow: boolean;
   /** There are shapes or closed strokes: they accept a fill. */
   hasFill: boolean;
   /** Common fill ('none' = no fill; null = different). */
