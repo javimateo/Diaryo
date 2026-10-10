@@ -1,7 +1,8 @@
-import { coverGrain, GRAIN_SCALE, KRAFT_COLOR, shade, type CoverMaterial } from './cover';
+import { COVER_TILE, KRAFT_COLOR, shade, type CoverMaterial } from './cover';
 import type { DeskStyle } from './desk';
 import type { Bounds } from './geometry';
 import type { ThemeMode } from './palette';
+import { BASE_SIZE, texture, type Texture } from './textures';
 
 export type PaperStyle = 'lines' | 'grid' | 'dots' | 'plain' | 'cornell' | 'planner' | 'isometric';
 
@@ -421,23 +422,26 @@ function drawElastic(
   ctx.fillRect(x - ELASTIC_WIDTH / 2 + 2.5, top + 5, 2, height - 10);
 }
 
+/** World units per pixel of the first grain texture (to fade it out from afar). */
+const FAR_GRAIN = COVER_TILE / BASE_SIZE;
+
 const grainPatterns = new WeakMap<
   CanvasRenderingContext2D,
-  Map<HTMLCanvasElement, CanvasPattern>
+  WeakMap<HTMLCanvasElement, CanvasPattern>
 >();
 
-function grainPattern(ctx: CanvasRenderingContext2D, texture: HTMLCanvasElement) {
+function grainPattern(ctx: CanvasRenderingContext2D, { canvas, scale }: Texture) {
   let patterns = grainPatterns.get(ctx);
   if (!patterns) {
-    patterns = new Map();
+    patterns = new WeakMap();
     grainPatterns.set(ctx, patterns);
   }
-  let pattern = patterns.get(texture);
+  let pattern = patterns.get(canvas);
   if (!pattern) {
-    pattern = ctx.createPattern(texture, 'repeat') ?? undefined;
+    pattern = ctx.createPattern(canvas, 'repeat') ?? undefined;
     if (!pattern) return null;
-    pattern.setTransform(new DOMMatrix([GRAIN_SCALE, 0, 0, GRAIN_SCALE, 0, 0]));
-    patterns.set(texture, pattern);
+    pattern.setTransform(new DOMMatrix([scale, 0, 0, scale, 0, 0]));
+    patterns.set(canvas, pattern);
   }
   return pattern;
 }
@@ -536,9 +540,12 @@ function drawCovers(
     }
   }
   // Material grain (it fades out from afar, where it can no longer be seen).
-  const grain = coverGrain(style.material);
-  const grainAlpha = Math.min(1, Math.max(0, (pixelScale * GRAIN_SCALE - 0.35) / 0.4));
-  const pattern = grain && grainAlpha > 0 ? grainPattern(ctx, grain) : null;
+  const { material } = style;
+  const grainAlpha = Math.min(1, Math.max(0, (pixelScale * FAR_GRAIN - 0.35) / 0.4));
+  const pattern =
+    material !== 'plain' && grainAlpha > 0
+      ? grainPattern(ctx, texture({ kind: 'cover', material }, pixelScale))
+      : null;
   if (pattern) {
     ctx.globalCompositeOperation = 'soft-light';
     ctx.globalAlpha = grainAlpha;

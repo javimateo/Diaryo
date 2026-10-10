@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { DESK_SCALE, DESK_TILE, deskColor, deskImage } from '../engine/desk';
+import { DESK_SCALE, DESK_TILE, deskColor } from '../engine/desk';
+import { textureImage } from '../engine/textures';
 import { useUI } from '../store/ui';
 
 /** On the map, the desk looks as seen from afar. */
@@ -12,7 +13,8 @@ export function useDeskBackground() {
 
   useEffect(() => {
     const root = document.documentElement.style;
-    const image = deskImage(desk, theme);
+    const image =
+      desk === 'plain' ? null : textureImage({ kind: 'desk', style: desk, mode: theme });
     // On a textured desk, whatever floats on top (the name) gets a background.
     document.documentElement.toggleAttribute('data-textured-desk', image !== null);
     const color = deskColor(desk, theme);

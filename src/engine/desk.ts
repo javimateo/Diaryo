@@ -1,4 +1,4 @@
-import { fbm, hash, noise } from './noise';
+import { cellular, fade, fbm, hash, sampleSurface, type Surface } from './noise';
 import type { ThemeMode } from './palette';
 
 export type DeskStyle = 'plain' | 'wood' | 'cork' | 'linen';
@@ -6,10 +6,13 @@ export type DeskStyle = 'plain' | 'wood' | 'cork' | 'linen';
 /** Desks, in the order they are offered. */
 export const DESKS: DeskStyle[] = ['plain', 'wood', 'cork', 'linen'];
 
-/** Side of the texture, in pixels. */
+/**
+ * Side of a desk's tile, in its own units. The desks' surfaces are measured in them, and
+ * their tone is how light they are: 1 is the base color and 0 the grain color.
+ */
 export const DESK_TILE = 512;
 
-/** World units per pixel of each texture (wide planks, small granules…). */
+/** World units per unit of each desk's tile (wide planks, small granules…). */
 export const DESK_SCALE: Record<DeskStyle, number> = {
   plain: 1,
   wood: 2.5,
@@ -62,105 +65,126 @@ export function deskColor(style: DeskStyle, mode: ThemeMode): string | null {
 }
 
 const PLANK = DESK_TILE / 4;
+const smooth = (t: number) => t * t * (3 - 2 * t);
+/** 1 on a line and 0 from `width` away, softly. */
+const line = (distance: number, width: number) => 1 - smooth(Math.min(1, distance / width));
+
+/** Distance to the nearest joint between planks or the end of a plank. */
+function joint(x: number, y: number): number {
+  const plank = Math.floor(y / PLANK);
+  const inPlank = y - plank * PLANK;
+  // Each plank ends at a different place.
+  const end = hash(plank, 1, 7) * DESK_TILE;
+  const along = Math.abs(x - end);
+  return Math.min(inPlank, PLANK - inPlank, along, DESK_TILE - along);
+}
+
+/** Wood: horizontal planks with their grain, slightly sunken joints between them. */
+const wood: Surface = {
+  height(x, y, pixel) {
+    const fine = fbm(x / DESK_TILE, y / DESK_TILE, 16, 512, 2, 9) * fade(1, pixel);
+    return -woodStreak(x, y) * 0.3 - fine * 0.15 - line(joint(x, y), 1.5) * 0.8;
+  },
+  tone(x, y) {
+    const u = x / DESK_TILE;
+    const v = y / DESK_TILE;
+    const plank = Math.floor(y / PLANK);
+    const fine = fbm(u, v, 64, 256, 1, 5) * 0.6 + fbm(u, v, 16, 512, 2, 9) * 0.4;
+    const tone = fbm(u, v, 2, 8, 2, 31 + plank) - 0.5 + (hash(plank, 0, 3) - 0.5) * 0.5;
+    const grain = 0.28 + woodStreak(x, y) * 0.45 + (fine - 0.5) * 0.16 + tone * 0.35;
+    return 1 - grain - line(joint(x, y), 1.2) * 0.5;
+  },
+  relief: 0.6,
+};
+
+/** The dark rings of the wood, waving along each plank (0 to 1). */
+function woodStreak(x: number, y: number): number {
+  const plank = Math.floor(y / PLANK);
+  const warp = fbm(x / DESK_TILE, y / DESK_TILE, 3, 16, 3, 11 + plank);
+  const rings = Math.sin(((y + warp * 34 + plank * 17) * Math.PI * 2) / 11);
+  return Math.pow(0.5 - 0.5 * rings, 4);
+}
+
+/** Cork granules: the coordinates wobble so they are irregular, not polygons. */
+function granule(x: number, y: number) {
+  const u = x / DESK_TILE;
+  const v = y / DESK_TILE;
+  const wx = x + (fbm(u, v, 64, 64, 1, 13) - 0.5) * 3;
+  const wy = y + (fbm(u, v, 64, 64, 1, 15) - 0.5) * 3;
+  return cellular(wx, wy, DESK_TILE, 128, 17);
+}
+
+/** Cork: pressed granules, each one of its own shade, with small dark holes. */
+const cork: Surface = {
+  height(x, y, pixel) {
+    const { nearest, second } = granule(x, y);
+    const bump =
+      smooth(Math.min(1, (second - nearest) / 0.35)) * 0.5 + (1 - nearest * nearest) * 0.5;
+    return bump * fade(DESK_TILE / 128, pixel);
+  },
+  tone(x, y, pixel) {
+    const { nearest, second, id } = granule(x, y);
+    const pore = cellular(x, y, DESK_TILE, 256, 41);
+    const dark = pore.id > 0.85 ? line(pore.nearest, 0.45) * 0.7 * fade(1, pixel) : 0;
+    const fine = fbm(x / DESK_TILE, y / DESK_TILE, 128, 128, 2, 23);
+    const gap = line(second - nearest, 0.08) * 0.15 * fade(DESK_TILE / 128, pixel);
+    return 0.45 + id * 0.4 + (fine - 0.5) * 0.35 - gap - dark;
+  },
+  relief: 0.2,
+};
+
+/** Threads per tile of the linen (even: one goes over, the next one under). */
+const LINEN_THREADS = 128;
+
+/** Linen: fine crossed threads, uneven: thicker and thinner along each one. */
+function weave(x: number, y: number, pixel: number): number {
+  const u = x / DESK_TILE;
+  const v = y / DESK_TILE;
+  const fx = u * LINEN_THREADS;
+  const fy = v * LINEN_THREADS;
+  const over = (Math.floor(fx) + Math.floor(fy)) % 2 === 0;
+  // Each thread's thickness changes along it (slubs), so the weave isn't a grid.
+  const slubX = fbm(u, v, LINEN_THREADS, 8, 2, 51);
+  const slubY = fbm(u, v, 8, LINEN_THREADS, 2, 57);
+  const across = Math.sin(Math.PI * (fy - Math.floor(fy))) * (0.6 + slubX * 0.8);
+  const down = Math.sin(Math.PI * (fx - Math.floor(fx))) * (0.6 + slubY * 0.8);
+  const threads = Math.max(across * (over ? 1 : 0.7), down * (over ? 0.7 : 1));
+  return threads * fade(DESK_TILE / LINEN_THREADS, pixel);
+}
+
+const linen: Surface = {
+  height: weave,
+  tone(x, y, pixel) {
+    const u = x / DESK_TILE;
+    const v = y / DESK_TILE;
+    const slubs = fbm(u, v, LINEN_THREADS, 8, 2, 51) + fbm(u, v, 8, LINEN_THREADS, 2, 57);
+    const tone = fbm(u, v, 4, 4, 2, 61);
+    return 0.65 + weave(x, y, pixel) * 0.3 - (slubs - 1) * 0.35 - (tone - 0.5) * 0.25;
+  },
+  relief: 0.5,
+};
+
+const SURFACES = { wood, cork, linen };
 
 /**
- * Wood: horizontal planks with their grain and joints. Returns how much grain there is (0
- * to 1).
+ * Pixels (RGBA) of a desk texture at `size` pixels per side: the same tile at any size,
+ * with more detail the bigger it is.
  */
-function wood(x: number, y: number): number {
-  const u = x / DESK_TILE;
-  const v = y / DESK_TILE;
-  const plank = Math.floor(y / PLANK);
-  const warp = fbm(u, v, 3, 16, 3, 11 + plank);
-  const rings = Math.sin(((y + warp * 34 + plank * 17) * Math.PI * 2) / 11);
-  const streak = Math.pow(1 - (0.5 + 0.5 * rings), 4);
-  const fine = fbm(u, v, 64, 256, 1, 5);
-  const tone = fbm(u, v, 2, 8, 2, 31 + plank) - 0.5 + (hash(plank, 0, 3) - 0.5) * 0.5;
-  let grain = 0.28 + streak * 0.45 + (fine - 0.5) * 0.16 + tone * 0.35;
-  // Joints between planks and the end of each one (at a different place on each plank).
-  const inPlank = y - plank * PLANK;
-  if (inPlank < 1.5 || inPlank > PLANK - 1) grain = 0.95;
-  const end = Math.floor(hash(plank, 1, 7) * DESK_TILE);
-  if (Math.abs(x - end) < 1.2) grain = 0.9;
-  return grain;
-}
-
-/** Cork: granules of different sizes and some dark specks. */
-function cork(x: number, y: number): number {
-  const u = x / DESK_TILE;
-  const v = y / DESK_TILE;
-  const big = fbm(u, v, 64, 64, 2, 17);
-  const small = noise(u * 160, v * 160, 160, 160, 23);
-  let grain = 0.75 - (big * 0.6 + small * 0.4) * 0.9;
-  if (hash(x, y, 41) > 0.992) grain += 0.35;
-  return grain;
-}
-
-/** Linen: very fine crossed threads, with irregularities along each thread. */
-function linen(x: number, y: number): number {
-  const u = x / DESK_TILE;
-  const v = y / DESK_TILE;
-  const across = 0.5 + 0.5 * Math.sin((x * Math.PI * 2) / 8);
-  const down = 0.5 + 0.5 * Math.sin((y * Math.PI * 2) / 8);
-  const slubX = fbm(u, v, 8, 128, 2, 51);
-  const slubY = fbm(u, v, 128, 8, 2, 57);
-  const weave = (across * (0.4 + slubY) + down * (0.4 + slubX)) / 2;
-  const tone = fbm(u, v, 4, 4, 2, 61);
-  return 0.18 + weave * 0.35 + (tone - 0.5) * 0.25;
-}
-
-const GRAIN = { wood, cork, linen };
-
-/** Pixels (RGBA) of a desk texture. */
 export function deskPixels(
   style: Exclude<DeskStyle, 'plain'>,
   mode: ThemeMode,
+  size: number,
+  samples: 1 | 2 = 1,
 ): Uint8ClampedArray<ArrayBuffer> {
   const [base, dark] = PALETTES[style][mode];
-  const grainAt = GRAIN[style];
-  const data = new Uint8ClampedArray(DESK_TILE * DESK_TILE * 4);
-  for (let y = 0; y < DESK_TILE; y++) {
-    for (let x = 0; x < DESK_TILE; x++) {
-      const t = Math.min(1, Math.max(0, grainAt(x, y)));
-      const i = (y * DESK_TILE + x) * 4;
-      data[i] = base[0] + (dark[0] - base[0]) * t;
-      data[i + 1] = base[1] + (dark[1] - base[1]) * t;
-      data[i + 2] = base[2] + (dark[2] - base[2]) * t;
-      data[i + 3] = 255;
-    }
+  const values = sampleSurface(SURFACES[style], DESK_TILE, size, samples);
+  const data = new Uint8ClampedArray(size * size * 4);
+  for (let i = 0; i < values.length; i++) {
+    const t = values[i];
+    data[i * 4] = dark[0] + (base[0] - dark[0]) * t;
+    data[i * 4 + 1] = dark[1] + (base[1] - dark[1]) * t;
+    data[i * 4 + 2] = dark[2] + (base[2] - dark[2]) * t;
+    data[i * 4 + 3] = 255;
   }
   return data;
-}
-
-const textures = new Map<string, HTMLCanvasElement>();
-
-/** The desk texture (made once per desk and theme), or null if plain. */
-export function deskTexture(style: DeskStyle, mode: ThemeMode): HTMLCanvasElement | null {
-  if (style === 'plain') return null;
-  const key = `${style}/${mode}`;
-  let canvas = textures.get(key);
-  if (!canvas) {
-    canvas = document.createElement('canvas');
-    canvas.width = DESK_TILE;
-    canvas.height = DESK_TILE;
-    const ctx = canvas.getContext('2d')!;
-    ctx.putImageData(new ImageData(deskPixels(style, mode), DESK_TILE, DESK_TILE), 0, 0);
-    textures.set(key, canvas);
-  }
-  return canvas;
-}
-
-const urls = new Map<string, string>();
-
-/** The texture as an image (for the map background and the swatches). */
-export function deskImage(style: DeskStyle, mode: ThemeMode): string | null {
-  const texture = deskTexture(style, mode);
-  if (!texture) return null;
-  const key = `${style}/${mode}`;
-  let url = urls.get(key);
-  if (!url) {
-    url = texture.toDataURL('image/webp', 0.9);
-    urls.set(key, url);
-  }
-  return url;
 }
