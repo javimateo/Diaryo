@@ -593,7 +593,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
               adapta a la foto: al cambiarlo, la caja cambia de alto (mismo ancho) para que
               la foto se vea entera y con sus proporciones; si se estira a mano, se recorta,
               nunca se deforma (también sin marco). `src/engine/frames.ts`, con tests.
-        - [ ] **Más tapas y mesas** (texturas generadas, sin imágenes).
+        - [x] **Más tapas y mesas** (texturas generadas, sin imágenes).
           - [x] **Texturas nítidas con cualquier zoom**: la tapa de cuero se veía a
                 cuadros al acercarse (ruido del tamaño de un píxel, en una imagen fija de
                 256). Ahora cada textura es una fórmula de relieve (alto y tono) con luz
@@ -602,7 +602,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
                 Web Worker), de un tamaño en otro. Los detalles demasiado finos para el
                 tamaño se apagan, así no salen rejillas de lejos. Rehechos el cuero, la
                 tela, el cartón, la madera, el corcho y el lino. `noise.ts`, `textures.ts`.
-          - [ ] Las cuatro tapas y cuatro mesas nuevas de la maqueta.
+          - [x] Las cuatro tapas y cuatro mesas nuevas de la maqueta: tapas de ante,
+                lona, vaquero (con pespunte dorado) y papel marmolado (con sus colores, en
+                un tile del tamaño de la tapa para que no se vea repetirse); mesas de
+                nogal, mármol, fieltro y hormigón, de día y de noche. Las tapas se eligen
+                con casillas (como la mesa) que muestran su textura.
       - [ ] **3. Ajustes**: el grupo «Portada», las plantillas y Ctrl K.
       - [ ] **4. Dónde se ve**: la pantalla de bloqueo y el mini diario bloqueado.
       - [ ] **5. Abrir con la portada**.

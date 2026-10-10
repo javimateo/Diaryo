@@ -176,3 +176,16 @@ export function textureImage(request: TextureRequest): string {
   }
   return url;
 }
+
+const previews = new Map<string, string>();
+
+/** A small image of the texture, `size` pixels for its whole tile (the swatches). */
+export function texturePreview(request: TextureRequest, size: number): string {
+  const key = `${keyOf(request)}@${size}`;
+  let url = previews.get(key);
+  if (!url) {
+    url = canvasOf(texturePixels(request, size, 1), size).toDataURL('image/webp', 0.9);
+    previews.set(key, url);
+  }
+  return url;
+}

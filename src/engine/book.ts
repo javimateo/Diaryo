@@ -1,4 +1,4 @@
-import { COVER_TILE, KRAFT_COLOR, shade, type CoverMaterial } from './cover';
+import { COVER_TILE, OWN_COLORS, shade, type CoverMaterial } from './cover';
 import type { DeskStyle } from './desk';
 import type { Bounds } from './geometry';
 import type { ThemeMode } from './palette';
@@ -446,15 +446,20 @@ function grainPattern(ctx: CanvasRenderingContext2D, { canvas, scale }: Texture)
   return pattern;
 }
 
-/** Cover color (cardboard has its own). */
-export const coverColor = (style: BookStyle) =>
-  style.material === 'kraft' ? KRAFT_COLOR : style.cover;
+/** Thread of the covers with stitching along the border. */
+const STITCHES: Partial<Record<CoverMaterial, string>> = {
+  leather: 'rgba(255, 232, 212, 0.45)',
+  denim: 'rgba(222, 164, 72, 0.85)',
+};
+
+/** Cover color (cardboard and marbled paper have their own). */
+export const coverColor = (style: BookStyle) => OWN_COLORS[style.material] ?? style.cover;
 
 /**
  * Covers: with rings they are two boards separated at the spine; sewn, a single cover
  * with its cloth spine; closed, only the front board. They have thickness (their darker edge shows at the bottom and
- * outside), the grain of their material, a soft light and, if leather, stitching along
- * the border. They cast a two-layer shadow: one close to the book and a diffuse one.
+ * outside), the grain of their material, a soft light and, on leather and denim,
+ * stitching along the border. They cast a two-layer shadow: one close to the book and a diffuse one.
  */
 function drawCovers(
   ctx: CanvasRenderingContext2D,
@@ -539,20 +544,27 @@ function drawCovers(
       ctx.stroke();
     }
   }
-  // Material grain (it fades out from afar, where it can no longer be seen).
+  // Material grain (it fades out from afar, where it can no longer be seen). The marbled
+  // paper is painted as it is, and always: it is its color.
   const { material } = style;
-  const grainAlpha = Math.min(1, Math.max(0, (pixelScale * FAR_GRAIN - 0.35) / 0.4));
+  const painted = material === 'marbled';
+  const grainAlpha = painted ? 1 : Math.min(1, Math.max(0, (pixelScale * FAR_GRAIN - 0.35) / 0.4));
   const pattern =
     material !== 'plain' && grainAlpha > 0
       ? grainPattern(ctx, texture({ kind: 'cover', material }, pixelScale))
       : null;
   if (pattern) {
-    ctx.globalCompositeOperation = 'soft-light';
+    ctx.globalCompositeOperation = painted ? 'source-over' : 'soft-light';
     ctx.globalAlpha = grainAlpha;
     ctx.fillStyle = pattern;
     ctx.fillRect(-outer, top, outer * 2, bottom - top);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
+    // At night, as muted as the other covers.
+    if (painted && mode === 'dark') {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+      ctx.fillRect(-outer, top, outer * 2, bottom - top);
+    }
   }
   // Soft light from the top left.
   const light = ctx.createLinearGradient(-outer, top, outer * 0.6, bottom);
@@ -563,8 +575,9 @@ function drawCovers(
   ctx.fillRect(-outer, top, outer * 2, bottom - top);
   ctx.restore();
 
-  // Leather stitching, near the border.
-  if (style.material === 'leather') {
+  // Stitching near the border: light on leather, golden on denim.
+  const thread = STITCHES[style.material];
+  if (thread) {
     const inset = 9;
     ctx.save();
     ctx.setLineDash([9, 7]);
@@ -575,7 +588,7 @@ function drawCovers(
     trace(inset, COVER_THICKNESS);
     ctx.stroke();
     ctx.translate(0, -1.4);
-    ctx.strokeStyle = 'rgba(255, 232, 212, 0.45)';
+    ctx.strokeStyle = thread;
     trace(inset, COVER_THICKNESS);
     ctx.stroke();
     ctx.restore();
