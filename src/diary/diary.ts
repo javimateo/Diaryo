@@ -8,6 +8,7 @@ import { Autosave, type Desk, type SaveStatus } from '../storage/autosave';
 import {
   COVER_ID,
   COVER_INFO,
+  coverImage,
   deletePage,
   DESK_ID,
   dumpDiary,
@@ -263,12 +264,35 @@ export class Diary {
 
   /** Closes the diary to dress up its cover (with the usual tools). */
   editCover() {
+    return this.run(() => this.openCover());
+  }
+
+  /**
+   * Starts the cover from a template: what was on it is replaced (it can be undone) and
+   * the cover stays open to change it.
+   */
+  startCover(elements: SceneElement[]) {
     return this.run(async () => {
-      const current = this.current;
-      if (!current || current.id === COVER_ID) return;
-      this.beforeCover = current;
-      await this.open(coverPage(), 0);
+      await this.openCover();
+      if (this.current?.id === COVER_ID) this.engine.replacePage(elements);
     });
+  }
+
+  private async openCover() {
+    const current = this.current;
+    if (!current || current.id === COVER_ID) return;
+    this.beforeCover = current;
+    await this.open(coverPage(), 0);
+  }
+
+  /** The cover's picture, as it was last saved (null if it was never drawn). */
+  coverPicture(): Promise<string | null> {
+    return coverImage(this.db);
+  }
+
+  /** How the cover would look with these elements, with the current covers. */
+  coverPreview(elements: SceneElement[], width: number): string {
+    return this.engine.coverImage(this.spreadFor(coverPage()), elements, width);
   }
 
   /** Done with the cover: back to the page that was open (or today's). */

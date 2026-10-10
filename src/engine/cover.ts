@@ -1,37 +1,17 @@
 import { cellular, fade, fbm, noise, sampleSurface, type Surface } from './noise';
 
-export type CoverMaterial =
-  'leather' | 'suede' | 'cloth' | 'canvas' | 'denim' | 'kraft' | 'marbled' | 'plain';
+export type CoverMaterial = 'leather' | 'cloth' | 'canvas' | 'denim' | 'kraft' | 'plain';
 
 /** Cover materials, in the order they are offered. */
-export const MATERIALS: CoverMaterial[] = [
-  'leather',
-  'suede',
-  'cloth',
-  'canvas',
-  'denim',
-  'kraft',
-  'marbled',
-  'plain',
-];
+export const MATERIALS: CoverMaterial[] = ['leather', 'cloth', 'canvas', 'denim', 'kraft', 'plain'];
 
-/**
- * Materials with a color of their own (the one chosen for the covers isn't used). The
- * marbled paper is painted as it is; the others are a grain over the cover color.
- */
+/** Materials with a color of their own (the one chosen for the covers isn't used). */
 export const OWN_COLORS: Partial<Record<CoverMaterial, string>> = {
   kraft: '#b58c5e',
-  marbled: '#efe6d4',
 };
 
 /** Side of the tile of a cover's grain, in world units (it repeats across the cover). */
 export const COVER_TILE = 512;
-/** The marbled paper's tile is as big as the cover: its swirls would be seen repeating. */
-const MARBLED_TILE = 1024;
-
-/** Side of the tile of each material, in world units. */
-export const coverTile = (material: CoverMaterial) =>
-  material === 'marbled' ? MARBLED_TILE : COVER_TILE;
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const T = COVER_TILE;
@@ -108,19 +88,6 @@ const kraft: Surface = {
   relief: 0.3,
 };
 
-/** Suede: a soft nap, brushed one way and another in patches, with almost no relief. */
-const suede: Surface = {
-  height: (x, y, pixel) => fbm(x / T, y / T, 96, 96, 3, 81) * fade(T / 96, pixel),
-  tone(x, y, pixel) {
-    const u = x / T;
-    const v = y / T;
-    const brushed = fbm(u, v, 3, 3, 3, 83);
-    const nap = fbm(u, v, 192, 192, 1, 85) * fade(T / 192, pixel);
-    return 0.5 + (brushed - 0.5) * 0.34 + (nap - 0.5) * 0.12;
-  },
-  relief: 0.25,
-};
-
 /** Threads per tile in the canvas: thick and uneven. */
 const CANVAS_THREADS = 192;
 
@@ -169,70 +136,24 @@ const denim: Surface = {
   relief: 0.35,
 };
 
-/** The inks of the marbled paper, over its cream. */
-const MARBLE_INKS: [number, number, number][] = [
-  [239, 230, 212],
-  [201, 103, 126],
-  [239, 230, 212],
-  [70, 105, 156],
-  [239, 230, 212],
-  [201, 154, 46],
-];
-
-/**
- * Marbled paper: bands of ink dragged into swirls. The coordinates are bent by noise
- * (which repeats, so the tile still does); the bands follow what is left.
- */
-function marbled(x: number, y: number): [number, number, number] {
-  const u = x / MARBLED_TILE;
-  const v = y / MARBLED_TILE;
-  // Bent twice, for swirls inside swirls.
-  const bu = u + (fbm(u, v, 2, 2, 4, 61) - 0.5) * 0.8;
-  const bv = v + (fbm(u, v, 2, 2, 4, 67) - 0.5) * 0.8;
-  // Many thin bands, one ink after another (a whole number of rounds of inks per tile,
-  // so it has no seam).
-  const bands =
-    v * MARBLE_INKS.length * 4 +
-    (fbm(bu, bv, 3, 3, 4, 71) - 0.5) * 12 +
-    (fbm(bu, bv, 8, 8, 3, 73) - 0.5) * 5;
-  const i = ((Math.floor(bands) % MARBLE_INKS.length) + MARBLE_INKS.length) % MARBLE_INKS.length;
-  const f = bands - Math.floor(bands);
-  const a = MARBLE_INKS[i];
-  const b = MARBLE_INKS[(i + 1) % MARBLE_INKS.length];
-  // Mostly one ink, and a quick change into the next one with a fine dark line.
-  const mix = smooth(Math.min(1, Math.max(0, (f - 0.7) / 0.3)));
-  const vein = 1 - 0.3 * (1 - smooth(Math.min(1, Math.abs(f - 0.85) / 0.04)));
-  return [0, 1, 2].map((c) => (a[c] + (b[c] - a[c]) * mix) * vein) as [number, number, number];
-}
-
-const SURFACES = { leather, suede, cloth, canvas, denim, kraft };
+const SURFACES = { leather, cloth, canvas, denim, kraft };
 
 /**
  * A cover's grain at `size` pixels per side, in grey (128 = no change: it blends with the
- * cover color); the marbled paper, in its colors. The same tile at any size, with more
- * detail the bigger it is.
+ * cover color). The same tile at any size, with more detail the bigger it is.
  */
 export function coverPixels(
   material: Exclude<CoverMaterial, 'plain'>,
   size: number,
   samples: 1 | 2 = 1,
 ): Uint8ClampedArray<ArrayBuffer> {
-  const channels =
-    material === 'marbled'
-      ? [0, 1, 2].map((c) =>
-          sampleSurface(
-            { height: () => 0, tone: (x, y) => marbled(x, y)[c] / 255, relief: 0 },
-            MARBLED_TILE,
-            size,
-            samples,
-          ),
-        )
-      : Array(3).fill(sampleSurface(SURFACES[material], COVER_TILE, size, samples));
+  const values = sampleSurface(SURFACES[material], COVER_TILE, size, samples);
   const data = new Uint8ClampedArray(size * size * 4);
-  for (let i = 0; i < size * size; i++) {
-    data[i * 4] = channels[0][i] * 255;
-    data[i * 4 + 1] = channels[1][i] * 255;
-    data[i * 4 + 2] = channels[2][i] * 255;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i] * 255;
+    data[i * 4] = v;
+    data[i * 4 + 1] = v;
+    data[i * 4 + 2] = v;
     data[i * 4 + 3] = 255;
   }
   return data;

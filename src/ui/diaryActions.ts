@@ -1,4 +1,5 @@
 import type { PaperStyle } from '../engine/book';
+import { coverTemplate, type CoverTemplate } from '../engine/coverTemplates';
 import { useUI } from '../store/ui';
 import { pageName } from './LinkDialog';
 import { t } from '../i18n';
@@ -22,6 +23,21 @@ export function goToToday() {
 
 export function addPage() {
   void useUI.getState().diary?.addPage();
+}
+
+/** Starts the cover from a template (it opens to change it; it can be undone). */
+export async function startCover(template: CoverTemplate) {
+  const { diary, showToast, setSettingsOpen } = useUI.getState();
+  if (!diary) return;
+  const texts = t();
+  setSettingsOpen(false);
+  await diary.startCover(
+    coverTemplate(template, texts.cover.templateTexts, new Date().getFullYear()),
+  );
+  showToast(texts.cover.started(texts.cover.templates[template]), {
+    label: texts.commands.undo,
+    run: () => useUI.getState().engine?.undo(),
+  });
 }
 
 /** Marks the page as important (its tab shows on the edge) or unmarks it. */

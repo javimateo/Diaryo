@@ -1,4 +1,4 @@
-import { coverPixels, coverTile, type CoverMaterial } from './cover';
+import { COVER_TILE, coverPixels, type CoverMaterial } from './cover';
 import { DESK_SCALE, DESK_TILE, deskPixels, type DeskStyle } from './desk';
 import type { ThemeMode } from './palette';
 
@@ -9,7 +9,7 @@ export type TextureRequest =
 
 /** World units the texture's tile measures (it repeats). */
 export const tileSize = (request: TextureRequest): number =>
-  request.kind === 'cover' ? coverTile(request.material) : DESK_TILE * DESK_SCALE[request.style];
+  request.kind === 'cover' ? COVER_TILE : DESK_TILE * DESK_SCALE[request.style];
 
 /** The texture's pixels (RGBA) at `size` × `size`. */
 export function texturePixels(

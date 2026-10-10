@@ -602,12 +602,17 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
                 Web Worker), de un tamaño en otro. Los detalles demasiado finos para el
                 tamaño se apagan, así no salen rejillas de lejos. Rehechos el cuero, la
                 tela, el cartón, la madera, el corcho y el lino. `noise.ts`, `textures.ts`.
-          - [x] Las cuatro tapas y cuatro mesas nuevas de la maqueta: tapas de ante,
-                lona, vaquero (con pespunte dorado) y papel marmolado (con sus colores, en
-                un tile del tamaño de la tapa para que no se vea repetirse); mesas de
+          - [x] Tapas nuevas de lona y vaquero (con pespunte dorado); mesas nuevas de
                 nogal, mármol, fieltro y hormigón, de día y de noche. Las tapas se eligen
-                con casillas (como la mesa) que muestran su textura.
-      - [ ] **3. Ajustes**: el grupo «Portada», las plantillas y Ctrl K.
+                con casillas (como la mesa) que muestran su textura. El ante y el papel
+                marmolado se probaron y se quitaron.
+      - [x] **3. Ajustes**: en Aspecto del diario, el grupo «Portada»: cómo está ahora,
+            «Editar la portada» con su aviso y seis plantillas (en blanco, grabado,
+            dorado, etiqueta, fotos y tiza), dibujadas con las tapas elegidas. Una
+            plantilla pone sus elementos en la portada (textos, trazos y post-its con
+            cinta como marcos de foto: todo se cambia después), la abre y avisa con
+            «Deshacer». También en Ctrl K. `src/engine/coverTemplates.ts`, con tests.
+            «Abrir con la portada» va con la fase 5.
       - [ ] **4. Dónde se ve**: la pantalla de bloqueo y el mini diario bloqueado.
       - [ ] **5. Abrir con la portada**.
     - [ ] **Diario de demostración**: al empezar, una plantilla o demo que enseñe lo que

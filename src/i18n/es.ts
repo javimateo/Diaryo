@@ -1,6 +1,7 @@
 import type { Binding, PaperColor, PaperStyle } from '../engine/book';
 import type { FillStyle } from '../engine/elements';
 import type { CoverMaterial } from '../engine/cover';
+import type { CoverTemplate } from '../engine/coverTemplates';
 import type { DeskStyle } from '../engine/desk';
 import type { FontCategory } from '../engine/fonts';
 import type { NoteVariant } from '../engine/notes';
@@ -465,6 +466,25 @@ export const es = {
     title: 'Portada',
     hint: 'Se ve con el diario bloqueado: no pongas nada privado',
     done: 'Listo',
+    edit: 'Editar la portada',
+    note: 'Como una página más: fotos, texto, dibujos y post-its sobre la tapa. Se ve aunque el diario esté bloqueado: no pongas nada privado.',
+    templatesTitle: 'Empezar de una plantilla (después se cambia todo)',
+    templates: {
+      blank: 'En blanco',
+      engraved: 'Grabado',
+      gilded: 'Dorado',
+      label: 'Etiqueta',
+      photos: 'Fotos',
+      chalk: 'Tiza',
+    } satisfies Record<CoverTemplate, string>,
+    /** What each template writes on the cover. */
+    templateTexts: {
+      engraved: 'Mi diario',
+      gilded: 'Recuerdos',
+      label: 'Apuntes',
+      chalk: 'Viajes',
+    },
+    started: (name: string) => `Portada: plantilla «${name}»`,
   },
 
   topBar: {
@@ -704,12 +724,10 @@ export const es = {
     bindings: { rings: 'Anillas', sewn: 'Cosido' } satisfies Record<Binding, string>,
     materials: {
       leather: 'Cuero',
-      suede: 'Ante',
       cloth: 'Tela',
       canvas: 'Lona',
       denim: 'Vaquero',
       kraft: 'Cartón',
-      marbled: 'Marmolado',
       plain: 'Lisa',
     } satisfies Record<CoverMaterial, string>,
     /** Cover colors, in the order of `COVER_COLORS`. */
@@ -895,6 +913,7 @@ export const es = {
     lockDiary: 'Bloquear el diario',
     editCover: 'Editar la portada',
     doneCover: 'Terminar la portada',
+    coverTemplate: (name: string) => `Portada: plantilla ${name}`,
     showPrivate: 'Mostrar todo lo privado',
     hidePrivate: 'Ocultar todo lo privado',
     markPrivate: 'Marcar como privado',
