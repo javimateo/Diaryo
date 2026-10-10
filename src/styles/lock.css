@@ -18,6 +18,37 @@
   background: transparent;
 }
 
+/* The closed diary beside the card (above it, smaller, on a phone). */
+.lock-stage {
+  display: flex;
+  align-items: center;
+  gap: 56px;
+}
+
+.lock-cover {
+  width: 300px;
+  filter: drop-shadow(0 18px 30px rgba(30, 18, 8, 0.35));
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .lock-stage {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .lock-cover {
+    width: 120px;
+  }
+}
+
+/* Short windows (the floating diary): only the card. */
+@media (max-height: 520px) {
+  .lock-cover {
+    display: none;
+  }
+}
+
 .lock-erase {
   justify-content: center;
   width: 100%;

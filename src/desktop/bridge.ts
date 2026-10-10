@@ -218,8 +218,9 @@ export class DesktopBridge {
       try {
         const cover = useUI.getState().bookStyle.cover;
         const preview = await this.diary.todayPreview(TODAY_WIDTH);
+        const coverImage = await this.diary.coverPicture();
         this.todayShown = preview.day;
-        const card: TodayCard = { ...preview, cover };
+        const card: TodayCard = { ...preview, cover, ...(coverImage && { coverImage }) };
         // With the whole diary encrypted, today's page isn't left readable on disk: only
         // its cover; the page itself goes to the desk's window in memory.
         if (sealedHere()) {

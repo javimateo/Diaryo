@@ -100,6 +100,7 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
       <div
         ref={ref}
         className="mini-diary"
+        data-closed={!card.image || undefined}
         style={{ right: place.right, top: place.top }}
         role="button"
         aria-label={t.miniDiary.openLabel}
@@ -108,18 +109,36 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
         onPointerUp={onPointerUp}
         onPointerCancel={() => (drag.current = null)}
       >
-        <div className="mini-diary-book" style={{ background: card.cover }}>
-          {card.image ? (
+        {card.image ? (
+          <div className="mini-diary-book" style={{ background: card.cover }}>
             <img src={card.image} alt="" draggable={false} onLoad={onChange} />
-          ) : (
-            // The diary is encrypted: only its cover.
+          </div>
+        ) : card.coverImage ? (
+          // The diary is encrypted and locked: its cover, closed, as it was dressed up.
+          <img
+            className="mini-diary-cover"
+            src={card.coverImage}
+            alt=""
+            draggable={false}
+            onLoad={onChange}
+          />
+        ) : (
+          <div className="mini-diary-book" style={{ background: card.cover }}>
             <div className="mini-diary-closed">
               <LockKeyhole size={22} strokeWidth={1.75} aria-hidden />
             </div>
-          )}
-        </div>
+          </div>
+        )}
         <div className="mini-diary-meta">
-          <span className="mini-diary-chip">{tasks}</span>
+          <span className="mini-diary-chip">
+            {card.image ? (
+              tasks
+            ) : (
+              <>
+                <LockKeyhole size={12} strokeWidth={2} aria-hidden /> {t.miniDiary.locked}
+              </>
+            )}
+          </span>
           <span className="mini-diary-chip">{t.miniDiary.open}</span>
         </div>
       </div>

@@ -43,16 +43,22 @@ export const TODAY_KEY = 'diaryo:today';
 export interface TodayCard extends TodayPreview {
   /** Cover color. */
   cover: string;
+  /**
+   * The cover's picture, shown while the diary is locked (it is kept readable anyway: see
+   * sealing.ts). Absent if it was never drawn.
+   */
+  coverImage?: string;
 }
 
 export function readToday(): TodayCard | null {
-  const { day, image, pending, cover } = asRecord(readJSON(TODAY_KEY));
+  const { day, image, pending, cover, coverImage } = asRecord(readJSON(TODAY_KEY));
   const ok =
     typeof day === 'string' &&
     typeof image === 'string' &&
     typeof pending === 'number' &&
     typeof cover === 'string';
-  return ok ? { day, image, pending, cover } : null;
+  if (!ok) return null;
+  return { day, image, pending, cover, ...(typeof coverImage === 'string' && { coverImage }) };
 }
 
 export const writeToday = (card: TodayCard) => writeJSON(TODAY_KEY, card);
