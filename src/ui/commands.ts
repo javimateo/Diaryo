@@ -50,11 +50,13 @@ import { DESKS } from '../engine/desk';
 import { exportPng, pickCopy, saveCopy } from './fileActions';
 import { SETTINGS_SECTIONS, useUI } from '../store/ui';
 import { COVER_ID } from '../storage/db';
+import { COVER_TEMPLATES } from '../engine/coverTemplates';
 import {
   addPage,
   deletePage,
   goToToday,
   setPagePaper,
+  startCover,
   toggleBookmark,
   turnPage,
 } from './diaryActions';
@@ -102,7 +104,8 @@ export function getCommands(): Command[] {
   if (!engine) return [];
   const current = diaryState.current;
   const saved = !!current && diaryState.pages.some((p) => p.id === current.id);
-  const { commands: c, commandKeywords: kw, commandGroups: g, catalog } = t();
+  const texts = t();
+  const { commands: c, commandKeywords: kw, commandGroups: g, catalog } = texts;
   const commands: Command[] = [];
   const add = (group: string, list: (Omit<Command, 'group'> | false)[]) => {
     for (const command of list) if (command) commands.push({ ...command, group });
@@ -419,6 +422,13 @@ export function getCommands(): Command[] {
           keywords: kw.editCover,
           run: () => void diary?.editCover(),
         },
+    ...COVER_TEMPLATES.map((template) => ({
+      id: `cover-template-${template}`,
+      label: c.coverTemplate(texts.cover.templates[template]),
+      icon: BookOpen,
+      keywords: kw.editCover,
+      run: () => void startCover(template),
+    })),
     useLock.getState().status === 'unlocked' && {
       id: 'lock-diary',
       label: c.lockDiary,

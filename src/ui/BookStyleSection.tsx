@@ -13,6 +13,7 @@ import { DESKS } from '../engine/desk';
 import { texturePreview } from '../engine/textures';
 import { useUI } from '../store/ui';
 import { setPagePaper } from './diaryActions';
+import { CoverSection } from './CoverSection';
 import { Switch } from './Switch';
 import { useT } from './useT';
 
@@ -143,7 +144,6 @@ export function BookStyleSection() {
             >
               <span
                 className="cover-preview"
-                data-painted={id === 'marbled' || undefined}
                 style={
                   {
                     '--cover': OWN_COLORS[id] ?? style.cover,
@@ -183,6 +183,8 @@ export function BookStyleSection() {
           onChange={(elastic) => setBookStyle({ elastic })}
         />
       </label>
+
+      <CoverSection />
 
       <h3>{t.bookStyle.desk}</h3>
       <div className="style-grid">

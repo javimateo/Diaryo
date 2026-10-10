@@ -1387,6 +1387,18 @@ export class Engine {
     return { x: a.x + this.origin.x, y: a.y + this.origin.y, width: b.x - a.x, height: b.y - a.y };
   }
 
+  /**
+   * Puts these elements in place of the open page's (what is on the desk stays), e.g. a
+   * cover template. It can be undone.
+   */
+  replacePage(elements: SceneElement[]) {
+    this.finishEditing(false);
+    this.setSelection([]);
+    const changes: Changes = new Map(this.pageElements().map((el) => [el.id, null]));
+    for (const el of elements) changes.set(el.id, el);
+    this.history.commit(changes);
+  }
+
   /** Replaces the whole page (e.g. when opening a backup). It can be undone. */
   replaceAll(elements: SceneElement[]) {
     this.finishEditing(false);
