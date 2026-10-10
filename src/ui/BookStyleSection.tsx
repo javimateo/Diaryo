@@ -9,7 +9,8 @@ import {
   type PaperStyle,
 } from '../engine/book';
 import { MATERIALS } from '../engine/cover';
-import { DESKS, deskImage } from '../engine/desk';
+import { DESKS } from '../engine/desk';
+import { textureImage } from '../engine/textures';
 import { useUI } from '../store/ui';
 import { setPagePaper } from './diaryActions';
 import { Switch } from './Switch';
@@ -173,7 +174,8 @@ export function BookStyleSection() {
       <h3>{t.bookStyle.desk}</h3>
       <div className="style-grid">
         {DESKS.map((desk) => {
-          const image = deskImage(desk, theme);
+          const image =
+            desk === 'plain' ? null : textureImage({ kind: 'desk', style: desk, mode: theme });
           return (
             <button
               key={desk}

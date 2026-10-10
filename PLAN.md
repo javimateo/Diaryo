@@ -588,9 +588,21 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
               SC, Kalam, Shadows Into Light, Pacifico y Space Mono; con su negrita y
               cursiva propias donde las hay (también las de antes). La parte web de la
               app pasa de 2,1 a 5,3 MB.
-        - [ ] **Marcos para las fotos**: ninguno, polaroid, borde blanco, esquinas
-              redondeadas; con sombra suave.
+        - [x] **Marcos para las fotos**: ninguno, polaroid (con hueco abajo para
+              escribir encima), borde blanco y redondo, y sombra suave aparte. El marco se
+              adapta a la foto: al cambiarlo, la caja cambia de alto (mismo ancho) para que
+              la foto se vea entera y con sus proporciones; si se estira a mano, se recorta,
+              nunca se deforma (también sin marco). `src/engine/frames.ts`, con tests.
         - [ ] **Más tapas y mesas** (texturas generadas, sin imágenes).
+          - [x] **Texturas nítidas con cualquier zoom**: la tapa de cuero se veía a
+                cuadros al acercarse (ruido del tamaño de un píxel, en una imagen fija de
+                256). Ahora cada textura es una fórmula de relieve (alto y tono) con luz
+                desde arriba a la izquierda, y se vuelve a calcular más grande al
+                acercarse (256 → 512 → 1024, la madera hasta 2048), en segundo plano (un
+                Web Worker), de un tamaño en otro. Los detalles demasiado finos para el
+                tamaño se apagan, así no salen rejillas de lejos. Rehechos el cuero, la
+                tela, el cartón, la madera, el corcho y el lino. `noise.ts`, `textures.ts`.
+          - [ ] Las cuatro tapas y cuatro mesas nuevas de la maqueta.
       - [ ] **3. Ajustes**: el grupo «Portada», las plantillas y Ctrl K.
       - [ ] **4. Dónde se ve**: la pantalla de bloqueo y el mini diario bloqueado.
       - [ ] **5. Abrir con la portada**.

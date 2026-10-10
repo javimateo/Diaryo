@@ -41,19 +41,19 @@ the **scene** (everything drawn) and the **overlay** (what is being drawn right 
 selection handles, the turning sheet) — and redraws only when something changed, on
 `requestAnimationFrame`.
 
-| Area                     | Files                                                                                                                                                             |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Elements and their model | `elements.ts` (strokes, texts, notes, shapes, arrows, images), `types.ts`                                                                                         |
-| Scene and hit testing    | `scene.ts` (elements + an R-tree spatial index), `hit.ts`, `geometry.ts`                                                                                          |
-| Camera                   | `camera.ts` (world ↔ screen), `cameraMotion.ts` (smooth zoom, inertia, flights)                                                                                   |
-| Input and tools          | `handlers/` (select, draw, erase, create, shape, arrow), `tools.ts`, `cursors.ts`                                                                                 |
-| Drawing                  | `render.ts`, `drawing.ts`, `strokes.ts` (perfect-freehand), `shapes.ts` (Rough.js), `text.ts`, `notes.ts`, `grid.ts`                                              |
-| Arrows and links         | `arrows.ts`, `arrowGeometry.ts` (ends attached to elements), `links.ts` (page links)                                                                              |
-| Editing                  | `editing.ts`, `containers.ts` (text inside shapes), `tasks.ts` (checkboxes), `restyle.ts`, `selectionStyle.ts`                                                    |
-| Selection                | `selection.ts`, `transform.ts`, `arrange.ts` (layers, align, flip)                                                                                                |
-| Undo                     | `history.ts` (changes are maps of element id → new value or deletion)                                                                                             |
-| The diary's look         | `book.ts` (the open book, paper styles), `cover.ts`, `desk.ts` and `noise.ts` (procedural wood, cork and linen), `pageTurn.ts` (the sheet you pull by its corner) |
-| Other                    | `clipboard.ts`, `assets.ts` (images), `fonts.ts`, `palette.ts` (named colors per theme)                                                                           |
+| Area                     | Files                                                                                                                                                                                                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Elements and their model | `elements.ts` (strokes, texts, notes, shapes, arrows, images), `types.ts`                                                                                                                                                                       |
+| Scene and hit testing    | `scene.ts` (elements + an R-tree spatial index), `hit.ts`, `geometry.ts`                                                                                                                                                                        |
+| Camera                   | `camera.ts` (world ↔ screen), `cameraMotion.ts` (smooth zoom, inertia, flights)                                                                                                                                                                 |
+| Input and tools          | `handlers/` (select, draw, erase, create, shape, arrow), `tools.ts`, `cursors.ts`                                                                                                                                                               |
+| Drawing                  | `render.ts`, `drawing.ts`, `strokes.ts` (perfect-freehand), `shapes.ts` (Rough.js), `text.ts`, `notes.ts`, `grid.ts`                                                                                                                            |
+| Arrows and links         | `arrows.ts`, `arrowGeometry.ts` (ends attached to elements), `links.ts` (page links)                                                                                                                                                            |
+| Editing                  | `editing.ts`, `containers.ts` (text inside shapes), `tasks.ts` (checkboxes), `restyle.ts`, `selectionStyle.ts`                                                                                                                                  |
+| Selection                | `selection.ts`, `transform.ts`, `arrange.ts` (layers, align, flip)                                                                                                                                                                              |
+| Undo                     | `history.ts` (changes are maps of element id → new value or deletion)                                                                                                                                                                           |
+| The diary's look         | `book.ts` (the open book, paper styles), `cover.ts`, `desk.ts` and `noise.ts` (procedural materials: a relief lit from the top left), `textures.ts` (made bigger as you zoom in, in a worker), `pageTurn.ts` (the sheet you pull by its corner) |
+| Other                    | `clipboard.ts`, `assets.ts` (images), `fonts.ts`, `palette.ts` (named colors per theme)                                                                                                                                                         |
 
 Input goes through Pointer Events: one pointer drives the active tool; with a finger,
 two fingers pinch and move the view and holding still opens the context menu. Sizes set

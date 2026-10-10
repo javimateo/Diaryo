@@ -1,8 +1,9 @@
 import type { Camera } from './camera';
-import { DESK_SCALE, deskColor, deskTexture, type DeskStyle } from './desk';
+import { DESK_SCALE, deskColor, type DeskStyle } from './desk';
 import type { Bounds } from './geometry';
 import { clamp, easeOutCubic } from './math';
 import type { ThemeMode } from './palette';
+import { texture } from './textures';
 
 /**
  * What goes under everything: the desk with its texture, nothing (the desktop layer) or a
@@ -35,18 +36,19 @@ export function drawBackdrop(
   const { style } = backdrop;
   ctx.fillStyle = deskColor(style, mode) ?? theme.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const texture = deskTexture(style, mode);
-  if (!texture) return;
-  const k = dpr * camera.zoom * DESK_SCALE[style];
-  const alpha = clamp((k - 0.2) / 0.25, 0, 1);
+  if (style === 'plain') return;
+  // From afar it fades into its color: the texture would flicker.
+  const alpha = clamp((dpr * camera.zoom * DESK_SCALE[style] - 0.2) / 0.25, 0, 1);
   if (alpha === 0) return;
-  let pattern = patterns.get(texture);
+  const { canvas: tile, scale: texel } = texture({ kind: 'desk', style, mode }, dpr * camera.zoom);
+  let pattern = patterns.get(tile);
   if (!pattern) {
-    pattern = ctx.createPattern(texture, 'repeat') ?? undefined;
+    pattern = ctx.createPattern(tile, 'repeat') ?? undefined;
     if (!pattern) return;
-    patterns.set(texture, pattern);
+    patterns.set(tile, pattern);
   }
   const scale = dpr * camera.zoom;
+  const k = scale * texel;
   pattern.setTransform(new DOMMatrix([k, 0, 0, k, -camera.x * scale, -camera.y * scale]));
   ctx.globalAlpha = alpha;
   ctx.fillStyle = pattern;

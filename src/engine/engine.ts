@@ -79,6 +79,7 @@ import { containerAt, hitTestElement } from './selection';
 import { applyStyle, patchMergeKey, type StylePatch } from './restyle';
 import { clearTextCache } from './text';
 import { taskAt, withTaskToggled } from './tasks';
+import { onTextureReady } from './textures';
 import { drawBackdrop, drawHighlight, type Backdrop } from './drawing';
 import { TOOL_CURSORS, type ToolId } from './tools';
 import { translateElement } from './transform';
@@ -302,6 +303,9 @@ export class Engine {
 
     this.resize();
     this.updateCursor();
+
+    // The cover and desk textures get sharper as they are made for the zoom.
+    this.cleanups.push(onTextureReady(() => this.invalidateScene()));
 
     // Text measurements depend on the font: redo them when each one finishes loading. The
     // bundled ones are preloaded so they are ready when chosen.
