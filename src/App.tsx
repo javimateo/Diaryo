@@ -24,6 +24,8 @@ import { PropertiesPanel } from './ui/properties/PropertiesPanel';
 import { TextEditor } from './ui/TextEditor';
 import { Toast } from './ui/Toast';
 import { Toolbar } from './ui/Toolbar';
+import { Tour } from './ui/Tour';
+import { WelcomeNotice } from './ui/WelcomeNotice';
 import { Brand, TopActions } from './ui/TopBar';
 import { useShortcuts } from './ui/useShortcuts';
 import { ViewControls } from './ui/ViewControls';
@@ -77,10 +79,12 @@ export function App() {
             {t.hint.move} · <kbd>?</kbd> {t.hint.shortcuts}
           </p>
         )}
+        <WelcomeNotice />
         <Toast />
       </div>
       <ContextMenu />
       <HelpDialog />
+      <Tour />
       <MapView />
       <LinkDialog />
       <OpenCopyDialog />

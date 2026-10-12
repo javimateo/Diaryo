@@ -1,0 +1,142 @@
+/* ─── Welcome page notice and the tour ──────────────────────────── */
+
+/* Under the welcome page: it is a sample, and it can be cleared at once. */
+.welcome-notice {
+  gap: 10px;
+  padding: 4px 4px 4px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.welcome-clear {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.welcome-clear:hover {
+  background: var(--hover);
+}
+
+/* The tour: a ring around what it points at and a bubble beside it. */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.tour-ring {
+  position: absolute;
+  border: 2px solid var(--accent);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.tour-bubble {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 14px 16px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  pointer-events: auto;
+}
+
+.tour-arrow {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: var(--surface);
+  border-left: 1px solid var(--surface-border);
+  border-top: 1px solid var(--surface-border);
+  transform: rotate(45deg);
+}
+
+.tour-arrow[style*='bottom'] {
+  transform: rotate(225deg);
+}
+
+.tour-bubble h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.tour-bubble p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.tour-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.tour-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.tour-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--surface-border);
+}
+
+.tour-dots i[data-active] {
+  background: var(--accent);
+}
+
+.tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tour-skip {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.tour-skip:hover {
+  background: var(--hover);
+}
+
+.tour-next {
+  height: 32px;
+}
+
+/* On a phone, only the button fits. */
+@media (max-width: 640px) {
+  .welcome-notice {
+    padding: 4px;
+  }
+
+  .welcome-notice span {
+    display: none;
+  }
+}

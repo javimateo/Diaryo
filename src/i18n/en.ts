@@ -447,6 +447,62 @@ export const en: Messages = {
     closeTip: 'Close — diaryo stays next to the clock',
   },
 
+  welcome: {
+    page: {
+      title: 'Hi! This is your diary',
+      intro: 'Each day has its page. Write anywhere: double click, or the T key.',
+      tasks: ['Open diaryo', 'Write something about today', 'Paste a photo (Ctrl V)'],
+      datedTask: 'Give a task a date with @',
+      draw: 'Draw with P (with the mouse, a finger or a pen)',
+      noteMoves: 'Sticky notes move and turn. Take them out of the book: they stay on the desk.',
+      arrows: 'Arrows join things and follow them',
+      ideas: 'Ideas',
+      photo: 'your photo',
+      appointment: 'Coffee with Ana',
+      search: 'Ctrl K: search the whole diary and any command',
+      desk: 'On the desk, what you want at hand on every page',
+    },
+    notice: 'Sample page, to touch and try',
+    clear: 'Start blank',
+    cleared: 'Blank page',
+  },
+
+  tour: {
+    next: 'Next',
+    done: 'Start',
+    skip: 'Skip',
+    steps: {
+      tools: {
+        title: 'Your tools',
+        text: 'Pen, highlighter, text, sticky notes, arrows and shapes. Each one has its key (hover over it).',
+      },
+      pages: {
+        title: 'One day, one page',
+        text: 'Every day starts a new page. Go to other days here; you can also drag the corner of the sheet.',
+      },
+      desk: {
+        title: 'The desk',
+        text: 'What you leave outside the book stays on the desk, whatever page you open.',
+      },
+      upcoming: {
+        title: 'Tasks and appointments',
+        text: 'Type @ and a day in a line (“@tomorrow 10”) and it gets a date. See here what is coming and what is overdue.',
+      },
+      search: {
+        title: 'Search and commands',
+        text: 'Ctrl K searches the whole diary and finds anything you can do.',
+      },
+      settings: {
+        title: 'Make it yours',
+        text: 'In Settings: covers, paper, desk, the cover, the cloud and privacy.',
+      },
+      floating: {
+        title: 'From any program',
+        text: 'Ctrl Alt D opens the diary over whatever you are doing, and the desk lives on your desktop. Tasks with a time remind you.',
+      },
+    },
+  },
+
   cover: {
     title: 'Cover',
     hint: 'It shows while the diary is locked: put nothing private on it',
@@ -512,6 +568,9 @@ export const en: Messages = {
     shortcuts: 'Keyboard shortcuts',
     shortcutsHint: 'Also with ? at any time.',
     showShortcuts: 'See shortcuts',
+    tour: 'Tour',
+    tourHint: 'The main things in a few steps, like the first time.',
+    showTour: 'Take the tour',
     savedWhere: (desktop, size) =>
       `Everything is saved automatically ${desktop ? 'in this app' : 'in this browser'}` +
       (size ? ` and it now takes ${size}.` : '.'),
@@ -917,6 +976,7 @@ export const en: Messages = {
     themeSystem: 'Theme like the system',
     settings: 'Settings',
     shortcuts: 'Keyboard shortcuts',
+    tour: 'Take the tour',
     diaryPaper: (name) => `Diary paper: ${name}`,
     pagePaper: (name) => `This page's paper: ${name}`,
     pagePaperDefault: "This page's paper: the diary's",
@@ -974,6 +1034,7 @@ export const en: Messages = {
     system: 'automatic mode appearance',
     settings: 'preferences options',
     help: 'help keys',
+    tour: 'tour help guide welcome start learn',
     paper: 'paper background',
     binding: 'notebook',
     material: 'material',

@@ -339,6 +339,8 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             explicar en la web cómo pasar el aviso de SmartScreen.
   - [ ] **I. Enseñar a usarla**: recorrido la primera vez que se abre (pasos cortos con
         animaciones) y vídeos de cada función para la web, hechos con el mismo código.
+        El recorrido (sin animaciones) y la página de ejemplo, hechos en 12-G; quedan los
+        vídeos para la web.
 
 - [ ] **12. Hacia la versión 1.0.0**. Primero los arreglos y lo que no cambia el modelo
       de datos; lo grande (nube, macOS, recordatorios) con su propuesta antes. Orden:
@@ -682,9 +684,20 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         abriera girando la tapa al arrancar. Para que se viera bien hacía falta tapar la
         mitad izquierda del libro mientras la tapa gira y seguir a la cámara; demasiado
         trabajo y recursos para lo que aporta.
-    - [ ] **Diario de demostración**: al empezar, una plantilla o demo que enseñe lo que
+    - [x] **Diario de demostración**: al empezar, una plantilla o demo que enseñe lo que
           se puede hacer (dibujo, post-its, conexiones, páginas, la mesa…), fácil de
-          borrar o de empezar en blanco.
+          borrar o de empezar en blanco. Hecho (octubre de 2026), con maqueta: un diario
+          nuevo (vacío, la primera vez) empieza con la página de hoy de ejemplo, hecha con
+          elementos normales: título con rotulador, tareas (una con fecha para mañana),
+          un dibujo, un post-it, una flecha que une un texto con un recuadro, un marco de
+          foto, una cita con fecha y Ctrl K; en la mesa, un post-it. Abajo, «Página de
+          ejemplo» con «Empezar en blanco» (lo quita todo, con «Deshacer»); si se escribe
+          algo propio, el aviso se va. Se escribe sin marcar para la nube: un dispositivo
+          nuevo que se une a un diario de la nube no lo sube. Después, un recorrido de
+          seis pasos (siete en Windows) con «Siguiente» y «Saltar» (Esc): herramientas,
+          pasar página, la mesa, tareas y citas, Ctrl K y Ajustes; en Windows, Ctrl Alt D
+          y los avisos. Se vuelve a ver en Ajustes → Ayuda y con Ctrl K.
+          `src/diary/welcome.ts` (con tests) y `src/ui/Tour.tsx`.
     - [ ] **Mejorar la web**: qué es diaryo, capturas o vídeo, descargas, la nube.
     - [x] **Ventana de ajustes**: ha crecido demasiado y es densa; reorganizarla
           (secciones o pestañas, lo avanzado aparte) para que se encuentre todo. Hecho

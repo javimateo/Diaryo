@@ -461,6 +461,64 @@ export const es = {
     closeTip: 'Cerrar — diaryo sigue junto al reloj',
   },
 
+  /** The welcome page of a new diary (examples to touch) and its notice. */
+  welcome: {
+    page: {
+      title: '¡Hola! Este es tu diario',
+      intro: 'Cada día tiene su página. Escribe donde quieras: doble clic, o la tecla T.',
+      tasks: ['Abrir diaryo', 'Escribir algo de hoy', 'Pegar una foto (Ctrl V)'],
+      datedTask: 'Ponerle fecha a una tarea con @',
+      draw: 'Dibuja con la P (con el ratón, el dedo o un lápiz)',
+      noteMoves: 'Los post-its se mueven y giran. Sácalos del libro: se quedan en la mesa.',
+      arrows: 'Las flechas unen cosas y las siguen',
+      ideas: 'Ideas',
+      photo: 'tu foto',
+      appointment: 'Café con Ana',
+      search: 'Ctrl K: buscar en todo el diario y cualquier comando',
+      desk: 'En la mesa, lo que quieres a mano en todas las páginas',
+    },
+    notice: 'Página de ejemplo, para tocar y probar',
+    clear: 'Empezar en blanco',
+    cleared: 'Página en blanco',
+  },
+
+  /** The short tour of a new diary. */
+  tour: {
+    next: 'Siguiente',
+    done: 'Empezar',
+    skip: 'Saltar',
+    steps: {
+      tools: {
+        title: 'Tus herramientas',
+        text: 'Lápiz, rotulador, texto, post-its, flechas y formas. Cada una tiene su tecla (pasa el ratón por encima).',
+      },
+      pages: {
+        title: 'Un día, una página',
+        text: 'Cada día empieza una página nueva. Aquí vas a otros días; también puedes arrastrar la esquina de la hoja.',
+      },
+      desk: {
+        title: 'La mesa',
+        text: 'Lo que dejas fuera del libro se queda en la mesa, abras la página que abras.',
+      },
+      upcoming: {
+        title: 'Tareas y citas',
+        text: 'Escribe @ y un día en una línea («@mañana 10») y tendrá fecha. Aquí ves lo que viene y lo que se ha pasado.',
+      },
+      search: {
+        title: 'Buscar y comandos',
+        text: 'Ctrl K busca en todo el diario y encuentra cualquier cosa que se pueda hacer.',
+      },
+      settings: {
+        title: 'A tu gusto',
+        text: 'En Ajustes: tapas, papel, mesa, la portada, la nube y la privacidad.',
+      },
+      floating: {
+        title: 'Desde cualquier programa',
+        text: 'Ctrl Alt D abre el diario sobre lo que estés haciendo, y la mesa vive en tu escritorio. Las tareas con hora te avisan.',
+      },
+    },
+  },
+
   /** Editing the closed diary's cover. */
   cover: {
     title: 'Portada',
@@ -528,6 +586,9 @@ export const es = {
     shortcuts: 'Atajos de teclado',
     shortcutsHint: 'También con ? en cualquier momento.',
     showShortcuts: 'Ver atajos',
+    tour: 'Recorrido',
+    tourHint: 'Lo principal en unos pasos, como la primera vez.',
+    showTour: 'Ver el recorrido',
     savedWhere: (desktop: boolean, size: string | null) =>
       `Todo se guarda solo ${desktop ? 'en esta app' : 'en este navegador'}` +
       (size ? ` y ahora ocupa ${size}.` : '.'),
@@ -937,6 +998,7 @@ export const es = {
     themeSystem: 'Tema como el sistema',
     settings: 'Ajustes',
     shortcuts: 'Atajos de teclado',
+    tour: 'Ver el recorrido',
     diaryPaper: (name: string) => `Hoja del diario: ${name}`,
     pagePaper: (name: string) => `Hoja de esta página: ${name}`,
     pagePaperDefault: 'Hoja de esta página: la del diario',
@@ -996,6 +1058,7 @@ export const es = {
     system: 'automático modo apariencia',
     settings: 'configuración preferencias opciones',
     help: 'ayuda teclas',
+    tour: 'recorrido ayuda guía bienvenida empezar aprender',
     paper: 'papel fondo',
     binding: 'libreta cuaderno',
     material: 'material',
