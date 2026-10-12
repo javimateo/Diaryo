@@ -698,7 +698,13 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           pasar página, la mesa, tareas y citas, Ctrl K y Ajustes; en Windows, Ctrl Alt D
           y los avisos. Se vuelve a ver en Ajustes → Ayuda y con Ctrl K.
           `src/diary/welcome.ts` (con tests) y `src/ui/Tour.tsx`.
-    - [ ] **Mejorar la web**: qué es diaryo, capturas o vídeo, descargas, la nube.
+    - [x] **Mejorar la web**: qué es diaryo, capturas o vídeo, descargas, la nube. Hecho
+          (octubre de 2026), con maqueta: en «Funciones», una fila nueva con «nuevo»:
+          tareas y citas (con fecha, «Próximo», avisos y calendario), tu portada y
+          privado de verdad (cifrado en el ordenador, bloqueo y post-its privados), con
+          dibujos en CSS. «A tu gusto» con las tapas y mesas de ahora, la privacidad con
+          el cifrado en el dispositivo, dos preguntas nuevas (avisos y cifrado) y, en
+          «Descargar», la página de ejemplo y el recorrido. En español e inglés.
     - [x] **Ventana de ajustes**: ha crecido demasiado y es densa; reorganizarla
           (secciones o pestañas, lo avanzado aparte) para que se encuentre todo. Hecho
           (octubre de 2026): siete páginas a la izquierda (General, Aspecto del diario,
