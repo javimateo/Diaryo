@@ -217,3 +217,17 @@ pub fn set_reminders(app: AppHandle, reminders: Vec<reminders::Reminder>) {
 pub fn show_reminder(app: AppHandle, reminder: reminders::Reminder) {
     reminders::show_now(&app, reminder);
 }
+
+/// Opens tasks and appointments in the calendar app (the `.ics` file, in the temporary
+/// folder, opened with the app Windows has for it).
+#[tauri::command]
+pub fn open_calendar_file(app: AppHandle, contents: String) -> Result<(), String> {
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis());
+    let path = std::env::temp_dir().join(format!("diaryo-{stamp}.ics"));
+    std::fs::write(&path, contents).map_err(|e| e.to_string())?;
+    app.opener()
+        .open_path(path.display().to_string(), None::<&str>)
+        .map_err(|e| e.to_string())
+}

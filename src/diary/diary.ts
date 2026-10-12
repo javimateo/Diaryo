@@ -435,6 +435,11 @@ export class Diary {
     });
   }
 
+  /** Where something on the canvas is kept: the desk or the open page. */
+  pageOf(elementId: string): string | null {
+    return this.desk.ids.has(elementId) ? DESK_ID : (this.current?.id ?? null);
+  }
+
   /** Which pages link to which (with the latest already saved). */
   links(): Promise<PageLink[]> {
     return this.run(async () => {

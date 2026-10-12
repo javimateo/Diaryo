@@ -596,8 +596,8 @@
   pointer-events: none;
 }
 
-/* Opened from the page footer, it sits down by it. */
-.diary-panel[data-at='bottom'] {
+/* The index sits down by the page footer that opens it; "Próximo", up by its button. */
+.diary-panel:not(.upcoming-panel) {
   align-self: flex-end;
 }
 
@@ -705,6 +705,45 @@
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
+}
+
+/* "Add to my calendar" takes the time's place while the row is pointed at. */
+.upcoming-item {
+  position: relative;
+}
+
+.upcoming-add {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  background: var(--surface);
+  color: var(--accent-text);
+  opacity: 0;
+}
+
+.upcoming-item:hover .upcoming-add,
+.upcoming-add:focus-visible {
+  opacity: 1;
+}
+
+.upcoming-item:hover .upcoming-when {
+  visibility: hidden;
+}
+
+/* Touch screens can't point at a row: there it is always there, after the time. */
+@media (hover: none) {
+  .upcoming-add {
+    position: static;
+    align-self: center;
+    flex: none;
+    opacity: 1;
+  }
+
+  .upcoming-item:hover .upcoming-when {
+    visibility: visible;
+  }
 }
 
 .upcoming-when[data-late] {

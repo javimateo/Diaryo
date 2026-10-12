@@ -12,6 +12,7 @@ import { CanvasView } from './ui/CanvasView';
 import { CommandPalette } from './ui/CommandPalette';
 import { ContextMenu } from './ui/ContextMenu';
 import { DiaryPanel } from './ui/DiaryPanel';
+import { UpcomingPanel } from './ui/Upcoming';
 import { HelpDialog } from './ui/HelpDialog';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { useDeskBackground } from './ui/useDeskBackground';
@@ -59,6 +60,7 @@ export function App() {
       </div>
       <div className="layer side-right">
         <DiaryPanel />
+        <UpcomingPanel />
       </div>
       <div className="layer bottom-left">
         <ZoomControls />

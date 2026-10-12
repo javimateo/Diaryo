@@ -1,5 +1,7 @@
 import { call, isDesktop, saveFileAs } from '../desktop/tauri';
+import { agendaItems, type AgendaItem } from '../diary/agenda';
 import type { Diary } from '../diary/diary';
+import { calendarFile } from '../diary/ics';
 import type { Engine } from '../engine/engine';
 import { fonts } from '../engine/fonts';
 import { useUI } from '../store/ui';
@@ -11,9 +13,54 @@ import {
   parseBackup,
   serializeDiary,
 } from '../storage/files';
-import { t } from '../i18n';
+import { getLanguage, t } from '../i18n';
+import { todayKey } from '../lib/dates';
 import { openSealedCopy, sealCopy } from '../cloud/lock';
 import { sealedHere } from '../cloud/lockState';
+
+/**
+ * Tasks and appointments to the calendar app: on the desktop the file opens in it right
+ * away; on the web it is downloaded (a phone offers to add it).
+ */
+export async function addToCalendar(items: AgendaItem[]) {
+  const { showToast } = useUI.getState();
+  const texts = t().calendar;
+  const contents = calendarFile(items, Date.now());
+  try {
+    if (isDesktop()) {
+      await call('open_calendar_file', { contents });
+      showToast(texts.opened(items.length));
+    } else {
+      downloadBlob(new Blob([contents], { type: 'text/calendar' }), 'diaryo.ics');
+      showToast(texts.downloaded);
+    }
+  } catch (error) {
+    console.error("Couldn't open the calendar", error);
+    showToast(texts.failed);
+  }
+}
+
+/** The dates written in the selection (not the done tasks), to add them to the calendar. */
+export function selectionDates(): AgendaItem[] {
+  const { engine, diary } = useUI.getState();
+  if (!engine || !diary) return [];
+  const entries = engine.selectedTexts().flatMap(({ id, text, private: hidden }) => {
+    const pageId = diary.pageOf(id);
+    if (!pageId) return [];
+    return [
+      {
+        pageId,
+        elementId: id,
+        type: 'text' as const,
+        text,
+        ...(hidden && { private: true as const }),
+      },
+    ];
+  });
+  return agendaItems(entries, todayKey(), getLanguage() === 'en').filter(
+    (item) => item.task !== 'done',
+  );
+}
 
 /**
  * Saves a file the user asked for: downloaded on the web; on the desktop, where they

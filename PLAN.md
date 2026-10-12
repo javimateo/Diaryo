@@ -590,7 +590,14 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           diaryo, un aviso con los que se pasaron con la app cerrada (del último día). Con
           `tauri-winrt-notification` (el plugin de Tauri no sabe en Windows si se pulsa).
           Rust 1.82 como mínimo.
-    - [ ] **F4. Exportar a calendario** (.ics): «Añadir a mi calendario».
+    - [x] **F4. Exportar a calendario** (.ics): «Añadir a mi calendario». En «Próximo»,
+          «Añadir todo» (lo pendiente, sin los post-its privados) y el icono de cada fila
+          (al pasar el ratón; en pantallas táctiles, siempre); con clic derecho, las fechas
+          de lo seleccionado (sin las tareas hechas). Cada línea es un evento (todo el día
+          sin hora, una hora sin fin) con un identificador fijo; en el escritorio se abre en
+          la app de calendario y en la web se descarga. `diary/ics.ts`, con tests. De paso,
+          el botón «Próximo» vuelve a abrir su propio panel, solo con la lista (el
+          calendario está en el índice).
     - Aparcado: recordatorios con la app cerrada en web/móvil (push con servidor; choca
       con el cifrado) y sincronizar con Google Calendar en las dos direcciones (permiso
       sensible con verificación de Google; sacaría las citas del cifrado).

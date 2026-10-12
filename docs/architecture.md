@@ -92,9 +92,11 @@ be dumped to a `.diaryo` file and merged back (`storage/files.ts`).
 The diary's dated lines (`diary/agenda.ts`: tasks and appointments, from the same texts the
 search reads) are kept in the store by `ui/agenda.ts`, read again after saving, when
 pages come and go and when changes arrive from elsewhere (`DiaryHooks.onChangedElsewhere`:
-the cloud, another tab, the desktop layer). They feed the index's "Tasks" tab, which the top bar's "Próximo" button
-opens (`ui/Upcoming.tsx`: what is pending, by when; a task is ticked there on any page with
-`Diary.toggleTask`), and the calendar's marks. Optionally, everything
+the cloud, another tab, the desktop layer). They feed "Próximo" (the top bar's button) and the index's "Tasks" tab
+(`ui/Upcoming.tsx`: what is pending, by when; a task is ticked there on any page with
+`Diary.toggleTask`), and the calendar's marks. From there or the context menu they go to
+the calendar app as an iCalendar file (`diary/ics.ts`): opened right away on the desktop
+(`open_calendar_file`), downloaded on the web. Optionally, everything
 is encrypted on the device (`storage/sealing.ts`, see [privacy](privacy.md)).
 
 ## The interface (`src/ui`, `src/store`)

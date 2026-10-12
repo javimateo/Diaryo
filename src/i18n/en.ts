@@ -1076,7 +1076,9 @@ export const en: Messages = {
   },
 
   upcoming: {
+    title: 'Upcoming',
     open: 'Upcoming: tasks and appointments',
+    close: 'Close Upcoming',
     tab: 'Tasks',
     pending: (n: number) => (n === 1 ? '1 pending' : `${n} pending`),
     soon: (n: number) => (n === 1 ? '1 late or due today' : `${n} late or due today`),
@@ -1092,6 +1094,15 @@ export const en: Messages = {
     empty: 'Nothing pending with a date.',
     emptyHint: 'Type “@” and a date in a task or a sticky note.',
     dayHas: (n: number) => (n === 1 ? '1 appointment or task' : `${n} appointments or tasks`),
+  },
+
+  calendar: {
+    add: 'Add to my calendar',
+    addAll: 'Add all to my calendar',
+    opened: (n: number) =>
+      n === 1 ? 'Opened in your calendar: 1 event' : `Opened in your calendar: ${n} events`,
+    downloaded: 'diaryo.ics downloaded: open it to add it',
+    failed: 'Couldn’t open the calendar',
   },
 
   reminders: {
