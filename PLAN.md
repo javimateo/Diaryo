@@ -545,7 +545,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         Apple (99 $/año) para firmar y notarizar; si no, macOS lo bloquea. Compilar en
         GitHub Actions (`macos-latest`) y un segundo `latest.json` para las
         actualizaciones.
-  - [ ] **F. Tareas y citas**: tareas con fecha y hora, citas (médico…), vista de
+  - [x] **F. Tareas y citas**: tareas con fecha y hora, citas (médico…), vista de
         calendario, recordatorios (notificación del sistema en el escritorio; por correo
         necesitaría la nube de C) e importar/exportar calendarios (.ics, Google Calendar).
         Decidido (octubre de 2026), por partes:
