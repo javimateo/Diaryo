@@ -112,9 +112,11 @@ export function useShortcuts() {
       if (e.altKey || mod) return;
 
       if (e.key === 'Escape') {
-        const { doc, diaryOpen, setDiaryOpen, desktop } = useUI.getState();
+        const { doc, diaryOpen, setDiaryOpen, upcomingOpen, setUpcomingOpen, desktop } =
+          useUI.getState();
         if (helpOpen) setHelpOpen(false);
         else if (doc.selectionCount === 0 && diaryOpen) setDiaryOpen(false);
+        else if (doc.selectionCount === 0 && upcomingOpen) setUpcomingOpen(false);
         // In the floating diary, Esc puts it away (like the shortcut).
         else if (doc.selectionCount === 0 && desktop?.mode === 'widget') void hideDesktop();
         else engine?.clearSelection();

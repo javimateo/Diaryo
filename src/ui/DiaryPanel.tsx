@@ -20,14 +20,12 @@ export function DiaryPanel() {
   const agenda = useUI((s) => s.agenda);
   const tab = useUI((s) => s.diaryTab);
   const setTab = useUI((s) => s.setDiaryTab);
-  const at = useUI((s) => s.diaryAt);
   const pending = usePendingCount();
   if (!open || !current) return null;
 
   return (
     <aside
       className="diary-panel floating"
-      data-at={at}
       aria-label={t.diary.index}
       onMouseDown={(e) => {
         if (!(e.target instanceof HTMLInputElement)) e.preventDefault();

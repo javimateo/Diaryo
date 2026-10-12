@@ -108,6 +108,7 @@ pub fn run() {
             commands::save_file,
             commands::set_reminders,
             commands::show_reminder,
+            commands::open_calendar_file,
         ])
         .run(tauri::generate_context!())
         .expect("couldn't start diaryo");

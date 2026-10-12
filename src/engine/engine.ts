@@ -1070,6 +1070,14 @@ export class Engine {
     return true;
   }
 
+  /** What is written in the selection (texts, notes, shapes), to read its dates. */
+  selectedTexts(): { id: string; text: string; private: boolean }[] {
+    return this.selectedElements()
+      .filter(isEditable)
+      .map((el) => ({ id: el.id, text: textOf(el), private: el.type === 'note' && !!el.private }))
+      .filter(({ text }) => text.trim() !== '');
+  }
+
   /** The ids of the selected notes (to mark them as private). */
   selectedNotes(): string[] {
     return this.selectedElements()

@@ -267,8 +267,8 @@ interface UIState {
   agenda: AgendaItem[];
   /** What the index lists under the calendar: the pages or the tasks ("Próximo"). */
   diaryTab: DiaryTab;
-  /** Where the index sits: by the control that opened it (the top bar or the page footer). */
-  diaryAt: 'top' | 'bottom';
+  /** What is pending with a date ("Próximo"), opened from the top bar. */
+  upcomingOpen: boolean;
   bookStyle: BookStyle;
   /** Dialog to choose the page to link the selection to. */
   linkDialogOpen: boolean;
@@ -313,10 +313,10 @@ interface UIState {
   setSaveStatus: (status: SaveStatus) => void;
   setDiary: (diary: Diary | null) => void;
   setDiaryState: (state: DiaryState) => void;
-  /** Opens or closes the index; with a tab, on it; by the page footer unless said. */
-  setDiaryOpen: (open: boolean, tab?: DiaryTab, at?: 'top' | 'bottom') => void;
+  setDiaryOpen: (open: boolean) => void;
   setDiaryTab: (tab: DiaryTab) => void;
   setAgenda: (agenda: AgendaItem[]) => void;
+  setUpcomingOpen: (open: boolean) => void;
   setBookStyle: (patch: Partial<BookStyle>) => void;
   setLinkDialogOpen: (open: boolean) => void;
   setPendingCopy: (copy: DiaryDump | null) => void;
@@ -368,7 +368,7 @@ export const useUI = create<UIState>()((set, get) => ({
   diaryOpen: false,
   agenda: [],
   diaryTab: readText(DIARY_TAB_KEY) === 'tasks' ? 'tasks' : 'pages',
-  diaryAt: 'bottom',
+  upcomingOpen: false,
   bookStyle: loadBookStyle(),
   linkDialogOpen: false,
   pendingCopy: null,
@@ -484,12 +484,14 @@ export const useUI = create<UIState>()((set, get) => ({
     // The cover's picture wears the covers too.
     void get().diary?.refreshCover();
   },
-  setDiaryOpen: (diaryOpen, tab, at = 'bottom') => {
+  setDiaryOpen: (diaryOpen) => {
     // When opening the index, the current page's thumbnail is brought up to date.
     if (diaryOpen) get().diary?.refreshThumbnail();
-    set(diaryOpen ? { diaryOpen, diaryAt: at } : { diaryOpen });
-    if (tab) get().setDiaryTab(tab);
+    // The index and "Próximo" share the right side: one at a time.
+    set(diaryOpen ? { diaryOpen, upcomingOpen: false } : { diaryOpen });
   },
+  setUpcomingOpen: (upcomingOpen) =>
+    set(upcomingOpen ? { upcomingOpen, diaryOpen: false } : { upcomingOpen }),
   setDiaryTab: (diaryTab) => {
     writeText(DIARY_TAB_KEY, diaryTab);
     set({ diaryTab });

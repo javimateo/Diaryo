@@ -1102,7 +1102,9 @@ export const es = {
 
   /** What is pending with a date: tasks and appointments of the whole diary. */
   upcoming: {
+    title: 'Próximo',
     open: 'Próximo: tareas y citas',
+    close: 'Cerrar Próximo',
     /** The index's tab. */
     tab: 'Tareas',
     pending: (n: number) => (n === 1 ? '1 pendiente' : `${n} pendientes`),
@@ -1121,6 +1123,16 @@ export const es = {
     emptyHint: 'Escribe «@» y una fecha en una tarea o un post-it.',
     /** On a calendar day. */
     dayHas: (n: number) => (n === 1 ? '1 cita o tarea' : `${n} citas o tareas`),
+  },
+
+  /** Tasks and appointments to the calendar app (an .ics file). */
+  calendar: {
+    add: 'Añadir a mi calendario',
+    addAll: 'Añadir todo a mi calendario',
+    opened: (n: number) =>
+      n === 1 ? 'Abierto en tu calendario: 1 cita' : `Abierto en tu calendario: ${n} citas`,
+    downloaded: 'diaryo.ics descargado: ábrelo para añadirlo',
+    failed: 'No se ha podido abrir el calendario',
   },
 
   /** Desktop app: Windows notifications of tasks and appointments. */

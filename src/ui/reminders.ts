@@ -61,7 +61,7 @@ export function startReminders(): () => void {
   const stopListening = listen<Reminder>(OPENED, (reminder) => {
     if (reminder.pageId && reminder.elementId) {
       void revealElement(reminder.pageId, reminder.elementId);
-    } else useUI.getState().setDiaryOpen(true, 'tasks', 'top');
+    } else useUI.getState().setUpcomingOpen(true);
   });
   return () => {
     stopUI();

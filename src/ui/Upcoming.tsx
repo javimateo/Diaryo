@@ -1,4 +1,4 @@
-import { CalendarClock, CalendarDays } from 'lucide-react';
+import { CalendarClock, CalendarDays, CalendarPlus, X } from 'lucide-react';
 import { useEffect } from 'react';
 import { upcoming, type AgendaGroup, type AgendaItem } from '../diary/agenda';
 import { formatClock, formatDayMonth, formatWhen } from '../i18n/dates';
@@ -7,6 +7,7 @@ import { DESK_ID } from '../storage/db';
 import { useUI } from '../store/ui';
 import { refreshAgenda } from './agenda';
 import { revealElement } from './diaryActions';
+import { addToCalendar } from './fileActions';
 import { useNow } from './useNow';
 import { useT } from './useT';
 
@@ -18,13 +19,10 @@ function useUpcoming() {
   return { groups: upcoming(agenda, now, weekStart), now };
 }
 
-/**
- * The top bar's button: "Próximo", with how many are late or for today. It opens the
- * diary index on its tasks.
- */
+/** The top bar's button: "Próximo", with how many are late or for today. */
 export function UpcomingButton() {
   const t = useT();
-  const open = useUI((s) => s.diaryOpen && s.diaryTab === 'tasks');
+  const open = useUI((s) => s.upcomingOpen);
   const { groups } = useUpcoming();
   const soon = groups
     .filter(({ group }) => group === 'late' || group === 'today')
@@ -38,7 +36,7 @@ export function UpcomingButton() {
       data-active={open || undefined}
       data-tip={open ? undefined : t.upcoming.open}
       data-tip-align="end"
-      onClick={() => useUI.getState().setDiaryOpen(!open, 'tasks', 'top')}
+      onClick={() => useUI.getState().setUpcomingOpen(!open)}
     >
       <CalendarClock size={18} strokeWidth={1.75} />
       {soon > 0 && (
@@ -50,7 +48,55 @@ export function UpcomingButton() {
   );
 }
 
-/** The diary index's "Tareas": the open tasks and the appointments to come, by when. */
+/** "Próximo", from the top bar: just the list, up by its button (the calendar is in the index). */
+export function UpcomingPanel() {
+  const t = useT();
+  const open = useUI((s) => s.upcomingOpen);
+  const setOpen = useUI((s) => s.setUpcomingOpen);
+  const { groups } = useUpcoming();
+  if (!open) return null;
+  const pendingItems = groups.flatMap(({ items }) => items);
+  const pending = pendingItems.length;
+  // Everything pending but the private notes' (one is added from its own row).
+  const shareable = pendingItems.filter((item) => !item.private);
+  return (
+    <aside
+      className="diary-panel upcoming-panel floating"
+      aria-label={t.upcoming.title}
+      onMouseDown={(e) => e.preventDefault()}
+    >
+      <header className="diary-header">
+        <h2>{t.upcoming.title}</h2>
+        <span className="diary-count">{pending > 0 && t.upcoming.pending(pending)}</span>
+        {shareable.length > 0 && (
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label={t.calendar.addAll}
+            data-tip={t.calendar.addAll}
+            data-tip-align="end"
+            onClick={() => void addToCalendar(shareable)}
+          >
+            <CalendarPlus size={16} strokeWidth={1.75} />
+          </button>
+        )}
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label={t.upcoming.close}
+          data-tip={`${t.common.close} — Esc`}
+          data-tip-align="end"
+          onClick={() => setOpen(false)}
+        >
+          <X size={16} strokeWidth={1.75} />
+        </button>
+      </header>
+      <UpcomingList />
+    </aside>
+  );
+}
+
+/** The open tasks and the appointments to come, by when ("Próximo" and the index's tab). */
 export function UpcomingList() {
   const t = useT();
   const { groups, now } = useUpcoming();
@@ -121,7 +167,7 @@ function UpcomingItem({ item, group, now }: { item: AgendaItem; group: AgendaGro
           type="button"
           className="upcoming-check"
           aria-label={`${t.upcoming.tick}: ${item.text}`}
-          data-tip={t.upcoming.tick}
+          title={t.upcoming.tick}
           onClick={() => void tick()}
         />
       ) : (
@@ -139,6 +185,16 @@ function UpcomingItem({ item, group, now }: { item: AgendaItem; group: AgendaGro
           </span>
         </span>
         {place && <span className="upcoming-place">{place}</span>}
+      </button>
+      <button
+        type="button"
+        className="icon-btn upcoming-add"
+        aria-label={`${t.calendar.add}: ${item.text}`}
+        // In a list that scrolls, the drawn tooltips would be cut off (and stretch it).
+        title={t.calendar.add}
+        onClick={() => void addToCalendar([item])}
+      >
+        <CalendarPlus size={15} strokeWidth={1.75} />
       </button>
     </li>
   );

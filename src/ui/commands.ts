@@ -185,7 +185,7 @@ export function getCommands(): Command[] {
       label: c.upcoming,
       icon: CalendarClock,
       keywords: kw.upcoming,
-      run: () => useUI.getState().setDiaryOpen(true, 'tasks', 'top'),
+      run: () => useUI.getState().setUpcomingOpen(true),
     },
     saved && {
       id: 'delete-page',

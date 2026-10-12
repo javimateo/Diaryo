@@ -5,6 +5,7 @@ import { useUI } from '../store/ui';
 import { askToReveal, deletePrivate, markPrivate } from './privateActions';
 import { hideNotes } from '../cloud/lock';
 import { copySelection, cutSelection, pasteFromClipboard } from './clipboard';
+import { addToCalendar, selectionDates } from './fileActions';
 import { t } from '../i18n';
 
 interface Item {
@@ -72,6 +73,8 @@ function Menu({ request, onClose }: { request: ContextMenuRequest; onClose: () =
   if (!engine) return null;
 
   const { contextMenu: m, commands: c } = t();
+  // The dates written in what is selected: "Add to my calendar".
+  const dated = selectionDates();
   // A hidden private note: nothing changes it without the diary password.
   const hidden = request.hiddenNote;
   const entries: Entry[] = hidden
@@ -159,6 +162,9 @@ function Menu({ request, onClose }: { request: ContextMenuRequest; onClose: () =
           },
           ...(doc.selectionHasLink
             ? [{ label: c.unlink, run: () => engine.setSelectionLink(null) }]
+            : []),
+          ...(dated.length > 0
+            ? [{ label: t().calendar.add, run: () => void addToCalendar(dated) }]
             : []),
           'divider',
           { label: c.duplicate, shortcut: 'Ctrl+D', run: () => engine.duplicateSelection() },
