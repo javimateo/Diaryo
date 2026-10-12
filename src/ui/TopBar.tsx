@@ -130,6 +130,7 @@ export function TopActions() {
         type="button"
         className="icon-btn"
         aria-label={t.topBar.settings}
+        data-tour="settings"
         data-tip={`${t.topBar.settings} — Ctrl ,`}
         data-tip-align="end"
         onClick={() => setSettingsOpen(true)}

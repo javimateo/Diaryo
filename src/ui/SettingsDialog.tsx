@@ -8,6 +8,7 @@ import {
   Cloud,
   Download,
   FolderOpen,
+  Compass,
   Keyboard,
   Lock,
   Monitor,
@@ -323,6 +324,18 @@ function Help() {
           }}
         >
           <Keyboard size={15} strokeWidth={1.75} /> {s.showShortcuts}
+        </button>
+      </SettingsRow>
+      <SettingsRow label={s.tour} hint={s.tourHint}>
+        <button
+          type="button"
+          className="settings-btn"
+          onClick={() => {
+            useUI.getState().setSettingsOpen(false);
+            useUI.getState().setTour(0);
+          }}
+        >
+          <Compass size={15} strokeWidth={1.75} /> {s.showTour}
         </button>
       </SettingsRow>
       <section className="settings-group">

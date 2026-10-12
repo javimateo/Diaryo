@@ -258,6 +258,8 @@ interface UIState {
   /** Opened on a given page: on a phone it shows that page instead of the list. */
   settingsDirect: boolean;
   helpOpen: boolean;
+  /** The step of the tour being shown (null: no tour). */
+  tour: number | null;
   saveStatus: SaveStatus;
   diary: Diary | null;
   diaryState: DiaryState;
@@ -310,6 +312,7 @@ interface UIState {
   setSettingsOpen: (open: boolean, section?: SettingsSection) => void;
   setSettingsSection: (section: SettingsSection) => void;
   setHelpOpen: (open: boolean) => void;
+  setTour: (step: number | null) => void;
   setSaveStatus: (status: SaveStatus) => void;
   setDiary: (diary: Diary | null) => void;
   setDiaryState: (state: DiaryState) => void;
@@ -362,6 +365,7 @@ export const useUI = create<UIState>()((set, get) => ({
   settingsSection: 'general',
   settingsDirect: false,
   helpOpen: false,
+  tour: null,
   saveStatus: 'loading',
   diary: null,
   diaryState: { pages: [], current: null },
@@ -431,6 +435,7 @@ export const useUI = create<UIState>()((set, get) => ({
     })),
   setSettingsSection: (settingsSection) => set({ settingsSection }),
   setHelpOpen: (helpOpen) => set({ helpOpen }),
+  setTour: (tour) => set({ tour }),
   setSaveStatus: (saveStatus) => set({ saveStatus }),
   setDiary: (diary) => set({ diary }),
   setDiaryState: (diaryState) => set({ diaryState }),

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { formatDayMonth } from '../i18n/dates';
 import { Diary } from '../diary/diary';
+import { seedWelcome } from '../diary/welcome';
 import type { PageMeta } from '../diary/pages';
 import { followLink } from './diaryActions';
 import { DesktopBridge } from '../desktop/bridge';
@@ -101,8 +102,14 @@ export function CanvasView() {
         })
       : null;
     updater?.start();
-    if (bridge) void diary.start().then(() => bridge.start());
-    else void diary.start();
+    // A new diary starts with the welcome page and the tour.
+    void seedWelcome(getDB(), t().welcome.page, useUI.getState().settings.language)
+      .catch(() => false)
+      .then(async (welcome) => {
+        await diary.start();
+        if (welcome) useUI.getState().setTour(0);
+        await bridge?.start();
+      });
     // Development only: access from the console for debugging and measuring.
     if (import.meta.env.DEV) Object.assign(window, { diaryo: instance });
     return () => {

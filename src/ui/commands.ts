@@ -21,6 +21,7 @@ import {
   Group,
   Image as ImageIcon,
   ImageDown,
+  Compass,
   Keyboard,
   LayoutGrid,
   Link,
@@ -466,6 +467,13 @@ export function getCommands(): Command[] {
       keys: ['?'],
       keywords: kw.help,
       run: () => state.setHelpOpen(true),
+    },
+    {
+      id: 'tour',
+      label: c.tour,
+      icon: Compass,
+      keywords: kw.tour,
+      run: () => state.setTour(0),
     },
   ]);
 
