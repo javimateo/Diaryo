@@ -74,6 +74,15 @@ export const es = {
     },
     /** What is written in the animated scenes. */
     scenes: {
+      tasks: {
+        lines: ['dentista', 'comprar pan', 'entregar trabajo'],
+        soon: 'mañana 10:00',
+        late: 'ayer',
+        hint: 'escribe @ y el día',
+        reminder: 'Dentista',
+      },
+      cover: { title: 'Viajes', engraved: 'Mi diario', label: 'Apuntes' },
+      private: { page: 'querido diario,\nhoy…', locked: 'Diario bloqueado' },
       today: 'hoy',
       day: 'sábado 26',
       turn: {
@@ -104,6 +113,25 @@ export const es = {
         ['Cartón', 'Puntos', 'Lino'],
       ],
     },
+    /** The newest features, in a row of their own with a "new" label. */
+    news: [
+      {
+        id: 'tasks',
+        title: 'Tareas y citas',
+        text: 'Escribe «@mañana 10» en una línea y ya tiene fecha. «Próximo» te enseña lo que viene, Windows te avisa a su hora y lo llevas a tu calendario.',
+      },
+      {
+        id: 'cover',
+        title: 'Tu portada',
+        text: 'Decora la tapa como un diario de verdad: fotos, texto, dibujos y post-its, o empieza de una plantilla. La ves al abrirlo y en tu escritorio.',
+      },
+      {
+        id: 'private',
+        title: 'Privado de verdad',
+        text: 'Cifra en tu ordenador solo lo privado o el diario entero, con su contraseña. Los post-its privados se ven con un candado hasta que los abres.',
+      },
+    ],
+    newBadge: 'nuevo',
     small: [
       {
         id: 'turn',
@@ -123,7 +151,7 @@ export const es = {
       {
         id: 'style',
         title: 'A tu gusto',
-        text: 'Tapas de cuero o tela, papel de rayas, cuadros, Cornell o agenda, y mesa de madera, corcho o lino.',
+        text: 'Tapas de cuero, tela, lona, vaquero o cartón; papel de rayas, cuadros, Cornell o agenda; y siete mesas, de la madera al mármol.',
       },
     ],
   },
@@ -149,7 +177,7 @@ export const es = {
   download: {
     eyebrow: 'Descargar',
     title: 'diaryo para Windows',
-    text: 'Windows 10 y 11, 64 bits. Se instala sin permisos de administrador y arranca con Windows, escondido y listo para el atajo.',
+    text: 'Windows 10 y 11, 64 bits. Se instala sin permisos de administrador y arranca con Windows, escondido y listo para el atajo. La primera vez te recibe una página de ejemplo y un recorrido corto.',
     button: 'Descargar v{version}',
     releases: 'Novedades y versiones anteriores',
     otherSystems: '¿Mac o Linux? Por ahora, úsalo en el navegador.',
@@ -167,7 +195,7 @@ export const es = {
   privacy: {
     eyebrow: 'Privacidad',
     title: 'Tus notas son tuyas',
-    text: 'Sin anuncios ni rastreo. El diario se guarda en tu ordenador y cada día deja una copia en Documentos; puedes llevártelo entero en un archivo cuando quieras. Si usas la nube, tu diario viaja cifrado: sin tu contraseña del diario nadie puede leerlo, tampoco nosotros. Esta web solo cuenta visitas y descargas, de forma anónima y sin cookies.',
+    text: 'Sin anuncios ni rastreo. El diario se guarda en tu ordenador y cada día deja una copia en Documentos; puedes llevártelo entero en un archivo cuando quieras. Si quieres, se cifra también en tu ordenador (solo lo privado o todo) y se bloquea con su contraseña. Si usas la nube, tu diario viaja cifrado: sin tu contraseña del diario nadie puede leerlo, tampoco nosotros. Esta web solo cuenta visitas y descargas, de forma anónima y sin cookies.',
     source: 'Ver el código en GitHub',
     policy: 'Política de privacidad',
     terms: 'Condiciones',
@@ -186,6 +214,14 @@ export const es = {
       {
         q: '¿Funciona sin internet?',
         a: 'Sí. Solo la nube, si la usas, necesita conexión para sincronizar; mientras tanto escribes igual.',
+      },
+      {
+        q: '¿Me avisa de mis tareas?',
+        a: 'Sí: escribe @ y el día (y la hora, si quieres) en una tarea o una cita, y en Windows te sale un aviso a su hora, aunque el diario esté escondido. También puedes llevarlas a tu calendario.',
+      },
+      {
+        q: '¿Puedo cifrar el diario en mi ordenador?',
+        a: 'Sí: en Ajustes → Privacidad eliges cifrar solo los post-its privados o el diario entero, con su contraseña. Cifrado entero, se bloquea solo cuando quieras y nadie lo lee sin ella.',
       },
       {
         q: '¿Paso mi diario de un ordenador a otro?',

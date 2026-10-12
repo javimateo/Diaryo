@@ -199,6 +199,84 @@ const taskbar =
       ))
     }
   </div>
+
+  <div class="news">
+    {
+      f.news.map((item) => (
+        <article class="card">
+          <div
+            class={`scene ${item.id === 'private' ? 'night' : 'desk'}`}
+            aria-hidden="true"
+          >
+            {item.id === 'tasks' && (
+              <>
+                <div class="paper-sheet tk-sheet hand">
+                  <span>
+                    <span class="box" />
+                    {sc.tasks.lines[0]} <b class="when">{sc.tasks.soon}</b>
+                  </span>
+                  <span class="done">
+                    <span class="box checked" />
+                    {sc.tasks.lines[1]}
+                  </span>
+                  <span>
+                    <span class="box" />
+                    {sc.tasks.lines[2]} <b class="when late">{sc.tasks.late}</b>
+                  </span>
+                  <span class="hint">{sc.tasks.hint}</span>
+                </div>
+                <div class="reminder">
+                  <b>diaryo · 10:00</b>
+                  {sc.tasks.reminder}
+                </div>
+              </>
+            )}
+            {item.id === 'cover' && (
+              <>
+                <div class="mini-cover cv-main">
+                  <span class="photo p1" />
+                  <span class="photo p2" />
+                  <span class="hand cv-title">{sc.cover.title}</span>
+                </div>
+                <div class="mini-cover cv-engraved">
+                  <span>{sc.cover.engraved}</span>
+                </div>
+                <div class="mini-cover cv-label">
+                  <span class="hand">{sc.cover.label}</span>
+                </div>
+              </>
+            )}
+            {item.id === 'private' && (
+              <>
+                <div class="paper-sheet pv-sheet hand">
+                  {sc.private.page.split('\n').map((line) => (
+                    <span>{line}</span>
+                  ))}
+                </div>
+                <div class="pv-note">
+                  <svg viewBox="0 0 24 24">
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                  </svg>
+                </div>
+                <div class="pv-lock">
+                  <b>{sc.private.locked}</b>
+                  <span>••••••</span>
+                </div>
+              </>
+            )}
+          </div>
+          <div class="body">
+            <h3>
+              {item.title}
+              <span class="badge">{f.newBadge}</span>
+            </h3>
+            <p>{item.text}</p>
+          </div>
+        </article>
+      ))
+    }
+  </div>
 </section>
 
 <style is:inline set:html={typing}></style>
@@ -260,6 +338,42 @@ const taskbar =
     margin: 0;
     font-size: 16px;
     color: var(--text-soft);
+  }
+
+  .news {
+    display: grid;
+    gap: 24px;
+    margin-top: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  }
+
+  .news .body {
+    padding: 20px 22px 24px;
+  }
+
+  .news .body h3 {
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .news .body p {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--cover) 16%, transparent);
+    color: var(--cover);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: middle;
   }
 
   .small .body {
@@ -1098,5 +1212,240 @@ const taskbar =
     font-size: 10px;
     font-weight: 700;
     white-space: nowrap;
+  }
+
+  /* ─── The newest: tasks, the cover, privacy (still pictures) ─── */
+
+  .night {
+    height: 190px;
+    background: #2f2d2a;
+  }
+
+  .paper-sheet {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 14px;
+    border-radius: 3px;
+    background: repeating-linear-gradient(180deg, transparent 0 21px, var(--paper-line) 21px 22px)
+      var(--paper);
+    box-shadow: var(--shadow);
+    font-size: 17px;
+  }
+
+  .tk-sheet {
+    left: 22px;
+    top: 20px;
+    width: 250px;
+  }
+
+  .tk-sheet .done {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  .box.checked {
+    background: currentColor;
+  }
+
+  .when {
+    padding: 0 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--cover) 18%, transparent);
+    color: var(--cover);
+    font-family: var(--font-body);
+    font-size: 10.5px;
+    font-weight: 700;
+    vertical-align: 2px;
+  }
+
+  .when.late {
+    background: rgba(194, 37, 92, 0.15);
+    color: #c2255c;
+  }
+
+  .tk-sheet .hint {
+    font-size: 14px;
+    opacity: 0.55;
+  }
+
+  .reminder {
+    position: absolute;
+    right: 14px;
+    bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    width: 160px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: #23211d;
+    color: #ffffff;
+    font-size: 12px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .mini-cover {
+    position: absolute;
+    border-radius: 4px 9px 9px 4px;
+    box-shadow:
+      0 3px 0 rgba(0, 0, 0, 0.2),
+      0 12px 24px rgba(40, 20, 5, 0.3);
+  }
+
+  .cv-main {
+    left: 50%;
+    top: 16px;
+    width: 116px;
+    height: 158px;
+    margin-left: -58px;
+    background: #46699c;
+  }
+
+  /* Its elastic. */
+  .cv-main::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: -3px;
+    bottom: -3px;
+    width: 6px;
+    border-radius: 3px;
+    background: #2a2724;
+  }
+
+  .photo {
+    position: absolute;
+    padding: 4px 4px 14px;
+    background: #fbf8f1;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+  }
+
+  .photo::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .p1 {
+    left: 12px;
+    top: 16px;
+    width: 48px;
+    height: 44px;
+    transform: rotate(-6deg);
+  }
+
+  .p1::before {
+    background: linear-gradient(#9cc3dd 55%, #557a5c 55%);
+  }
+
+  .p2 {
+    left: 44px;
+    top: 46px;
+    width: 44px;
+    height: 40px;
+    transform: rotate(5deg);
+  }
+
+  .p2::before {
+    background: linear-gradient(#f5d38a 40%, #c97a50 40%);
+  }
+
+  .cv-title {
+    position: absolute;
+    left: 0;
+    right: 18px;
+    bottom: 12px;
+    color: #fbf3ea;
+    font-size: 24px;
+    text-align: center;
+  }
+
+  .cv-engraved,
+  .cv-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 78px;
+  }
+
+  .cv-engraved {
+    right: 8%;
+    top: 26px;
+    background: var(--cover);
+    color: rgba(0, 0, 0, 0.45);
+    font-family: var(--font-title);
+    font-size: 10px;
+  }
+
+  .cv-label {
+    left: 8%;
+    bottom: 22px;
+    background: #c4a073;
+  }
+
+  .cv-label span {
+    padding: 1px 5px;
+    background: #f7f0e2;
+    color: #2b2520;
+    font-size: 13px;
+  }
+
+  .pv-sheet {
+    left: 24px;
+    top: 24px;
+    width: 150px;
+    height: 136px;
+    box-sizing: border-box;
+  }
+
+  .pv-note {
+    position: absolute;
+    left: 140px;
+    top: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 112px;
+    height: 112px;
+    background: #f4b6c2;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+    transform: rotate(5deg);
+  }
+
+  .pv-note svg {
+    width: 32px;
+    height: 32px;
+    fill: none;
+    stroke: #7a3343;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .pv-lock {
+    position: absolute;
+    right: 16px;
+    top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 118px;
+    padding: 11px;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #23211d;
+    font-size: 11px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .pv-lock span {
+    padding: 0 6px;
+    border: 1px solid var(--cover);
+    border-radius: 6px;
+    font-size: 13px;
+    letter-spacing: 0.2em;
   }
 </style>

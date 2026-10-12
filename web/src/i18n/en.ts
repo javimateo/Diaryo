@@ -72,6 +72,15 @@ export const en: WebMessages = {
       notes: ['call Ana', 'water the plants', 'meeting at 5'],
     },
     scenes: {
+      tasks: {
+        lines: ['dentist', 'buy bread', 'hand in work'],
+        soon: 'tomorrow 10:00',
+        late: 'yesterday',
+        hint: 'type @ and the day',
+        reminder: 'Dentist',
+      },
+      cover: { title: 'Travels', engraved: 'My diary', label: 'Notes' },
+      private: { page: 'dear diary,\ntoday…', locked: 'Diary locked' },
       today: 'today',
       day: 'Saturday 26',
       turn: {
@@ -101,6 +110,24 @@ export const en: WebMessages = {
         ['Cardboard', 'Dots', 'Linen'],
       ],
     },
+    news: [
+      {
+        id: 'tasks',
+        title: 'Tasks and appointments',
+        text: 'Type “@tomorrow 10” in a line and it has a date. “Upcoming” shows what is coming, Windows reminds you on time and you can add it to your calendar.',
+      },
+      {
+        id: 'cover',
+        title: 'Your cover',
+        text: 'Dress up the cover like a real diary: photos, text, drawings and sticky notes, or start from a template. You see it when you open it and on your desktop.',
+      },
+      {
+        id: 'private',
+        title: 'Truly private',
+        text: 'Encrypt only what is private or the whole diary on your computer, with its password. Private sticky notes show a padlock until you open them.',
+      },
+    ],
+    newBadge: 'new',
     small: [
       {
         id: 'turn',
@@ -120,7 +147,7 @@ export const en: WebMessages = {
       {
         id: 'style',
         title: 'Make it yours',
-        text: 'Leather or cloth covers, lined, grid, Cornell or planner paper, and a wood, cork or linen desk.',
+        text: 'Leather, cloth, canvas, denim or cardboard covers; lined, grid, Cornell or planner paper; and seven desks, from wood to marble.',
       },
     ],
   },
@@ -143,7 +170,7 @@ export const en: WebMessages = {
   download: {
     eyebrow: 'Download',
     title: 'diaryo for Windows',
-    text: 'Windows 10 and 11, 64-bit. Installs without admin rights and starts with Windows, hidden and ready for the shortcut.',
+    text: 'Windows 10 and 11, 64-bit. Installs without admin rights and starts with Windows, hidden and ready for the shortcut. The first time, a sample page and a short tour welcome you.',
     button: 'Download v{version}',
     releases: 'Release notes and older versions',
     otherSystems: 'Mac or Linux? For now, use it in the browser.',
@@ -161,7 +188,7 @@ export const en: WebMessages = {
   privacy: {
     eyebrow: 'Privacy',
     title: 'Your notes are yours',
-    text: 'No ads and no tracking. The diary is saved on your computer and leaves a copy in Documents every day; you can take the whole thing with you in one file whenever you want. If you use the cloud, your diary travels encrypted: without your diary password nobody can read it, us included. This website only counts visits and downloads, anonymously and without cookies.',
+    text: 'No ads and no tracking. The diary is saved on your computer and leaves a copy in Documents every day; you can take the whole thing with you in one file whenever you want. If you want, it is also encrypted on your computer (only what is private, or all of it) and locks with its password. If you use the cloud, your diary travels encrypted: without your diary password nobody can read it, us included. This website only counts visits and downloads, anonymously and without cookies.',
     source: 'See the code on GitHub',
     policy: 'Privacy policy',
     terms: 'Terms',
@@ -180,6 +207,14 @@ export const en: WebMessages = {
       {
         q: 'Does it work offline?',
         a: 'Yes. Only the cloud, if you use it, needs a connection to sync; meanwhile you write as usual.',
+      },
+      {
+        q: 'Does it remind me of my tasks?',
+        a: 'Yes: type @ and the day (and the time, if you like) in a task or an appointment, and Windows shows a reminder on time, even with the diary hidden. You can also add them to your calendar.',
+      },
+      {
+        q: 'Can I encrypt the diary on my computer?',
+        a: 'Yes: in Settings → Privacy, choose to encrypt only the private sticky notes or the whole diary, with its password. Fully encrypted, it locks when you want and nobody reads it without it.',
       },
       {
         q: 'Can I move my diary to another computer?',
