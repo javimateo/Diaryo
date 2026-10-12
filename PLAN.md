@@ -552,14 +552,13 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           Lora y la interfaz en Nunito Sans, como la web; borrar y los errores pasan a un
           carmesí que no se confunde con el terracota. Cómo regenerar el icono, en
           `docs/releasing.md`.
-    - [ ] **Portada del diario editable**: que cada uno personalice la suya (no solo el
+    - [x] **Portada del diario editable**: que cada uno personalice la suya (no solo el
           color). Es también lo que enseña el mini diario cuando el diario está
           bloqueado (D2). Decidido (octubre de 2026): la portada es un lienzo más, sobre
           la tapa cerrada, con las herramientas de siempre (fotos, texto, dibujo,
           post-its); seis plantillas para empezar (en blanco, grabado, dorado, etiqueta,
           fotos con solo el marco, tiza); se guarda sin cifrar, como la mesa, porque se ve
-          con el diario bloqueado (y lo avisa); «Abrir con la portada» al arrancar,
-          encendido por defecto, con una imagen ya hecha y nunca en el diario flotante.
+          con el diario bloqueado (y lo avisa).
       - [x] **1. Motor**: el diario cerrado (`closed`): solo la tapa delantera, con su
             material, color y goma por encima; lo pegado se recorta en su borde; ahí no
             se pasan páginas.
@@ -571,7 +570,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             dispositivo (cada uno dibuja la suya). **Solo esa imagen queda en claro**
             (`sealing.ts`); lo pegado en la portada se cifra como todo, porque solo se
             edita con el diario abierto. Viaja en copias y nube como una página más.
-      - [ ] **Antes de la fase 3, herramientas para componer** (decidido en octubre de
+      - [x] **Antes de la fase 3, herramientas para componer** (decidido en octubre de
             2026; valen para todo el diario y las plantillas las usarán):
         - [x] **Guías al colocar**: al mover, los bordes y el centro de la selección se
               pegan a los de lo que hay alrededor y a los de la página (o la tapa); al
@@ -612,7 +611,6 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             plantilla pone sus elementos en la portada (textos, trazos y post-its con
             cinta como marcos de foto: todo se cambia después), la abre y avisa con
             «Deshacer». También en Ctrl K. `src/engine/coverTemplates.ts`, con tests.
-            «Abrir con la portada» va con la fase 5.
       - [x] **4. Dónde se ve**: la pantalla de bloqueo enseña la portada junto a la
             tarjeta de la contraseña (encima y más pequeña en el móvil; en ventanas bajas,
             como el diario flotante, solo la tarjeta). El mini diario del escritorio,
@@ -621,7 +619,10 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             portada). La imagen viaja con la tarjeta de hoy, que ya se guardaba en claro.
             Con la mesa «Oculta hasta abrir», el mini diario sale igual (solo la mesa
             espera).
-      - [ ] **5. Abrir con la portada**.
+      - Descartado (octubre de 2026): **«Abrir con la portada»**, que el diario se
+        abriera girando la tapa al arrancar. Para que se viera bien hacía falta tapar la
+        mitad izquierda del libro mientras la tapa gira y seguir a la cámara; demasiado
+        trabajo y recursos para lo que aporta.
     - [ ] **Diario de demostración**: al empezar, una plantilla o demo que enseñe lo que
           se puede hacer (dibujo, post-its, conexiones, páginas, la mesa…), fácil de
           borrar o de empezar en blanco.
