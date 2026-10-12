@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { StrokeElement } from '../engine/elements';
 import type { Engine } from '../engine/engine';
 import { Scene } from '../engine/scene';
-import { Autosave, type Desk } from './autosave';
+import { Autosave, type Desk, type SaveStatus } from './autosave';
 import { DESK_ID, DESK_INFO, DiaryoDB, loadPage, saveChanges, type PageInfo } from './db';
 
 /**
@@ -61,6 +61,7 @@ async function open(deskElements: StrokeElement[] = []) {
   const engine = fakeEngine();
   engine.loadPage(deskElements as never);
   let deskSaves = 0;
+  const statuses: SaveStatus[] = [];
   const desk: Desk = {
     ids: new Set(deskElements.map((el) => el.id)),
     onPage: new Map(deskElements.map((el) => [el.id, el.x === INSIDE])),
@@ -70,7 +71,7 @@ async function open(deskElements: StrokeElement[] = []) {
     db,
     engine,
     () => PAGE,
-    () => {},
+    (status) => statuses.push(status),
     true,
     desk,
   );
@@ -78,7 +79,7 @@ async function open(deskElements: StrokeElement[] = []) {
   const move = (id: string, x: number) =>
     engine.scene.apply(new Map([[id, { ...(engine.scene.get(id) as StrokeElement), x }]]));
   const ids = async (pageId: string) => (await loadPage(db, pageId)).elements.map((el) => el.id);
-  return { engine, autosave, desk, move, ids, deskSaves: () => deskSaves };
+  return { engine, autosave, desk, move, ids, statuses, deskSaves: () => deskSaves };
 }
 
 describe('the desk and the page when saving', () => {
@@ -126,5 +127,20 @@ describe('the desk and the page when saving', () => {
     await autosave.flush();
     expect(await ids(DESK_ID)).toEqual([]);
     expect(desk.ids.has('nota')).toBe(false);
+  });
+});
+
+describe('what the save status says', () => {
+  it('ends in "Saved" even if what was waiting had nothing to save', async () => {
+    const { engine, autosave, statuses } = await open();
+    engine.scene.apply(new Map([['a', stroke('a', INSIDE)]]));
+    const saving = autosave.flush();
+    // Meanwhile a save is asked for with nothing new (as when a font finishes loading).
+    (autosave as unknown as { schedule(delay: number): void }).schedule(60_000);
+    await saving;
+    expect(statuses.at(-1)).toBe('saving');
+    // The waiting save (its time come) has nothing to write, and says it.
+    await autosave.flush();
+    expect(statuses.at(-1)).toBe('saved');
   });
 });

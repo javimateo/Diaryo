@@ -899,6 +899,7 @@ export const es = {
     bookmark: 'Marcar la página como importante',
     map: 'Mapa del diario',
     index: 'Índice y calendario',
+    upcoming: 'Próximo: tareas y citas',
     deletePage: 'Borrar esta página',
     duplicate: 'Duplicar',
     changeLink: 'Cambiar el enlace…',
@@ -978,6 +979,7 @@ export const es = {
     bookmark: 'pestaña marcador favorita',
     map: 'todas las páginas vista general',
     index: 'lista páginas meses',
+    upcoming: 'agenda citas tareas fechas pendientes calendario',
     deletePage: 'eliminar hoja',
     link: 'enlace vincular',
     layerUp: 'capa encima',
@@ -1098,8 +1100,33 @@ export const es = {
     shortcuts: 'atajos',
   },
 
+  /** What is pending with a date: tasks and appointments of the whole diary. */
+  upcoming: {
+    open: 'Próximo: tareas y citas',
+    /** The index's tab. */
+    tab: 'Tareas',
+    pending: (n: number) => (n === 1 ? '1 pendiente' : `${n} pendientes`),
+    /** The button's number: late or for today. */
+    soon: (n: number) => (n === 1 ? '1 vencida o de hoy' : `${n} vencidas o de hoy`),
+    groups: {
+      late: 'Vencido',
+      today: 'Hoy',
+      tomorrow: 'Mañana',
+      week: 'Esta semana',
+      later: 'Más adelante',
+    },
+    allDay: 'todo el día',
+    tick: 'Marcar como hecha',
+    empty: 'Nada pendiente con fecha.',
+    emptyHint: 'Escribe «@» y una fecha en una tarea o un post-it.',
+    /** On a calendar day. */
+    dayHas: (n: number) => (n === 1 ? '1 cita o tarea' : `${n} citas o tareas`),
+  },
+
   diary: {
     title: 'Diario',
+    /** The index's tab with the pages (the other one has the tasks). */
+    pagesTab: 'Páginas',
     index: 'Índice del diario',
     calendar: 'Calendario',
     closeIndex: 'Cerrar el índice',

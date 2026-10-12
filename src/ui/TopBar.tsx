@@ -27,6 +27,7 @@ import { Choice } from './Choice';
 import { lockDiaryNow } from './lockActions';
 import { useSync } from './cloudSync';
 import { relativeTime } from './relativeTime';
+import { UpcomingButton } from './Upcoming';
 import { useT } from './useT';
 
 export function Brand() {
@@ -122,6 +123,7 @@ export function TopActions() {
         <span className="search-label">{t.topBar.searchLabel}</span>
         <kbd className="search-label">Ctrl K</kbd>
       </button>
+      <UpcomingButton />
       <span className="top-actions-separator" aria-hidden />
       <MainMenu />
       <button

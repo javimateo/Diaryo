@@ -87,7 +87,14 @@ between page and desk only when it crosses the book's edge.
 Storage is IndexedDB through Dexie (`storage/db.ts`): a `pages` table and an `elements`
 table (one row per element, so changing one only writes that one), plus images and
 custom fonts. `Autosave` writes the changes shortly after they happen. A whole diary can
-be dumped to a `.diaryo` file and merged back (`storage/files.ts`). Optionally, everything
+be dumped to a `.diaryo` file and merged back (`storage/files.ts`).
+
+The diary's dated lines (`diary/agenda.ts`: tasks and appointments, from the same texts the
+search reads) are kept in the store by `ui/agenda.ts`, read again after saving, when
+pages come and go and when changes arrive from elsewhere (`DiaryHooks.onChangedElsewhere`:
+the cloud, another tab, the desktop layer). They feed the index's "Tasks" tab, which the top bar's "Próximo" button
+opens (`ui/Upcoming.tsx`: what is pending, by when; a task is ticked there on any page with
+`Diary.toggleTask`), and the calendar's marks. Optionally, everything
 is encrypted on the device (`storage/sealing.ts`, see [privacy](privacy.md)).
 
 ## The interface (`src/ui`, `src/store`)

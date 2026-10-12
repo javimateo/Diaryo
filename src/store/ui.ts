@@ -8,6 +8,7 @@ import type { HexColor } from '../engine/palette';
 import type { ToolId } from '../engine/tools';
 import type { DesktopBridge } from '../desktop/bridge';
 import type { DesktopInfo } from '../desktop/settings';
+import type { AgendaItem } from '../diary/agenda';
 import type { Diary, DiaryState, TurnSpeed } from '../diary/diary';
 import type { SaveStatus } from '../storage/autosave';
 import type { DiaryDump } from '../storage/db';
@@ -64,6 +65,9 @@ export type CopyPrivacy = { kind: 'save' } | { kind: 'open'; backup: SealedBacku
 
 /** The chosen theme: light, dark or the system one (and it follows it). */
 export type ThemePreference = Theme | 'system';
+
+/** Under the index's calendar: the pages or the tasks. */
+export type DiaryTab = 'pages' | 'tasks';
 /** The pages of the settings window. */
 export type SettingsSection =
   'general' | 'look' | 'desktop' | 'privacy' | 'account' | 'data' | 'help';
@@ -130,6 +134,8 @@ export const SETTINGS_KEY = 'diaryo:settings';
 const STYLES_KEY = 'diaryo:styles';
 const RECENT_COLORS_KEY = 'diaryo:recent-colors';
 const BOOK_KEY = 'diaryo:book';
+/** The index's last tab. */
+const DIARY_TAB_KEY = 'diaryo:diary-tab';
 const TOAST_DURATION = 1800;
 /** Toasts with a button (e.g. "Undo") last longer to leave time to press it. */
 const ACTION_TOAST_DURATION = 6000;
@@ -244,6 +250,12 @@ interface UIState {
   diaryState: DiaryState;
   /** Diary index (calendar and pages) open. */
   diaryOpen: boolean;
+  /** The lines with a date in the whole diary (tasks and appointments). */
+  agenda: AgendaItem[];
+  /** What the index lists under the calendar: the pages or the tasks ("Próximo"). */
+  diaryTab: DiaryTab;
+  /** Where the index sits: by the control that opened it (the top bar or the page footer). */
+  diaryAt: 'top' | 'bottom';
   bookStyle: BookStyle;
   /** Dialog to choose the page to link the selection to. */
   linkDialogOpen: boolean;
@@ -288,7 +300,10 @@ interface UIState {
   setSaveStatus: (status: SaveStatus) => void;
   setDiary: (diary: Diary | null) => void;
   setDiaryState: (state: DiaryState) => void;
-  setDiaryOpen: (open: boolean) => void;
+  /** Opens or closes the index; with a tab, on it; by the page footer unless said. */
+  setDiaryOpen: (open: boolean, tab?: DiaryTab, at?: 'top' | 'bottom') => void;
+  setDiaryTab: (tab: DiaryTab) => void;
+  setAgenda: (agenda: AgendaItem[]) => void;
   setBookStyle: (patch: Partial<BookStyle>) => void;
   setLinkDialogOpen: (open: boolean) => void;
   setPendingCopy: (copy: DiaryDump | null) => void;
@@ -338,6 +353,9 @@ export const useUI = create<UIState>()((set, get) => ({
   diary: null,
   diaryState: { pages: [], current: null },
   diaryOpen: false,
+  agenda: [],
+  diaryTab: readText(DIARY_TAB_KEY) === 'tasks' ? 'tasks' : 'pages',
+  diaryAt: 'bottom',
   bookStyle: loadBookStyle(),
   linkDialogOpen: false,
   pendingCopy: null,
@@ -453,11 +471,17 @@ export const useUI = create<UIState>()((set, get) => ({
     // The cover's picture wears the covers too.
     void get().diary?.refreshCover();
   },
-  setDiaryOpen: (diaryOpen) => {
+  setDiaryOpen: (diaryOpen, tab, at = 'bottom') => {
     // When opening the index, the current page's thumbnail is brought up to date.
     if (diaryOpen) get().diary?.refreshThumbnail();
-    set({ diaryOpen });
+    set(diaryOpen ? { diaryOpen, diaryAt: at } : { diaryOpen });
+    if (tab) get().setDiaryTab(tab);
   },
+  setDiaryTab: (diaryTab) => {
+    writeText(DIARY_TAB_KEY, diaryTab);
+    set({ diaryTab });
+  },
+  setAgenda: (agenda) => set({ agenda }),
   openContextMenu: (contextMenu) => set({ contextMenu }),
   closeContextMenu: () => set({ contextMenu: null }),
   showToast: (message, action) => {

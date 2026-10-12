@@ -587,6 +587,15 @@ export class Engine {
     return null;
   }
 
+  /** Ticks or unticks a task (its line `paragraph`) of something here; false if it isn't. */
+  toggleTask(elementId: string, paragraph: number): boolean {
+    const el = this.scene.get(elementId);
+    if (!el) return false;
+    const toggled = withTaskToggled(el, paragraph);
+    this.history.commit(new Map([[toggled.id, toggled]]));
+    return true;
+  }
+
   /** Notifies when a marked page's tab is clicked. */
   onBookTab(listener: (pageId: string) => void) {
     this.bookTabListener = listener;
