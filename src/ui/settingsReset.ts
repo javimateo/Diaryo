@@ -55,7 +55,7 @@ const RESETS: Partial<Record<SettingsSection, Reset>> = {
   },
   desktop: () => {
     const { settings, desktop, setSettings } = useUI.getState();
-    const { deskPrivate, miniLocked } = settings;
+    const { deskPrivate, miniLocked, reminders, remindBefore } = settings;
     const sealed = useLock.getState().deskSealed;
     if (desktop) {
       if (desktop.shortcut !== DEFAULT_SHORTCUT) void setDesktopShortcut(DEFAULT_SHORTCUT);
@@ -67,6 +67,8 @@ const RESETS: Partial<Record<SettingsSection, Reset>> = {
     setSettings({
       deskPrivate: DEFAULT_SETTINGS.deskPrivate,
       miniLocked: DEFAULT_SETTINGS.miniLocked,
+      reminders: DEFAULT_SETTINGS.reminders,
+      remindBefore: DEFAULT_SETTINGS.remindBefore,
     });
     if (sealed) void setDeskVisible(true);
     return () => {
@@ -75,7 +77,7 @@ const RESETS: Partial<Record<SettingsSection, Reset>> = {
         void setDeskShortcut(desktop.deskShortcut);
         void setDeskLayer(desktop.deskLayer);
       }
-      setSettings({ deskPrivate, miniLocked });
+      setSettings({ deskPrivate, miniLocked, reminders, remindBefore });
       if (sealed) void setDeskVisible(false);
     };
   },

@@ -1,6 +1,7 @@
 mod backup;
 mod commands;
 mod desk_layer;
+mod reminders;
 mod settings;
 mod shortcuts;
 mod state;
@@ -60,6 +61,7 @@ pub fn run() {
             // If another app already uses a shortcut, Settings says so to change it.
             let _ = shortcuts::register(&handle, Hotkey::Widget, &accel);
             let _ = shortcuts::register(&handle, Hotkey::Desk, &desk_accel);
+            reminders::start(&handle);
             tray::build(&handle)?;
             // The desk on the desktop, behind the windows.
             desk_layer::create(&handle)?;
@@ -104,6 +106,8 @@ pub fn run() {
             commands::open_sign_in,
             commands::open_website,
             commands::save_file,
+            commands::set_reminders,
+            commands::show_reminder,
         ])
         .run(tauri::generate_context!())
         .expect("couldn't start diaryo");

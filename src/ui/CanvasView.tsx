@@ -7,6 +7,7 @@ import { DesktopBridge } from '../desktop/bridge';
 import { isDesktop, notifyDeskSaved } from '../desktop/tauri';
 import { askToReveal, deletePrivate, startPrivacy } from './privateActions';
 import { refreshAgenda, startAgenda } from './agenda';
+import { startReminders } from './reminders';
 import { hideNotes } from '../cloud/lock';
 import { Updater } from '../desktop/updates';
 import { Engine } from '../engine/engine';
@@ -79,6 +80,8 @@ export function CanvasView() {
     setDiary(diary);
     const stopPrivacy = startPrivacy(diary, instance);
     const stopAgenda = startAgenda();
+    // In the desktop app, Windows notifications of tasks and appointments.
+    const stopReminders = desktop ? startReminders() : () => {};
     // In the desktop app, as soon as today's page is there it connects with it.
     const bridge = desktop ? new DesktopBridge(instance, diary) : null;
     useUI.getState().setDesktopBridge(bridge);
@@ -114,6 +117,7 @@ export function CanvasView() {
       unsubscribeDelete();
       stopPrivacy();
       stopAgenda();
+      stopReminders();
       diary.stop();
       setDiary(null);
       instance.destroy();

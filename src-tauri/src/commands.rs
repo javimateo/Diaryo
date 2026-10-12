@@ -7,6 +7,7 @@ use tauri_plugin_opener::OpenerExt;
 
 use crate::backup;
 use crate::desk_layer;
+use crate::reminders;
 use crate::shortcuts::{self, Hotkey};
 use crate::state::{info, lang, update_settings, Desktop, DesktopInfo};
 use crate::tray;
@@ -203,4 +204,16 @@ pub fn open_website(app: AppHandle, url: String) -> Result<(), String> {
     app.opener()
         .open_url(url, None::<&str>)
         .map_err(|e| e.to_string())
+}
+
+/// The reminders to come (they are kept only in memory).
+#[tauri::command]
+pub fn set_reminders(app: AppHandle, reminders: Vec<reminders::Reminder>) {
+    reminders::set(&app, reminders);
+}
+
+/// Shows a reminder now (those missed while diaryo was closed).
+#[tauri::command]
+pub fn show_reminder(app: AppHandle, reminder: reminders::Reminder) {
+    reminders::show_now(&app, reminder);
 }

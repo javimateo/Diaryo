@@ -1123,6 +1123,28 @@ export const es = {
     dayHas: (n: number) => (n === 1 ? '1 cita o tarea' : `${n} citas o tareas`),
   },
 
+  /** Desktop app: Windows notifications of tasks and appointments. */
+  reminders: {
+    group: 'Recordatorios',
+    enabled: 'Avisar de tareas y citas',
+    enabledHint:
+      'Una notificación de Windows a su hora, aunque diaryo esté escondido en la bandeja. Sin hora, a las 9:00.',
+    when: 'Cuándo avisar',
+    whenHint: 'A su hora o ese tiempo antes. Las tareas hechas no avisan.',
+    /** How long before its time. */
+    before: { 0: 'A la hora', 10: '10 min', 30: '30 min', 60: '1 h', 1440: '1 día' },
+    /** "Hoy a las 10:00", "Mañana, todo el día". */
+    atTime: (day: string, time: string) => `${day} a las ${time}`,
+    allDay: (day: string) => `${day}, todo el día`,
+    /** From a private note or with the diary locked: without its words. */
+    hidden: 'Tienes un recordatorio',
+    openToSee: 'Ábrelo en diaryo para verlo',
+    missed: (n: number) =>
+      n === 1
+        ? '1 aviso mientras diaryo estaba cerrado'
+        : `${n} avisos mientras diaryo estaba cerrado`,
+  },
+
   diary: {
     title: 'Diario',
     /** The index's tab with the pages (the other one has the tasks). */

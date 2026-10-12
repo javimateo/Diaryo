@@ -5,7 +5,7 @@ description = "Diario infinito: cada página es un lienzo sin límites para dibu
 authors = ["Javier Mateo"]
 license = "PolyForm-Noncommercial-1.0.0"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.82"
 
 [lib]
 name = "diaryo_lib"
@@ -36,3 +36,5 @@ windows-sys = { version = "0.59", features = [
   "Win32_UI_Shell",
   "Win32_UI_WindowsAndMessaging",
 ] }
+# Los recordatorios de tareas y citas: notificaciones de Windows que saben si se pulsan.
+tauri-winrt-notification = "0.8"

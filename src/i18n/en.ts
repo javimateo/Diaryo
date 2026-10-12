@@ -1094,6 +1094,22 @@ export const en: Messages = {
     dayHas: (n: number) => (n === 1 ? '1 appointment or task' : `${n} appointments or tasks`),
   },
 
+  reminders: {
+    group: 'Reminders',
+    enabled: 'Remind me of tasks and appointments',
+    enabledHint:
+      'A Windows notification at their time, even with diaryo hidden in the tray. Without a time, at 9:00.',
+    when: 'When to remind',
+    whenHint: 'At their time or that long before. Done tasks don’t remind.',
+    before: { 0: 'On time', 10: '10 min', 30: '30 min', 60: '1 h', 1440: '1 day' },
+    atTime: (day: string, time: string) => `${day} at ${time}`,
+    allDay: (day: string) => `${day}, all day`,
+    hidden: 'You have a reminder',
+    openToSee: 'Open diaryo to see it',
+    missed: (n: number) =>
+      n === 1 ? '1 reminder while diaryo was closed' : `${n} reminders while diaryo was closed`,
+  },
+
   diary: {
     title: 'Diary',
     pagesTab: 'Pages',
