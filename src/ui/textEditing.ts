@@ -1,4 +1,10 @@
-/** Text editor helpers: indentation with Tab and lists that continue by themselves. */
+import type { DayKey } from '../lib/dates';
+import { findDates, type When } from '../lib/when';
+
+/**
+ * Text editor helpers: indentation with Tab, lists that continue by themselves and the
+ * date being written after an "@".
+ */
 
 export interface TextEdit {
   value: string;
@@ -95,4 +101,52 @@ export function taskShortcut(value: string, start: number, end: number): TextEdi
   const insert = `${match[1]}[ ] `;
   const caret = lineStart + insert.length;
   return { value: value.slice(0, lineStart) + insert + value.slice(end), start: caret, end: caret };
+}
+
+/** A date being written at the cursor, for the date picker. */
+export interface DateInProgress {
+  /** Where its "@" is; it goes up to the cursor. */
+  start: number;
+  /** What is understood so far (null: nothing yet, "@" or "@mañ"). */
+  when: When | null;
+}
+
+/**
+ * The date being written at the cursor: an "@" starting a word, on the same line, followed
+ * by a date ("@mañana 10", with a space after it too) or by a word being written ("@mañ").
+ * Null if there is none or it was just text ("@Lucía viene").
+ */
+export function dateInProgress(
+  value: string,
+  caret: number,
+  today: DayKey,
+  monthFirst: boolean,
+): DateInProgress | null {
+  const lineStart = lineStartOf(value, caret);
+  const match = /(^|\s)@([^@\n]*)$/.exec(value.slice(lineStart, caret));
+  if (!match) return null;
+  const start = lineStart + match.index + match[1].length;
+  const written = `@${match[2]}`.trimEnd();
+  const [mark] = findDates(written, today, monthFirst);
+  if (mark?.start === 0 && mark.end === written.length) {
+    const { day, time, until } = mark;
+    return { start, when: { day, time, until } };
+  }
+  return /\s/.test(written) ? null : { start, when: null };
+}
+
+/**
+ * The date being written (from `start` to the cursor) replaced by `date`; with `space`, the
+ * cursor goes past a space after it (added if there isn't one).
+ */
+export function replaceDate(
+  value: string,
+  start: number,
+  caret: number,
+  date: string,
+  space: boolean,
+): TextEdit {
+  const after = space && !/^\s/.test(value.slice(caret)) ? ' ' : '';
+  const end = start + date.length + (space ? 1 : 0);
+  return { value: value.slice(0, start) + date + after + value.slice(caret), start: end, end };
 }

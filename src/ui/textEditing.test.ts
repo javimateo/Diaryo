@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { continueList, indent, taskShortcut } from './textEditing';
+import { continueList, dateInProgress, indent, replaceDate, taskShortcut } from './textEditing';
 
 const at = (value: string) => value.length;
 
@@ -61,5 +61,43 @@ describe('tasks', () => {
   it('Enter on a task continues with another one to do', () => {
     const value = '[x] pan';
     expect(continueList(value, value.length, value.length)?.value).toBe('[x] pan\n[ ] ');
+  });
+});
+
+describe('the date being written', () => {
+  // Thursday.
+  const TODAY = '2026-09-24';
+  const writing = (value: string) => dateInProgress(value, value.length, TODAY, false);
+
+  it('starts with an "@" at the start of a word', () => {
+    expect(writing('[ ] Dentista @')).toEqual({ start: 13, when: null });
+    expect(writing('Dentista @mañ')).toEqual({ start: 9, when: null });
+    expect(writing('ana@')).toBeNull();
+    expect(writing('@lunes\nnada')).toBeNull();
+  });
+
+  it('says what is understood, also with a space after it', () => {
+    expect(writing('Dentista @mañana 10')).toEqual({
+      start: 9,
+      when: { day: '2026-09-25', time: 600, until: undefined },
+    });
+    expect(writing('@vie ')?.when?.day).toBe('2026-09-25');
+  });
+
+  it('ends when it is just text', () => {
+    expect(writing('@Lucía viene')).toBeNull();
+    expect(writing('@mañana 10 llevar')).toBeNull();
+  });
+
+  it('is replaced, with a space to keep writing', () => {
+    expect(replaceDate('Ir @mañ', 3, 7, '@25 sep 2026', true)).toEqual({
+      value: 'Ir @25 sep 2026 ',
+      start: 16,
+      end: 16,
+    });
+    expect(replaceDate('Ir @vie al cine', 3, 7, '@25 sep 2026', true).value).toBe(
+      'Ir @25 sep 2026 al cine',
+    );
+    expect(replaceDate('@mañ', 0, 4, '@25 sep 2026', false).end).toBe(12);
   });
 });

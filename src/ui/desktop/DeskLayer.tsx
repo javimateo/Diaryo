@@ -4,6 +4,7 @@ import { isDesktop } from '../../desktop/tauri';
 import { Engine } from '../../engine/engine';
 import { useUI } from '../../store/ui';
 import { readCanvasTheme } from '../canvasTheme';
+import { useDateLabels } from '../useDateLabels';
 import { TextEditor } from '../TextEditor';
 import { LockDialog } from '../LockDialog';
 import { askToReveal, deletePrivate, startPrivacyTimers } from '../privateActions';
@@ -22,6 +23,7 @@ export function DeskLayer() {
   const engine = useUI((s) => s.engine);
   const theme = useUI((s) => s.theme);
   const lockDialog = useUI((s) => s.lockDialog);
+  useDateLabels();
 
   useEffect(() => {
     document.documentElement.toggleAttribute('data-desk-layer', true);

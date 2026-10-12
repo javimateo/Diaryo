@@ -1082,6 +1082,14 @@ export const es = {
     shape: 'Texto de la figura',
   },
 
+  /** The picker that opens when typing "@" in a text: a date for a task or an appointment. */
+  datePicker: {
+    label: 'Fecha',
+    hint: 'Escribe una fecha: mañana 10, vie 17:30, 15/10',
+    noTime: 'Sin hora',
+    accept: 'para ponerla',
+  },
+
   /** The hint at the bottom of an empty page: "P para dibujar · T o doble clic…". */
   hint: {
     draw: 'para dibujar',

@@ -533,6 +533,12 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           no lo estaba, se cifra con la contraseña del diario de la nube). En la web,
           «Mantener la sesión en este navegador»: apagado, la sesión vive en el
           `sessionStorage` de la pestaña y las llaves de la nube solo en memoria.
+    - [ ] **No quedarse atrapado en la pantalla de contraseña**: cuando se pide la
+          contraseña del diario (al abrir la app, al desbloquear…), poder también
+          **cerrar sesión o cambiar de cuenta** y **empezar otro diario** en ese
+          dispositivo (guardando antes, cifrado, el que hay). Si no, quien olvide la
+          contraseña, o encuentre un diario que no es suyo, no puede hacer nada con la
+          app.
   - [ ] **E. macOS**: Tauri compila para macOS casi sin cambios; lo que es solo de
         Windows (la mesa en el escritorio, `windows-sys`) necesita su versión o quedarse
         fuera al principio. Para distribuirlo hace falta la cuenta de desarrollador de
@@ -543,8 +549,24 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         calendario, recordatorios (notificación del sistema en el escritorio; por correo
         necesitaría la nube de C) e importar/exportar calendarios (.ics, Google Calendar).
         Decidido (octubre de 2026), por partes:
-    - [ ] **F1. Fecha y hora** en tareas y post-its (citas), guardadas en el propio
-          elemento (así se sincronizan y cifran como todo).
+    - Decidido con maquetas (octubre de 2026): la fecha se escribe en el texto de cada
+      línea tras una `@` («@mañana 10», «@vie 17:30», «@15/10 10:00-11:30»), con un
+      selector que sale al escribir la `@`. Una línea con casilla y fecha es una tarea;
+      sin casilla, una cita. En el lienzo se ve como una etiqueta relativa («mañana
+      10:00»). «Próximo» va en un botón arriba a la derecha, junto a Buscar. Los avisos
+      de post-its privados o con el diario bloqueado salen sin texto. Sin hora, el aviso
+      es a las 9:00; avisar antes, un ajuste general; en el .ics, 1 h si no hay hora de
+      fin.
+    - [x] **F1. Fecha y hora** en tareas y post-its (citas), guardadas en el propio
+          elemento (así se sincronizan y cifran como todo). La fecha va en el texto tras
+          una `@`; al escribirla sale un selector (lo entendido, un mes y unas horas; Tab o
+          Enter la ponen, Esc lo aparta) y al terminar de editar se escribe completa
+          («@mañana 10» → «@13 oct 2026 10:00»: mañana no cambia de día, y en los dos
+          idiomas se lee igual). En el lienzo, una etiqueta con reloj (o calendario sin
+          hora): terracota lo que viene, carmesí la tarea vencida, en gris lo hecho o
+          pasado; ocupa su sitio en la línea y, al editar, se ve el texto completo.
+          `lib/when.ts` (con tests; el lector de días de la búsqueda pasa aquí y entiende
+          también «vie», «lun»…).
     - [ ] **F2. Vista «Próximo»**: lo pendiente con fecha de todo el diario, y el
           calendario marca los días con citas.
     - [ ] **F3. Recordatorios en el escritorio**: notificación de Windows a la hora,
