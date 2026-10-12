@@ -16,6 +16,7 @@ import {
   replaceDiary,
   restorePage,
   saveChanges,
+  toggleSavedTask,
   updatePage,
   type PageInfo,
 } from './db';
@@ -194,6 +195,38 @@ describe("a page's own paper", () => {
     };
     expect(ids(file('a"><img src=x onerror=alert(1)>'))).toEqual(['x']);
     expect(ids(file('0b7c6a8e-1f2d-4c3b-9a8e-7d6c5b4a3f2e'))).toHaveLength(2);
+  });
+});
+
+describe('tasks on pages that are not open', () => {
+  it('ticks one and lets the other devices know', async () => {
+    db = new DiaryoDB('test-tasks');
+    const note = {
+      id: 'n',
+      type: 'note' as const,
+      z: 1,
+      x: 0,
+      y: 0,
+      rotation: 0,
+      opacity: 1,
+      groupId: null,
+      locked: false,
+      variant: 'plain' as const,
+      text: 'Hoy\n[ ] Dentista @13 oct 2026 10:00',
+      fontSize: 20,
+      color: 'yellow' as const,
+      textColor: null,
+      font: 'inter',
+      align: 'left' as const,
+      valign: 'top' as const,
+      width: 220,
+      height: 220,
+    };
+    await saveChanges(db, info('p'), { ...empty, upserts: [note] });
+    await db.tracked.clear();
+    await toggleSavedTask(db, 'p', 'n', 1);
+    expect((await listTexts(db))[0].text).toBe('Hoy\n[x] Dentista @13 oct 2026 10:00');
+    expect((await db.tracked.toArray()).length).toBe(2);
   });
 });
 

@@ -3,7 +3,7 @@ import { coverTemplate, type CoverTemplate } from '../engine/coverTemplates';
 import { useUI } from '../store/ui';
 import { pageName } from './LinkDialog';
 import { t } from '../i18n';
-import { getDB, privateNoteIds } from '../storage/db';
+import { DESK_ID, getDB, privateNoteIds } from '../storage/db';
 import { askToDelete } from './privateActions';
 
 /** Diary actions shared by the buttons and the shortcuts (with their toasts). */
@@ -15,6 +15,15 @@ export async function turnPage(direction: 1 | -1) {
   if (!moved) {
     showToast(direction === 1 ? t().toasts.lastPage : t().toasts.firstPage);
   }
+}
+
+/** Goes to something written: its page turns and it lights up a moment. */
+export async function revealElement(pageId: string, elementId: string) {
+  const { diary, engine, diaryState, mapOpen, setMapOpen } = useUI.getState();
+  if (!diary || !engine) return;
+  if (mapOpen) setMapOpen(false);
+  if (pageId !== DESK_ID && pageId !== diaryState.current?.id) await diary.goToPage(pageId);
+  engine.focusElement(elementId);
 }
 
 export function goToToday() {

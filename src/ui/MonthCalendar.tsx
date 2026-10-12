@@ -9,12 +9,14 @@ interface Props {
   /** The chosen day: it is highlighted and its month is shown when it changes. */
   selected: DayKey;
   onPick: (day: DayKey) => void;
-  /** Days that have something (a dot under the number). */
+  /** Days with pages (a dot under the number). */
   marked?: Set<DayKey>;
+  /** How many appointments or pending tasks each day has (a dot at the top). */
+  dated?: Map<DayKey, number>;
 }
 
 /** A month to pick a day, with arrows to the previous and next ones. */
-export function MonthCalendar({ selected, onPick, marked }: Props) {
+export function MonthCalendar({ selected, onPick, marked, dated }: Props) {
   const t = useT();
   const today = todayKey();
   const weekStart = useUI((s) => s.settings.weekStart);
@@ -60,24 +62,28 @@ export function MonthCalendar({ selected, onPick, marked }: Props) {
         ))}
         {monthGrid(view.year, view.month, weekStart)
           .flat()
-          .map((day, i) =>
-            day ? (
+          .map((day, i) => {
+            if (!day) return <span key={`empty-${i}`} />;
+            const count = dated?.get(day);
+            const name = formatDay(day, today);
+            const label = count ? `${name} · ${t.upcoming.dayHas(count)}` : name;
+            return (
               <button
                 key={day}
                 type="button"
                 className="calendar-day"
-                aria-label={formatDay(day, today)}
+                aria-label={label}
+                data-tip={count ? label : undefined}
                 aria-current={day === selected ? 'date' : undefined}
                 data-today={day === today || undefined}
                 data-pages={marked?.has(day) || undefined}
+                data-dated={count || undefined}
                 onClick={() => onPick(day)}
               >
                 {parseDay(day).getDate()}
               </button>
-            ) : (
-              <span key={`empty-${i}`} />
-            ),
-          )}
+            );
+          })}
       </div>
     </section>
   );

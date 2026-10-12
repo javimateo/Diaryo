@@ -15,6 +15,7 @@ import {
   listLinks,
   listTexts,
   listPages,
+  toggleSavedTask,
   loadPage,
   mergeDiary,
   pruneEmptyPages,
@@ -65,6 +66,8 @@ export interface DiaryHooks {
   turnSpeed?: () => TurnSpeed;
   /** Something on the desk was saved (or it changed completely when opening a backup). */
   onDeskSaved?: () => void;
+  /** What is saved changed elsewhere: the cloud, another tab or the desktop layer. */
+  onChangedElsewhere?: () => void;
 }
 
 /** Today's page for the desktop mini diary. */
@@ -421,6 +424,17 @@ export class Diary {
     });
   }
 
+  /**
+   * Ticks or unticks a task (its element's line `paragraph`) on any page: on the open one
+   * or the desk it can be undone; elsewhere it is saved right away.
+   */
+  toggleTask(pageId: string, elementId: string, paragraph: number): Promise<void> {
+    return this.run(async () => {
+      if (this.engine.toggleTask(elementId, paragraph)) return;
+      await toggleSavedTask(this.db, pageId, elementId, paragraph);
+    });
+  }
+
   /** Which pages link to which (with the latest already saved). */
   links(): Promise<PageLink[]> {
     return this.run(async () => {
@@ -586,6 +600,7 @@ export class Diary {
       const today = todayKey();
       await this.open(stillThere ?? this.lastOfDay(today) ?? newPage(today), 0);
     } else this.emit();
+    this.hooks.onChangedElsewhere?.();
     void this.refreshOldThumbnails();
   }
 
@@ -637,7 +652,10 @@ export class Diary {
    * changed it.
    */
   reloadDesk(): Promise<void> {
-    return this.run(() => this.loadDesk());
+    return this.run(async () => {
+      await this.loadDesk();
+      this.hooks.onChangedElsewhere?.();
+    });
   }
 
   private async loadDesk() {

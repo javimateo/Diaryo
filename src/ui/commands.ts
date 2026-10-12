@@ -5,6 +5,7 @@ import {
   BookOpen,
   Bookmark,
   BookmarkX,
+  CalendarClock,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -178,6 +179,13 @@ export function getCommands(): Command[] {
       keys: ['Ctrl', 'B'],
       keywords: kw.index,
       run: () => useUI.getState().setDiaryOpen(true),
+    },
+    {
+      id: 'upcoming',
+      label: c.upcoming,
+      icon: CalendarClock,
+      keywords: kw.upcoming,
+      run: () => useUI.getState().setDiaryOpen(true, 'tasks', 'top'),
     },
     saved && {
       id: 'delete-page',

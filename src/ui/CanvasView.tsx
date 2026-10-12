@@ -6,6 +6,7 @@ import { followLink } from './diaryActions';
 import { DesktopBridge } from '../desktop/bridge';
 import { isDesktop, notifyDeskSaved } from '../desktop/tauri';
 import { askToReveal, deletePrivate, startPrivacy } from './privateActions';
+import { refreshAgenda, startAgenda } from './agenda';
 import { hideNotes } from '../cloud/lock';
 import { Updater } from '../desktop/updates';
 import { Engine } from '../engine/engine';
@@ -73,9 +74,11 @@ export function CanvasView() {
       turnSpeed: () => useUI.getState().settings.turnSpeed,
       // The desktop layer shows the same desk: it is told so it catches up.
       onDeskSaved: desktop ? notifyDeskSaved : undefined,
+      onChangedElsewhere: () => refreshAgenda(),
     });
     setDiary(diary);
     const stopPrivacy = startPrivacy(diary, instance);
+    const stopAgenda = startAgenda();
     // In the desktop app, as soon as today's page is there it connects with it.
     const bridge = desktop ? new DesktopBridge(instance, diary) : null;
     useUI.getState().setDesktopBridge(bridge);
@@ -110,6 +113,7 @@ export function CanvasView() {
       unsubscribeHide();
       unsubscribeDelete();
       stopPrivacy();
+      stopAgenda();
       diary.stop();
       setDiary(null);
       instance.destroy();

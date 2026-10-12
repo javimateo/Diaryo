@@ -567,8 +567,20 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           pasado; ocupa su sitio en la línea y, al editar, se ve el texto completo.
           `lib/when.ts` (con tests; el lector de días de la búsqueda pasa aquí y entiende
           también «vie», «lun»…).
-    - [ ] **F2. Vista «Próximo»**: lo pendiente con fecha de todo el diario, y el
-          calendario marca los días con citas.
+    - [x] **F2. Vista «Próximo»**: lo pendiente con fecha de todo el diario, y el
+          calendario marca los días con citas. El índice tiene abajo dos pestañas,
+          «Páginas | Tareas» (recuerda la última); un botón junto a Buscar (con cuántas
+          están vencidas o son de hoy) lo abre en «Tareas»: vencido, hoy, mañana, esta
+          semana y más adelante, cada una con su hora y dónde está. La casilla
+          marca la tarea ahí mismo, en cualquier página (en la abierta o la mesa se puede
+          deshacer); la fila lleva hasta ella. Salen las tareas sin hacer y las citas que no
+          han pasado. En el calendario del índice, un punto terracota arriba en los días con
+          citas o tareas (el de las páginas, abajo, pasa a gris); también «Próximo» en
+          Ctrl K. El índice ya no lleva el botón de aspecto del diario (está en Ajustes),
+          mide lo que su contenido (560 px como mucho) y su lista se desliza con la rueda
+          (antes se la quedaba el lienzo). De paso, arreglado «Guardando…» que a veces se
+          quedaba fijo. Se vuelve a leer al guardar y cuando llegan cambios de la nube, de otra
+          pestaña o de la mesa del escritorio. `diary/agenda.ts`, con tests.
     - [ ] **F3. Recordatorios en el escritorio**: notificación de Windows a la hora,
           aunque el diario esté oculto.
     - [ ] **F4. Exportar a calendario** (.ics): «Añadir a mi calendario».

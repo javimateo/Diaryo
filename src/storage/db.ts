@@ -3,6 +3,7 @@ import type { Camera } from '../engine/camera';
 import { parseElement } from '../engine/clipboard';
 import type { PaperStyle } from '../engine/book';
 import type { SceneElement } from '../engine/elements';
+import { withTaskToggled } from '../engine/tasks';
 import { dayKey } from '../lib/dates';
 import {
   keptClear,
@@ -216,6 +217,23 @@ export async function saveChanges(db: DiaryoDB, info: PageInfo, save: PendingSav
       ...save.assets.map((asset) => assetPath(asset.id)),
       ...save.fonts.map((font) => fontPath(font.id)),
     ]);
+  });
+}
+
+/** Ticks or unticks a task of an element on a page that isn't open (its line `paragraph`). */
+export async function toggleSavedTask(
+  db: DiaryoDB,
+  pageId: string,
+  elementId: string,
+  paragraph: number,
+) {
+  await db.transaction('rw', [db.pages, db.elements, db.tracked], async () => {
+    const row = await db.elements.get([pageId, elementId]);
+    if (!row) return;
+    await db.elements.put({ ...row, data: withTaskToggled(row.data, paragraph) });
+    const page = await db.pages.get(pageId);
+    if (page) await db.pages.put({ ...page, updatedAt: Date.now() });
+    await touch(db, [pagePath(pageId), elementPath(pageId, elementId)]);
   });
 }
 

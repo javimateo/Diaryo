@@ -55,6 +55,9 @@ export class Autosave {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private saving: Promise<void> = Promise.resolve();
   private stopped = false;
+  /** Saves under way; and whether the last one to end couldn't say "Saved" yet. */
+  private writing = 0;
+  private untold = false;
   private readonly cleanups: (() => void)[] = [];
 
   constructor(
@@ -171,10 +174,19 @@ export class Autosave {
       !save.assets.length &&
       !fontsToSave.length &&
       !save.camera;
-    if (pageEmpty && !deskSave) return this.saving;
+    if (pageEmpty && !deskSave) {
+      // A save ended while this one was waiting, so it didn't say "Saved": this one does
+      // (with nothing to save, e.g. after a font loaded).
+      if (this.untold && this.writing === 0) {
+        this.untold = false;
+        this.onStatus('saved');
+      }
+      return this.saving;
+    }
 
     fontsToSave.forEach((font) => this.savedFonts.add(font.id));
     this.onStatus('saving');
+    this.writing++;
     // Writes are queued so an older one never overtakes a newer one.
     this.saving = this.saving
       .then(async () => {
@@ -185,9 +197,14 @@ export class Autosave {
         }
       })
       .then(() => {
-        if (!this.timer) this.onStatus('saved');
+        this.writing--;
+        // Another save comes (or is on its way): that one says it.
+        this.untold = !!this.timer || this.writing > 0;
+        if (!this.untold) this.onStatus('saved');
       })
       .catch((error) => {
+        this.writing--;
+        this.untold = false;
         console.error("Couldn't save", error);
         this.onStatus('error');
       });
