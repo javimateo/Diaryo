@@ -542,6 +542,17 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
   - [ ] **F. Tareas y citas**: tareas con fecha y hora, citas (médico…), vista de
         calendario, recordatorios (notificación del sistema en el escritorio; por correo
         necesitaría la nube de C) e importar/exportar calendarios (.ics, Google Calendar).
+        Decidido (octubre de 2026), por partes:
+    - [ ] **F1. Fecha y hora** en tareas y post-its (citas), guardadas en el propio
+          elemento (así se sincronizan y cifran como todo).
+    - [ ] **F2. Vista «Próximo»**: lo pendiente con fecha de todo el diario, y el
+          calendario marca los días con citas.
+    - [ ] **F3. Recordatorios en el escritorio**: notificación de Windows a la hora,
+          aunque el diario esté oculto.
+    - [ ] **F4. Exportar a calendario** (.ics): «Añadir a mi calendario».
+    - Aparcado: recordatorios con la app cerrada en web/móvil (push con servidor; choca
+      con el cifrado) y sincronizar con Google Calendar en las dos direcciones (permiso
+      sensible con verificación de Google; sacaría las citas del cifrado).
   - [ ] **G. Marca y diseño**, lo último antes de publicar la 1.0.0 (con maqueta antes de
         cada cambio):
     - [x] **Marca**: logo, icono, colores y tipografía coherentes en la app, la web y el
