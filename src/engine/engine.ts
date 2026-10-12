@@ -77,7 +77,13 @@ import { Scene, type Changes } from './scene';
 import { elementHitsSegment } from './hit';
 import { containerAt, hitTestElement } from './selection';
 import { applyStyle, patchMergeKey, type StylePatch } from './restyle';
-import { clearTextCache } from './text';
+import {
+  clearTextCache,
+  completeTextDates,
+  setTextDates,
+  setTextInEditor,
+  type TextDates,
+} from './text';
 import { taskAt, withTaskToggled } from './tasks';
 import { onTextureReady } from './textures';
 import { drawBackdrop, drawHighlight, type Backdrop } from './drawing';
@@ -537,6 +543,12 @@ export class Engine {
     this.invalidateScene();
   }
 
+  /** How the dates of tasks and appointments are labelled (null: as written). */
+  setDates(dates: TextDates | null) {
+    setTextDates(dates);
+    this.invalidateScene();
+  }
+
   /** Notifies when a link label is clicked. */
   onLinkOpen(listener: (pageId: string) => void) {
     this.linkListener = listener;
@@ -915,6 +927,7 @@ export class Engine {
 
   updateEditingText(text: string) {
     if (!this.editing) return;
+    setTextInEditor(text);
     this.setEditing({
       ...this.editing,
       element: fitEditable(withText(this.editing.element, text)),
@@ -939,6 +952,11 @@ export class Engine {
     this.setEditing(null);
     const { isNew } = editing;
     let { element } = editing;
+    // The dates are written in full ("@mañana" would be another day tomorrow) and take the
+    // room of their labels again.
+    if (textOf(element).includes('@')) {
+      element = fitEditable(withText(element, completeTextDates(textOf(element))));
+    }
     const original = this.scene.get(element.id);
     const empty = textOf(element).trim() === '';
 
@@ -965,11 +983,14 @@ export class Engine {
       isContainer(element) && !element.label
         ? { ...element, label: defaultLabel(this.styles, this.camera.zoom) }
         : element;
-    this.setEditing({ element: ready, isNew });
+    // While it is written, its dates take the room of what is written, not of their labels.
+    setTextInEditor(textOf(ready));
+    this.setEditing({ element: textOf(ready).includes('@') ? fitEditable(ready) : ready, isNew });
   }
 
   private setEditing(editing: EditingState | null) {
     this.editing = editing;
+    if (!editing) setTextInEditor(null);
     this.invalidateScene();
     this.invalidateOverlay();
     this.editingListeners.forEach((listener) => listener(editing));

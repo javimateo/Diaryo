@@ -12,6 +12,7 @@ import { Engine } from '../engine/engine';
 import { getDB } from '../storage/db';
 import { useUI } from '../store/ui';
 import { readCanvasTheme } from './canvasTheme';
+import { useDateLabels } from './useDateLabels';
 import { t } from '../i18n';
 
 /** Short name of each page for the link labels: title or "21 sept". */
@@ -28,6 +29,7 @@ export function CanvasView() {
   const styles = useUI((s) => s.styles);
   const theme = useUI((s) => s.theme);
   const language = useUI((s) => s.settings.language);
+  useDateLabels();
 
   useEffect(() => {
     const {

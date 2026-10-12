@@ -294,3 +294,45 @@
   background: var(--accent-soft);
   color: var(--accent-text);
 }
+
+/* ─── Date picker (typing "@" in a text) ─────────────────────── */
+
+.date-picker {
+  position: absolute;
+  z-index: 2;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 264px;
+  padding: 10px;
+  animation: pop-in 140ms var(--ease);
+}
+
+.date-picker-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 2px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.date-picker-head strong {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.date-picker .calendar {
+  padding: 0;
+}
+
+.date-picker .calendar-day {
+  height: 28px;
+}
+
+.date-picker .text-option {
+  padding: 0 4px;
+  font-size: 12px;
+}

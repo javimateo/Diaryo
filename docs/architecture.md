@@ -11,7 +11,8 @@ diaryo is one TypeScript codebase that runs in three places:
 
 ```
 src/
-  lib/       Pure helpers any layer may use (dates, what is saved in the browser)
+  lib/       Pure helpers any layer may use (dates, dates written in texts, what is saved
+             in the browser)
   engine/    The canvas engine: plain TypeScript, no React, no storage, no diary
   i18n/      The app's texts in Spanish and English, and dates in the chosen language
   storage/   The database (Dexie / IndexedDB), its encryption on the device, autosave and
@@ -59,6 +60,16 @@ Input goes through Pointer Events: one pointer drives the active tool; with a fi
 two fingers pinch and move the view and holding still opens the context menu. Sizes set
 in screen pixels (stroke width, font size, new notes) are divided by the zoom when
 creating, so things look the same size on screen at any zoom.
+
+Tasks are lines starting with `[ ]` or `[x]`; a line with an `@` date ("@15 oct 2026
+10:00", read by `lib/when.ts`) is a dated task or, without a checkbox, an appointment.
+`text.ts` draws each date as a label ("mañana 10:00", terracotta to come, crimson when a
+task is late) whose words come from outside (`Engine.setDates`, refreshed every minute by
+`ui/useDateLabels.ts`). Lines are laid out with the labels' room, except the text in the
+editor, which keeps what is written; when editing ends, its dates are written in full, so
+"@mañana" doesn't move to another day. Typing "@" opens a date picker under the text
+(`ui/DatePicker.tsx`). The date lives in the element's text: it syncs, encrypts and
+travels in backups like the rest.
 
 Options: `transparent` (the floating diary over the desktop), `deskLayer` (only the
 desk, on the Windows desktop), `embedded` (the website demo: fixed view, the page keeps

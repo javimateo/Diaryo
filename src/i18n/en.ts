@@ -1059,6 +1059,13 @@ export const en: Messages = {
     shape: 'Shape text',
   },
 
+  datePicker: {
+    label: 'Date',
+    hint: 'Type a date: tomorrow 10, fri 5pm, 10/15',
+    noTime: 'No time',
+    accept: 'to set it',
+  },
+
   hint: {
     draw: 'to draw',
     write: 'or double-click to write',

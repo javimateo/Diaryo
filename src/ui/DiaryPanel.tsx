@@ -1,21 +1,13 @@
-import {
-  Bookmark,
-  ChevronLeft,
-  ChevronRight,
-  Palette,
-  Pencil,
-  Plus,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { Bookmark, Palette, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { monthGrid, parseDay, todayKey, type DayKey } from '../lib/dates';
-import { formatDay, formatMonth, formatShortDay, weekdayInitials } from '../i18n/dates';
+import { parseDay } from '../lib/dates';
+import { formatMonth, formatShortDay } from '../i18n/dates';
 import type { PageMeta } from '../diary/pages';
 import { useUI } from '../store/ui';
 import { BOOKMARK_COLORS } from '../diary/diary';
 import { BookStyleSection } from './BookStyleSection';
 import { addPage, cycleBookmarkColor, deletePage, toggleBookmark } from './diaryActions';
+import { MonthCalendar } from './MonthCalendar';
 import { useT } from './useT';
 
 /** Diary index: a calendar to jump to any day and a list of pages. */
@@ -61,7 +53,11 @@ export function DiaryPanel() {
         </button>
       </header>
       {styling && <BookStyleSection />}
-      <Calendar pages={pages} current={current} />
+      <MonthCalendar
+        selected={current.date}
+        marked={new Set(pages.map((p) => p.date))}
+        onPick={(day) => void useUI.getState().diary?.goToDay(day)}
+      />
       <button type="button" className="new-page-btn" onClick={addPage}>
         <Plus size={16} strokeWidth={2} />
         {t.commands.newPage}
@@ -71,81 +67,6 @@ export function DiaryPanel() {
     </aside>
   );
 }
-
-function Calendar({ pages, current }: { pages: PageMeta[]; current: PageMeta }) {
-  const t = useT();
-  const today = todayKey();
-  const weekStart = useUI((s) => s.settings.weekStart);
-  const [view, setView] = useState(() => monthOf(current.date));
-  // When the page changes, the calendar shows its month.
-  const [shownFor, setShownFor] = useState(current.date);
-  if (shownFor !== current.date) {
-    setShownFor(current.date);
-    setView(monthOf(current.date));
-  }
-
-  const withPages = new Set(pages.map((p) => p.date));
-  const move = (delta: number) => {
-    const date = new Date(view.year, view.month + delta, 1);
-    setView({ year: date.getFullYear(), month: date.getMonth() });
-  };
-
-  return (
-    <section className="calendar" aria-label={t.diary.calendar}>
-      <div className="calendar-head">
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label={t.diary.prevMonth}
-          onClick={() => move(-1)}
-        >
-          <ChevronLeft size={16} strokeWidth={1.75} />
-        </button>
-        <span className="calendar-month">{formatMonth(view.year, view.month)}</span>
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label={t.diary.nextMonth}
-          onClick={() => move(1)}
-        >
-          <ChevronRight size={16} strokeWidth={1.75} />
-        </button>
-      </div>
-      <div className="calendar-grid" role="grid">
-        {weekdayInitials(weekStart).map((d, i) => (
-          <span key={i} className="calendar-weekday" aria-hidden>
-            {d}
-          </span>
-        ))}
-        {monthGrid(view.year, view.month, weekStart)
-          .flat()
-          .map((day, i) =>
-            day ? (
-              <button
-                key={day}
-                type="button"
-                className="calendar-day"
-                aria-label={formatDay(day, today)}
-                aria-current={day === current.date ? 'date' : undefined}
-                data-today={day === today || undefined}
-                data-pages={withPages.has(day) || undefined}
-                onClick={() => void useUI.getState().diary?.goToDay(day)}
-              >
-                {parseDay(day).getDate()}
-              </button>
-            ) : (
-              <span key={`empty-${i}`} />
-            ),
-          )}
-      </div>
-    </section>
-  );
-}
-
-const monthOf = (day: DayKey) => {
-  const date = parseDay(day);
-  return { year: date.getFullYear(), month: date.getMonth() };
-};
 
 /** Pages from newest to oldest, grouped by month. */
 function PageList({ pages, current }: { pages: PageMeta[]; current: PageMeta }) {

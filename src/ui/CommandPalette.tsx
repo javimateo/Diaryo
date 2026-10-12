@@ -11,15 +11,10 @@ import {
 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { todayKey, type DayKey } from '../lib/dates';
+import { parseDayQuery } from '../lib/when';
 import { formatDay, formatDayMonth, relativeDay } from '../i18n/dates';
 import { comparePages, pagesOfDay, type PageMeta } from '../diary/pages';
-import {
-  findInText,
-  matchesPrefixes,
-  parseDayQuery,
-  queryWords,
-  type Snippet,
-} from '../diary/search';
+import { findInText, matchesPrefixes, queryWords, type Snippet } from '../diary/search';
 import type { SceneElement } from '../engine/elements';
 import { DESK_ID, type TextEntry } from '../storage/db';
 import { useUI } from '../store/ui';
