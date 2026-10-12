@@ -109,7 +109,14 @@ export interface Settings {
   autoLock: AutoLock;
   /** The whole diary locks when it is put away (another tab, minimized, the tray). */
   lockAway: boolean;
+  /** Desktop app: a Windows notification for each task and appointment with a date. */
+  reminders: boolean;
+  /** How many minutes before its time it reminds. */
+  remindBefore: RemindBefore;
 }
+
+export const REMIND_BEFORE = [0, 10, 30, 60, 1440] as const;
+export type RemindBefore = (typeof REMIND_BEFORE)[number];
 
 export type AutoLock = 0 | 5 | 15 | 60;
 
@@ -127,6 +134,8 @@ export const DEFAULT_SETTINGS: Settings = {
   miniLocked: 'cover',
   autoLock: 0,
   lockAway: false,
+  reminders: true,
+  remindBefore: 0,
 };
 
 export const THEME_KEY = 'diaryo:theme';
@@ -173,6 +182,10 @@ function loadSettings(): Settings {
     settings.autoLock = saved.autoLock;
   }
   if (saved.lockAway === true) settings.lockAway = true;
+  if (saved.reminders === false) settings.reminders = false;
+  if (REMIND_BEFORE.includes(saved.remindBefore as RemindBefore)) {
+    settings.remindBefore = saved.remindBefore as RemindBefore;
+  }
   return settings;
 }
 

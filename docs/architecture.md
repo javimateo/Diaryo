@@ -118,6 +118,7 @@ The Rust side (`src-tauri/src`) owns what a web page can't do:
 | `shortcuts.rs`                           | Global shortcuts (`Ctrl+Alt+D`, `Ctrl+Alt+N`)                                                                                                               |
 | `tray.rs`                                | The tray icon and its menu                                                                                                                                  |
 | `backup.rs`                              | Daily backups to a folder, keeping the last two weeks                                                                                                       |
+| `reminders.rs`                           | Reminders of tasks and appointments: Windows notifications at their time, from a list the page sends (kept only in memory); a click opens the item          |
 | `settings.rs`, `state.rs`, `commands.rs` | Desktop settings and the commands the page can call                                                                                                         |
 | `texts.rs`                               | The desktop side's texts in both languages                                                                                                                  |
 
@@ -131,6 +132,11 @@ On the TypeScript side, `desktop/tauri.ts` wraps Tauri (imported only on the des
 the web build doesn't load it), `desktop/bridge.ts` connects the diary with the window
 modes and backups, `desktop/deskLayer.ts` drives the desk window, and
 `desktop/updates.ts` checks GitHub for new versions (see [releasing](releasing.md)).
+`ui/reminders.ts` sends the desktop side the next reminders (`diary/reminders.ts` builds
+them from the agenda: without their words for private notes or with the diary locked),
+tells in one notification those missed while diaryo was closed (within a day) and opens
+what a clicked reminder is about. Notifications have diaryo's name and icon only in the
+installed app; in development they come from PowerShell.
 
 ## The website (`web/`)
 

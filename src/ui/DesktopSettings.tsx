@@ -12,7 +12,7 @@ import {
 } from '../desktop/settings';
 import { shortcutFromEvent, shortcutKeys } from '../desktop/shortcuts';
 import { appVersion, isDesktop } from '../desktop/tauri';
-import { useUI } from '../store/ui';
+import { REMIND_BEFORE, useUI } from '../store/ui';
 import { setDeskVisible } from '../cloud/lock';
 import { useLock } from '../cloud/lockState';
 import { Choice } from './Choice';
@@ -87,6 +87,38 @@ export function DesktopStartRows() {
           onChange={(enabled) => useUI.getState().setSettings({ autoUpdate: enabled })}
         />
       </SettingsRow>
+    </section>
+  );
+}
+
+/** Settings → Desktop: Windows notifications of tasks and appointments. */
+export function DesktopReminders() {
+  const t = useT();
+  const desktop = useUI((s) => s.desktop);
+  const reminders = useUI((s) => s.settings.reminders);
+  const remindBefore = useUI((s) => s.settings.remindBefore);
+  const setSettings = useUI((s) => s.setSettings);
+  if (!desktop) return null;
+  const r = t.reminders;
+  return (
+    <section className="settings-group">
+      <h4>{r.group}</h4>
+      <SettingsRow label={r.enabled} hint={r.enabledHint}>
+        <Switch
+          checked={reminders}
+          label={r.enabled}
+          onChange={(enabled) => setSettings({ reminders: enabled })}
+        />
+      </SettingsRow>
+      {reminders && (
+        <SettingsRow label={r.when} hint={r.whenHint}>
+          <Choice
+            options={REMIND_BEFORE.map((id) => [id, r.before[id]])}
+            value={remindBefore}
+            onChange={(before) => setSettings({ remindBefore: before })}
+          />
+        </SettingsRow>
+      )}
     </section>
   );
 }

@@ -40,6 +40,15 @@ describe('agendaItems', () => {
     ]);
   });
 
+  it('marks those of private notes (their words stay out of reminders)', () => {
+    const [item] = agendaItems(
+      [{ ...entry('[ ] Clave @13 oct 2026'), private: true }],
+      TODAY,
+      false,
+    );
+    expect(item.private).toBe(true);
+  });
+
   it('names a line with only a date after the element', () => {
     const [item] = agendaItems([entry('Médico\n@15 oct 2026 10:00')], TODAY, false);
     expect(item.text).toBe('Médico');

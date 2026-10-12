@@ -24,7 +24,7 @@ import { SETTINGS_SECTIONS, useUI, type SettingsSection, type ThemePreference } 
 import { isDesktop } from '../desktop/tauri';
 import { useLock } from '../cloud/lockState';
 import { BookStyleSection } from './BookStyleSection';
-import { DesktopBackups, DesktopRows, DesktopStartRows } from './DesktopSettings';
+import { DesktopBackups, DesktopReminders, DesktopRows, DesktopStartRows } from './DesktopSettings';
 import { Choice } from './Choice';
 import { SettingsRow } from './SettingsRow';
 import { useT } from './useT';
@@ -175,7 +175,12 @@ function Page({ id }: { id: SettingsSection }) {
         </>
       );
     case 'desktop':
-      return <DesktopRows />;
+      return (
+        <>
+          <DesktopRows />
+          <DesktopReminders />
+        </>
+      );
     case 'privacy':
       return <PrivacySection />;
     case 'account':

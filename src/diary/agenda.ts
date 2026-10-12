@@ -11,6 +11,8 @@ export interface AgendaItem extends When {
   /** What it says, without its checkbox and its date. */
   text: string;
   task: 'open' | 'done' | null;
+  /** In a private note: its words aren't shown outside the diary (a reminder). */
+  private?: true;
 }
 
 const TASK = /^\s*\[([ xX])\]/;
@@ -32,7 +34,7 @@ function words(line: string, marks: DateMark[]): string {
  */
 export function agendaItems(entries: TextEntry[], today: DayKey, monthFirst: boolean) {
   const items: AgendaItem[] = [];
-  for (const { pageId, elementId, text } of entries) {
+  for (const { pageId, elementId, text, private: hidden } of entries) {
     if (!text.includes('@')) continue;
     const lines = text.split('\n');
     const marks = lines.map((line) => findDates(line, today, monthFirst));
@@ -51,10 +53,18 @@ export function agendaItems(entries: TextEntry[], today: DayKey, monthFirst: boo
         day: first.day,
         time: first.time,
         until: first.until,
+        ...(hidden && { private: true as const }),
       });
     });
   }
   return items;
+}
+
+/** When it reminds of it: at its time (9:00 without one), `before` minutes earlier. */
+export function remindAt(item: When, before: number): number {
+  const date = parseDay(item.day);
+  date.setHours(0, (item.time ?? 9 * 60) - before, 0, 0);
+  return date.getTime();
 }
 
 export type AgendaGroup = 'late' | 'today' | 'tomorrow' | 'week' | 'later';

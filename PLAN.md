@@ -581,8 +581,15 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           (antes se la quedaba el lienzo). De paso, arreglado «Guardando…» que a veces se
           quedaba fijo. Se vuelve a leer al guardar y cuando llegan cambios de la nube, de otra
           pestaña o de la mesa del escritorio. `diary/agenda.ts`, con tests.
-    - [ ] **F3. Recordatorios en el escritorio**: notificación de Windows a la hora,
-          aunque el diario esté oculto.
+    - [x] **F3. Recordatorios en el escritorio**: notificación de Windows a la hora,
+          aunque el diario esté oculto. Ajustes → Escritorio → «Recordatorios»: encendido
+          por defecto y cuándo (a la hora, 10 o 30 min, 1 h o 1 día antes); sin hora, a las
+          9:00. La página manda la lista a Rust (`reminders.rs`, solo en memoria) y un hilo
+          mira el reloj cada 20 s; al pulsar el aviso se abre el diario flotante en lo que
+          avisa. De un post-it privado o con el diario bloqueado, sin el texto. Al abrir
+          diaryo, un aviso con los que se pasaron con la app cerrada (del último día). Con
+          `tauri-winrt-notification` (el plugin de Tauri no sabe en Windows si se pulsa).
+          Rust 1.82 como mínimo.
     - [ ] **F4. Exportar a calendario** (.ics): «Añadir a mi calendario».
     - Aparcado: recordatorios con la app cerrada en web/móvil (push con servidor; choca
       con el cifrado) y sincronizar con Google Calendar en las dos direcciones (permiso

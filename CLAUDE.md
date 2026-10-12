@@ -24,8 +24,7 @@ Also:
   change** (and wait for the OK).
 - **Never commit, push or merge.** The user runs git. At the end of each step, give the
   exact commands (Git Flow: `feature/*` or `fix/*` from `develop`, `git merge --no-ff`
-  into `develop`, delete the branch). End commit messages with the
-  `Co-Authored-By` line.
+  into `develop`, delete the branch). Commit messages carry no `Co-Authored-By` line.
 - **Never ask for or handle secrets** (Google client secret, PocketBase admin password,
   the updater key `~/.tauri/diaryo.key`).
 - Answer the user in **Spanish**. Code, comments and `docs/` in **English**; `PLAN.md`

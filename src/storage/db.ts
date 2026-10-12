@@ -518,6 +518,8 @@ export interface TextEntry {
   elementId: string;
   type: SceneElement['type'];
   text: string;
+  /** A private note (shown: hidden ones have no text). */
+  private?: true;
 }
 
 function rowText(data: SceneElement | undefined): string {
@@ -534,7 +536,9 @@ export async function listTexts(db: DiaryoDB): Promise<TextEntry[]> {
     if (row.pageId === COVER_ID) return;
     const text = rowText(row.data);
     if (typeof text !== 'string' || !text.trim()) return;
-    entries.push({ pageId: row.pageId, elementId: row.id, type: row.data.type, text });
+    const entry: TextEntry = { pageId: row.pageId, elementId: row.id, type: row.data.type, text };
+    if (isPrivateRow(row)) entry.private = true;
+    entries.push(entry);
   });
   return entries;
 }
