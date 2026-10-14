@@ -8,6 +8,7 @@ export const es = {
   nav: {
     features: 'Funciones',
     download: 'Descargar',
+    help: 'Ayuda',
     privacy: 'Privacidad',
     source: 'GitHub',
     downloadShort: 'Descargar',
@@ -252,6 +253,14 @@ export const es = {
     language: 'English',
     privacy: 'Privacidad',
     terms: 'Condiciones',
+  },
+  /** The help page (the lists themselves are the app's, from its own texts). */
+  help: {
+    title: 'Cómo se usa diaryo',
+    lead: 'Lo mismo que la ayuda de la app (en Ajustes → Ayuda, o con ?), para leerlo antes de instalarla o tenerlo a mano.',
+    shortcuts: 'Atajos de teclado',
+    windows:
+      'Los atajos del diario flotante y de la mesa en el escritorio son los de la app de Windows, y se cambian en Ajustes → Escritorio.',
   },
   legal: {
     back: 'Volver a diaryo',

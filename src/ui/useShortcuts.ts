@@ -142,7 +142,7 @@ export function useShortcuts() {
         return;
       }
       if (e.key === '?') {
-        setHelpOpen(!helpOpen);
+        setHelpOpen(!helpOpen, 'shortcuts');
         return;
       }
       // + / − change the stroke width or the font size (can be held down).

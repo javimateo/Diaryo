@@ -1,6 +1,6 @@
 ---
 import Legal from '../components/Legal.astro';
-import { legalHref } from '../i18n';
+import { pageHref } from '../i18n';
 import { SITE } from '../site';
 
 // When this text changes in what it says (not a typo), update the date too, and the
@@ -94,6 +94,6 @@ import { SITE } from '../site';
   <h2>Contacto</h2>
   <p>
     {SITE.owner}: <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>. Lo que hacemos con tus
-    datos está en la <a href={legalHref('es', 'privacy')}>política de privacidad</a>.
+    datos está en la <a href={pageHref('es', 'privacy')}>política de privacidad</a>.
   </p>
 </Legal>

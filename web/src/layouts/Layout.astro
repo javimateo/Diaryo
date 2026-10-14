@@ -3,7 +3,7 @@ import '@fontsource-variable/caveat';
 import '@fontsource-variable/lora';
 import '@fontsource-variable/nunito-sans';
 import '../styles/global.css';
-import { homeHref, legalHref, otherLang, texts, type Lang, type LegalPage } from '../i18n';
+import { homeHref, pageHref, otherLang, texts, type Lang, type Page } from '../i18n';
 import { latestDownload } from '../release';
 import { SITE } from '../site';
 import { BrandMark } from '@app/ui/BrandMark';
@@ -11,7 +11,7 @@ import { BrandMark } from '@app/ui/BrandMark';
 interface Props {
   lang: Lang;
   /** A legal page (the home page if not given), with its title. */
-  page?: LegalPage;
+  page?: Page;
   title?: string;
 }
 
@@ -19,7 +19,7 @@ const { lang, page, title } = Astro.props;
 const t = texts(lang);
 const other = otherLang(lang, page);
 const home = homeHref(lang);
-const hrefIn = (code: Lang) => (page ? legalHref(code, page) : homeHref(code));
+const hrefIn = (code: Lang) => (page ? pageHref(code, page) : homeHref(code));
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const langs: Lang[] = ['es', 'en'];
 const installer = (await latestDownload()).url;
@@ -65,6 +65,7 @@ const installer = (await latestDownload()).url;
       <nav class="links">
         <a href={`${home}#features`}>{t.nav.features}</a>
         <a href={`${home}#download`}>{t.nav.download}</a>
+        <a href={pageHref(lang, 'help')}>{t.nav.help}</a>
         <a href={`${home}#privacy`}>{t.nav.privacy}</a>
         <a href={SITE.repo}>{t.nav.source}</a>
       </nav>
@@ -119,8 +120,9 @@ const installer = (await latestDownload()).url;
       <span class="made">{t.footer.made}</span>
       <a href={SITE.repo}>GitHub</a>
       <a href={`${home}#download`}>{t.nav.download}</a>
-      <a href={legalHref(lang, 'privacy')}>{t.footer.privacy}</a>
-      <a href={legalHref(lang, 'terms')}>{t.footer.terms}</a>
+      <a href={pageHref(lang, 'help')}>{t.nav.help}</a>
+      <a href={pageHref(lang, 'privacy')}>{t.footer.privacy}</a>
+      <a href={pageHref(lang, 'terms')}>{t.footer.terms}</a>
       <a href={other.href} hreflang={other.lang} lang={other.lang}>{t.footer.language}</a>
     </footer>
   </body>

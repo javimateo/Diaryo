@@ -583,9 +583,10 @@ export const es = {
     turnPage: 'Pasar página',
     turnPageHint: 'Con los botones, el teclado o al ir a otro día.',
     turnSpeeds: { normal: 'Con animación', fast: 'Rápido', off: 'Sin animación' },
-    shortcuts: 'Atajos de teclado',
-    shortcutsHint: 'También con ? en cualquier momento.',
-    showShortcuts: 'Ver atajos',
+    shortcuts: 'Ayuda',
+    shortcutsHint:
+      'Para qué sirve cada herramienta, los gestos y los atajos (los atajos, también con ?).',
+    showShortcuts: 'Abrir la ayuda',
     tour: 'Recorrido',
     tourHint: 'Lo principal en unos pasos, como la primera vez.',
     showTour: 'Ver el recorrido',
@@ -645,7 +646,7 @@ export const es = {
   },
 
   help: {
-    title: 'Atajos de teclado',
+    title: 'Ayuda',
     or: 'o',
     tools: 'Herramientas',
     writing: 'Escribir',
@@ -712,6 +713,69 @@ export const es = {
     floatingDiary: 'Diario flotante (desde cualquier sitio)',
     hideFloatingDiary: 'Apartar el diario flotante',
     toggleDeskLayer: 'Enseñar o esconder la mesa en el escritorio',
+    tabs: { howTo: 'Cómo se usa', shortcuts: 'Atajos' },
+    /** What each tool is for, in a line. */
+    toolUses: {
+      hand: 'Mueve el lienzo. También Espacio + arrastrar, o el botón central del ratón.',
+      select: 'Elige, mueve, gira y cambia el tamaño. Doble clic para escribir.',
+      lasso: 'Rodea a mano alzada lo que quieras elegir.',
+      pen: 'Escribe y dibuja a mano; con un lápiz digital, cuenta la presión.',
+      marker: 'Subraya y resalta por detrás de lo escrito, sin taparlo.',
+      eraser: 'Pasa por encima de un trazo para borrarlo entero.',
+      text: 'Clic y escribe; arrastra para una caja de un ancho.',
+      note: 'Notas de colores, con cinta, chincheta o clip. Pueden ser privadas.',
+      arrow: 'De una cosa a otra: se queda unida y las sigue al moverlas.',
+      rect: 'Recuadros para enmarcar o agrupar; doble clic para escribir dentro.',
+      ellipse: 'Círculos y óvalos para rodear; también se escribe dentro.',
+    } satisfies Record<ToolId, string>,
+    gesturesTitle: 'Gestos y trucos',
+    gestures: {
+      turn: { title: 'Pasar la hoja', text: 'Tira de la esquina de abajo, como en un cuaderno.' },
+      desk: {
+        title: 'La mesa',
+        text: 'Lo que sacas del libro se queda en la mesa, abras la página que abras.',
+      },
+      tasks: {
+        title: 'Tareas y listas',
+        text: 'Escribe [] y espacio para una casilla, o - para una lista; con Enter sigue sola.',
+      },
+      dates: {
+        title: 'Fechas y avisos',
+        text: 'Escribe @ y un día en una línea («@mañana 10»): sale en «Próximo» y te avisa a su hora.',
+      },
+      private: {
+        title: 'Post-its privados',
+        text: 'Clic derecho → «Marcar como privado»: se ve un candado hasta que lo abres con la contraseña.',
+      },
+      link: {
+        title: 'Enlazar días',
+        text: 'Clic derecho → «Enlazar con otra página»: una etiqueta te lleva hasta ella.',
+      },
+      images: {
+        title: 'Fotos',
+        text: 'Pégalas con Ctrl V o arrástralas; en el panel, un marco polaroid, de borde o redondo.',
+      },
+      search: {
+        title: 'Buscar',
+        text: 'Encuentra palabras, días («martes»), tareas y cualquier cosa que se pueda hacer.',
+      },
+      map: {
+        title: 'Mapa e índice',
+        text: 'Todo el diario de un vistazo, o por días en el calendario del índice.',
+      },
+      copyStyle: {
+        title: 'Copiar el estilo',
+        text: 'Lleva el color, el tamaño y la letra de una cosa a otras.',
+      },
+      guides: {
+        title: 'Guías',
+        text: 'Al mover, se pega a los bordes y al centro de lo que hay alrededor; con Ctrl, no.',
+      },
+      floating: {
+        title: 'Diario flotante',
+        text: 'Desde cualquier programa, el atajo abre el diario sobre tu escritorio (en Windows).',
+      },
+    },
   },
 
   desktop: {
@@ -999,6 +1063,7 @@ export const es = {
     settings: 'Ajustes',
     shortcuts: 'Atajos de teclado',
     tour: 'Ver el recorrido',
+    howTo: 'Cómo se usa diaryo',
     diaryPaper: (name: string) => `Hoja del diario: ${name}`,
     pagePaper: (name: string) => `Hoja de esta página: ${name}`,
     pagePaperDefault: 'Hoja de esta página: la del diario',

@@ -613,6 +613,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           Lora y la interfaz en Nunito Sans, como la web; borrar y los errores pasan a un
           carmesí que no se confunde con el terracota. Cómo regenerar el icono, en
           `docs/releasing.md`.
+    - [x] **Nombre** (octubre de 2026): se queda «diaryo», sin descriptor. Hay apps de
+          nombre parecido («Diaro», un «Diaryo» de iPhone), pero son diarios de texto y
+          se distinguen bien de un lienzo infinito.
+      - [ ] Antes de la 1.0.0: buscar «diaryo» como marca registrada en la OEPM y la
+            EUIPO (clase 9, software) y decidir si se quiere un dominio propio.
     - [x] **Portada del diario editable**: que cada uno personalice la suya (no solo el
           color). Es también lo que enseña el mini diario cuando el diario está
           bloqueado (D2). Decidido (octubre de 2026): la portada es un lienzo más, sobre
@@ -723,8 +728,15 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           botón suelto; bloquear el diario; atajos); ajustes aparte. Por debajo de 900 px
           «Buscar» y «Guardado» quedan en icono, y por debajo de 760 el nombre en su
           símbolo, para no montarse sobre las herramientas.
-    - [ ] **Explicar mejor las funciones**: ayuda dentro de la app y en la web (atajos,
-          gestos, para qué sirve cada herramienta).
+    - [x] **Explicar mejor las funciones**: ayuda dentro de la app y en la web (atajos,
+          gestos, para qué sirve cada herramienta). Hecho (octubre de 2026), con maqueta:
+          la ventana de atajos pasa a ser «Ayuda» con dos pestañas, «Cómo se usa» (cada
+          herramienta y once gestos y trucos, con su icono, su tecla y una frase; en
+          Windows, también el diario flotante) y «Atajos» (la lista de antes). Recuerda la
+          última pestaña; «?» abre los atajos; Ajustes → Ayuda y Ctrl K, «Cómo se usa». En
+          la web, la página «Ayuda» (`/ayuda/` y `/en/help/`), en el menú y el pie, con lo
+          mismo: los textos y las listas salen de `src/ui/helpContent.ts`, así que la app
+          y la web dicen siempre lo mismo.
 
 Tras la fase 5 ya es una app usable para tomar notas.
 

@@ -120,6 +120,8 @@ export type RemindBefore = (typeof REMIND_BEFORE)[number];
 
 export type AutoLock = 0 | 5 | 15 | 60;
 
+export type HelpTab = 'howTo' | 'shortcuts';
+
 export type HidePrivate = 30 | 60 | 300;
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -258,6 +260,8 @@ interface UIState {
   /** Opened on a given page: on a phone it shows that page instead of the list. */
   settingsDirect: boolean;
   helpOpen: boolean;
+  /** The Help window's tab (the last one seen). */
+  helpTab: HelpTab;
   /** The step of the tour being shown (null: no tour). */
   tour: number | null;
   saveStatus: SaveStatus;
@@ -311,7 +315,8 @@ interface UIState {
   /** Opens or closes the settings; with a page, opens on it. */
   setSettingsOpen: (open: boolean, section?: SettingsSection) => void;
   setSettingsSection: (section: SettingsSection) => void;
-  setHelpOpen: (open: boolean) => void;
+  /** Opens or closes Help, on a tab or on the last one seen. */
+  setHelpOpen: (open: boolean, tab?: HelpTab) => void;
   setTour: (step: number | null) => void;
   setSaveStatus: (status: SaveStatus) => void;
   setDiary: (diary: Diary | null) => void;
@@ -365,6 +370,7 @@ export const useUI = create<UIState>()((set, get) => ({
   settingsSection: 'general',
   settingsDirect: false,
   helpOpen: false,
+  helpTab: 'howTo',
   tour: null,
   saveStatus: 'loading',
   diary: null,
@@ -434,7 +440,7 @@ export const useUI = create<UIState>()((set, get) => ({
       contextMenu: null,
     })),
   setSettingsSection: (settingsSection) => set({ settingsSection }),
-  setHelpOpen: (helpOpen) => set({ helpOpen }),
+  setHelpOpen: (helpOpen, tab) => set(tab ? { helpOpen, helpTab: tab } : { helpOpen }),
   setTour: (tour) => set({ tour }),
   setSaveStatus: (saveStatus) => set({ saveStatus }),
   setDiary: (diary) => set({ diary }),
