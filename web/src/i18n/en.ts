@@ -10,6 +10,7 @@ export const en: WebMessages = {
   nav: {
     features: 'Features',
     download: 'Download',
+    help: 'Help',
     privacy: 'Privacy',
     source: 'GitHub',
     downloadShort: 'Download',
@@ -245,6 +246,13 @@ export const en: WebMessages = {
     language: 'Español',
     privacy: 'Privacy',
     terms: 'Terms',
+  },
+  help: {
+    title: 'How to use diaryo',
+    lead: 'The same as the help in the app (in Settings → Help, or with ?), to read before installing it or to keep at hand.',
+    shortcuts: 'Keyboard shortcuts',
+    windows:
+      'The shortcuts of the floating diary and the desk on the desktop are the Windows app’s, and they change in Settings → Desktop.',
   },
   legal: {
     back: 'Back to diaryo',

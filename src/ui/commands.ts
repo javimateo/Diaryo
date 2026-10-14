@@ -466,7 +466,14 @@ export function getCommands(): Command[] {
       icon: Keyboard,
       keys: ['?'],
       keywords: kw.help,
-      run: () => state.setHelpOpen(true),
+      run: () => state.setHelpOpen(true, 'shortcuts'),
+    },
+    {
+      id: 'how-to',
+      label: c.howTo,
+      icon: Compass,
+      keywords: kw.help,
+      run: () => state.setHelpOpen(true, 'howTo'),
     },
     {
       id: 'tour',

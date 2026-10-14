@@ -1,10 +1,10 @@
 ---
-import { fill, homeHref, texts, type Lang, type LegalPage } from '../i18n';
+import { fill, homeHref, texts, type Lang, type Page } from '../i18n';
 import Layout from '../layouts/Layout.astro';
 
 interface Props {
   lang: Lang;
-  page: LegalPage;
+  page: Page;
   title: string;
   /** When the text last changed (YYYY-MM-DD). */
   updated: string;

@@ -565,9 +565,10 @@ export const en: Messages = {
     turnPage: 'Page turning',
     turnPageHint: 'With the buttons, the keyboard or when going to another day.',
     turnSpeeds: { normal: 'Animated', fast: 'Fast', off: 'No animation' },
-    shortcuts: 'Keyboard shortcuts',
-    shortcutsHint: 'Also with ? at any time.',
-    showShortcuts: 'See shortcuts',
+    shortcuts: 'Help',
+    shortcutsHint:
+      'What each tool is for, the gestures and the shortcuts (the shortcuts, also with ?).',
+    showShortcuts: 'Open help',
     tour: 'Tour',
     tourHint: 'The main things in a few steps, like the first time.',
     showTour: 'Take the tour',
@@ -626,7 +627,7 @@ export const en: Messages = {
   },
 
   help: {
-    title: 'Keyboard shortcuts',
+    title: 'Help',
     or: 'or',
     tools: 'Tools',
     writing: 'Writing',
@@ -693,6 +694,68 @@ export const en: Messages = {
     floatingDiary: 'Floating diary (from anywhere)',
     hideFloatingDiary: 'Put the floating diary away',
     toggleDeskLayer: 'Show or hide the desk on the desktop',
+    tabs: { howTo: 'How to use it', shortcuts: 'Shortcuts' },
+    toolUses: {
+      hand: 'Moves the canvas. Also Space + drag, or the middle mouse button.',
+      select: 'Picks, moves, turns and resizes. Double click to write.',
+      lasso: 'Draw around whatever you want to pick.',
+      pen: 'Write and draw by hand; with a digital pen, pressure counts.',
+      marker: 'Underline and highlight behind the writing, without covering it.',
+      eraser: 'Go over a stroke to erase it whole.',
+      text: 'Click and type; drag for a box of a set width.',
+      note: 'Colored notes, with tape, a pin or a clip. They can be private.',
+      arrow: 'From one thing to another: it stays joined and follows them when they move.',
+      rect: 'Boxes to frame or group things; double click to write inside.',
+      ellipse: 'Circles and ovals to ring things; you can write inside too.',
+    },
+    gesturesTitle: 'Gestures and tips',
+    gestures: {
+      turn: { title: 'Turn the page', text: 'Pull the bottom corner, like in a notebook.' },
+      desk: {
+        title: 'The desk',
+        text: 'Whatever you take out of the book stays on the desk, whatever page you open.',
+      },
+      tasks: {
+        title: 'Tasks and lists',
+        text: 'Type [] and space for a checkbox, or - for a list; Enter keeps it going.',
+      },
+      dates: {
+        title: 'Dates and reminders',
+        text: 'Type @ and a day in a line (“@tomorrow 10”): it shows in “Upcoming” and reminds you on time.',
+      },
+      private: {
+        title: 'Private sticky notes',
+        text: 'Right click → “Mark as private”: a padlock shows until you open it with the password.',
+      },
+      link: {
+        title: 'Link days',
+        text: 'Right click → “Link to another page”: a label takes you there.',
+      },
+      images: {
+        title: 'Photos',
+        text: 'Paste them with Ctrl V or drag them in; in the panel, a polaroid, border or round frame.',
+      },
+      search: {
+        title: 'Search',
+        text: 'Finds words, days (“Tuesday”), tasks and anything you can do.',
+      },
+      map: {
+        title: 'Map and index',
+        text: 'The whole diary at a glance, or by day in the index calendar.',
+      },
+      copyStyle: {
+        title: 'Copy the style',
+        text: 'Takes the color, size and font of one thing to others.',
+      },
+      guides: {
+        title: 'Guides',
+        text: 'When moving, it snaps to the edges and center of what is around; with Ctrl, it doesn’t.',
+      },
+      floating: {
+        title: 'Floating diary',
+        text: 'From any program, the shortcut opens the diary over your desktop (on Windows).',
+      },
+    },
   },
 
   desktop: {
@@ -977,6 +1040,7 @@ export const en: Messages = {
     settings: 'Settings',
     shortcuts: 'Keyboard shortcuts',
     tour: 'Take the tour',
+    howTo: 'How to use diaryo',
     diaryPaper: (name) => `Diary paper: ${name}`,
     pagePaper: (name) => `This page's paper: ${name}`,
     pagePaperDefault: "This page's paper: the diary's",

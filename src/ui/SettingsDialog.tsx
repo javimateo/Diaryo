@@ -320,7 +320,7 @@ function Help() {
           className="settings-btn"
           onClick={() => {
             useUI.getState().setSettingsOpen(false);
-            useUI.getState().setHelpOpen(true);
+            useUI.getState().setHelpOpen(true, 'howTo');
           }}
         >
           <Keyboard size={15} strokeWidth={1.75} /> {s.showShortcuts}

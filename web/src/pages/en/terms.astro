@@ -1,6 +1,6 @@
 ---
 import Legal from '../../components/Legal.astro';
-import { legalHref } from '../../i18n';
+import { pageHref } from '../../i18n';
 import { SITE } from '../../site';
 
 // The English version of /condiciones: keep both saying the same.
@@ -91,6 +91,6 @@ import { SITE } from '../../site';
   <h2>Contact</h2>
   <p>
     {SITE.owner}: <a href={`mailto:${SITE.contact}`}>{SITE.contact}</a>. What we do with your data
-    is in the <a href={legalHref('en', 'privacy')}>privacy policy</a>.
+    is in the <a href={pageHref('en', 'privacy')}>privacy policy</a>.
   </p>
 </Legal>

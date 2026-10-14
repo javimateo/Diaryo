@@ -1,6 +1,6 @@
 ---
 import Legal from '../components/Legal.astro';
-import { legalHref } from '../i18n';
+import { pageHref } from '../i18n';
 import { SITE } from '../site';
 
 // When this text changes in what it says (not a typo), update the date too, and the
@@ -174,7 +174,7 @@ import { SITE } from '../site';
   <h2>Cambios</h2>
   <p>
     Si cambia algo de esta política, lo verás aquí con su fecha; si es importante y tienes cuenta,
-    te avisaremos antes por correo. Mira también las <a href={legalHref('es', 'terms')}
+    te avisaremos antes por correo. Mira también las <a href={pageHref('es', 'terms')}
       >condiciones</a
     >.
   </p>

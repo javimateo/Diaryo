@@ -1,6 +1,6 @@
 ---
 import Legal from '../../components/Legal.astro';
-import { legalHref } from '../../i18n';
+import { pageHref } from '../../i18n';
 import { SITE } from '../../site';
 
 // The English version of /privacidad: keep both saying the same.
@@ -167,7 +167,7 @@ import { SITE } from '../../site';
   <p>
     If anything in this policy changes, you'll see it here with its date; if it is important and
     you have an account, we'll tell you by email first. See also the <a
-      href={legalHref('en', 'terms')}>terms</a
+      href={pageHref('en', 'terms')}>terms</a
     >.
   </p>
 </Legal>
