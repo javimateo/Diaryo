@@ -16,8 +16,6 @@ import { randomBytes } from 'k6/crypto';
 
 const API = `${__ENV.PB_URL ?? 'http://127.0.0.1:8090'}/api`;
 const MAX = Number(__ENV.MAX_USERS ?? 50);
-/** Every account of this run starts like this (to delete them at the end). */
-const RUN = `stress-${Date.now()}`;
 
 export const options = {
   stages: [
@@ -44,8 +42,8 @@ const sealed = (bytes) => encoding.b64encode(randomBytes(bytes), 'std');
 let me = null;
 let cursor = '';
 
-function signUp() {
-  const email = `${RUN}-${__VU}@diaryo.test`;
+function signUp(run) {
+  const email = `${run}-${__VU}@diaryo.test`;
   const password = 'stress-password-123';
   http.post(
     `${API}/collections/users/records`,
@@ -61,8 +59,16 @@ function signUp() {
   return auth.status === 200 ? { id: auth.json('record.id'), token: auth.json('token') } : null;
 }
 
-export default function () {
-  me ??= signUp();
+/**
+ * Every account of this run starts like this (to delete them at the end). It is made once
+ * here and handed to every user and to the teardown (each of them runs this file apart).
+ */
+export function setup() {
+  return { run: `stress-${Date.now()}` };
+}
+
+export default function ({ run }) {
+  me ??= signUp(run);
   if (!me) return sleep(5);
 
   // Push: a few elements, and now and then an image.
@@ -98,20 +104,20 @@ export default function () {
 }
 
 /** Deletes this run's accounts (their items go with them). */
-export function teardown() {
+export function teardown({ run }) {
   const admin = http.post(
     `${API}/collections/_superusers/auth-with-password`,
     JSON.stringify({ identity: __ENV.PB_ADMIN_EMAIL, password: __ENV.PB_ADMIN_PASSWORD }),
     json(),
   );
   if (admin.status !== 200) {
-    console.error(`Couldn't sign in as superuser: delete the accounts starting with ${RUN} by hand`);
+    console.error(`Couldn't sign in as superuser: delete the accounts starting with ${run} by hand`);
     return;
   }
   const token = admin.json('token');
   for (;;) {
     const page = http.get(
-      `${API}/collections/users/records?perPage=200&fields=id&filter=${encodeURIComponent(`email ~ "${RUN}"`)}`,
+      `${API}/collections/users/records?perPage=200&fields=id&filter=${encodeURIComponent(`email ~ "${run}"`)}`,
       json(token),
     );
     const users = page.status === 200 ? page.json('items') : [];
