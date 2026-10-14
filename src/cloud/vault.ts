@@ -8,7 +8,9 @@ import {
   diaryKeys,
   keysMatch,
   newRecoveryCode,
+  newSecret,
   openSecret,
+  PBKDF2_ITERATIONS,
   privateKeyOf,
   recoverWithCode,
   unlockWithPassword,
@@ -225,15 +227,19 @@ export async function setUpVault(password: string): Promise<string | null> {
   const lock = readLock();
   const own = lock?.account === null ? lock : null;
   const opened = own ? await openSecret(own.vault, password) : null;
-  const created = own
-    ? { vault: own.vault, keys: opened!.keys, recoveryCode: null }
-    : await createVault(password);
+  // A new secret otherwise. With a password set here for another account, this device
+  // takes the new one (as when unlocking a cloud that had a diary): its private notes too.
+  const secret = opened?.secret ?? newSecret();
+  if (!opened) await canFollow(secret);
+  const created = opened
+    ? { vault: own!.vault, keys: opened.keys, recoveryCode: null }
+    : await createVault(password, PBKDF2_ITERATIONS, secret);
   try {
     const record = await vaults().create<VaultRecord>(
       { user: account, ...created.vault },
       { requestKey: null },
     );
-    if (opened) await follow(account, record, opened.secret);
+    await follow(account, record, secret);
   } catch (error) {
     // Unique per user: another device was quicker.
     if ((await fetchVault().catch(() => null)) !== null) {

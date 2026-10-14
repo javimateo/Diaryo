@@ -151,7 +151,9 @@ style stay as they are, so it shows in its place with a padlock.
 - **Another account's password**: the first time with an account that had a diary of its
   own, its secret is another one, so the private notes' text goes into boxes with the new
   key (`reboxPrivateNotes`), and the ones shown are hidden. That needs the old secret: if
-  the notes are hidden, unlocking that cloud asks to show them first.
+  the notes are hidden, unlocking that cloud asks to show them first. The same happens
+  when the password here was another account's and the cloud diary is made for a new
+  one: the new password becomes this device's, the old one stops opening it.
 
 ## Shared computers
 
