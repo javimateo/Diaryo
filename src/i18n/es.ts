@@ -284,6 +284,23 @@ export const es = {
       'Sin ellas no hay forma de abrir este diario: está cifrado y no se guarda ninguna copia de la contraseña. Puedes borrarlo de este dispositivo y empezar uno nuevo. Si lo tienes abierto en otro dispositivo, allí sigue.',
     erase: 'Borrar el diario de este dispositivo',
     eraseConfirm: 'Sí, borrarlo para siempre',
+    /** The ways out of the lock screen without the password. */
+    otherOptions: 'Otras opciones',
+    optionsText: 'Sin la contraseña el diario no se puede leer, pero sí apartarlo.',
+    signOut: 'Cerrar sesión',
+    signOutHint: (email: string) =>
+      `Sales de tu cuenta (${email}). El diario sigue aquí, bloqueado.`,
+    startOver: 'Empezar otro diario',
+    startOverHint: 'Este se guarda cifrado en un archivo y aquí empieza uno en blanco.',
+    eraseHint: 'Sin guardar nada. No se puede deshacer.',
+    startOverText: (desktop: boolean) =>
+      desktop
+        ? 'Guardamos este diario tal cual, cifrado, en la carpeta de las copias.'
+        : 'Guardamos este diario tal cual, cifrado, en un archivo que se descarga.',
+    startOverOpen:
+      'Se abre cuando quieras con «Abrir una copia» y su contraseña o su clave de recuperación.',
+    startOverButton: 'Guardar y empezar otro',
+    startOverFailed: 'No se ha podido guardar el diario, así que no se ha borrado nada.',
     ownVaultText:
       'Tu diario ya tiene contraseña en este dispositivo: la nube usará la misma, con la misma clave de recuperación.',
     adopted:

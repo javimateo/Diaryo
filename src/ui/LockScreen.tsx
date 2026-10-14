@@ -1,6 +1,14 @@
-import { KeyRound, Loader2, LockKeyhole, TriangleAlert } from 'lucide-react';
+import {
+  BookPlus,
+  KeyRound,
+  Loader2,
+  LockKeyhole,
+  LogOut,
+  Trash2,
+  TriangleAlert,
+} from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { accountError, PASSWORD_MIN } from '../cloud/account';
+import { accountError, PASSWORD_MIN, signOut, useAccount } from '../cloud/account';
 import { WrongSecretError } from '../cloud/crypto';
 import { eraseDiary, recoverDiary, unlockDiary } from '../cloud/lock';
 import { readLock, useLock } from '../cloud/lockState';
@@ -8,6 +16,7 @@ import type { DesktopInfo, DesktopMode } from '../desktop/settings';
 import { call, isDesktop, listen } from '../desktop/tauri';
 import { coverImage, getDB } from '../storage/db';
 import { useUI } from '../store/ui';
+import { keepLockedDiary } from './fileActions';
 import { WindowControls, WindowDragRegion } from './desktop/WindowControls';
 import { LockProgress } from './LockDialog';
 import { PasswordField } from './PasswordField';
@@ -17,7 +26,7 @@ import { useT } from './useT';
 /** The diary password allows long phrases. */
 const PHRASE_MAX = 200;
 
-type View = 'unlock' | 'recover' | 'forgot';
+type View = 'unlock' | 'recover' | 'forgot' | 'options' | 'startOver';
 
 /**
  * The diary is encrypted on this device and locked: nothing of it is read until the diary
@@ -38,6 +47,7 @@ export function LockScreen() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [erasing, setErasing] = useState(false);
+  const email = useAccount((s) => s.account?.email ?? null);
   const cover = useCoverPicture();
 
   const go = (next: View) => {
@@ -96,6 +106,87 @@ export function LockScreen() {
   if (progress !== null) {
     const opening = readLock()?.rewriting === 'open';
     body = <LockProgress label={opening ? l.decrypting : l.encrypting} />;
+  } else if (view === 'options') {
+    body = (
+      <>
+        <p className="account-text">{l.optionsText}</p>
+        <div className="lock-options">
+          {email && (
+            <button type="button" className="lock-option" onClick={() => signOut()}>
+              <LogOut size={17} strokeWidth={1.75} aria-hidden />
+              <strong>{l.signOut}</strong>
+              <small>{l.signOutHint(email)}</small>
+            </button>
+          )}
+          <button type="button" className="lock-option" onClick={() => go('startOver')}>
+            <BookPlus size={17} strokeWidth={1.75} aria-hidden />
+            <strong>{l.startOver}</strong>
+            <small>{l.startOverHint}</small>
+          </button>
+          <button
+            type="button"
+            className="lock-option"
+            data-danger=""
+            onClick={() => setErasing(true)}
+          >
+            <Trash2 size={17} strokeWidth={1.75} aria-hidden />
+            <strong>{l.erase}</strong>
+            <small>{l.eraseHint}</small>
+          </button>
+        </div>
+        {erasing && (
+          <button
+            type="button"
+            className="settings-btn lock-erase"
+            data-danger-fill=""
+            onClick={() => void eraseDiary()}
+          >
+            <TriangleAlert size={15} strokeWidth={2} aria-hidden /> {l.eraseConfirm}
+          </button>
+        )}
+        <div className="account-links">
+          <button type="button" className="account-link" onClick={() => go('unlock')}>
+            {v.back}
+          </button>
+        </div>
+      </>
+    );
+  } else if (view === 'startOver') {
+    body = (
+      <>
+        <p className="account-text">{l.startOverText(isDesktop())}</p>
+        <p className="account-text">{l.startOverOpen}</p>
+        {error && (
+          <p className="account-error" role="alert">
+            {error}
+          </p>
+        )}
+        <button
+          type="button"
+          className="account-primary"
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            setError('');
+            keepLockedDiary()
+              .then(() => eraseDiary())
+              .catch((e: unknown) => {
+                console.error("Couldn't keep the locked diary", e);
+                setError(l.startOverFailed);
+                setBusy(false);
+              });
+          }}
+        >
+          {busy && <Loader2 size={15} strokeWidth={2} className="account-spin" aria-hidden />}
+          {l.startOverButton}
+        </button>
+        <div className="account-links">
+          <button type="button" className="account-link" onClick={() => go('options')}>
+            {v.back}
+          </button>
+        </div>
+      </>
+    );
   } else if (view === 'forgot') {
     body = (
       <>
@@ -175,9 +266,14 @@ export function LockScreen() {
         </form>
         <div className="account-links">
           {view === 'unlock' ? (
-            <button type="button" className="account-link" onClick={() => go('recover')}>
-              {v.forgot}
-            </button>
+            <>
+              <button type="button" className="account-link" onClick={() => go('recover')}>
+                {v.forgot}
+              </button>
+              <button type="button" className="account-link" onClick={() => go('options')}>
+                {l.otherOptions}
+              </button>
+            </>
           ) : (
             <>
               <button type="button" className="account-link" onClick={() => go('unlock')}>
@@ -197,6 +293,8 @@ export function LockScreen() {
     unlock: l.lockedTitle,
     recover: v.recoverTitle,
     forgot: l.forgotTitle,
+    options: l.otherOptions,
+    startOver: l.startOver,
   };
   // On the desktop the locked diary can be put away again (Esc, or a click around it).
   const putAway = () => {

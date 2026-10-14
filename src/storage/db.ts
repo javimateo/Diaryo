@@ -691,3 +691,42 @@ export async function rewriteDiary(
 /** A single database for the whole app. */
 let instance: DiaryoDB | null = null;
 export const getDB = () => (instance ??= new DiaryoDB());
+
+/** The diary's tables (a backup's), as IndexedDB keeps them: sealed rows stay sealed. */
+export const RAW_TABLES = ['pages', 'elements', 'assets', 'fonts'] as const;
+
+export type RawTables = Record<(typeof RAW_TABLES)[number], Record<string, unknown>[]>;
+
+/**
+ * The diary's rows exactly as they are stored, without opening them: with the diary
+ * locked, the only way to take it somewhere else (straight from IndexedDB, under the
+ * sealing middleware).
+ */
+export async function readRawTables(db: DiaryoDB): Promise<RawTables> {
+  await db.open();
+  const idb = db.backendDB();
+  const tx = idb.transaction([...RAW_TABLES], 'readonly');
+  const read = (name: string) =>
+    new Promise<Record<string, unknown>[]>((resolve, reject) => {
+      const all = tx.objectStore(name).getAll();
+      all.onsuccess = () => resolve(all.result);
+      all.onerror = () => reject(all.error);
+    });
+  const [pages, elements, assets, fonts] = await Promise.all(RAW_TABLES.map(read));
+  return { pages, elements, assets, fonts };
+}
+
+/** Writes rows exactly as they come (`readRawTables`'), sealed or not, into a database. */
+export async function writeRawTables(db: DiaryoDB, tables: RawTables): Promise<void> {
+  await db.open();
+  const tx = db.backendDB().transaction([...RAW_TABLES], 'readwrite');
+  for (const name of RAW_TABLES) {
+    const store = tx.objectStore(name);
+    for (const row of tables[name]) store.put(row);
+  }
+  await new Promise<void>((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}

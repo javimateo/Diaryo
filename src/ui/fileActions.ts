@@ -15,7 +15,7 @@ import {
 } from '../storage/files';
 import { getLanguage, t } from '../i18n';
 import { todayKey } from '../lib/dates';
-import { openSealedCopy, sealCopy } from '../cloud/lock';
+import { lockedDiaryFile, openSealedCopy, sealCopy } from '../cloud/lock';
 import { sealedHere } from '../cloud/lockState';
 
 /**
@@ -162,6 +162,20 @@ export async function keepCopyOfDiary(diary: Diary): Promise<string> {
   const name = `diaryo-${texts.fileLabel}-${moment()}${FILE_EXTENSION}`;
   downloadBlob(new Blob([contents], { type: 'application/json' }), name);
   return texts.downloads;
+}
+
+/**
+ * Keeps the locked diary as it is, encrypted, in a file (`lockedDiaryFile`): in the
+ * backups folder (desktop) or downloaded (web). Throws if it couldn't be kept.
+ */
+export async function keepLockedDiary(): Promise<void> {
+  const contents = await lockedDiaryFile();
+  if (isDesktop()) {
+    await call<string>('write_copy_before_opening', { moment: moment(), contents });
+    return;
+  }
+  const name = `diaryo-${t().openCopy.fileLabel}-${moment()}${FILE_EXTENSION}`;
+  downloadBlob(new Blob([contents], { type: 'application/json' }), name);
 }
 
 /**

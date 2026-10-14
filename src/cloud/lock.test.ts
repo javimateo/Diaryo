@@ -361,6 +361,31 @@ describe('encrypted copies', () => {
     expect(await a.lock.openSealedCopy(backup.sealed, { code })).toBe(text);
   });
 
+  it('of a locked diary keep it as it is, and open with its password or its code', async () => {
+    let a = await start();
+    const code = (await a.lock.enableLock('contraseña larga', 'all'))!;
+    await a.write('hola');
+    a = await start();
+    expect(a.status()).toBe('locked');
+
+    const file = await a.lock.lockedDiaryFile();
+    expect(file).not.toContain('hola');
+    const files = await import('../storage/files');
+    const backup = files.parseBackup(file);
+    expect(backup?.kind).toBe('sealed');
+    if (backup?.kind !== 'sealed') return;
+    await expect(a.lock.openSealedCopy(backup.sealed, { password: 'otra' })).rejects.toBeInstanceOf(
+      a.crypto.WrongSecretError,
+    );
+    for (const secret of [{ password: 'contraseña larga' }, { code }]) {
+      const opened = files.parseBackup(await a.lock.openSealedCopy(backup.sealed, secret));
+      expect(opened?.kind).toBe('diary');
+      if (opened?.kind !== 'diary') return;
+      const page = opened.diary.pages.find((p) => p.page.id === 'pg');
+      expect(page?.elements.map((row) => (row.data as NoteElement).text)).toEqual(['hola']);
+    }
+  });
+
   it("aren't made when the diary isn't encrypted", async () => {
     const a = await start();
     expect(a.lock.sealCopy('{}')).toBeNull();
