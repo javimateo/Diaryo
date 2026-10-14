@@ -551,3 +551,26 @@ describe('the session not kept in this browser (a shared computer)', () => {
     expect(await a.keystore.loadKeys('ana')).toBeNull();
   });
 });
+
+describe('a new diary in another account', () => {
+  it("its new password becomes this device's, and the private notes go with it", async () => {
+    const other = await (await import('./crypto')).createVault('la de ana', 1000);
+    fake.state.vault = { ...other.vault, id: 'v1', version: 1 };
+    fake.state.record = { id: 'ana', email: 'ana@diaryo.test', verified: true };
+    let a = await start();
+    await a.lock.enableLock('la de ana', 'private', ['p1']);
+    await a.writePrivate('pin 4321');
+
+    // Another account, without a diary in the cloud yet: a new password for it.
+    fake.state.vault = null;
+    fake.signIn('bea');
+    await vi.waitFor(() => expect(a.account.useAccount.getState().vault).toBe('none'));
+    await a.vault.setUpVault('la de bea');
+    expect(a.state.readLock()).toMatchObject({ account: 'bea' });
+
+    a = await start();
+    await expect(a.lock.revealNotes('la de ana', ['p1'])).rejects.toThrow();
+    await a.lock.revealNotes('la de bea', ['p1']);
+    expect(await a.readPrivate()).toBe('pin 4321');
+  });
+});

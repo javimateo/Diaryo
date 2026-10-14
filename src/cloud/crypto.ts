@@ -24,6 +24,9 @@ const CHECK_TEXT = 'diaryo';
 
 const random = (n: number) => globalThis.crypto.getRandomValues(new Uint8Array(n));
 
+/** A new diary secret. */
+export const newSecret = () => random(SECRET_BYTES);
+
 export function toBase64(bytes: Uint8Array): string {
   let text = '';
   for (const byte of bytes) text += String.fromCharCode(byte);
@@ -218,7 +221,7 @@ async function openWith(vault: VaultData, secret: Uint8Array<ArrayBuffer>): Prom
 export async function createVault(
   password: string,
   iterations = PBKDF2_ITERATIONS,
-  secret = random(SECRET_BYTES),
+  secret = newSecret(),
 ) {
   const code = random(RECOVERY_BYTES);
   const kdf: VaultKdf = {
