@@ -26,12 +26,33 @@
   pointer-events: auto;
 }
 
+/*
+ * The brand, the tools and the actions in one row: the tools centered while they fit, and
+ * pushed aside by the others (never under them) when the window is narrow or the actions
+ * are wider, like the desktop app's with its window buttons. On phones the row dissolves
+ * (display: contents) and each part goes its own way.
+ */
+.top-bar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);
+  gap: 8px;
+  align-items: start;
+  pointer-events: none;
+}
+
+.top-bar > .layer {
+  position: static;
+}
+
 .top-left {
   top: 16px;
   left: 16px;
 }
 
-/* They take the whole width (without catching the mouse) to center without clipping the content. */
 .top-center {
   top: 16px;
   left: 0;
@@ -44,6 +65,7 @@
 .top-right {
   top: 16px;
   right: 16px;
+  justify-content: flex-end;
 }
 
 .side-left {
@@ -66,6 +88,26 @@
   flex-direction: column-reverse;
   align-items: center;
   gap: 12px;
+}
+
+/*
+ * Below ~1200 px the notices (the shortcuts hint is the widest) don't fit between the zoom
+ * and the page navigation: above them.
+ */
+@media (min-width: 641px) and (max-width: 1200px) {
+  .bottom-center {
+    bottom: 72px;
+  }
+}
+
+/*
+ * Up to there (and on a phone upright) an open side panel would cover the welcome notice
+ * and the hint: they step aside while it is open.
+ */
+@media (max-width: 1200px) and (min-height: 501px) {
+  .layer:has(.props-panel, .diary-panel) ~ .bottom-center :is(.welcome-notice, .hint) {
+    display: none;
+  }
 }
 
 .floating {

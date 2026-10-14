@@ -152,8 +152,8 @@
   font-size: 12.5px;
 }
 
-/* Between the phone layout and ~900 px the brand would reach the tools: only icons. */
-@media (max-width: 900px) {
+/* Below ~1080 px (with the desktop app's window buttons) the tools would be pushed aside: only icons. */
+@media (max-width: 1080px) {
   .search-label,
   .save-status-text {
     display: none;
@@ -166,9 +166,30 @@
 }
 
 /* Narrower still, the brand is only its mark. */
-@media (max-width: 760px) {
+@media (max-width: 920px) {
   .brand-name {
     display: none;
+  }
+}
+
+/*
+ * And below that (phones too) the tools slide sideways. The scroll would cut their tooltips,
+ * and their hidden boxes would let it scroll into blank space, so they go.
+ */
+@media (max-width: 880px) {
+  .toolbar {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .toolbar [data-tip]::after {
+    display: none;
+  }
+
+  .toolbar .tool-btn {
+    flex-shrink: 0;
   }
 }
 

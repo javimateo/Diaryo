@@ -48,17 +48,19 @@ export function App() {
       <CanvasView />
       <WindowDragRegion />
       <TextEditor />
-      <div className="layer top-left">
-        <Brand />
-      </div>
-      <div className="layer top-center">
-        <Toolbar />
+      <div className="top-bar">
+        <div className="layer top-left">
+          <Brand />
+        </div>
+        <div className="layer top-center">
+          <Toolbar />
+        </div>
+        <div className="layer top-right">
+          <TopActions />
+        </div>
       </div>
       <div className="layer side-left">
         <PropertiesPanel />
-      </div>
-      <div className="layer top-right">
-        <TopActions />
       </div>
       <div className="layer side-right">
         <DiaryPanel />
