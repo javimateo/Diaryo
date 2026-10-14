@@ -392,7 +392,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
     - **Sincronización por elemento**: cada elemento, página e imagen es un registro
       cifrado con su fecha de cambio; gana el cambio más reciente del mismo elemento; lo
       borrado deja una marca. Identificadores opacos (no dejan ver qué es cada cosa).
-    - **Espacio**: 100 MB gratis por cuenta; un plan de pago con más espacio, más
+    - **Espacio**: 50 MB gratis por cuenta (eran 100 MB hasta octubre de 2026; las cuentas ya creadas los conservan); un plan de pago con más espacio, más
       adelante (necesita alta como autónomo y un servicio de pagos que gestione el IVA,
       como Paddle o Lemon Squeezy).
     - **Primer inicio de sesión** con diario local y diario en la nube: el diálogo de
