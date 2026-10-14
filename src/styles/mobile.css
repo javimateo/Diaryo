@@ -7,6 +7,14 @@
  * with two fingers, so the zoom buttons go.
  */
 @media (max-width: 640px) {
+  .top-bar {
+    display: contents;
+  }
+
+  .top-bar > .layer {
+    position: absolute;
+  }
+
   .top-left,
   .hint,
   .theme-btn,
@@ -136,6 +144,14 @@
  * the few phones that are also narrower than 640 px on their side.
  */
 @media (max-height: 500px) and (orientation: landscape) {
+  .top-bar {
+    display: contents;
+  }
+
+  .top-bar > .layer {
+    position: absolute;
+  }
+
   .top-left,
   .hint,
   .theme-btn,
@@ -180,11 +196,16 @@
   .toolbar {
     max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 
   .toolbar .tool-btn {
     flex-shrink: 0;
+  }
+
+  .toolbar [data-tip]::after {
+    display: none;
   }
 
   .bottom-right {
