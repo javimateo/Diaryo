@@ -29,8 +29,8 @@ import { FILL_STYLES, HEADS, ROUGHNESS, VARIANT_ICONS } from './options';
 import { useUI } from '../../store/ui';
 import { useT } from '../useT';
 
-/** A phone: the panel starts folded, so it doesn't cover what is being edited. */
-const NARROW = '(max-width: 640px)';
+/** A phone, held either way: the panel starts folded, so it doesn't cover what is being edited. */
+const NARROW = '(max-width: 640px), (max-height: 500px) and (orientation: landscape)';
 
 function useNarrow() {
   const [narrow, setNarrow] = useState(() => matchMedia(NARROW).matches);

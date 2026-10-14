@@ -39,10 +39,12 @@ function Menu({ request, onClose }: { request: ContextMenuRequest; onClose: () =
 
   // Keep it inside the window.
   useLayoutEffect(() => {
-    const rect = ref.current!.getBoundingClientRect();
+    // Its layout size: the opening animation scales it down a little.
+    const { offsetWidth: width, offsetHeight: height } = ref.current!;
     setPosition({
-      left: Math.min(request.x, window.innerWidth - rect.width - 8),
-      top: Math.min(request.y, window.innerHeight - rect.height - 8),
+      left: Math.min(request.x, window.innerWidth - width - 8),
+      // Taller than the window: from the top, scrolling inside.
+      top: Math.max(8, Math.min(request.y, window.innerHeight - height - 8)),
     });
   }, [request]);
 
