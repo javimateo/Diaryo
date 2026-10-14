@@ -337,6 +337,9 @@ export const en: Messages = {
       "Your diary keeps saving on this device, but new things don't go up. Delete pages or images you don't need to free some space.",
     spaceWarning: (percent: number) => `You've used ${percent} % of your cloud space`,
     seeSpace: 'See',
+    locked: 'Not syncing: unlock to send and get the changes.',
+    otherTodayPage: 'Another page for today came from another device',
+    seePage: 'Go to it',
     lowSpace: (free: string) =>
       `You're running out of cloud space: ${free} free. Delete pages or images you don't need.`,
     rejected: (n: number) => (n === 1 ? "1 change couldn't go up" : `${n} changes couldn't go up`),
@@ -396,6 +399,7 @@ export const en: Messages = {
       full: "Cloud space full: new things don't go up",
       error: "Couldn't sync",
       manual: (n: number) => (n === 0 ? 'Cloud up to date' : `${n} changes not synced`),
+      locked: 'The cloud is not syncing · Unlock',
     },
   },
 

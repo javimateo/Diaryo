@@ -17,6 +17,7 @@ import { dropLock } from '../cloud/lock';
 import { currentKeys } from '../cloud/vault';
 import { isDesktop, onDeskChangedElsewhere } from '../desktop/tauri';
 import { t } from '../i18n';
+import { todayKey } from '../lib/dates';
 import { readText, writeText } from '../lib/saved';
 import { getDB, type DiaryoDB } from '../storage/db';
 import {
@@ -153,6 +154,7 @@ async function syncOnce(keys: DiaryKeys, still: () => boolean) {
   if (!navigator.onLine) return useSync.setState({ status: 'offline' });
   useSync.setState({ status: 'syncing', progress: null });
   const db = getDB();
+  const known = new Set(useUI.getState().diaryState.pages.map((page) => page.id));
   try {
     const result = await syncRound(db, pocketbaseRemote(account.id), keys, account.id, diary, {
       idle: whenIdle,
@@ -169,7 +171,10 @@ async function syncOnce(keys: DiaryKeys, still: () => boolean) {
       });
       return;
     }
-    if (result.applied) tellOtherTabs(result.applied);
+    if (result.applied) {
+      tellOtherTabs(result.applied);
+      tellOtherTodayPage(known);
+    }
     // Still drawing or writing: what came is fetched next time.
     else again = true;
     const { full, rejected } = result.push;
@@ -190,6 +195,24 @@ async function syncOnce(keys: DiaryKeys, still: () => boolean) {
   } finally {
     await refreshInfo(true);
   }
+}
+
+/**
+ * Another page for today came while today's is open here (each device made its own, for
+ * example while one of them didn't sync): said, so both are seen.
+ */
+function tellOtherTodayPage(known: Set<string>) {
+  const { diaryState, diary, showToast } = useUI.getState();
+  const today = todayKey();
+  if (diaryState.current?.date !== today) return;
+  const other = diaryState.pages.find(
+    (page) => page.date === today && !known.has(page.id) && page.id !== diaryState.current?.id,
+  );
+  if (!other || !diary) return;
+  showToast(t().sync.otherTodayPage, {
+    label: t().sync.seePage,
+    run: () => void diary.goToPage(other.id),
+  });
 }
 
 /**
@@ -402,6 +425,7 @@ export function startSync() {
     const account = useAccount.getState().account;
     if (!active() || !account) {
       useSync.setState({ status: 'off', progress: null, choosing: null });
+      if (account) void refreshInfo();
     } else {
       const saved = loadSaved(account.id);
       useSync.setState((s) => ({
@@ -435,7 +459,8 @@ export function startSync() {
     }
     tellOtherTabs(applied);
     schedule(AFTER_CHANGE);
-    if (active()) void refreshInfo();
+    // Also with the cloud locked here: the settings say how many changes wait.
+    if (useAccount.getState().account) void refreshInfo();
   });
   const onOnline = () => schedule(500);
   const onOffline = () => active() && useSync.setState({ status: 'offline' });

@@ -22,7 +22,9 @@ import { WindowControls } from './desktop/WindowControls';
 import { BrandMark } from './BrandMark';
 import { COVER_ID } from '../storage/db';
 import { useUI, type ThemePreference } from '../store/ui';
+import { useAccount } from '../cloud/account';
 import { useLock } from '../cloud/lockState';
+import { CloudLock } from './CloudLock';
 import { Choice } from './Choice';
 import { lockDiaryNow } from './lockActions';
 import { useSync } from './cloudSync';
@@ -67,12 +69,33 @@ export function Brand() {
   );
 }
 
-/** The cloud, next to "Saved": up to date, syncing, offline or full. Opens the settings. */
+/**
+ * The cloud, next to "Saved": up to date, syncing, offline or full. Opens the settings.
+ * Signed in with the cloud locked here (not on purpose, as the "with password" mode), it
+ * says nothing syncs, and opens the unlocking.
+ */
 function SyncIndicator() {
   const t = useT();
   const { status, lastSync, pending } = useSync();
   const manual = useUI((s) => s.settings.syncMode !== 'auto');
+  const asksEachTime = useUI((s) => s.settings.syncMode === 'password');
+  const locked = useAccount((s) => !!s.account && s.vault === 'locked') && !asksEachTime;
   const setSettingsOpen = useUI((s) => s.setSettingsOpen);
+  const setVaultDialog = useUI((s) => s.setVaultDialog);
+  if (locked) {
+    return (
+      <button
+        type="button"
+        className="sync-indicator icon-btn"
+        data-status="locked"
+        data-tip={t.sync.tips.locked}
+        aria-label={t.sync.tips.locked}
+        onClick={() => setVaultDialog({ view: 'unlock' })}
+      >
+        <CloudLock size={15} />
+      </button>
+    );
+  }
   if (status === 'off') return null;
   const tips = t.sync.tips;
   let tip: string;

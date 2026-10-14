@@ -32,6 +32,7 @@ import { continueWithGoogle } from './accountActions';
 import { saveFile } from './fileActions';
 import { Choice } from './Choice';
 import { signOutOfDevice, syncNow, useSync } from './cloudSync';
+import { CloudLock } from './CloudLock';
 import { relativeTime } from './relativeTime';
 import { formatBytes } from './formatBytes';
 import { GoogleButton } from './GoogleButton';
@@ -362,6 +363,7 @@ function VaultRows() {
   const vault = useAccount((s) => s.vault);
   const asksEachTime = useUI((s) => s.settings.syncMode === 'password') && vault === 'locked';
   const setVaultDialog = useUI((s) => s.setVaultDialog);
+  const pending = useSync((s) => s.pending);
   const open = (view: VaultView) => setVaultDialog({ view, fromSettings: true });
 
   if (vault === 'unlocked' || asksEachTime) {
@@ -394,20 +396,31 @@ function VaultRows() {
   if (vault === 'none' || vault === 'locked') {
     const none = vault === 'none';
     return (
-      <SettingsRow label={v.section} hint={none ? v.stateNone : v.stateLocked}>
-        <button
-          type="button"
-          className="settings-btn"
-          onClick={() => open(none ? 'create' : 'unlock')}
-        >
-          {none ? (
-            <LockKeyhole size={15} strokeWidth={1.75} />
-          ) : (
-            <LockKeyholeOpen size={15} strokeWidth={1.75} />
-          )}
-          {none ? v.setUp : v.unlock}
-        </button>
-      </SettingsRow>
+      <>
+        <SettingsRow label={v.section} hint={none ? v.stateNone : v.stateLocked}>
+          <button
+            type="button"
+            className="settings-btn"
+            onClick={() => open(none ? 'create' : 'unlock')}
+          >
+            {none ? (
+              <LockKeyhole size={15} strokeWidth={1.75} />
+            ) : (
+              <LockKeyholeOpen size={15} strokeWidth={1.75} />
+            )}
+            {none ? v.setUp : v.unlock}
+          </button>
+        </SettingsRow>
+        {!none && (
+          <p className="sync-locked">
+            <CloudLock size={16} />
+            <span>
+              {t.sync.locked}
+              {pending > 0 && ` · ${t.sync.pending(pending)}`}
+            </span>
+          </p>
+        )}
+      </>
     );
   }
   return <p className="settings-note">{v.stateUnknown}</p>;

@@ -180,6 +180,12 @@ the state the app shows). A round only runs with the keys of the account signed 
 - **A page deleted on one device while another one writes on it**: what was written
   before the deletion is cleaned up when it arrives (no element is left hidden on a page
   that is gone); what was written after brings the page back with it.
+- **Signed in with the cloud locked here** (not in the "with password" mode): nothing
+  syncs, so the cloud next to "Saved" turns orange with a padlock (a click unlocks it) and
+  the settings say so, with how many changes wait.
+- **Another page for today arrives** while today's page is open (each device made its
+  own, for example while one of them didn't sync): a notice says so, with a button to go
+  to it.
 - **Several tabs** of the web app: only one syncs at a time (a Web Lock); every change
   written here (not the view) is told to the other tabs (a BroadcastChannel), which show
   it once the user isn't drawing or writing.
