@@ -38,8 +38,8 @@ const mk = async (n, extra = {}) => {
 const a = await mk(1),
   b = await mk(2);
 check(
-  'new user gets 100 MB free',
-  a.record.quotaBytes === 104857600 && a.record.plan === 'free',
+  'new user gets 50 MB free',
+  a.record.quotaBytes === 52428800 && a.record.plan === 'free',
   JSON.stringify(a.record),
 );
 const selfQuota = await call(
@@ -52,7 +52,7 @@ check('user cannot raise their own quota', selfQuota.status >= 400, selfQuota.st
 const greedy = await mk(3, { quotaBytes: 999999999, plan: 'pro' });
 check(
   'a sign-up cannot choose its quota or plan',
-  greedy.record.quotaBytes === 104857600 && greedy.record.plan === 'free',
+  greedy.record.quotaBytes === 52428800 && greedy.record.plan === 'free',
   JSON.stringify(greedy.record),
 );
 

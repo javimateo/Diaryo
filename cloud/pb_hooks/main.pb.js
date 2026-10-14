@@ -5,7 +5,7 @@
  * sign-up sent: only the server gives a bigger plan, by changing it afterwards.
  */
 onRecordCreate((e) => {
-  e.record.set('quotaBytes', 100 * 1024 * 1024);
+  e.record.set('quotaBytes', 50 * 1024 * 1024);
   e.record.set('plan', 'free');
   e.next();
 }, 'users');

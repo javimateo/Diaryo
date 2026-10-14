@@ -17,7 +17,7 @@ encrypted** copy that every device keeps up to date.
 ## Accounts
 
 PocketBase's `users` collection: email and password (with email verification and password
-reset) and Google (OAuth2). Each user has a storage quota (`quotaBytes`, 100 MB on the
+reset) and Google (OAuth2). Each user has a storage quota (`quotaBytes`, 50 MB on the
 free plan) that only the server can change.
 
 In the app (`src/cloud/account.ts`, Settings → Account and cloud):

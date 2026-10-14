@@ -162,7 +162,7 @@ export const en: WebMessages = {
         text: 'Without an account nothing changes: the diary lives on your computer.',
       },
       { title: 'End-to-end encrypted', text: "Not even the server's administrator can read it." },
-      { title: '100 MB free', text: 'Years of text and drawings; images are compressed.' },
+      { title: '50 MB free', text: 'Years of text and drawings; images are compressed.' },
       { title: 'Offline too', text: 'You write as usual and it syncs when you are back.' },
     ],
     server: 'Server',
@@ -199,7 +199,7 @@ export const en: WebMessages = {
     items: [
       {
         q: 'Is it free?',
-        a: 'Yes: the app is completely free, with no ads, and the cloud comes with 100 MB free. And its code is public (for non-commercial use).',
+        a: 'Yes: the app is completely free, with no ads, and the cloud comes with 50 MB free. And its code is public (for non-commercial use).',
       },
       {
         q: 'Where are my notes saved?',

@@ -167,7 +167,7 @@ export const es = {
         text: 'Ni el administrador del servidor puede leerlo.',
       },
       {
-        title: '100 MB gratis',
+        title: '50 MB gratis',
         text: 'Para años de texto y dibujos; las imágenes se comprimen.',
       },
       { title: 'Sin conexión, también', text: 'Escribes igual y se sincroniza al volver.' },
@@ -206,7 +206,7 @@ export const es = {
     items: [
       {
         q: '¿Es gratis?',
-        a: 'Sí: la app es gratis del todo, sin anuncios, y la nube trae 100 MB gratis. Y su código es público (para uso no comercial).',
+        a: 'Sí: la app es gratis del todo, sin anuncios, y la nube trae 50 MB gratis. Y su código es público (para uso no comercial).',
       },
       {
         q: '¿Dónde se guardan mis notas?',
