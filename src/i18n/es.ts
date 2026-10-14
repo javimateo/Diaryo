@@ -348,6 +348,9 @@ export const es = {
       'Tu diario sigue guardándose en este dispositivo, pero lo nuevo no se sube. Borra páginas o imágenes que no necesites para liberar espacio.',
     spaceWarning: (percent: number) => `Has usado el ${percent} % de tu espacio en la nube`,
     seeSpace: 'Ver',
+    locked: 'No se sincroniza: desbloquea para subir y bajar los cambios.',
+    otherTodayPage: 'Ha llegado otra página de hoy desde otro dispositivo',
+    seePage: 'Ir a ella',
     lowSpace: (free: string) =>
       `Te queda poco espacio en la nube: ${free} libres. Borra páginas o imágenes que no necesites.`,
     rejected: (n: number) =>
@@ -408,6 +411,7 @@ export const es = {
       full: 'Espacio en la nube lleno: lo nuevo no se sube',
       error: 'No se ha podido sincronizar',
       manual: (n: number) => (n === 0 ? 'Nube al día' : `${n} cambios sin sincronizar`),
+      locked: 'La nube no se sincroniza · Desbloquear',
     },
   },
 

@@ -498,6 +498,34 @@
   color: #c27a1a;
 }
 
+.sync-indicator[data-status='locked'] {
+  color: #c27a1a;
+  background: rgba(194, 122, 26, 0.13);
+}
+
+/* Signed in, but the cloud is locked here: nothing goes up or comes. */
+.sync-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(194, 122, 26, 0.12);
+  color: #8a5410;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.sync-locked svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+:root[data-theme='dark'] .sync-locked {
+  color: #f0c07e;
+}
+
 .brand .sync-indicator {
   width: 24px;
   height: 24px;

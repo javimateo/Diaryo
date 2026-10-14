@@ -16,7 +16,9 @@ import {
   type PageInfo,
 } from '../storage/db';
 import { dirtyPaths, trackEverything } from '../storage/tracking';
-import { createVault, encrypt, itemName, type DiaryKeys } from './crypto';
+import { useAccount } from './account';
+import { pb } from './client';
+import { createVault, encrypt, itemName, newSecret, type DiaryKeys } from './crypto';
 import {
   removeDiaryFromDevice,
   settleChoice,
@@ -41,6 +43,8 @@ import {
   type Remote,
   type RemoteItem,
 } from './sync';
+import { writeLock } from './lockState';
+import { checkVault, currentKeys, takeDeviceSecret } from './vault';
 
 /**
  * A server that behaves like ours (pb_hooks/items.js): newest wins, no times from the
@@ -822,5 +826,47 @@ describe('what the user is asked, and what each answer does', () => {
     expect(await pageIds(b)).toEqual([]);
     expect((await s.round()).question).toBeNull();
     expect(await pageIds(b)).toEqual(['p1']);
+  });
+});
+
+describe('the cloud diary on this device', () => {
+  beforeEach(() => {
+    const data = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => data.set(key, value),
+      removeItem: (key: string) => data.delete(key),
+    });
+  });
+
+  afterEach(() => {
+    useAccount.setState({ account: null });
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('stays unlocked when the diary is opened while the app checks the vault', async () => {
+    const secret = newSecret();
+    const { vault } = await createVault('clave', 1000, secret);
+    // The whole diary is encrypted here: the cloud's keys come from unlocking it, not the disk.
+    writeLock({ level: 'all', vault, version: 0, account: 'u', deviceKey: 'wrapped' });
+    // The server answers a little later, as the real one does.
+    vi.spyOn(pb.collection('vaults'), 'getList').mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ items: [{ id: 'v', version: 0, ...vault }] } as never), 20),
+        ),
+    );
+    useAccount.setState({
+      account: { id: 'u', email: 'a@b.c', verified: true, plan: 'free', quotaBytes: 0 },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(useAccount.getState().vault).toBe('locked');
+
+    // Unlocking the diary gives the keys (lock.ts) while the app, starting, checks the vault
+    // without them yet.
+    await Promise.all([checkVault(), takeDeviceSecret(secret)]);
+    expect(useAccount.getState().vault).toBe('unlocked');
+    expect(currentKeys()).not.toBeNull();
   });
 });

@@ -192,6 +192,9 @@ export async function checkVault() {
     return; // Without a connection, it stays as it was.
   }
   if (account !== accountId()) return;
+  // Other keys came meanwhile (the diary was unlocked here as the app started): the check
+  // made with them decides. Otherwise this one, made without them, would lock the cloud.
+  if (keys !== kept) return;
   if (!vault) {
     keys = null;
     return setVault('none');
