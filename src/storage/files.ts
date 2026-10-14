@@ -1,7 +1,15 @@
 import { isPaperStyle } from '../engine/book';
 import { parseElement } from '../engine/clipboard';
 import type { SceneElement } from '../engine/elements';
-import type { AssetRow, DiaryDump, FontRow, PageRow, StoredPage } from './db';
+import {
+  RAW_TABLES,
+  type AssetRow,
+  type DiaryDump,
+  type FontRow,
+  type PageRow,
+  type RawTables,
+  type StoredPage,
+} from './db';
 import { fromBase64, openBytes, sealBytes, toBase64 } from './sealing';
 
 /** Backup format: a readable JSON with everything needed to restore it. */
@@ -48,9 +56,43 @@ export function serializeDiary(dump: DiaryDump): string {
  */
 const SEALED_TYPE = 'diaryo/sealed';
 
-export interface SealedBackup {
-  lock: Record<string, unknown>;
-  data: Uint8Array;
+/**
+ * Encrypted backups: a sealed copy of the diary (`data`) or, of a locked diary, its rows
+ * as they were stored (`rows`). Both open with the key that `lock` gives back.
+ */
+export type SealedBackup =
+  | { lock: Record<string, unknown>; data: Uint8Array }
+  | { lock: Record<string, unknown>; rows: RawTables };
+
+/**
+ * A locked diary taken as it is (it can't be read without its password): its rows, still
+ * sealed, and how to get its key back. It opens like an encrypted backup.
+ */
+const LOCKED_TYPE = 'diaryo/locked';
+
+/** The sealed rows' bytes, written as text. */
+const BYTES = '$bytes';
+
+/** The file of a locked diary (`readRawTables`' rows and the lock to open them). */
+export function serializeLocked(rows: RawTables, lock: Record<string, unknown>): string {
+  return JSON.stringify(
+    { type: LOCKED_TYPE, version: 1, exportedAt: new Date().toISOString(), lock, rows },
+    (_, value) => (value instanceof Uint8Array ? { [BYTES]: toBase64(value) } : value),
+  );
+}
+
+function parseLocked(text: string): SealedBackup | null {
+  const data = JSON.parse(text, (_, value) =>
+    value && typeof value === 'object' && typeof value[BYTES] === 'string'
+      ? fromBase64(value[BYTES])
+      : value,
+  ) as Record<string, unknown>;
+  const rows = data.rows as Partial<RawTables> | undefined;
+  if (!rows || typeof data.lock !== 'object' || !data.lock) return null;
+  const tables = Object.fromEntries(
+    RAW_TABLES.map((name) => [name, Array.isArray(rows[name]) ? rows[name] : []]),
+  ) as RawTables;
+  return { lock: data.lock as Record<string, unknown>, rows: tables };
 }
 
 const sealedContext = new TextEncoder().encode(SEALED_TYPE);
@@ -68,7 +110,7 @@ export function serializeSealed(text: string, key: Uint8Array, lock: Record<stri
 }
 
 /** The backup's text, with the key it was encrypted with. Throws with another one. */
-export function openSealed(backup: SealedBackup, key: Uint8Array): string {
+export function openSealed(backup: { data: Uint8Array }, key: Uint8Array): string {
   return new TextDecoder().decode(openBytes(key, backup.data, sealedContext));
 }
 
@@ -169,6 +211,14 @@ export function parseBackup(text: string): Backup | null {
       kind: 'page',
       page: { elements: parseElements(data.elements, assets), assets, fonts },
     };
+  }
+  if (data.type === LOCKED_TYPE) {
+    try {
+      const sealed = parseLocked(text);
+      return sealed ? { kind: 'sealed', sealed } : null;
+    } catch {
+      return null;
+    }
   }
   if (data.type === SEALED_TYPE && typeof data.data === 'string' && typeof data.lock === 'object') {
     try {

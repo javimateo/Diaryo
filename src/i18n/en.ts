@@ -275,6 +275,22 @@ export const en: Messages = {
       "Without them there is no way to open this diary: it's encrypted and no copy of the password is kept. You can delete it from this device and start a new one. If it's open on another device, it's still there.",
     erase: 'Delete the diary from this device',
     eraseConfirm: 'Yes, delete it for good',
+    otherOptions: 'Other options',
+    optionsText: 'Without the password the diary can’t be read, but it can be put aside.',
+    signOut: 'Sign out',
+    signOutHint: (email: string) =>
+      `You leave your account (${email}). The diary stays here, locked.`,
+    startOver: 'Start another diary',
+    startOverHint: 'This one is kept encrypted in a file, and a blank one starts here.',
+    eraseHint: 'Keeping nothing. It can’t be undone.',
+    startOverText: (desktop: boolean) =>
+      desktop
+        ? 'We keep this diary as it is, encrypted, in the backups folder.'
+        : 'We keep this diary as it is, encrypted, in a file that downloads.',
+    startOverOpen:
+      'Open it whenever you like with “Open a copy” and its password or recovery code.',
+    startOverButton: 'Keep it and start another',
+    startOverFailed: 'The diary couldn’t be kept, so nothing was deleted.',
     ownVaultText:
       'Your diary already has a password on this device: the cloud will use the same one, with the same recovery code.',
     adopted: "From now on, the diary password on this device is this account's cloud one.",

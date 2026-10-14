@@ -1,13 +1,23 @@
 import {
   countPrivateNotes,
   deskAssetIds,
+  DiaryoDB,
+  dumpDiary,
   getDB,
   matchDesk,
   privateNoteIds,
+  readRawTables,
   releasePrivateNotes,
   rewriteDiary,
+  writeRawTables,
 } from '../storage/db';
-import { openSealed, serializeSealed, type SealedBackup } from '../storage/files';
+import {
+  openSealed,
+  serializeDiary,
+  serializeLocked,
+  serializeSealed,
+  type SealedBackup,
+} from '../storage/files';
 import { newSealingKey } from '../storage/sealing';
 import { useAccount } from './account';
 import {
@@ -485,7 +495,7 @@ export async function openSealedCopy(
   const key = getDB().sealing.key;
   if (key) {
     try {
-      return openSealed(backup, key);
+      return await openWithKey(backup, key);
     } catch {
       // Another diary's (or this one's from before a new key): it needs its password.
     }
@@ -496,7 +506,7 @@ export async function openSealedCopy(
   const unlocked = unlockedSecret();
   if (unlocked) {
     const opened = await unwrapDeviceKey(unlocked, deviceKey)
-      .then((other) => openSealed(backup, other))
+      .then((other) => openWithKey(backup, other))
       .catch(() => null);
     if (opened !== null) return opened;
   }
@@ -506,8 +516,35 @@ export async function openSealedCopy(
       ? (await openSecret(vault, with_.password)).secret
       : await openSecretWithCode(vault, with_.code);
   try {
-    return openSealed(backup, await unwrapDeviceKey(secret, deviceKey));
+    return await openWithKey(backup, await unwrapDeviceKey(secret, deviceKey));
   } catch {
     throw new WrongSecretError();
   }
+}
+
+/**
+ * The backup's text, with its key (throws with another one). A locked diary's rows are
+ * opened in a database of their own, read like any diary and dropped.
+ */
+async function openWithKey(backup: SealedBackup, key: Uint8Array<ArrayBuffer>): Promise<string> {
+  if ('data' in backup) return openSealed(backup, key);
+  const db = new DiaryoDB(`diaryo-opening-${crypto.randomUUID()}`);
+  try {
+    await writeRawTables(db, backup.rows);
+    db.sealing.key = key;
+    return serializeDiary(await dumpDiary(db));
+  } finally {
+    await db.delete();
+  }
+}
+
+/**
+ * The locked diary as a file, as it is (it can't be read without its password): it opens
+ * like an encrypted backup, with its diary password or its recovery code.
+ */
+export async function lockedDiaryFile(): Promise<string> {
+  const lock = readLock();
+  if (!lock?.deviceKey) throw new Error('the diary is not encrypted here');
+  const rows = await readRawTables(getDB());
+  return serializeLocked(rows, { vault: lock.vault, deviceKey: lock.deviceKey });
 }

@@ -535,12 +535,20 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           no lo estaba, se cifra con la contraseña del diario de la nube). En la web,
           «Mantener la sesión en este navegador»: apagado, la sesión vive en el
           `sessionStorage` de la pestaña y las llaves de la nube solo en memoria.
-    - [ ] **No quedarse atrapado en la pantalla de contraseña**: cuando se pide la
+    - [x] **No quedarse atrapado en la pantalla de contraseña**: cuando se pide la
           contraseña del diario (al abrir la app, al desbloquear…), poder también
           **cerrar sesión o cambiar de cuenta** y **empezar otro diario** en ese
           dispositivo (guardando antes, cifrado, el que hay). Si no, quien olvide la
           contraseña, o encuentre un diario que no es suyo, no puede hacer nada con la
           app.
+          Hecho (octubre de 2026), con maqueta: en la tarjeta de la contraseña, «Otras
+          opciones»: **cerrar sesión** (con cuenta; el diario se queda aquí, bloqueado),
+          **empezar otro diario** (antes se guarda tal cual, cifrado: en Windows en la
+          carpeta de las copias, en la web se descarga; si no se puede guardar, no se
+          borra nada) y **borrar el diario de este dispositivo** (lo de antes). El archivo
+          lleva las filas como estaban guardadas y se abre con «Abrir una copia» y su
+          contraseña o su clave de recuperación. `readRawTables` y `lockedDiaryFile`,
+          con un test de ida y vuelta.
   - [ ] **E. macOS**: Tauri compila para macOS casi sin cambios; lo que es solo de
         Windows (la mesa en el escritorio, `windows-sys`) necesita su versión o quedarse
         fuera al principio. Para distribuirlo hace falta la cuenta de desarrollador de
