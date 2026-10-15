@@ -11,6 +11,13 @@ const OPENED = 'diaryo://reminder-opened';
 const SEEN_KEY = 'diaryo:reminders-seen';
 
 /**
+ * Without their words with the whole diary encrypted: Windows keeps the notifications it
+ * showed (its notification centre, on disk), and the diary is meant not to be readable
+ * there.
+ */
+const withoutWords = () => useLock.getState().level === 'all';
+
+/**
  * Desktop app: keeps the desktop side's reminders up to date (as the agenda, the settings
  * and the lock change), tells those missed while diaryo was closed and opens what a
  * clicked reminder is about.
@@ -20,7 +27,7 @@ export function startReminders(): () => void {
   const now = () => Date.now();
   const send = () => {
     const { agenda, settings, diaryState } = useUI.getState();
-    const hidden = useLock.getState().status === 'locked';
+    const hidden = withoutWords();
     const list = settings.reminders
       ? buildReminders(agenda, now(), settings.remindBefore, hidden, diaryState.pages)
       : [];
@@ -37,7 +44,7 @@ export function startReminders(): () => void {
       loaded = true;
       const from = Number(readText(SEEN_KEY));
       const { reminders, remindBefore } = state.settings;
-      const hidden = useLock.getState().status === 'locked';
+      const hidden = withoutWords();
       const missed =
         reminders && from > 0
           ? missedReminder(state.agenda, from, now(), remindBefore, hidden)
@@ -55,7 +62,7 @@ export function startReminders(): () => void {
     }
   });
   const stopLock = useLock.subscribe((state, before) => {
-    if (state.status !== before.status) send();
+    if (state.level !== before.level) send();
   });
   const timer = window.setInterval(seen, 60_000);
   const stopListening = listen<Reminder>(OPENED, (reminder) => {

@@ -1,7 +1,8 @@
-//! Reminders of tasks and appointments. The page sends the next ones (only in memory: their
-//! text never touches the disk) and a thread shows each one as a Windows notification at
-//! its time, also with the diary hidden in the tray. A click opens the floating diary on
-//! it.
+//! Reminders of tasks and appointments. The page sends the next ones (kept here only in
+//! memory) and a thread shows each one as a Windows notification at its time, also with the
+//! diary hidden in the tray. A click opens the floating diary on it. Windows keeps the
+//! notifications it showed (on disk): with the whole diary encrypted, the page sends them
+//! without their words.
 
 use serde::{Deserialize, Serialize};
 use std::{

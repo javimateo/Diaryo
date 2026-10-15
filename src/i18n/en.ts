@@ -1262,7 +1262,7 @@ export const en: Messages = {
     group: 'Reminders',
     enabled: 'Remind me of tasks and appointments',
     enabledHint:
-      'A Windows notification at their time, even with diaryo hidden in the tray. Without a time, at 9:00.',
+      'A Windows notification at their time, even with diaryo hidden in the tray. Without a time, at 9:00. With the whole diary encrypted, without their text (Windows keeps notifications).',
     when: 'When to remind',
     whenHint: 'At their time or that long before. Done tasks don’t remind.',
     before: { 0: 'On time', 10: '10 min', 30: '30 min', 60: '1 h', 1440: '1 day' },

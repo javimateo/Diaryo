@@ -40,7 +40,7 @@ function placeOf(item: AgendaItem, pages: PageMeta[]) {
 
 /**
  * The reminders to come of what is pending, `before` minutes before each one's time.
- * With `hidden` (the diary locked) or for a private note, without its words.
+ * With `hidden` (the whole diary encrypted) or for a private note, without its words.
  */
 export function buildReminders(
   items: AgendaItem[],
