@@ -752,9 +752,10 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             enseguida; si el navegador aún lo estaba guardando, se perdían los dos. Ahora
             se borra solo cuando el usuario dice que ya tiene el archivo (y puede bajarlo
             otra vez).
-      - [ ] **La mesa sin cifrar en la web**: con «Todo el diario», la mesa, sus imágenes
-            y las fuentes quedan en claro por defecto (`applyRecord` en `lock.ts`). Solo
-            sirve en el escritorio, y en la web no hay opción para cambiarlo.
+      - [x] **La mesa sin cifrar en la web**: con «Todo el diario», la mesa, sus imágenes
+            y las fuentes quedaban en claro (solo sirve en el escritorio, y en la web no
+            había opción). Ahora en la web van cifradas con el resto, y un diario web
+            cifrado antes cifra su mesa la próxima vez que se abre.
       - [ ] **Copias legibles de antes del cifrado**: al activarlo, las copias diarias
             legibles siguen en la carpeta hasta 14 días y las de «antes de abrir», siempre.
             Ofrecer cifrarlas o borrarlas.

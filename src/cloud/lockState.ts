@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isDesktop } from '../lib/platform';
 import { asRecord, readJSON, writeJSON } from '../lib/saved';
 import { getDB } from '../storage/db';
 import type { VaultData } from './crypto';
@@ -81,7 +82,10 @@ export function writeLock(record: LockRecord | null) {
 export const sealedHere = () => readLock()?.level === 'all';
 
 /** The whole diary is encrypted here, the desk too (it doesn't show while locked). */
-export const deskSealed = (lock = readLock()) => lock?.level === 'all' && lock.desk === 'sealed';
+export const deskSealed = (lock = readLock()) =>
+  // Only the desktop app keeps the desk out (it shows on the Windows desktop): on the web
+  // nothing would show it, so it is encrypted with the rest.
+  lock?.level === 'all' && (lock.desk === 'sealed' || !isDesktop());
 
 /**
  * - `status`: the whole diary is locked (the password is needed to open it), unlocked,
