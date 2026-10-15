@@ -782,9 +782,10 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             local y explica por qué no a producción; la limpieza se para (y lo dice) si una
             petición falla, en vez de insistir sin fin.
     - **Mantenibilidad**
-      - [ ] **Los atajos en un solo sitio**: la paleta (`commands.ts`) y el teclado
-            (`useShortcuts.ts`, 109 ramas) los repiten; una tabla para todo, la ayuda
-            incluida.
+      - [x] **Los atajos en un solo sitio**: la paleta (`commands.ts`), la ayuda y el teclado
+            (`useShortcuts.ts`) los repetían. Ahora están en `ui/shortcuts.ts`: la paleta y la
+            ayuda los leen de ahí, y un test comprueba que el teclado hace lo que dice cada
+            combinación (el manejador no se reescribe: su lógica depende del contexto).
       - [x] **Un formulario de contraseña** compartido por `LockDialog`, `VaultDialog`,
             `LockScreen` y `CopyPrivacyDialog`, que lo copiaban: sus piezas en
             `ui/passwordForm.tsx` (campos, error, botón), las reglas en `ui/passwordRules.ts`

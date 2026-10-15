@@ -108,6 +108,10 @@ store (`store/ui.ts`); settings and the diary's look are saved in the browser
 (`lib/saved.ts`). On narrow screens `styles/mobile.css` rearranges everything for a
 thumb.
 
+The keyboard shortcuts are written once, in `ui/shortcuts.ts`: the command palette and the
+help show them from there, `ui/useShortcuts.ts` runs them, and its test checks that every
+combination there does what it says (the tools' keys are in `ui/toolDefs.ts`).
+
 ## The desktop app (`src/desktop`, `src-tauri`)
 
 The Rust side (`src-tauri/src`) owns what a web page can't do:
