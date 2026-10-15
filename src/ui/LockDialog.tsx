@@ -12,6 +12,7 @@ import {
   revealNotes,
 } from '../cloud/lock';
 import { useLock } from '../cloud/lockState';
+import { openBackupDir } from '../desktop/settings';
 import { useUI, type LockDialogRequest, type LockView } from '../store/ui';
 import { PasswordField } from './PasswordField';
 import { useT } from './useT';
@@ -41,6 +42,7 @@ function Dialog({ request }: { request: LockDialogRequest }) {
   const v = t.vault;
   const setLockDialog = useUI((s) => s.setLockDialog);
   const showToast = useUI((s) => s.showToast);
+  const desktop = useUI((s) => s.desktop !== null);
   const level = useLock((s) => s.level);
   // Signed in with a cloud diary and no password here yet: its password is the one.
   const cloud = useAccount((s) => !!s.account && (s.vault === 'locked' || s.vault === 'unlocked'));
@@ -79,6 +81,17 @@ function Dialog({ request }: { request: LockDialogRequest }) {
     showToast(message);
     request.then?.();
   };
+  /**
+   * The password set. With the whole diary encrypted on the desktop, the backups made
+   * before stay readable in their folder (only the new ones are encrypted): it says so,
+   * and opens the folder, for the user to delete them if they like.
+   */
+  const finishEnabled = () => {
+    if (view !== 'all' || !desktop) return finish(view === 'private' ? l.privateDone : l.enabled);
+    setLockDialog(null);
+    showToast(l.enabledBackups, { label: l.openBackups, run: () => void openBackupDir() });
+    request.then?.();
+  };
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -95,7 +108,7 @@ function Dialog({ request }: { request: LockDialogRequest }) {
           const shows = view === 'private' && Array.isArray(request.notes) ? request.notes : [];
           const made = await enableLock(password, view, shows);
           if (made) setShownCode(made);
-          else finish(view === 'private' ? l.privateDone : l.enabled);
+          else finishEnabled();
         } else if (view === 'down') {
           await disableLock(password, 'private');
           finish(l.downDone);
@@ -207,9 +220,7 @@ function Dialog({ request }: { request: LockDialogRequest }) {
         saved={saved}
         onSaved={setSaved}
         finishLabel={v.done}
-        onFinish={() =>
-          finish(view === 'private' ? l.privateDone : view === 'all' ? l.enabled : v.done)
-        }
+        onFinish={() => (view === 'private' || view === 'all' ? finishEnabled() : finish(v.done))}
       />
     );
   } else if (rewriting) {

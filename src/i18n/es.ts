@@ -270,6 +270,9 @@ export const es = {
     decrypting: 'Quitando el cifrado…',
     keepOpen: 'No cierres diaryo hasta que termine.',
     enabled: 'Diario cifrado en este dispositivo',
+    enabledBackups:
+      'Diario cifrado. Las copias de antes siguen legibles en su carpeta; las nuevas, cifradas.',
+    openBackups: 'Abrir la carpeta',
     disabled: 'Ya no se cifra nada en este dispositivo',
     codeText:
       'Si olvidas la contraseña del diario, esta clave es la única forma de volver a abrirlo. Solo se muestra ahora.',

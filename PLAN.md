@@ -756,9 +756,10 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             y las fuentes quedaban en claro (solo sirve en el escritorio, y en la web no
             había opción). Ahora en la web van cifradas con el resto, y un diario web
             cifrado antes cifra su mesa la próxima vez que se abre.
-      - [ ] **Copias legibles de antes del cifrado**: al activarlo, las copias diarias
+      - [x] **Copias legibles de antes del cifrado**: al activarlo, las copias diarias
             legibles siguen en la carpeta hasta 14 días y las de «antes de abrir», siempre.
-            Ofrecer cifrarlas o borrarlas.
+            No las reescribimos (las hace la app, pero borrarlas es cosa del usuario): al
+            cifrar en el escritorio, un aviso lo dice y ofrece abrir la carpeta.
       - [ ] **Los avisos en el historial de Windows**: guarda su texto aunque el diario
             esté cifrado. Con «Todo el diario», avisos sin palabras; y corregir el
             comentario de `reminders.rs`.
