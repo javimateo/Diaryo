@@ -16,6 +16,7 @@ import {
 import { shortcutKeys } from '../desktop/shortcuts';
 import type { DesktopInfo } from '../desktop/settings';
 import type { Messages } from '../i18n';
+import { keysOf, type ShortcutId } from './shortcuts';
 import { TOOLS } from './toolDefs';
 
 /**
@@ -35,25 +36,20 @@ export type Shortcut = [string, string[][]];
  */
 export function shortcutLists(t: Messages, desktop: DesktopShortcuts | null) {
   const { help: h, keys: k } = t;
+  const keys = (...ids: ShortcutId[]) => ids.flatMap((id) => keysOf(id, t));
   const navigation: Shortcut[] = [
     [h.moveCanvas, [[k.space, k.drag], [k.middleButton]]],
     [h.scroll, [[k.wheel]]],
     [h.scrollSideways, [['Shift', k.wheelLower]]],
     [h.zoom, [['Ctrl', k.wheelLower]]],
-    [
-      h.zoomInOut,
-      [
-        ['Ctrl', '+'],
-        ['Ctrl', '−'],
-      ],
-    ],
-    [h.resetZoom, [['Ctrl', '0']]],
-    [h.seeAll, [['Shift', '1']]],
+    [h.zoomInOut, keys('zoomIn', 'zoomOut')],
+    [h.resetZoom, keys('resetZoom')],
+    [h.seeAll, keys('seeAll')],
   ];
   const selection: Shortcut[] = [
     [h.lasso, [['Alt', k.drag]]],
     [h.addToSelection, [['Shift', k.click]]],
-    [h.selectAll, [['Ctrl', 'A']]],
+    [h.selectAll, keys('selectAll')],
     [
       h.copyCutPaste,
       [
@@ -62,56 +58,26 @@ export function shortcutLists(t: Messages, desktop: DesktopShortcuts | null) {
         ['Ctrl', 'V'],
       ],
     ],
-    [h.duplicate, [['Ctrl', 'D']]],
-    [h.delete, [[k.delete]]],
-    [h.nudge, [[k.arrows], ['Shift', k.arrowsLower]]],
+    [h.duplicate, keys('duplicate')],
+    [h.delete, keys('delete')],
+    [h.nudge, keys('nudge', 'nudgeFar')],
     [h.scaleFree, [['Shift', k.corner]]],
     [h.scaleFromCenter, [['Alt', k.handle]]],
     [h.rotateSnap, [['Shift', k.rotate]]],
     [h.noGuides, [['Ctrl', k.drag]]],
-    [
-      h.group,
-      [
-        ['Ctrl', 'G'],
-        ['Ctrl', 'Shift', 'G'],
-      ],
-    ],
-    [
-      h.bringForward,
-      [
-        ['Ctrl', '↑'],
-        ['Ctrl', '↓'],
-      ],
-    ],
-    [
-      h.bringToFront,
-      [
-        ['Ctrl', 'Shift', '↑'],
-        ['Ctrl', 'Shift', '↓'],
-      ],
-    ],
-    [
-      h.flip,
-      [
-        ['Shift', 'H'],
-        ['Shift', 'V'],
-      ],
-    ],
-    [h.lock, [['Ctrl', 'Shift', 'L']]],
-    [
-      h.copyStyle,
-      [
-        ['Ctrl', 'Alt', 'C'],
-        ['Ctrl', 'Alt', 'V'],
-      ],
-    ],
-    [h.copyAsImage, [['Shift', 'Alt', 'C']]],
+    [h.group, keys('group', 'ungroup')],
+    [h.bringForward, keys('forward', 'backward')],
+    [h.bringToFront, keys('toFront', 'toBack')],
+    [h.flip, keys('flipHorizontal', 'flipVertical')],
+    [h.lock, keys('lock')],
+    [h.copyStyle, keys('copyStyle', 'pasteStyle')],
+    [h.copyAsImage, keys('copyAsImage')],
     [h.moreOptions, [[k.rightClick]]],
-    [h.deselect, [['Esc']]],
+    [h.deselect, keys('deselect')],
   ];
   const writing: Shortcut[] = [
     [h.writeAnywhere, [[k.doubleClick]]],
-    [h.editSelected, [['Enter']]],
+    [h.editSelected, keys('edit')],
     [h.finishWriting, [['Esc'], ['Ctrl', 'Enter']]],
     [h.textBox, [['T', k.drag]]],
     [
@@ -132,41 +98,23 @@ export function shortcutLists(t: Messages, desktop: DesktopShortcuts | null) {
     [h.curveArrow, [[k.dragItsCenter]]],
   ];
   const diary: Shortcut[] = [
-    [
-      h.turnPage,
-      [
-        ['Ctrl', '←'],
-        ['Ctrl', '→'],
-      ],
-    ],
-    [h.prevNextPage, [[k.pageUp], [k.pageDown]]],
-    [h.goToToday, [['Ctrl', k.home]]],
-    [h.newPage, [['Alt', 'N']]],
-    [h.bookmark, [['Alt', 'M']]],
+    [h.turnPage, keys('turnBack', 'turnForward')],
+    [h.prevNextPage, keys('pageBack', 'pageForward')],
+    [h.goToToday, keys('today')],
+    [h.newPage, keys('newPage')],
+    [h.bookmark, keys('bookmark')],
     [h.link, [[k.rightClick], [k.panel]]],
-    [h.index, [['Ctrl', 'B']]],
-    [h.map, [['Shift', 'M']]],
+    [h.index, keys('index')],
+    [h.map, keys('map')],
   ];
   const general: Shortcut[] = [
-    [
-      h.search,
-      [
-        ['Ctrl', 'K'],
-        ['Ctrl', 'F'],
-      ],
-    ],
-    [h.size, [['+'], ['−']]],
-    [h.undo, [['Ctrl', 'Z']]],
-    [
-      h.redo,
-      [
-        ['Ctrl', 'Shift', 'Z'],
-        ['Ctrl', 'Y'],
-      ],
-    ],
-    [h.showShortcuts, [['?']]],
-    [h.settings, [['Ctrl', ',']]],
-    [h.theme, [['Alt', 'Shift', 'D']]],
+    [h.search, keys('search')],
+    [h.size, keys('sizeUp', 'sizeDown')],
+    [h.undo, keys('undo')],
+    [h.redo, keys('redo')],
+    [h.showShortcuts, keys('help')],
+    [h.settings, keys('settings')],
+    [h.theme, keys('theme')],
   ];
   // In the desktop app, also the floating diary.
   if (desktop) {
@@ -192,6 +140,7 @@ export interface HowTo {
 export function howToLists(t: Messages, desktop: DesktopShortcuts | null) {
   const { help: h, keys: k } = t;
   const g = h.gestures;
+  const keys = (...ids: ShortcutId[]) => ids.flatMap((id) => keysOf(id, t));
   const tools: HowTo[] = TOOLS.map((tool) => ({
     id: tool.id,
     icon: tool.icon,
@@ -206,22 +155,16 @@ export function howToLists(t: Messages, desktop: DesktopShortcuts | null) {
     keys,
   });
   const gestures: HowTo[] = [
-    gesture('turn', BookOpen, [
-      ['Ctrl', '←'],
-      ['Ctrl', '→'],
-    ]),
+    gesture('turn', BookOpen, keys('turnBack', 'turnForward')),
     gesture('desk', Layers),
     gesture('tasks', SquareCheck, [['[]', k.spaceLower]]),
     gesture('dates', CalendarClock, [['@']]),
     gesture('private', LockKeyhole),
     gesture('link', Link),
     gesture('images', Image, [['Ctrl', 'V']]),
-    gesture('search', Search, [['Ctrl', 'K']]),
-    gesture('map', Map, [
-      ['Shift', 'M'],
-      ['Ctrl', 'B'],
-    ]),
-    gesture('copyStyle', Paintbrush, [['Ctrl', 'Alt', 'C']]),
+    gesture('search', Search, keys('search').slice(0, 1)),
+    gesture('map', Map, keys('map', 'index')),
+    gesture('copyStyle', Paintbrush, keys('copyStyle')),
     gesture('guides', Magnet),
   ];
   if (desktop)

@@ -72,6 +72,7 @@ import { lockDiaryNow } from './lockActions';
 import { askToReveal, markPrivate } from './privateActions';
 import { hideNotes } from '../cloud/lock';
 import { t } from '../i18n';
+import { keysOf, type ShortcutId } from './shortcuts';
 
 /** What a command asks for when something needs to be typed (e.g. a title). */
 export interface CommandPrompt {
@@ -109,6 +110,8 @@ export function getCommands(): Command[] {
   const texts = t();
   const { commands: c, commandKeywords: kw, commandGroups: g, catalog } = texts;
   const commands: Command[] = [];
+  /** A shortcut's first combination (the palette shows one). */
+  const key = (id: ShortcutId) => keysOf(id, texts)[0];
   const add = (group: string, list: (Omit<Command, 'group'> | false)[]) => {
     for (const command of list) if (command) commands.push({ ...command, group });
   };
@@ -118,14 +121,14 @@ export function getCommands(): Command[] {
       id: 'today',
       label: c.today,
       icon: CalendarDays,
-      keys: ['Ctrl', t().keys.home],
+      keys: key('today'),
       run: goToToday,
     },
     {
       id: 'new-page',
       label: c.newPage,
       icon: FilePlus2,
-      keys: ['Alt', 'N'],
+      keys: key('newPage'),
       keywords: kw.newPage,
       run: addPage,
     },
@@ -133,7 +136,7 @@ export function getCommands(): Command[] {
       id: 'next-page',
       label: c.nextPage,
       icon: ChevronRight,
-      keys: ['Ctrl', '→'],
+      keys: key('turnForward'),
       keywords: kw.turn,
       run: () => void turnPage(1),
     },
@@ -141,7 +144,7 @@ export function getCommands(): Command[] {
       id: 'prev-page',
       label: c.prevPage,
       icon: ChevronLeft,
-      keys: ['Ctrl', '←'],
+      keys: key('turnBack'),
       keywords: kw.turnBack,
       run: () => void turnPage(-1),
     },
@@ -161,7 +164,7 @@ export function getCommands(): Command[] {
       id: 'bookmark',
       label: current.bookmark ? c.removeBookmark : c.bookmark,
       icon: current.bookmark ? BookmarkX : Bookmark,
-      keys: ['Alt', 'M'],
+      keys: key('bookmark'),
       keywords: kw.bookmark,
       run: () => toggleBookmark(),
     },
@@ -169,7 +172,7 @@ export function getCommands(): Command[] {
       id: 'map',
       label: c.map,
       icon: LayoutGrid,
-      keys: ['Shift', 'M'],
+      keys: key('map'),
       keywords: kw.map,
       run: () => useUI.getState().setMapOpen(true),
     },
@@ -177,7 +180,7 @@ export function getCommands(): Command[] {
       id: 'index',
       label: c.index,
       icon: BookOpen,
-      keys: ['Ctrl', 'B'],
+      keys: key('index'),
       keywords: kw.index,
       run: () => useUI.getState().setDiaryOpen(true),
     },
@@ -203,7 +206,7 @@ export function getCommands(): Command[] {
       id: 'duplicate',
       label: c.duplicate,
       icon: Copy,
-      keys: ['Ctrl', 'D'],
+      keys: key('duplicate'),
       run: () => engine.duplicateSelection(),
     },
     selected && {
@@ -224,21 +227,21 @@ export function getCommands(): Command[] {
       id: 'group',
       label: c.group,
       icon: Group,
-      keys: ['Ctrl', 'G'],
+      keys: key('group'),
       run: () => engine.groupSelection(),
     },
     doc.selectionGrouped && {
       id: 'ungroup',
       label: c.ungroup,
       icon: Ungroup,
-      keys: ['Ctrl', 'Shift', 'G'],
+      keys: key('ungroup'),
       run: () => engine.ungroupSelection(),
     },
     selected && {
       id: 'front',
       label: c.front,
       icon: ArrowUpToLine,
-      keys: ['Ctrl', 'Shift', '↑'],
+      keys: key('toFront'),
       keywords: kw.layerUp,
       run: () => engine.arrangeSelection('front'),
     },
@@ -246,7 +249,7 @@ export function getCommands(): Command[] {
       id: 'back',
       label: c.back,
       icon: ArrowDownToLine,
-      keys: ['Ctrl', 'Shift', '↓'],
+      keys: key('toBack'),
       keywords: kw.layerDown,
       run: () => engine.arrangeSelection('back'),
     },
@@ -254,7 +257,7 @@ export function getCommands(): Command[] {
       id: 'flip-h',
       label: c.flipH,
       icon: FlipHorizontal2,
-      keys: ['Shift', 'H'],
+      keys: key('flipHorizontal'),
       keywords: kw.mirror,
       run: () => engine.flipSelection('horizontal'),
     },
@@ -262,7 +265,7 @@ export function getCommands(): Command[] {
       id: 'flip-v',
       label: c.flipV,
       icon: FlipVertical2,
-      keys: ['Shift', 'V'],
+      keys: key('flipVertical'),
       keywords: kw.mirror,
       run: () => engine.flipSelection('vertical'),
     },
@@ -270,7 +273,7 @@ export function getCommands(): Command[] {
       id: 'lock',
       label: doc.selectionLocked ? c.unlock : c.lock,
       icon: doc.selectionLocked ? LockOpen : Lock,
-      keys: ['Ctrl', 'Shift', 'L'],
+      keys: key('lock'),
       keywords: kw.lock,
       run: () => engine.toggleLockSelection(),
     },
@@ -288,7 +291,7 @@ export function getCommands(): Command[] {
       id: 'copy-png',
       label: c.copyPng,
       icon: ImageIcon,
-      keys: ['Shift', 'Alt', 'C'],
+      keys: key('copyAsImage'),
       keywords: kw.copyPng,
       run: () =>
         void engine
@@ -299,7 +302,7 @@ export function getCommands(): Command[] {
       id: 'delete',
       label: c.deleteSelection,
       icon: Trash2,
-      keys: [t().keys.delete],
+      keys: key('delete'),
       keywords: kw.delete,
       run: () => engine.deleteSelection(),
     },
@@ -323,21 +326,21 @@ export function getCommands(): Command[] {
       id: 'undo',
       label: c.undo,
       icon: Undo2,
-      keys: ['Ctrl', 'Z'],
+      keys: key('undo'),
       run: () => engine.undo(),
     },
     {
       id: 'redo',
       label: c.redo,
       icon: Redo2,
-      keys: ['Ctrl', 'Shift', 'Z'],
+      keys: key('redo'),
       run: () => engine.redo(),
     },
     {
       id: 'select-all',
       label: c.selectAll,
       icon: Frame,
-      keys: ['Ctrl', 'A'],
+      keys: key('selectAll'),
       run: () => {
         engine.selectAll();
         if (state.tool !== 'select' && state.tool !== 'lasso') state.setTool('select');
@@ -356,7 +359,7 @@ export function getCommands(): Command[] {
       id: 'fit',
       label: c.fit,
       icon: Frame,
-      keys: ['Shift', '1'],
+      keys: key('seeAll'),
       keywords: kw.fit,
       run: () => engine.zoomToFit(),
     },
@@ -364,7 +367,7 @@ export function getCommands(): Command[] {
       id: 'zoom-in',
       label: c.zoomIn,
       icon: ZoomIn,
-      keys: ['Ctrl', '+'],
+      keys: key('zoomIn'),
       keywords: kw.zoom,
       run: () => engine.zoomIn(),
     },
@@ -372,7 +375,7 @@ export function getCommands(): Command[] {
       id: 'zoom-out',
       label: c.zoomOut,
       icon: ZoomOut,
-      keys: ['Ctrl', '−'],
+      keys: key('zoomOut'),
       keywords: kw.zoom,
       run: () => engine.zoomOut(),
     },
@@ -449,7 +452,7 @@ export function getCommands(): Command[] {
       id: 'settings',
       label: c.settings,
       icon: Settings,
-      keys: ['Ctrl', ','],
+      keys: key('settings'),
       keywords: kw.settings,
       run: () => state.setSettingsOpen(true),
     },
@@ -464,7 +467,7 @@ export function getCommands(): Command[] {
       id: 'help',
       label: c.shortcuts,
       icon: Keyboard,
-      keys: ['?'],
+      keys: key('help'),
       keywords: kw.help,
       run: () => state.setHelpOpen(true, 'shortcuts'),
     },
