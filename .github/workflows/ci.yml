@@ -1,6 +1,7 @@
-# The checks of CLAUDE.md ("Verifying") on every push to develop or main and on every
-# pull request: the app's types, lint, tests and format, the desktop side (on Windows,
-# where its code runs) and the cloud server's rules against a real PocketBase.
+# The checks of CONTRIBUTING.md on every push to develop or main and on every pull
+# request: the app's types, lint, tests and format (of the whole repository), the desktop
+# side (on Windows, where its code runs), the website, and the cloud server's rules
+# against a real PocketBase.
 name: CI
 
 on:
@@ -24,7 +25,24 @@ jobs:
       - run: npx tsc --noEmit
       - run: npx eslint src
       - run: npx vitest run
-      - run: npx prettier --check src docs
+      - run: npx prettier --check .
+
+  website:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+      # The website's demo uses the app's code: both sets of dependencies.
+      - run: npm ci
+      - run: npm --prefix web ci
+      - run: npm --prefix web run check
+      - run: npm --prefix web run build
 
   desktop:
     runs-on: windows-latest
@@ -36,13 +54,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
         with:
           toolchain: stable
-          components: rustfmt
+          components: rustfmt, clippy
       - uses: swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           workspaces: src-tauri
       # Tauri embeds the built page (`frontendDist`): an empty folder is enough to check it.
       - run: mkdir ../dist
       - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test
 
   cloud:

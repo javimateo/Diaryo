@@ -16,6 +16,19 @@ a copy of the browser's profile can't read it. Private notes protect their text 
 whoever uses the app while it is open too. Neither protects the system's memory (swap,
 hibernation) or what the browser itself keeps besides the database.
 
+Known limits, on purpose:
+
+- **It is as strong as the password.** The lock record (`diaryo:lock`) and encrypted
+  backups carry the vault, so someone with a copy can try passwords offline, each one at
+  the cost of PBKDF2-SHA-256 with 600 000 iterations. The app asks for 8 characters at
+  least; a longer password is what keeps it safe.
+- **What was there before is not wiped.** Turning the encryption on rewrites every row,
+  but IndexedDB may keep the old, readable versions in its own files for a while, until
+  the browser compacts them. Backups made before stay readable too (the app says so).
+- **Confidential, not tamper-proof.** Plain rows are read in a diary that is encrypted
+  (a rewrite cut halfway needs it), so someone who can write to the disk could slip
+  readable rows in. They can't read what is encrypted.
+
 ## One diary password
 
 The password and the recovery code are the cloud's ones (`src/cloud/crypto.ts`): one
