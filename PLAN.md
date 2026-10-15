@@ -790,8 +790,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             `LockScreen` y `CopyPrivacyDialog`, que lo copiaban: sus piezas en
             `ui/passwordForm.tsx` (campos, error, botón), las reglas en `ui/passwordRules.ts`
             y la clave de recuperación en `ui/RecoveryCode.tsx`. Mismo HTML que antes.
-      - [ ] **Tests para la lógica de `ui/`**: 24 módulos y un test (la paleta, el sync,
-            el panel de propiedades, la privacidad, los archivos).
+      - [x] **Tests para la lógica de `ui/`**: había 24 módulos y un test. Ahora los tienen
+            el teclado, la paleta (qué ofrece según el estado), «Restaurar» de cada página
+            de Ajustes, el aviso de espacio y las utilidades (colores, tamaños, tiempos,
+            teclas). Fuera, a propósito: los hooks de React (piden jsdom y Testing Library)
+            y las acciones que solo encadenan capas que ya tienen sus tests.
       - [ ] **Partir `store/ui.ts`** (74 campos, lo que más cambia) por temas.
       - [ ] **Partir `Engine`** (2 200 líneas) poco a poco, al tocar cada parte.
       - [ ] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
