@@ -772,10 +772,12 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       - [x] **Filas sin cifrar en un diario cifrado**: se queda como límite documentado
             (`docs/privacy.md`): cambiarlo toca la parte más delicada del cifrado por algo
             (la integridad frente a quien escribe en el disco) que no se promete.
-      - [ ] **Borrar desde la pantalla de bloqueo**: dos clics, sin copia. Guardar una
-            copia por defecto.
-      - [ ] **Bases temporales huérfanas** (`diaryo-opening-*`) si se cierra la app a mitad
-            de abrir un diario bloqueado: limpiarlas al arrancar.
+      - [x] **Borrar desde la pantalla de bloqueo**: descartado. En el escritorio ya están
+            las copias diarias (cifradas) y «Empezar otro diario», que guarda una antes; en
+            la web es lo mismo que borrar los datos del sitio desde el navegador, y la
+            confirmación evita el borrado sin querer.
+      - [x] **Bases temporales huérfanas** (`diaryo-opening-*`) si se cierra la app a mitad
+            de abrir un diario bloqueado: se borran al arrancar (`dropOpeningLeftovers`).
       - [ ] **Prueba de carga** (`cloud/stress.k6.js`): lanzarla en local o en un servidor
             de pruebas, no en producción, y poner un límite al bucle de limpieza.
     - **Mantenibilidad**

@@ -692,6 +692,29 @@ export async function rewriteDiary(
 let instance: DiaryoDB | null = null;
 export const getDB = () => (instance ??= new DiaryoDB());
 
+/** The databases a locked diary's file is opened in: one each time, dropped right after. */
+const OPENING = 'diaryo-opening-';
+export const openingDB = () => new DiaryoDB(`${OPENING}${crypto.randomUUID()}`);
+
+/**
+ * Drops the ones left behind (the app was closed while opening such a file): they hold
+ * that diary's rows, encrypted, and would only take space. One still in use elsewhere
+ * goes once it is closed.
+ */
+export async function dropOpeningLeftovers() {
+  const all = (await indexedDB.databases?.().catch(() => [])) ?? [];
+  const names = all.map((info) => info.name ?? '').filter((name) => name.startsWith(OPENING));
+  await Promise.all(
+    names.map(
+      (name) =>
+        new Promise<void>((resolve) => {
+          const request = indexedDB.deleteDatabase(name);
+          request.onsuccess = request.onerror = request.onblocked = () => resolve();
+        }),
+    ),
+  );
+}
+
 /** The diary's tables (a backup's), as IndexedDB keeps them: sealed rows stay sealed. */
 export const RAW_TABLES = ['pages', 'elements', 'assets', 'fonts'] as const;
 

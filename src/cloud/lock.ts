@@ -1,10 +1,10 @@
 import {
   countPrivateNotes,
   deskAssetIds,
-  DiaryoDB,
   dumpDiary,
   getDB,
   matchDesk,
+  openingDB,
   privateNoteIds,
   readRawTables,
   releasePrivateNotes,
@@ -528,7 +528,7 @@ export async function openSealedCopy(
  */
 async function openWithKey(backup: SealedBackup, key: Uint8Array<ArrayBuffer>): Promise<string> {
   if ('data' in backup) return openSealed(backup, key);
-  const db = new DiaryoDB(`diaryo-opening-${crypto.randomUUID()}`);
+  const db = openingDB();
   try {
     await writeRawTables(db, backup.rows);
     db.sealing.key = key;

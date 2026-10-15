@@ -6,6 +6,7 @@ import { App } from './App';
 import { lockInPlace, startLock } from './cloud/lock';
 import { useLock } from './cloud/lockState';
 import { call, isDesktop } from './desktop/tauri';
+import { dropOpeningLeftovers } from './storage/db';
 import { DeskLayer } from './ui/desktop/DeskLayer';
 import { MiniDiary } from './ui/desktop/MiniDiary';
 import { LockScreen } from './ui/LockScreen';
@@ -19,6 +20,7 @@ if (deskLayer) document.documentElement.toggleAttribute('data-desk-layer', true)
 // without starting again.
 startLock();
 if (deskLayer) lockInPlace();
+void dropOpeningLeftovers();
 
 /**
  * The diary encrypted here and locked: nothing of it loads until it is opened. The desk
