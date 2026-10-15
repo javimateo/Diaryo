@@ -285,19 +285,28 @@ async function shrinkPendingImages(db: DiaryoDB) {
 const WARN_AT = [0.8, 0.95];
 const warnedKey = (account: string) => `diaryo:space-warned:${account}`;
 
+/**
+ * Whether to warn about the space used (`share` of the quota), given the level warned last
+ * (0: none): the level to remember from now on, and whether to warn now. Full, it doesn't
+ * (the settings and the cloud's colour say so already).
+ */
+export function spaceWarning(share: number, warned: number): { warned: number; warn: boolean } {
+  const reached = WARN_AT.filter((level) => share >= level).pop() ?? 0;
+  // Well below the first level again: it will warn again next time.
+  if (reached === 0 && warned > 0 && share < WARN_AT[0] - 0.1) return { warned: 0, warn: false };
+  if (reached <= warned || share >= 1) return { warned, warn: false };
+  return { warned: reached, warn: true };
+}
+
 /** Warns once when the space goes past 80 % and past 95 %. */
 function warnAboutSpace({ used, quota }: { used: number; quota: number }) {
   const account = useAccount.getState().account;
   if (!account || quota <= 0) return;
   const share = used / quota;
-  const reached = WARN_AT.filter((level) => share >= level).pop() ?? 0;
-  const warned = Number(readText(warnedKey(account.id)) ?? 0);
-  // Below the first level again: it will warn again next time.
-  if (reached === 0 && warned > 0 && share < WARN_AT[0] - 0.1) {
-    return writeText(warnedKey(account.id), '0');
-  }
-  if (reached <= warned || share >= 1) return;
-  writeText(warnedKey(account.id), String(reached));
+  const before = Number(readText(warnedKey(account.id)) ?? 0);
+  const { warned, warn } = spaceWarning(share, before);
+  if (warned !== before) writeText(warnedKey(account.id), String(warned));
+  if (!warn) return;
   useUI.getState().showToast(t().sync.spaceWarning(Math.round(share * 100)), {
     label: t().sync.seeSpace,
     run: () => useUI.getState().setSettingsOpen(true, 'account'),

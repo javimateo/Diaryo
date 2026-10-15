@@ -1,16 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-// What the store and the handler need from a browser, before they load.
-vi.hoisted(() => {
-  globalThis.matchMedia = (() => ({
-    matches: false,
-    addEventListener: () => {},
-  })) as unknown as typeof matchMedia;
-  globalThis.HTMLElement = class {} as unknown as typeof HTMLElement;
-  globalThis.document = {
-    documentElement: { dataset: {}, style: {}, setAttribute: () => {}, toggleAttribute: () => {} },
-  } as unknown as Document;
-});
+import './testBrowser';
 
 vi.mock('./diaryActions', () => ({
   addPage: vi.fn(),
