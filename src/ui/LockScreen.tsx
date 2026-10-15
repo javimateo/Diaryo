@@ -47,6 +47,8 @@ export function LockScreen() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [erasing, setErasing] = useState(false);
+  /** The locked diary's file was downloaded (web): erasing waits for the user to say so. */
+  const [downloaded, setDownloaded] = useState(false);
   const email = useAccount((s) => s.account?.email ?? null);
   const cover = useCoverPicture();
 
@@ -152,9 +154,29 @@ export function LockScreen() {
       </>
     );
   } else if (view === 'startOver') {
+    // On the desktop the copy is written before going on. On the web it is a download,
+    // which the browser may still be saving (or asking where): the diary is only erased
+    // once the user says the file is there.
+    const desktop = isDesktop();
+    const keep = (then?: () => Promise<void>) => {
+      setBusy(true);
+      setError('');
+      keepLockedDiary()
+        .then(async () => {
+          if (then) await then();
+          else setDownloaded(true);
+          setBusy(false);
+        })
+        .catch((e: unknown) => {
+          console.error("Couldn't keep the locked diary", e);
+          setError(l.startOverFailed);
+          setBusy(false);
+        });
+    };
+    const waiting = !desktop && downloaded;
     body = (
       <>
-        <p className="account-text">{l.startOverText(isDesktop())}</p>
+        <p className="account-text">{waiting ? l.startOverCheck : l.startOverText(desktop)}</p>
         <p className="account-text">{l.startOverOpen}</p>
         {error && (
           <p className="account-error" role="alert">
@@ -165,22 +187,17 @@ export function LockScreen() {
           type="button"
           className="account-primary"
           disabled={busy}
-          onClick={() => {
-            setBusy(true);
-            setError('');
-            keepLockedDiary()
-              .then(() => eraseDiary())
-              .catch((e: unknown) => {
-                console.error("Couldn't keep the locked diary", e);
-                setError(l.startOverFailed);
-                setBusy(false);
-              });
-          }}
+          onClick={() => (waiting ? void eraseDiary() : keep(desktop ? eraseDiary : undefined))}
         >
           {busy && <Loader2 size={15} strokeWidth={2} className="account-spin" aria-hidden />}
-          {l.startOverButton}
+          {waiting ? l.startOverConfirm : desktop ? l.startOverButton : l.startOverDownload}
         </button>
         <div className="account-links">
+          {waiting && (
+            <button type="button" className="account-link" disabled={busy} onClick={() => keep()}>
+              {l.startOverAgain}
+            </button>
+          )}
           <button type="button" className="account-link" onClick={() => go('options')}>
             {v.back}
           </button>

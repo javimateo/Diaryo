@@ -290,6 +290,11 @@ export const en: Messages = {
     startOverOpen:
       'Open it whenever you like with “Open a copy” and its password or recovery code.',
     startOverButton: 'Keep it and start another',
+    startOverDownload: 'Download the diary',
+    startOverCheck:
+      'Check that the file is in your downloads: going on deletes this diary from here.',
+    startOverConfirm: 'I have it: start another',
+    startOverAgain: 'Download it again',
     startOverFailed: 'The diary couldn’t be kept, so nothing was deleted.',
     ownVaultText:
       'Your diary already has a password on this device: the cloud will use the same one, with the same recovery code.',

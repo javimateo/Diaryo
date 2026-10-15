@@ -300,6 +300,11 @@ export const es = {
     startOverOpen:
       'Se abre cuando quieras con «Abrir una copia» y su contraseña o su clave de recuperación.',
     startOverButton: 'Guardar y empezar otro',
+    startOverDownload: 'Descargar el diario',
+    startOverCheck:
+      'Comprueba que el archivo está en tus descargas: al seguir, este diario se borra de aquí.',
+    startOverConfirm: 'Ya lo tengo: empezar otro',
+    startOverAgain: 'Descargarlo otra vez',
     startOverFailed: 'No se ha podido guardar el diario, así que no se ha borrado nada.',
     ownVaultText:
       'Tu diario ya tiene contraseña en este dispositivo: la nube usará la misma, con la misma clave de recuperación.',
