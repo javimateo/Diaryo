@@ -51,6 +51,10 @@ describe('calendarFile', () => {
   it('escapes the text and folds long lines', () => {
     const file = calendarFile([item('Comprar pan, leche; y más\\ cosas')], NOW);
     expect(field(file, 'SUMMARY')).toBe('Comprar pan\\, leche\\; y más\\\\ cosas');
+    // Every kind of line break, a lone CR too: none ends the line.
+    const breaks = calendarFile([item('uno\r\ndos\ntres\rDTSTART:19700101')], NOW);
+    expect(field(breaks, 'SUMMARY')).toBe('uno\\ndos\\ntres\\nDTSTART:19700101');
+    expect(breaks.match(/DTSTART/g)).toHaveLength(2);
     const long = calendarFile([item('ñ'.repeat(80))], NOW);
     const lines = long.split('\r\n');
     const summary = lines.findIndex((line) => line.startsWith('SUMMARY:'));

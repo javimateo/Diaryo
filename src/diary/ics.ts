@@ -29,9 +29,12 @@ function at(day: string, minutes: number): number {
   return date.getTime();
 }
 
-/** Commas, semicolons, backslashes and line breaks are escaped in a text value. */
+/**
+ * Commas, semicolons, backslashes and line breaks are escaped in a text value (any kind of
+ * break: a lone CR ends the line for some apps).
+ */
 const escapeText = (text: string) =>
-  text.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\r?\n/g, '\\n');
+  text.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\r\n|\r|\n/g, '\\n');
 
 /** Lines longer than 75 bytes go on in the next one, which starts with a space. */
 function fold(line: string): string {

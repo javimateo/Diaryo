@@ -763,8 +763,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       - [x] **Los avisos en el historial de Windows**: guardaba su texto aunque el diario
             estuviera cifrado. Ahora, con «Todo el diario», los avisos salen sin palabras
             («Tienes un recordatorio»), y Ajustes → Recordatorios lo dice.
-      - [ ] **El `.ics` en la carpeta temporal**: no se borra nunca; y `ics.ts` no escapa
-            un `\r` suelto.
+      - [x] **El `.ics` en la carpeta temporal**: no se borraba nunca. Ahora se borra a los
+            10 minutos (y al arrancar, los que quedaran); y `ics.ts` escapa también un
+            `\r` suelto.
       - [ ] **Tope a las iteraciones de PBKDF2** que vienen en un archivo cifrado (uno
             manipulado puede colgar la pestaña).
       - [ ] **Filas sin cifrar en un diario cifrado**: aceptarlas solo mientras se reescribe.
