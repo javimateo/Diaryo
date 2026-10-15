@@ -745,6 +745,53 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           la web, la página «Ayuda» (`/ayuda/` y `/en/help/`), en el menú y el pie, con lo
           mismo: los textos y las listas salen de `src/ui/helpContent.ts`, así que la app
           y la web dicen siempre lo mismo.
+  - [ ] **H. Revisión del código** (octubre de 2026): lo que encontró la revisión de
+        seguridad, privacidad y mantenibilidad, de más a menos urgente.
+    - **Seguridad, privacidad y datos**
+      - [x] **Empezar otro diario en la web**: descargaba el archivo y borraba el diario
+            enseguida; si el navegador aún lo estaba guardando, se perdían los dos. Ahora
+            se borra solo cuando el usuario dice que ya tiene el archivo (y puede bajarlo
+            otra vez).
+      - [ ] **La mesa sin cifrar en la web**: con «Todo el diario», la mesa, sus imágenes
+            y las fuentes quedan en claro por defecto (`applyRecord` en `lock.ts`). Solo
+            sirve en el escritorio, y en la web no hay opción para cambiarlo.
+      - [ ] **Copias legibles de antes del cifrado**: al activarlo, las copias diarias
+            legibles siguen en la carpeta hasta 14 días y las de «antes de abrir», siempre.
+            Ofrecer cifrarlas o borrarlas.
+      - [ ] **Los avisos en el historial de Windows**: guarda su texto aunque el diario
+            esté cifrado. Con «Todo el diario», avisos sin palabras; y corregir el
+            comentario de `reminders.rs`.
+      - [ ] **El `.ics` en la carpeta temporal**: no se borra nunca; y `ics.ts` no escapa
+            un `\r` suelto.
+      - [ ] **Tope a las iteraciones de PBKDF2** que vienen en un archivo cifrado (uno
+            manipulado puede colgar la pestaña).
+      - [ ] **Filas sin cifrar en un diario cifrado**: aceptarlas solo mientras se reescribe.
+      - [ ] **Borrar desde la pantalla de bloqueo**: dos clics, sin copia. Guardar una
+            copia por defecto.
+      - [ ] **Bases temporales huérfanas** (`diaryo-opening-*`) si se cierra la app a mitad
+            de abrir un diario bloqueado: limpiarlas al arrancar.
+      - [ ] **Prueba de carga** (`cloud/stress.k6.js`): lanzarla en local o en un servidor
+            de pruebas, no en producción, y poner un límite al bucle de limpieza.
+    - **Mantenibilidad**
+      - [ ] **Los atajos en un solo sitio**: la paleta (`commands.ts`) y el teclado
+            (`useShortcuts.ts`, 109 ramas) los repiten; una tabla para todo, la ayuda
+            incluida.
+      - [ ] **Un formulario de contraseña** compartido por `LockDialog`, `VaultDialog`,
+            `LockScreen` y `CopyPrivacyDialog`, que hoy lo copian.
+      - [ ] **Tests para la lógica de `ui/`**: 24 módulos y un test (la paleta, el sync,
+            el panel de propiedades, la privacidad, los archivos).
+      - [ ] **Partir `store/ui.ts`** (74 campos, lo que más cambia) por temas.
+      - [ ] **Partir `Engine`** (2 200 líneas) poco a poco, al tocar cada parte.
+      - [ ] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
+            varios; los merge con `-m` o `--no-edit` (uno salió con la plantilla de git).
+    - **Herramientas y orden**
+      - [ ] **CI completa**: `prettier --check .`, `cargo clippy` y `astro check`, como
+            pide CONTRIBUTING (por eso entró `stress.k6.js` sin formatear).
+      - [ ] **Formatear `cloud/stress.k6.js`**.
+      - [ ] **Comentarios de `Cargo.toml` en inglés**.
+      - [ ] **`cloud/google-logo.png`**, sin subir desde hace semanas: subirlo o quitarlo.
+      - [ ] **Límites en `docs/privacy.md`**: restos en IndexedDB tras activar el cifrado,
+            y que la protección en disco depende de la fuerza de la contraseña.
 
 Tras la fase 5 ya es una app usable para tomar notas.
 
