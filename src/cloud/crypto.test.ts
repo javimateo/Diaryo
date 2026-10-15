@@ -64,6 +64,18 @@ describe('vault', () => {
     await expect(unlockWithPassword(vault, 'otra')).rejects.toBeInstanceOf(WrongSecretError);
   });
 
+  it('refuses at once a vault that asks for absurd iterations (from a tampered file)', async () => {
+    const { vault } = await createVault('una contraseña', FAST);
+    for (const iterations of [2 ** 31 - 1, 0, 1.5, Number.NaN]) {
+      const tampered = { ...vault, kdf: { ...vault.kdf, iterations } };
+      const start = Date.now();
+      await expect(unlockWithPassword(tampered, 'una contraseña')).rejects.toBeInstanceOf(
+        WrongSecretError,
+      );
+      expect(Date.now() - start).toBeLessThan(1000);
+    }
+  });
+
   it('recovers with the code and sets a new password', async () => {
     const { vault, keys, recoveryCode } = await createVault('olvidada', FAST);
     const sealed = await encrypt(keys.enc, text('secreto'));
