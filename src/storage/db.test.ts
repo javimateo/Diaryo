@@ -6,12 +6,14 @@ import {
   deletePage,
   DESK_INFO,
   DiaryoDB,
+  dropOpeningLeftovers,
   dumpDiary,
   listLinks,
   listPages,
   listTexts,
   loadPage,
   mergeDiary,
+  openingDB,
   pruneEmptyPages,
   replaceDiary,
   restorePage,
@@ -370,6 +372,22 @@ describe('diary backups', () => {
     expect(desk.find((el) => el.id === 'a')?.x).toBe(99);
     // The same backup again: there is nothing new to merge.
     expect(await mergeDiary(db, copy)).toEqual([]);
+  });
+});
+
+describe('databases left behind', () => {
+  it('drops those a locked diary was being opened in, and nothing else', async () => {
+    const left = openingDB();
+    await left.open();
+    left.close();
+    const other = new DiaryoDB('test-keeps');
+    await other.open();
+    other.close();
+    await dropOpeningLeftovers();
+    const names = (await indexedDB.databases()).map((d) => d.name);
+    expect(names).not.toContain(left.name);
+    expect(names).toContain('test-keeps');
+    await Dexie.delete('test-keeps');
   });
 });
 
