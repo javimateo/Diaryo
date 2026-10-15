@@ -778,8 +778,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             confirmación evita el borrado sin querer.
       - [x] **Bases temporales huérfanas** (`diaryo-opening-*`) si se cierra la app a mitad
             de abrir un diario bloqueado: se borran al arrancar (`dropOpeningLeftovers`).
-      - [ ] **Prueba de carga** (`cloud/stress.k6.js`): lanzarla en local o en un servidor
-            de pruebas, no en producción, y poner un límite al bucle de limpieza.
+      - [x] **Prueba de carga** (`cloud/stress.k6.js`): el ejemplo apunta a un servidor
+            local y explica por qué no a producción; la limpieza se para (y lo dice) si una
+            petición falla, en vez de insistir sin fin.
     - **Mantenibilidad**
       - [ ] **Los atajos en un solo sitio**: la paleta (`commands.ts`) y el teclado
             (`useShortcuts.ts`, 109 ramas) los repiten; una tabla para todo, la ayuda
