@@ -760,9 +760,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             legibles siguen en la carpeta hasta 14 días y las de «antes de abrir», siempre.
             No las reescribimos (las hace la app, pero borrarlas es cosa del usuario): al
             cifrar en el escritorio, un aviso lo dice y ofrece abrir la carpeta.
-      - [ ] **Los avisos en el historial de Windows**: guarda su texto aunque el diario
-            esté cifrado. Con «Todo el diario», avisos sin palabras; y corregir el
-            comentario de `reminders.rs`.
+      - [x] **Los avisos en el historial de Windows**: guardaba su texto aunque el diario
+            estuviera cifrado. Ahora, con «Todo el diario», los avisos salen sin palabras
+            («Tienes un recordatorio»), y Ajustes → Recordatorios lo dice.
       - [ ] **El `.ics` en la carpeta temporal**: no se borra nunca; y `ics.ts` no escapa
             un `\r` suelto.
       - [ ] **Tope a las iteraciones de PBKDF2** que vienen en un archivo cifrado (uno

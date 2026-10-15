@@ -1297,7 +1297,7 @@ export const es = {
     group: 'Recordatorios',
     enabled: 'Avisar de tareas y citas',
     enabledHint:
-      'Una notificación de Windows a su hora, aunque diaryo esté escondido en la bandeja. Sin hora, a las 9:00.',
+      'Una notificación de Windows a su hora, aunque diaryo esté escondido en la bandeja. Sin hora, a las 9:00. Con todo el diario cifrado, sin su texto (Windows guarda las notificaciones).',
     when: 'Cuándo avisar',
     whenHint: 'A su hora o ese tiempo antes. Las tareas hechas no avisan.',
     /** How long before its time. */
@@ -1305,7 +1305,7 @@ export const es = {
     /** "Hoy a las 10:00", "Mañana, todo el día". */
     atTime: (day: string, time: string) => `${day} a las ${time}`,
     allDay: (day: string) => `${day}, todo el día`,
-    /** From a private note or with the diary locked: without its words. */
+    /** From a private note or with the whole diary encrypted: without its words. */
     hidden: 'Tienes un recordatorio',
     openToSee: 'Ábrelo en diaryo para verlo',
     missed: (n: number) =>
