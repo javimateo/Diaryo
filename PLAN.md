@@ -769,7 +769,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       - [x] **Tope a las iteraciones de PBKDF2** que vienen en un archivo cifrado (uno
             manipulado podía colgar la pestaña): como mucho 10 millones (hoy, 600 000);
             fuera de eso, como una contraseña equivocada.
-      - [ ] **Filas sin cifrar en un diario cifrado**: aceptarlas solo mientras se reescribe.
+      - [x] **Filas sin cifrar en un diario cifrado**: se queda como límite documentado
+            (`docs/privacy.md`): cambiarlo toca la parte más delicada del cifrado por algo
+            (la integridad frente a quien escribe en el disco) que no se promete.
       - [ ] **Borrar desde la pantalla de bloqueo**: dos clics, sin copia. Guardar una
             copia por defecto.
       - [ ] **Bases temporales huérfanas** (`diaryo-opening-*`) si se cierra la app a mitad
@@ -789,13 +791,14 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       - [ ] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
             varios; los merge con `-m` o `--no-edit` (uno salió con la plantilla de git).
     - **Herramientas y orden**
-      - [ ] **CI completa**: `prettier --check .`, `cargo clippy` y `astro check`, como
-            pide CONTRIBUTING (por eso entró `stress.k6.js` sin formatear).
-      - [ ] **Formatear `cloud/stress.k6.js`**.
-      - [ ] **Comentarios de `Cargo.toml` en inglés**.
+      - [x] **CI completa**: `prettier --check .`, `cargo clippy` (avisos como errores) y
+            la web (`astro check` y el build), como pide CONTRIBUTING.
+      - [x] **Formatear `cloud/stress.k6.js`**.
+      - [x] **Comentarios de `Cargo.toml` en inglés**.
       - [ ] **`cloud/google-logo.png`**, sin subir desde hace semanas: subirlo o quitarlo.
-      - [ ] **Límites en `docs/privacy.md`**: restos en IndexedDB tras activar el cifrado,
-            y que la protección en disco depende de la fuerza de la contraseña.
+      - [x] **Límites en `docs/privacy.md`**: restos en IndexedDB tras activar el cifrado,
+            que la protección en disco depende de la fuerza de la contraseña, y que no
+            protege frente a quien escribe en el disco.
 
 Tras la fase 5 ya es una app usable para tomar notas.
 

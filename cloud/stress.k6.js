@@ -111,7 +111,9 @@ export function teardown({ run }) {
     json(),
   );
   if (admin.status !== 200) {
-    console.error(`Couldn't sign in as superuser: delete the accounts starting with ${run} by hand`);
+    console.error(
+      `Couldn't sign in as superuser: delete the accounts starting with ${run} by hand`,
+    );
     return;
   }
   const token = admin.json('token');
@@ -122,6 +124,7 @@ export function teardown({ run }) {
     );
     const users = page.status === 200 ? page.json('items') : [];
     if (users.length === 0) break;
-    for (const user of users) http.del(`${API}/collections/users/records/${user.id}`, null, json(token));
+    for (const user of users)
+      http.del(`${API}/collections/users/records/${user.id}`, null, json(token));
   }
 }
