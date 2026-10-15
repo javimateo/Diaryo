@@ -183,7 +183,10 @@ The desk on the Windows desktop is another window (see [architecture](architectu
   opened": the desk waits for the password, as the rest). The lock record says which
   (`desk`), and each time the diary is unlocked, or that setting changes, `matchDesk`
   writes again the rows that aren't as they should (an image that left the desk is
-  sealed again then).
+  sealed again then). Only in the desktop app: on the web nothing shows the desk while
+  the diary is locked, so it is always encrypted with the rest (`deskSealed` in
+  `src/cloud/lockState.ts`); a web diary encrypted before that seals its desk the next
+  time it is unlocked.
 - **Private notes on the desktop**: with their padlock, or not drawn there at all
   (Settings → Desktop). Not drawn, they aren't loaded in the desk's window (nor touched:
   only changes are saved); in the diary they always show with their padlock.

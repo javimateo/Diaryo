@@ -529,6 +529,8 @@ describe('private notes', () => {
 
 describe('the desk on the Windows desktop, with the whole diary encrypted', () => {
   const desk = { id: 'desk' };
+  // The desktop app (only there can the desk stay out of the encryption).
+  beforeEach(() => vi.stubGlobal('window', { __TAURI_INTERNALS__: {} }));
 
   it('shows while the diary is locked (out of its encryption), and can be used', async () => {
     let a = await start();
@@ -559,6 +561,34 @@ describe('the desk on the Windows desktop, with the whole diary encrypted', () =
 
     a = await start();
     expect(await a.read('desk')).toBe('en la mesa');
+  });
+});
+
+describe('the desk on the web, with the whole diary encrypted', () => {
+  const desk = { id: 'desk' };
+
+  it('is encrypted with the rest (nothing shows it while locked)', async () => {
+    let a = await start();
+    await a.write('en la mesa', desk);
+    await a.lock.enableLock('contraseña larga', 'all');
+    expect(a.state.deskSealed()).toBe(true);
+
+    a = await start();
+    await expect(a.read('desk')).rejects.toThrow('locked');
+  });
+
+  it('a desk left in the clear before is encrypted when the diary is unlocked', async () => {
+    vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
+    let a = await start();
+    await a.write('en la mesa', desk);
+    await a.lock.enableLock('contraseña larga', 'all');
+    // As a web diary encrypted before this fix had it: the desk out.
+    vi.stubGlobal('window', undefined);
+
+    a = await start();
+    await a.lock.unlockDiary('contraseña larga');
+    a = await start();
+    await expect(a.read('desk')).rejects.toThrow('locked');
   });
 });
 

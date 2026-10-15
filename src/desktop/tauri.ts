@@ -3,8 +3,7 @@
  * modules are imported only when needed.
  */
 
-/** Is it the desktop app? */
-export const isDesktop = () => '__TAURI_INTERNALS__' in window;
+export { isDesktop } from '../lib/platform';
 
 /** Calls a command of the desktop side (in Rust). */
 export async function call<T = void>(command: string, args?: Record<string, unknown>): Promise<T> {
