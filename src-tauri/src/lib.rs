@@ -62,6 +62,7 @@ pub fn run() {
             let _ = shortcuts::register(&handle, Hotkey::Widget, &accel);
             let _ = shortcuts::register(&handle, Hotkey::Desk, &desk_accel);
             reminders::start(&handle);
+            commands::remove_calendar_files(&std::env::temp_dir());
             tray::build(&handle)?;
             // The desk on the desktop, behind the windows.
             desk_layer::create(&handle)?;

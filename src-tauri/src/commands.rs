@@ -218,8 +218,14 @@ pub fn show_reminder(app: AppHandle, reminder: reminders::Reminder) {
     reminders::show_now(&app, reminder);
 }
 
+/// How long the calendar app has to read the `.ics` file before it is deleted (it may wait
+/// for the user to confirm the import).
+const CALENDAR_FILE_LIFE: std::time::Duration = std::time::Duration::from_secs(10 * 60);
+
 /// Opens tasks and appointments in the calendar app (the `.ics` file, in the temporary
-/// folder, opened with the app Windows has for it).
+/// folder, opened with the app Windows has for it). The file carries their text, so it
+/// doesn't stay there: it is deleted a while later (and at start, if diaryo was closed
+/// meanwhile, see `remove_calendar_files`).
 #[tauri::command]
 pub fn open_calendar_file(app: AppHandle, contents: String) -> Result<(), String> {
     let stamp = std::time::SystemTime::now()
@@ -227,7 +233,56 @@ pub fn open_calendar_file(app: AppHandle, contents: String) -> Result<(), String
         .map_or(0, |d| d.as_millis());
     let path = std::env::temp_dir().join(format!("diaryo-{stamp}.ics"));
     std::fs::write(&path, contents).map_err(|e| e.to_string())?;
-    app.opener()
+    let opened = app
+        .opener()
         .open_path(path.display().to_string(), None::<&str>)
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string());
+    std::thread::spawn(move || {
+        std::thread::sleep(CALENDAR_FILE_LIFE);
+        let _ = std::fs::remove_file(&path);
+    });
+    opened
+}
+
+/// Deletes the calendar files left in a folder (the temporary one: diaryo was closed
+/// before their time was up).
+pub fn remove_calendar_files(dir: &std::path::Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name.starts_with("diaryo-") && name.ends_with(".ics") {
+            let _ = std::fs::remove_file(entry.path());
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn removes_only_the_calendar_files() {
+        let dir = std::env::temp_dir().join(format!("diaryo-test-ics-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        for name in [
+            "diaryo-1.ics",
+            "diaryo-2.ics",
+            "other.ics",
+            "diaryo-2026-10-15.diaryo",
+        ] {
+            std::fs::write(dir.join(name), "x").unwrap();
+        }
+        remove_calendar_files(&dir);
+        let mut left: Vec<String> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().into_string().unwrap())
+            .collect();
+        left.sort();
+        assert_eq!(left, ["diaryo-2026-10-15.diaryo", "other.ics"]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
