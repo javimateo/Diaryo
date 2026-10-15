@@ -1,14 +1,11 @@
-import { FileLock2, FileText, Loader2, X } from 'lucide-react';
+import { FileLock2, FileText, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { WrongSecretError } from '../cloud/crypto';
 import { openSealedCopy } from '../cloud/lock';
 import { useUI, type CopyPrivacy } from '../store/ui';
 import { openCopyText, saveCopy } from './fileActions';
-import { PasswordField } from './PasswordField';
+import { FormError, phraseFields, RecoveryCodeField, SubmitButton } from './passwordForm';
 import { useT } from './useT';
-
-/** The diary password allows long phrases. */
-const PHRASE_MAX = 200;
 
 /**
  * With the diary encrypted on this device: a copy is saved encrypted (the default) or
@@ -100,6 +97,7 @@ function OpenSealed({ copy }: { copy: Extract<CopyPrivacy, { kind: 'open' }> }) 
   const [value, setValue] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const field = phraseFields(() => setError(''));
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -128,44 +126,18 @@ function OpenSealed({ copy }: { copy: Extract<CopyPrivacy, { kind: 'open' }> }) 
       <p className="account-text">{l.openText}</p>
       <form className="account-form" onSubmit={submit}>
         {withCode ? (
-          <label className="account-field">
-            <span>{v.code}</span>
-            <input
-              className="vault-code-input"
-              autoFocus
-              autoComplete="off"
-              autoCapitalize="characters"
-              spellCheck={false}
-              placeholder="XXXX-XXXX-XXXX-…"
-              value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
-                setError('');
-              }}
-            />
-          </label>
-        ) : (
-          <PasswordField
-            label={v.password}
-            autoFocus
-            autoComplete="current-password"
-            maxLength={PHRASE_MAX}
+          <RecoveryCodeField
             value={value}
             onChange={(next) => {
               setValue(next);
               setError('');
             }}
           />
+        ) : (
+          field(v.password, value, setValue, { autoFocus: true, autoComplete: 'current-password' })
         )}
-        {error && (
-          <p className="account-error" role="alert">
-            {error}
-          </p>
-        )}
-        <button type="submit" className="account-primary" disabled={busy}>
-          {busy && <Loader2 size={15} strokeWidth={2} className="account-spin" aria-hidden />}
-          {l.open}
-        </button>
+        <FormError message={error} />
+        <SubmitButton busy={busy}>{l.open}</SubmitButton>
       </form>
       <div className="account-links">
         <button

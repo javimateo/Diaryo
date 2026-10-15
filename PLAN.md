@@ -785,8 +785,10 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       - [ ] **Los atajos en un solo sitio**: la paleta (`commands.ts`) y el teclado
             (`useShortcuts.ts`, 109 ramas) los repiten; una tabla para todo, la ayuda
             incluida.
-      - [ ] **Un formulario de contraseña** compartido por `LockDialog`, `VaultDialog`,
-            `LockScreen` y `CopyPrivacyDialog`, que hoy lo copian.
+      - [x] **Un formulario de contraseña** compartido por `LockDialog`, `VaultDialog`,
+            `LockScreen` y `CopyPrivacyDialog`, que lo copiaban: sus piezas en
+            `ui/passwordForm.tsx` (campos, error, botón), las reglas en `ui/passwordRules.ts`
+            y la clave de recuperación en `ui/RecoveryCode.tsx`. Mismo HTML que antes.
       - [ ] **Tests para la lógica de `ui/`**: 24 módulos y un test (la paleta, el sync,
             el panel de propiedades, la privacidad, los archivos).
       - [ ] **Partir `store/ui.ts`** (74 campos, lo que más cambia) por temas.

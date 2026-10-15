@@ -1,15 +1,6 @@
-import {
-  Copy,
-  Download,
-  KeyRound,
-  Loader2,
-  LockKeyhole,
-  LockKeyholeOpen,
-  Printer,
-  X,
-} from 'lucide-react';
+import { KeyRound, LockKeyhole, LockKeyholeOpen, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { accountError, PASSWORD_MIN, useAccount } from '../cloud/account';
+import { accountError } from '../cloud/account';
 import { WrongSecretError } from '../cloud/crypto';
 import {
   changeVaultPassword,
@@ -23,15 +14,12 @@ import {
   VaultChangedError,
   VaultExistsError,
 } from '../cloud/vault';
-import { locale } from '../i18n';
 import { useUI, type VaultDialogRequest, type VaultView } from '../store/ui';
 import { syncNow } from './cloudSync';
-import { saveFile } from './fileActions';
-import { PasswordField } from './PasswordField';
+import { FormError, phraseFields, RecoveryCodeField, SubmitButton } from './passwordForm';
+import { newPasswordError } from './passwordRules';
+import { RecoveryCode } from './RecoveryCode';
 import { useT } from './useT';
-
-/** The diary password allows long phrases. */
-const PHRASE_MAX = 200;
 
 /**
  * The cloud diary's password and recovery code: setting them up on the first device,
@@ -106,10 +94,8 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
     e.preventDefault();
     if (busy) return;
     const choosing = (view === 'create' && !ownVault) || view === 'recover' || view === 'change';
-    if (choosing && password.length < PASSWORD_MIN) {
-      return setError(t.account.errors.shortPassword(PASSWORD_MIN));
-    }
-    if (choosing && password !== repeat) return setError(v.errors.mismatch);
+    const wrong = choosing && newPasswordError(password, repeat, t);
+    if (wrong) return setError(wrong);
     if (view === 'create' && ownVault) {
       void run(async () => {
         await setUpVault(password);
@@ -170,25 +156,7 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
     newCode: <KeyRound size={18} strokeWidth={1.75} aria-hidden />,
   };
 
-  const field = (
-    label: string,
-    value: string,
-    onChange: (value: string) => void,
-    options: { hint?: string; autoFocus?: boolean; autoComplete?: string } = {},
-  ) => (
-    <PasswordField
-      label={label}
-      hint={options.hint}
-      autoFocus={options.autoFocus}
-      autoComplete={options.autoComplete ?? 'new-password'}
-      maxLength={PHRASE_MAX}
-      value={value}
-      onChange={(next) => {
-        onChange(next);
-        setError('');
-      }}
-    />
-  );
+  const field = phraseFields(() => setError(''));
 
   let body: ReactNode;
   if (shownCode) {
@@ -218,22 +186,13 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
         )}
         <form className="account-form" onSubmit={submit}>
           {view === 'recover' && (
-            <label className="account-field">
-              <span>{v.code}</span>
-              <input
-                className="vault-code-input"
-                autoFocus
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                placeholder="XXXX-XXXX-XXXX-…"
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  setError('');
-                }}
-              />
-            </label>
+            <RecoveryCodeField
+              value={code}
+              onChange={(next) => {
+                setCode(next);
+                setError('');
+              }}
+            />
           )}
           {view === 'change' &&
             field(v.current, current, setCurrent, {
@@ -254,15 +213,8 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
               {field(v.repeat, repeat, setRepeat)}
             </>
           )}
-          {error && (
-            <p className="account-error" role="alert">
-              {error}
-            </p>
-          )}
-          <button type="submit" className="account-primary" disabled={busy}>
-            {busy && <Loader2 size={15} strokeWidth={2} className="account-spin" aria-hidden />}
-            {request.once ? v.onceSubmit : submits[view]}
-          </button>
+          <FormError message={error} />
+          <SubmitButton busy={busy}>{request.once ? v.onceSubmit : submits[view]}</SubmitButton>
         </form>
         <div className="account-links">
           {view === 'unlock' && !request.once && (
@@ -309,95 +261,4 @@ function Dialog({ request }: { request: VaultDialogRequest }) {
       </div>
     </div>
   );
-}
-
-/**
- * The recovery code, shown once: to download, print or copy, and say it was saved. The
- * cloud's one by default; the diary encrypted on the device without an account says
- * its own text.
- */
-export function RecoveryCode({
-  code,
-  saved,
-  onSaved,
-  finishLabel,
-  onFinish,
-  local = false,
-}: {
-  code: string;
-  saved: boolean;
-  onSaved: (saved: boolean) => void;
-  finishLabel: string;
-  onFinish: () => void;
-  local?: boolean;
-}) {
-  const t = useT();
-  const v = t.vault;
-  const showToast = useUI((s) => s.showToast);
-  const email = useAccount((s) => s.account?.email ?? '');
-  const file = () => {
-    const date = new Date().toLocaleDateString(locale(), { dateStyle: 'long' });
-    return local ? t.lock.file(code, date) : v.file(email, code, date);
-  };
-  const groups = code.split('-');
-
-  return (
-    <>
-      <p className="account-text">{local ? t.lock.codeText : v.codeText}</p>
-      <div className="vault-code" aria-label={v.code}>
-        {[0, 4, 8].map((start) => (
-          <span key={start}>{groups.slice(start, start + 4).join('-')}</span>
-        ))}
-      </div>
-      <div className="vault-code-actions">
-        <button
-          type="button"
-          className="settings-btn"
-          onClick={() =>
-            void saveFile(new Blob([file()], { type: 'text/plain' }), `${v.fileName}.txt`)
-          }
-        >
-          <Download size={15} strokeWidth={1.75} /> {v.download}
-        </button>
-        <button type="button" className="settings-btn" onClick={() => printText(file())}>
-          <Printer size={15} strokeWidth={1.75} /> {v.print}
-        </button>
-        <button
-          type="button"
-          className="settings-btn"
-          onClick={() =>
-            void navigator.clipboard.writeText(code).then(
-              () => showToast(v.copied),
-              () => undefined,
-            )
-          }
-        >
-          <Copy size={15} strokeWidth={1.75} /> {v.copy}
-        </button>
-      </div>
-      <label className="vault-saved">
-        <input type="checkbox" checked={saved} onChange={(e) => onSaved(e.target.checked)} />
-        {v.saved}
-      </label>
-      <button type="button" className="account-primary" disabled={!saved} onClick={onFinish}>
-        {finishLabel}
-      </button>
-    </>
-  );
-}
-
-/** Prints a text alone (in a frame of its own, so the diary isn't printed). */
-function printText(text: string) {
-  const frame = document.createElement('iframe');
-  frame.style.cssText = 'position:fixed;width:0;height:0;border:0;';
-  document.body.append(frame);
-  const doc = frame.contentDocument;
-  if (!doc || !frame.contentWindow) return frame.remove();
-  const pre = doc.createElement('pre');
-  pre.style.cssText = 'font:15px/1.7 ui-monospace,monospace;white-space:pre-wrap;margin:32px';
-  pre.textContent = text;
-  doc.body.append(pre);
-  frame.contentWindow.focus();
-  frame.contentWindow.print();
-  setTimeout(() => frame.remove(), 1000);
 }

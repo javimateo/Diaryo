@@ -1,6 +1,6 @@
-import { Eye, KeyRound, Loader2, LockKeyhole, LockKeyholeOpen, Trash2, X } from 'lucide-react';
+import { Eye, KeyRound, LockKeyhole, LockKeyholeOpen, Trash2, X } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { accountError, PASSWORD_MIN, useAccount } from '../cloud/account';
+import { accountError, useAccount } from '../cloud/account';
 import { WrongSecretError } from '../cloud/crypto';
 import {
   changeLockPassword,
@@ -14,12 +14,10 @@ import {
 import { useLock } from '../cloud/lockState';
 import { openBackupDir } from '../desktop/settings';
 import { useUI, type LockDialogRequest, type LockView } from '../store/ui';
-import { PasswordField } from './PasswordField';
+import { FormError, phraseFields, RecoveryCodeField, SubmitButton } from './passwordForm';
+import { newPasswordError } from './passwordRules';
+import { RecoveryCode } from './RecoveryCode';
 import { useT } from './useT';
-import { RecoveryCode } from './VaultDialog';
-
-/** The diary password allows long phrases. */
-const PHRASE_MAX = 200;
 
 /** Inside the dialog, besides what it was opened for: recovering with the code. */
 type View = LockView | 'recover';
@@ -96,10 +94,8 @@ function Dialog({ request }: { request: LockDialogRequest }) {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (busy) return;
-    if (choosing && password.length < PASSWORD_MIN) {
-      return setError(t.account.errors.shortPassword(PASSWORD_MIN));
-    }
-    if (choosing && password !== repeat) return setError(v.errors.mismatch);
+    const wrong = choosing && newPasswordError(password, repeat, t);
+    if (wrong) return setError(wrong);
     setBusy(true);
     setError('');
     void (async () => {
@@ -191,25 +187,7 @@ function Dialog({ request }: { request: LockDialogRequest }) {
       <LockKeyhole size={18} strokeWidth={1.75} aria-hidden />
     );
 
-  const field = (
-    label: string,
-    value: string,
-    onChange: (value: string) => void,
-    options: { hint?: string; autoFocus?: boolean; autoComplete?: string } = {},
-  ) => (
-    <PasswordField
-      label={label}
-      hint={options.hint}
-      autoFocus={options.autoFocus}
-      autoComplete={options.autoComplete ?? 'new-password'}
-      maxLength={PHRASE_MAX}
-      value={value}
-      onChange={(next) => {
-        onChange(next);
-        setError('');
-      }}
-    />
-  );
+  const field = phraseFields(() => setError(''));
 
   let body: ReactNode;
   if (shownCode) {
@@ -270,22 +248,13 @@ function Dialog({ request }: { request: LockDialogRequest }) {
         )}
         <form className="account-form" onSubmit={submit}>
           {view === 'recover' && (
-            <label className="account-field">
-              <span>{v.code}</span>
-              <input
-                className="vault-code-input"
-                autoFocus
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                placeholder="XXXX-XXXX-XXXX-…"
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  setError('');
-                }}
-              />
-            </label>
+            <RecoveryCodeField
+              value={code}
+              onChange={(next) => {
+                setCode(next);
+                setError('');
+              }}
+            />
           )}
           {view === 'change' &&
             field(v.current, current, setCurrent, {
@@ -311,15 +280,8 @@ function Dialog({ request }: { request: LockDialogRequest }) {
               autoComplete: 'current-password',
             })
           )}
-          {error && (
-            <p className="account-error" role="alert">
-              {error}
-            </p>
-          )}
-          <button type="submit" className="account-primary" disabled={busy}>
-            {busy && <Loader2 size={15} strokeWidth={2} className="account-spin" aria-hidden />}
-            {submits[view]}
-          </button>
+          <FormError message={error} />
+          <SubmitButton busy={busy}>{submits[view]}</SubmitButton>
         </form>
         {(view === 'reveal' || view === 'recover') && (
           <div className="account-links">

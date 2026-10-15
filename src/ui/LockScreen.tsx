@@ -1,14 +1,6 @@
-import {
-  BookPlus,
-  KeyRound,
-  Loader2,
-  LockKeyhole,
-  LogOut,
-  Trash2,
-  TriangleAlert,
-} from 'lucide-react';
+import { BookPlus, KeyRound, LockKeyhole, LogOut, Trash2, TriangleAlert } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { accountError, PASSWORD_MIN, signOut, useAccount } from '../cloud/account';
+import { accountError, signOut, useAccount } from '../cloud/account';
 import { WrongSecretError } from '../cloud/crypto';
 import { eraseDiary, recoverDiary, unlockDiary } from '../cloud/lock';
 import { readLock, useLock } from '../cloud/lockState';
@@ -19,12 +11,10 @@ import { useUI } from '../store/ui';
 import { keepLockedDiary } from './fileActions';
 import { WindowControls, WindowDragRegion } from './desktop/WindowControls';
 import { LockProgress } from './LockDialog';
-import { PasswordField } from './PasswordField';
+import { FormError, phraseFields, RecoveryCodeField, SubmitButton } from './passwordForm';
+import { newPasswordError } from './passwordRules';
 import { useDeskBackground } from './useDeskBackground';
 import { useT } from './useT';
-
-/** The diary password allows long phrases. */
-const PHRASE_MAX = 200;
 
 type View = 'unlock' | 'recover' | 'forgot' | 'options' | 'startOver';
 
@@ -61,12 +51,8 @@ export function LockScreen() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (busy) return;
-    if (view === 'recover') {
-      if (password.length < PASSWORD_MIN) {
-        return setError(t.account.errors.shortPassword(PASSWORD_MIN));
-      }
-      if (password !== repeat) return setError(v.errors.mismatch);
-    }
+    const wrong = view === 'recover' && newPasswordError(password, repeat, t);
+    if (wrong) return setError(wrong);
     setBusy(true);
     setError('');
     void (async () => {
@@ -84,25 +70,7 @@ export function LockScreen() {
     })();
   };
 
-  const field = (
-    label: string,
-    value: string,
-    onChange: (value: string) => void,
-    options: { hint?: string; autoFocus?: boolean; autoComplete: string },
-  ) => (
-    <PasswordField
-      label={label}
-      hint={options.hint}
-      autoFocus={options.autoFocus}
-      autoComplete={options.autoComplete}
-      maxLength={PHRASE_MAX}
-      value={value}
-      onChange={(next) => {
-        onChange(next);
-        setError('');
-      }}
-    />
-  );
+  const field = phraseFields(() => setError(''));
 
   let body: ReactNode;
   if (progress !== null) {
@@ -178,20 +146,13 @@ export function LockScreen() {
       <>
         <p className="account-text">{waiting ? l.startOverCheck : l.startOverText(desktop)}</p>
         <p className="account-text">{l.startOverOpen}</p>
-        {error && (
-          <p className="account-error" role="alert">
-            {error}
-          </p>
-        )}
-        <button
-          type="button"
-          className="account-primary"
-          disabled={busy}
+        <FormError message={error} />
+        <SubmitButton
+          busy={busy}
           onClick={() => (waiting ? void eraseDiary() : keep(desktop ? eraseDiary : undefined))}
         >
-          {busy && <Loader2 size={15} strokeWidth={2} className="account-spin" aria-hidden />}
           {waiting ? l.startOverConfirm : desktop ? l.startOverButton : l.startOverDownload}
-        </button>
+        </SubmitButton>
         <div className="account-links">
           {waiting && (
             <button type="button" className="account-link" disabled={busy} onClick={() => keep()}>
@@ -240,22 +201,13 @@ export function LockScreen() {
         <p className="account-text">{view === 'recover' ? v.recoverText : l.lockedText}</p>
         <form className="account-form" onSubmit={submit}>
           {view === 'recover' && (
-            <label className="account-field">
-              <span>{v.code}</span>
-              <input
-                className="vault-code-input"
-                autoFocus
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                placeholder="XXXX-XXXX-XXXX-…"
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  setError('');
-                }}
-              />
-            </label>
+            <RecoveryCodeField
+              value={code}
+              onChange={(next) => {
+                setCode(next);
+                setError('');
+              }}
+            />
           )}
           {view === 'recover' ? (
             <>
@@ -271,15 +223,8 @@ export function LockScreen() {
               autoComplete: 'current-password',
             })
           )}
-          {error && (
-            <p className="account-error" role="alert">
-              {error}
-            </p>
-          )}
-          <button type="submit" className="account-primary" disabled={busy}>
-            {busy && <Loader2 size={15} strokeWidth={2} className="account-spin" aria-hidden />}
-            {view === 'recover' ? v.recover : l.open}
-          </button>
+          <FormError message={error} />
+          <SubmitButton busy={busy}>{view === 'recover' ? v.recover : l.open}</SubmitButton>
         </form>
         <div className="account-links">
           {view === 'unlock' ? (
