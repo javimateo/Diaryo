@@ -197,7 +197,9 @@ The desk on the Windows desktop is another window (see [architecture](architectu
   replacing the diary) are encrypted too: a `diaryo/sealed` file with the backup sealed with the device's key, plus the vault
   and the wrapped key (`serializeSealed` in `src/storage/files.ts`). It opens at once on
   a device with that diary unlocked, and anywhere else with the diary password or the
-  recovery code of when it was made.
+  recovery code of when it was made. The ones made before stay as they were (readable):
+  on turning it on, the app says so and offers to open the folder, for the user to delete
+  them if they like.
 - **"Save a copy"** asks: encrypted (the default) or readable.
 - **The desktop mini diary**: today's page isn't written to the local storage, only
   its cover. With the diary open, the diary's window passes the page to the desk's in

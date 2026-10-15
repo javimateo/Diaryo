@@ -261,6 +261,9 @@ export const en: Messages = {
     decrypting: 'Decrypting the diary…',
     keepOpen: "Don't close diaryo until it's done.",
     enabled: 'Diary encrypted on this device',
+    enabledBackups:
+      'Diary encrypted. Earlier backups stay readable in their folder; new ones are encrypted.',
+    openBackups: 'Open the folder',
     disabled: 'Nothing is encrypted on this device any more',
     codeText:
       "If you forget the diary password, this code is the only way to open it again. It's only shown now.",
