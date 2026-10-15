@@ -766,8 +766,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
       - [x] **El `.ics` en la carpeta temporal**: no se borraba nunca. Ahora se borra a los
             10 minutos (y al arrancar, los que quedaran); y `ics.ts` escapa también un
             `\r` suelto.
-      - [ ] **Tope a las iteraciones de PBKDF2** que vienen en un archivo cifrado (uno
-            manipulado puede colgar la pestaña).
+      - [x] **Tope a las iteraciones de PBKDF2** que vienen en un archivo cifrado (uno
+            manipulado podía colgar la pestaña): como mucho 10 millones (hoy, 600 000);
+            fuera de eso, como una contraseña equivocada.
       - [ ] **Filas sin cifrar en un diario cifrado**: aceptarlas solo mientras se reescribe.
       - [ ] **Borrar desde la pantalla de bloqueo**: dos clics, sin copia. Guardar una
             copia por defecto.

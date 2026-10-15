@@ -116,7 +116,16 @@ export async function diaryKeys(secret: Uint8Array<ArrayBuffer>): Promise<DiaryK
   return { enc, mac };
 }
 
+/**
+ * The most iterations a vault may ask for (many times today's). A vault comes from the
+ * server or inside a file: an absurd number would hang the page while deriving.
+ */
+const MAX_ITERATIONS = 10_000_000;
+
 async function passwordKey(password: string, salt: Uint8Array<ArrayBuffer>, iterations: number) {
+  if (!Number.isInteger(iterations) || iterations < 1 || iterations > MAX_ITERATIONS) {
+    throw new WrongSecretError();
+  }
   const base = await subtle().importKey('raw', encoder.encode(password), 'PBKDF2', false, [
     'deriveKey',
   ]);
