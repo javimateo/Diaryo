@@ -4,10 +4,14 @@
  * few encrypted-looking elements (now and then an image) and pulls what changed. At the
  * end the throwaway accounts are deleted (with their items).
  *
- *   k6 run -e PB_URL=https://cloud.diaryo.javiermateo.dev \
+ *   k6 run -e PB_URL=http://127.0.0.1:8090 \
  *     -e PB_ADMIN_EMAIL=… -e PB_ADMIN_PASSWORD=… cloud/stress.k6.js
  *
  * `-e MAX_USERS=50` sets the peak (default 50); each run moves a few hundred MB.
+ *
+ * Against a local server or a copy, not the real one: the server writes items one at a
+ * time (pb_hooks/main.pb.js), so a load test slows every real user while it lasts, and
+ * its accounts live in the real database until the end.
  */
 import http from 'k6/http';
 import { check, sleep } from 'k6';
@@ -117,14 +121,20 @@ export function teardown({ run }) {
     return;
   }
   const token = admin.json('token');
+  const byHand = `delete the accounts starting with ${run} by hand`;
+  // Page after page until none is left. A request that fails stops it: it would only fail
+  // again and again against the server.
   for (;;) {
     const page = http.get(
       `${API}/collections/users/records?perPage=200&fields=id&filter=${encodeURIComponent(`email ~ "${run}"`)}`,
       json(token),
     );
-    const users = page.status === 200 ? page.json('items') : [];
-    if (users.length === 0) break;
-    for (const user of users)
-      http.del(`${API}/collections/users/records/${user.id}`, null, json(token));
+    if (page.status !== 200) return console.error(`Couldn't list the accounts: ${byHand}`);
+    const users = page.json('items');
+    if (users.length === 0) return;
+    for (const user of users) {
+      const gone = http.del(`${API}/collections/users/records/${user.id}`, null, json(token));
+      if (gone.status !== 204) return console.error(`Couldn't delete an account: ${byHand}`);
+    }
   }
 }
