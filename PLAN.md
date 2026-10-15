@@ -795,7 +795,10 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             de Ajustes, el aviso de espacio y las utilidades (colores, tamaños, tiempos,
             teclas). Fuera, a propósito: los hooks de React (piden jsdom y Testing Library)
             y las acciones que solo encadenan capas que ya tienen sus tests.
-      - [ ] **Partir `store/ui.ts`** (74 campos, lo que más cambia) por temas.
+      - [x] **Partir `store/ui.ts`** (74 campos, lo que más cambia) por temas: un mismo
+            store escrito en cinco partes (`store/*Slice.ts`: el lienzo, el aspecto y los
+            ajustes, el diario, los diálogos y el escritorio). Ningún uso cambia; antes,
+            tests de cómo se comportaba (`store/ui.test.ts`).
       - [ ] **Partir `Engine`** (2 200 líneas) poco a poco, al tocar cada parte.
       - [ ] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
             varios; los merge con `-m` o `--no-edit` (uno salió con la plantilla de git).

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import './testBrowser';
+import '../lib/testBrowser';
 import { spaceWarning } from './cloudSync';
 
 describe('warning about the space used', () => {

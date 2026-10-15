@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import './testBrowser';
+import '../lib/testBrowser';
 
 import { useLock } from '../cloud/lockState';
 import type { DesktopInfo } from '../desktop/settings';
