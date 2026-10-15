@@ -1,6 +1,6 @@
 /**
- * For the tests of src/ui (Node, no browser): what the store and the interface's modules
- * read from a browser as they load. Imported first, before them.
+ * For the tests of the interface and its store (Node, no browser): what they read from a
+ * browser as they load. Imported first, before them.
  */
 globalThis.matchMedia ??= (() => ({
   matches: false,

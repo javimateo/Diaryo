@@ -104,7 +104,9 @@ is encrypted on the device (`storage/sealing.ts`, see [privacy](privacy.md)).
 React only draws the chrome around the canvas: toolbar, style panel, top actions, page
 navigation, dialogs (settings, help, map, search, links) and the text editor — a
 `<textarea>` laid exactly over the text being edited. The state lives in one Zustand
-store (`store/ui.ts`); settings and the diary's look are saved in the browser
+store (`store/ui.ts`), written in parts by subject: the canvas, the look and settings, the
+diary, the dialogs and the desktop (`store/*Slice.ts`); settings and the diary's look are
+saved in the browser
 (`lib/saved.ts`). On narrow screens `styles/mobile.css` rearranges everything for a
 thumb.
 

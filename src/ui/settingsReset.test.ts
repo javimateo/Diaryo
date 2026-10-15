@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import './testBrowser';
+import '../lib/testBrowser';
 
 vi.mock('../desktop/settings', () => ({
   setAutostart: vi.fn(),
