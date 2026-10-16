@@ -693,6 +693,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             portada). La imagen viaja con la tarjeta de hoy, que ya se guardaba en claro.
             Con la mesa «Oculta hasta abrir», el mini diario sale igual (solo la mesa
             espera).
+      - [ ] **Que la portada parezca un diario cerrado**: al editarla se ve solo la tapa,
+            plana, como un cartón suelto. Faltan el canto de las hojas asomando por la
+            derecha y por abajo, y el grosor del libro (el lomo, la sombra de un bloque),
+            para que se lea como un diario cerrado sobre la mesa. Lo mismo en su imagen
+            (pantalla de bloqueo y mini diario).
       - Descartado (octubre de 2026): **«Abrir con la portada»**, que el diario se
         abriera girando la tapa al arrancar. Para que se viera bien hacía falta tapar la
         mitad izquierda del libro mientras la tapa gira y seguir a la cámara; demasiado
