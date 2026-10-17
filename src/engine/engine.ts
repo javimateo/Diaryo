@@ -10,14 +10,7 @@ import {
   zoomAt,
   type Camera,
 } from './camera';
-import {
-  arrange,
-  elementsToPng,
-  fillBehind,
-  flip,
-  renderElements,
-  type ArrangeMode,
-} from './arrange';
+import { arrange, elementsToPng, fillBehind, flip, type ArrangeMode } from './arrange';
 import {
   bookBounds,
   CLOSED_COVER,
@@ -31,6 +24,7 @@ import {
   PAGE_WIDTH,
   type BookSpread,
 } from './book';
+import * as pageImages from './pageImages';
 import { PageTurner, type TurnDirection, type TurnTarget } from './pageTurn';
 import { badgeAt, drawLinkBadge, linkBadges, type LinkLabel } from './links';
 import { AssetStore, isImageFile, loadImageFile } from './assets';
@@ -42,7 +36,6 @@ import { createText, fitEditable, isEditable } from './editing';
 import {
   createId,
   DEFAULT_STYLES,
-  concealNote,
   elementBounds,
   isConcealed,
   isLocked,
@@ -229,7 +222,8 @@ export class Engine {
   /** When the window is resized, frame the whole book again. */
   private fitOnResize: (() => Camera) | null = null;
   private readonly pageTurner = new PageTurner({
-    renderTexture: (target, scale) => this.renderSpread(target, scale),
+    renderTexture: (target, scale) =>
+      pageImages.renderSpread(target, scale, this.theme.mode, this.assets),
     invalidate: () => this.invalidateOverlay(),
     onTurn: (dir) => this.pageTurnListener(dir),
   });
@@ -617,56 +611,12 @@ export class Engine {
 
   /** Thumbnail of another page (its double page in small), at that width. */
   spreadThumbnail(target: TurnTarget, width: number): string {
-    const concealed = { ...target, elements: concealPrivate(target.elements) };
-    return this.renderSpread(concealed, width / (PAGE_WIDTH * 2)).toDataURL('image/webp', 0.85);
+    return pageImages.spreadThumbnail(target, width, this.theme.mode, this.assets);
   }
 
-  /**
-   * The closed diary's cover as an image, at that width: the board, what is stuck on it
-   * (ending at its edge) and the elastic on top.
-   */
+  /** The closed diary's cover as an image, at that width. */
   coverImage(book: BookSpread, elements: SceneElement[], width: number): string {
-    const closed = { ...book, closed: true };
-    const bounds = bookBounds(closed);
-    const scale = width / (bounds.maxX - bounds.minX);
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(width);
-    canvas.height = Math.round((bounds.maxY - bounds.minY) * scale);
-    const ctx = canvas.getContext('2d')!;
-    ctx.setTransform(scale, 0, 0, scale, -bounds.minX * scale, -bounds.minY * scale);
-    drawBook(ctx, closed, 'light', scale);
-    ctx.save();
-    traceClosedCover(ctx);
-    ctx.clip();
-    const rc: RenderContext = {
-      mode: 'light',
-      pixelScale: scale,
-      assets: this.assets,
-      editingId: null,
-    };
-    for (const el of concealPrivate([...elements].sort((a, b) => a.z - b.z)))
-      drawElement(ctx, el, rc);
-    ctx.restore();
-    drawBinding(ctx, closed, scale);
-    return canvas.toDataURL('image/webp', 0.85);
-  }
-
-  /** Draws a double page (paper and content, without covers) for the turning sheet. */
-  private renderSpread(target: TurnTarget, scale: number): HTMLCanvasElement {
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(PAGE_WIDTH * 2 * scale);
-    canvas.height = Math.round(PAGE_HEIGHT * scale);
-    const ctx = canvas.getContext('2d')!;
-    ctx.setTransform(scale, 0, 0, scale, PAGE_WIDTH * scale, (PAGE_HEIGHT / 2) * scale);
-    drawBook(ctx, target.book, this.theme.mode, scale, true);
-    const rc: RenderContext = {
-      mode: this.theme.mode,
-      pixelScale: scale,
-      assets: this.assets,
-      editingId: null,
-    };
-    for (const el of [...target.elements].sort((a, b) => a.z - b.z)) drawElement(ctx, el, rc);
-    return canvas;
+    return pageImages.coverImage(book, elements, width, this.assets);
   }
 
   private fitCamera(): Camera {
@@ -1347,22 +1297,16 @@ export class Engine {
     this.invalidateScene();
   }
 
-  /** Thumbnail of the whole page (always in the light theme), or null if it is empty. */
+  /** Thumbnail of the open page, or null if it is empty. */
   thumbnail(width: number, height: number): string | null {
-    const elements = concealPrivate(this.pageElements());
-    // The closed diary: its cover, also when nothing is stuck on it yet.
-    if (this.book?.closed) return this.coverImage(this.book, elements, width);
-    if (elements.length === 0) return null;
-    // In the diary, the double page in small (paper, date and content in place).
-    if (this.book) {
-      const spread = this.renderSpread(
-        { id: '', elements, book: this.book },
-        width / (PAGE_WIDTH * 2),
-      );
-      return spread.toDataURL('image/webp', 0.85);
-    }
-    const canvas = renderElements(elements, { mode: 'light', assets: this.assets, width, height });
-    return canvas.toDataURL('image/webp', 0.8);
+    const size = { width, height };
+    return pageImages.pageThumbnail(
+      this.pageElements(),
+      this.book,
+      size,
+      this.theme.mode,
+      this.assets,
+    );
   }
 
   /** Where the two pages are in the window (px), to animate entering the map. */
@@ -2096,7 +2040,3 @@ export class Engine {
     this.cleanups.push(() => target.removeEventListener(type, listener, options));
   }
 }
-
-/** Thumbnails never show a private note's text, even while it can be seen. */
-const concealPrivate = (elements: SceneElement[]) =>
-  elements.map((el) => (el.type === 'note' && el.private ? concealNote(el) : el));
