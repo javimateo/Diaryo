@@ -819,6 +819,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         - [x] Las reglas de empezar y terminar de escribir (las fechas completas, un texto
               vacío se borra, una forma vacía pierde su etiqueta, sin cambios no hay paso que
               deshacer) en `editing.ts`, con tests, también del orden en que se miden.
+        - [x] Lo que hay bajo el puntero, junto a lo suyo: la casilla de una tarea
+              (`tasks.ts`), la etiqueta de un enlace (`links.ts`) y el candado de una nota
+              privada (`selection.ts`), con tests y clics de verdad en el motor.
       - [ ] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
             varios; los merge con `-m` o `--no-edit` (uno salió con la plantilla de git).
     - **Herramientas y orden**

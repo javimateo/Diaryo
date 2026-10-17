@@ -3,6 +3,7 @@ import {
   elementBounds,
   isConcealed,
   isLocked,
+  privateBadge,
   toLocal,
   type ContainerElement,
   type SceneElement,
@@ -246,4 +247,17 @@ export function withGroups(scene: Scene, ids: Iterable<string>): Set<string> {
     }
   }
   return next;
+}
+
+/** The shown private note whose open padlock is at this point (topmost first), or null. */
+export function privateBadgeAt(scene: Scene, world: Vec): string | null {
+  const near = { minX: world.x - 1, minY: world.y - 1, maxX: world.x + 1, maxY: world.y + 1 };
+  const candidates = scene.search(near).sort((a, b) => b.z - a.z);
+  for (const el of candidates) {
+    if (el.type !== 'note' || !el.private || el.concealed) continue;
+    const badge = privateBadge(el);
+    const p = toLocal(el, world);
+    if (Math.hypot(p.x - badge.x, p.y - badge.y) <= badge.r * 1.3) return el.id;
+  }
+  return null;
 }

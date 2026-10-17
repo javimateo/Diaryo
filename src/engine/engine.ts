@@ -26,7 +26,7 @@ import {
 } from './book';
 import * as pageImages from './pageImages';
 import { PageTurner, type TurnDirection, type TurnTarget } from './pageTurn';
-import { badgeAt, drawLinkBadge, linkBadges, type LinkLabel } from './links';
+import { drawLinkBadge, linkAt, linkBadges, type LinkLabel } from './links';
 import { AssetStore, isImageFile, loadImageFile } from './assets';
 import { parseElements, serializeElements } from './clipboard';
 import { brushCursor, eraserCursor } from './cursors';
@@ -40,8 +40,6 @@ import {
   isConcealed,
   isLocked,
   isPrivateNote,
-  privateBadge,
-  toLocal,
   type EditableElement,
   type ImageElement,
   NOTE_SIZE,
@@ -64,11 +62,11 @@ import { resolveColor } from './palette';
 import { drawElement, type RenderContext } from './render';
 import { Scene, type Changes } from './scene';
 import { elementHitsSegment } from './hit';
-import { containerAt, hitTestElement, withGroups } from './selection';
+import { containerAt, hitTestElement, privateBadgeAt, withGroups } from './selection';
 import { applyStyle, patchMergeKey, type StylePatch } from './restyle';
 import * as edits from './selectionEdits';
 import { clearTextCache, setTextDates, setTextInEditor, type TextDates } from './text';
-import { taskAt, withTaskToggled } from './tasks';
+import { taskUnder, withTaskToggled } from './tasks';
 import { onTextureReady } from './textures';
 import { drawBackdrop, drawHighlight, type Backdrop } from './drawing';
 import { TOOL_CURSORS, type ToolId } from './tools';
@@ -553,22 +551,13 @@ export class Engine {
 
   /** Page of the link whose label is under the point, or null. */
   private linkUnder(world: Vec): string | null {
-    // On the selection its handles win (its link opens from the panel).
-    const badges = this.visibleBadges().filter((b) => !b.ids.some((id) => this.selection.has(id)));
-    return badgeAt(badges, world)?.link ?? null;
+    return linkAt(this.visibleBadges(), this.selection, world);
   }
 
-  /** Task whose checkbox is under the point (topmost first), or null. */
+  /** Task whose checkbox is under the point, with the selection tools; or null. */
   private taskUnder(world: Vec): { el: SceneElement; paragraph: number } | null {
     if (this.tool !== 'select' && this.tool !== 'lasso') return null;
-    const slop = 4 / this.camera.zoom;
-    const near = { minX: world.x - 1, minY: world.y - 1, maxX: world.x + 1, maxY: world.y + 1 };
-    const candidates = this.scene.search(near).sort((a, b) => b.z - a.z);
-    for (const el of candidates) {
-      const paragraph = taskAt(el, world, slop);
-      if (paragraph !== null) return { el, paragraph };
-    }
-    return null;
+    return taskUnder(this.scene, world, 4 / this.camera.zoom);
   }
 
   /** Ticks or unticks a task (its line `paragraph`) of something here; false if it isn't. */
@@ -836,19 +825,6 @@ export class Engine {
   subscribeHide(listener: (id: string) => void): () => void {
     this.hideListeners.add(listener);
     return () => this.hideListeners.delete(listener);
-  }
-
-  /** The private note shown whose open padlock is under the point. */
-  private privateBadgeUnder(world: Vec): string | null {
-    const near = { minX: world.x - 1, minY: world.y - 1, maxX: world.x + 1, maxY: world.y + 1 };
-    const candidates = this.scene.search(near).sort((a, b) => b.z - a.z);
-    for (const el of candidates) {
-      if (el.type !== 'note' || !el.private || el.concealed) continue;
-      const badge = privateBadge(el);
-      const p = toLocal(el, world);
-      if (Math.hypot(p.x - badge.x, p.y - badge.y) <= badge.r * 1.3) return el.id;
-    }
-    return null;
   }
 
   /** The UI learns that the engine wants to change the tool. */
@@ -1487,7 +1463,7 @@ export class Engine {
     if (e.button === 0 && !this.editing && !this.spaceHeld && this.tool !== 'hand') {
       const world = screenToWorld(this.camera, this.localPoint(e));
       // A shown private note's open padlock hides it again.
-      const shown = this.privateBadgeUnder(world);
+      const shown = privateBadgeAt(this.scene, world);
       if (shown) {
         e.preventDefault();
         this.hideListeners.forEach((listener) => listener(shown));

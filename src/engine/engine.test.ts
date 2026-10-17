@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { drawnTexts, testCanvases } from './testCanvas';
 import { DEFAULT_BOOK_STYLE, type BookSpread } from './book';
 import { Engine, type EngineState } from './engine';
+import { privateBadge } from './elements';
+import { linkBadges } from './links';
+import { taskAt } from './tasks';
 import type { TextDates } from './text';
 import type { EditingState } from './types';
 import type {
@@ -445,5 +448,75 @@ describe('writing in a text, a note or a shape', () => {
     engine.finishEditing(false);
     expect(get('t')).toMatchObject({ text: 'otra' });
     expect(selected()).toEqual([]);
+  });
+});
+
+describe('clicking what is under the pointer', () => {
+  /** A click with the mouse at this point (the camera shows the world as it is). */
+  const click = (x: number, y: number) => {
+    const event = {
+      button: 0,
+      buttons: 1,
+      pointerType: 'mouse',
+      clientX: x,
+      clientY: y,
+      pointerId: 1,
+      preventDefault: () => {},
+    };
+    const input = engine as unknown as Record<
+      'onPointerDown' | 'onPointerUp',
+      (e: unknown) => void
+    >;
+    input.onPointerDown(event);
+    input.onPointerUp(event);
+  };
+  const show = (...elements: SceneElement[]) => engine.loadPage(elements, { x: 0, y: 0, zoom: 1 });
+
+  it("a shown private note's open padlock asks to hide it; a hidden one has none", () => {
+    const hidden: string[] = [];
+    engine.subscribeHide((id) => hidden.push(id));
+    const shown = note('p', 1, { private: true, x: 100, y: 100 });
+    const locked = note('h', 2, { private: true, concealed: true, x: 400, y: 100 });
+    show(shown, locked);
+    const badge = privateBadge(shown);
+    click(100 + badge.x, 100 + badge.y);
+    click(400 + badge.x, 100 + badge.y);
+    expect(hidden).toEqual(['p']);
+  });
+
+  it("a link's label opens its page, unless it is on the selection", () => {
+    const opened: string[] = [];
+    engine.onLinkOpen((page) => opened.push(page));
+    engine.setLinkLabels(new Map([['p2', 'Lunes']]), '?');
+    const linked = stroke('a', 1, { x: 100, y: 100, link: 'p2' });
+    show(linked);
+    const [badge] = linkBadges([linked], () => ({ text: 'Lunes', missing: false }), 1);
+    const { minX, minY, maxX, maxY } = badge.rect;
+    select('a');
+    click((minX + maxX) / 2, (minY + maxY) / 2);
+    expect(opened).toEqual([]);
+    engine.clearSelection();
+    click((minX + maxX) / 2, (minY + maxY) / 2);
+    expect(opened).toEqual(['p2']);
+  });
+
+  it("a task's checkbox is ticked with the selection tools, not with the others", () => {
+    const task = text('t', 1, { text: '[ ] pan', x: 100, y: 100, width: 200, height: 40 });
+    show(task);
+    // Where its checkbox is.
+    let box: { x: number; y: number } | null = null;
+    for (let x = 100; x < 300 && !box; x++) {
+      for (let y = 100; y < 140 && !box; y++)
+        if (taskAt(task, { x, y }, 0) !== null) box = { x, y };
+    }
+    engine.setTool('pen');
+    click(box!.x, box!.y);
+    expect(get('t')).toMatchObject({ text: '[ ] pan' });
+    engine.setTool('select');
+    click(box!.x, box!.y);
+    expect(get('t')).toMatchObject({ text: '[x] pan' });
+    expect(selected()).toEqual([]);
+    engine.undo();
+    expect(get('t')).toMatchObject({ text: '[ ] pan' });
   });
 });
