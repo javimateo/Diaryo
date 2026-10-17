@@ -156,6 +156,13 @@ export const CLOSED_COVER: Bounds = {
 };
 /** Corners of the closed cover: soft at the spine (left), round outside. */
 const CLOSED_RADII = [6, COVER_RADIUS, COVER_RADIUS, 6];
+/**
+ * Closed, how far the block of sheets and the back cover show under the front one, on the
+ * right and at the bottom: that is what makes it a book and not a loose board.
+ */
+const CLOSED_DEPTH = 16;
+/** Of that, the back cover's rim, past the sheets. */
+const CLOSED_BACK = 4;
 
 /**
  * Does it belong to the page (inside the book) or to the desk (outside, shared by the
@@ -181,8 +188,8 @@ export function bookBounds(spread?: BookSpread | null): Bounds {
     return {
       minX: CLOSED_COVER.minX,
       minY: CLOSED_COVER.minY - ELASTIC_PEEK,
-      maxX: CLOSED_COVER.maxX,
-      maxY: CLOSED_COVER.maxY + COVER_THICKNESS + ELASTIC_PEEK,
+      maxX: CLOSED_COVER.maxX + CLOSED_DEPTH,
+      maxY: CLOSED_COVER.maxY + COVER_THICKNESS + Math.max(ELASTIC_PEEK, CLOSED_DEPTH),
     };
   }
   return bookBoundsWith(!!spread?.tabs.length);
@@ -339,6 +346,7 @@ export function drawBook(
   const c = COLORS[mode];
   const { style } = spread;
   if (spread.closed) {
+    drawClosedBlock(ctx, style, mode, pixelScale);
     drawCovers(ctx, style, mode, pixelScale, true);
     return;
   }
@@ -455,11 +463,76 @@ const STITCHES: Partial<Record<CoverMaterial, string>> = {
 /** Cover color (cardboard has its own). */
 export const coverColor = (style: BookStyle) => OWN_COLORS[style.material] ?? style.cover;
 
+/** Cover tones (at night, a bit more muted, like the rest of the diary). */
+function coverTone(style: BookStyle, mode: ThemeMode) {
+  const night = mode === 'dark' ? 0.78 : 1;
+  return (amount: number) => shade(coverColor(style), (1 + amount) * night - 1);
+}
+
+/** The covers' two-layer shadow: a diffuse one and one close to the book. */
+const coverShadows = (mode: ThemeMode) => ({
+  tint: mode === 'dark' ? '0, 0, 0' : '50, 32, 15',
+  diffuse: [70, 26, mode === 'dark' ? 0.5 : 0.2],
+  contact: [8, 3, mode === 'dark' ? 0.6 : 0.3],
+});
+
+/**
+ * Under the closed front cover, the back cover and the block of sheets, a little lower and
+ * to the right, so their edges show. The block casts the diffuse shadow.
+ */
+function drawClosedBlock(
+  ctx: CanvasRenderingContext2D,
+  style: BookStyle,
+  mode: ThemeMode,
+  pixelScale: number,
+) {
+  const tone = coverTone(style, mode);
+  const { minX, maxX } = CLOSED_COVER;
+  const top = TOP - COVER_OUT;
+  const width = maxX - minX;
+  const height = BOTTOM + COVER_OUT - top;
+  const back = () => {
+    ctx.beginPath();
+    ctx.roundRect(minX + CLOSED_DEPTH, top + CLOSED_DEPTH, width, height, CLOSED_RADII);
+  };
+  const { tint, diffuse, contact } = coverShadows(mode);
+  for (const [blur, offset, alpha] of [diffuse, contact]) {
+    ctx.save();
+    ctx.shadowColor = `rgba(${tint}, ${alpha})`;
+    ctx.shadowBlur = blur * pixelScale;
+    ctx.shadowOffsetY = offset * pixelScale;
+    back();
+    ctx.fillStyle = tone(-0.4);
+    ctx.fill();
+    ctx.restore();
+  }
+  // The block of sheets, up to the back cover's rim, with a fine line where each sheet
+  // ends (on the right and at the bottom, where they show).
+  const block = CLOSED_DEPTH - CLOSED_BACK;
+  const [light, deep] = COLORS[mode].sheet;
+  ctx.fillStyle = mode === 'dark' ? deep : light;
+  ctx.beginPath();
+  ctx.roundRect(minX + block, top + block, width, height, [4, 8, 8, 4]);
+  ctx.fill();
+  ctx.strokeStyle = mode === 'dark' ? 'rgba(0, 0, 0, 0.45)' : 'rgba(110, 85, 50, 0.22)';
+  ctx.lineWidth = hairline(1, pixelScale);
+  for (let k = 1; k < BLOCK_LINES; k++) {
+    const out = (k * block) / BLOCK_LINES;
+    ctx.beginPath();
+    ctx.moveTo(maxX + out, top + out + 10);
+    ctx.lineTo(maxX + out, top + out + height - 8);
+    ctx.moveTo(minX + out + 10, top + out + height);
+    ctx.lineTo(maxX + out - 8, top + out + height);
+    ctx.stroke();
+  }
+}
+
 /**
  * Covers: with rings they are two boards separated at the spine; sewn, a single cover
- * with its cloth spine; closed, only the front board. They have thickness (their darker edge shows at the bottom and
- * outside), the grain of their material, a soft light and, on leather and denim,
- * stitching along the border. They cast a two-layer shadow: one close to the book and a diffuse one.
+ * with its cloth spine; closed, only the front board. They have thickness (their darker edge
+ * shows at the bottom and outside), the grain of their material, a soft light and, on
+ * leather and denim, stitching along the border. They cast a two-layer shadow: one close
+ * to the book and a diffuse one.
  */
 function drawCovers(
   ctx: CanvasRenderingContext2D,
@@ -468,9 +541,7 @@ function drawCovers(
   pixelScale: number,
   closed = false,
 ) {
-  // Cover tones (at night, a bit more muted, like the rest of the diary).
-  const night = mode === 'dark' ? 0.78 : 1;
-  const tone = (amount: number) => shade(coverColor(style), (1 + amount) * night - 1);
+  const tone = coverTone(style, mode);
   const color = tone(0);
   const rings = style.binding === 'rings';
   const outer = PAGE_WIDTH + COVER_OUT;
@@ -498,13 +569,9 @@ function drawCovers(
     }
   };
 
-  // Two-layer shadow: the diffuse one and the contact one.
-  const dark = mode === 'dark';
-  const tint = dark ? '0, 0, 0' : '50, 32, 15';
-  for (const [blur, offset, alpha] of [
-    [70, 26, dark ? 0.5 : 0.2],
-    [8, 3, dark ? 0.6 : 0.3],
-  ]) {
+  // Two-layer shadow (closed, the block under it already casts the diffuse one).
+  const { tint, diffuse, contact } = coverShadows(mode);
+  for (const [blur, offset, alpha] of closed ? [contact] : [diffuse, contact]) {
     ctx.save();
     ctx.shadowColor = `rgba(${tint}, ${alpha})`;
     ctx.shadowBlur = blur * pixelScale;

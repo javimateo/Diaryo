@@ -81,4 +81,12 @@ describe('the closed diary', () => {
     expect(bounds.minY).toBeLessThan(CLOSED_COVER.minY);
     expect(bounds.maxX - bounds.minX).toBeLessThan((open.maxX - open.minX) / 1.8);
   });
+
+  it('its frame takes in the sheets and the back cover showing on the right and below', () => {
+    const bounds = bookBounds(closed);
+    expect(bounds.maxX).toBeGreaterThanOrEqual(CLOSED_COVER.maxX + 16);
+    expect(bounds.maxY).toBeGreaterThanOrEqual(CLOSED_COVER.maxY + 16);
+    // The spine side stays where the cover ends.
+    expect(bounds.minX).toBe(CLOSED_COVER.minX);
+  });
 });
