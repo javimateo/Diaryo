@@ -816,6 +816,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         - [x] Las imágenes de páginas (miniaturas, la portada cerrada, la hoja que gira) en
               `engine/pageImages.ts`, con tests de que ninguna dibuja el texto de una nota
               privada.
+        - [x] Las reglas de empezar y terminar de escribir (las fechas completas, un texto
+              vacío se borra, una forma vacía pierde su etiqueta, sin cambios no hay paso que
+              deshacer) en `editing.ts`, con tests, también del orden en que se miden.
       - [ ] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
             varios; los merge con `-m` o `--no-edit` (uno salió con la plantilla de git).
     - **Herramientas y orden**

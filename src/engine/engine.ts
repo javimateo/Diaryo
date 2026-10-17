@@ -31,8 +31,8 @@ import { AssetStore, isImageFile, loadImageFile } from './assets';
 import { parseElements, serializeElements } from './clipboard';
 import { brushCursor, eraserCursor } from './cursors';
 import { isEditableTarget } from './dom';
-import { defaultLabel, isContainer, textOf, withText } from './containers';
-import { createText, fitEditable, isEditable } from './editing';
+import { textOf, withText } from './containers';
+import { createText, finishEdit, fitEditable, isEditable, readyToEdit } from './editing';
 import {
   createId,
   DEFAULT_STYLES,
@@ -67,13 +67,7 @@ import { elementHitsSegment } from './hit';
 import { containerAt, hitTestElement, withGroups } from './selection';
 import { applyStyle, patchMergeKey, type StylePatch } from './restyle';
 import * as edits from './selectionEdits';
-import {
-  clearTextCache,
-  completeTextDates,
-  setTextDates,
-  setTextInEditor,
-  type TextDates,
-} from './text';
+import { clearTextCache, setTextDates, setTextInEditor, type TextDates } from './text';
 import { taskAt, withTaskToggled } from './tasks';
 import { onTextureReady } from './textures';
 import { drawBackdrop, drawHighlight, type Backdrop } from './drawing';
@@ -894,40 +888,21 @@ export class Engine {
   finishEditing(selectResult = true) {
     const editing = this.editing;
     if (!editing) return;
+    // Out of the editor first: the dates are measured again as labels.
     this.setEditing(null);
-    const { isNew } = editing;
-    let { element } = editing;
-    // The dates are written in full ("@mañana" would be another day tomorrow) and take the
-    // room of their labels again.
-    if (textOf(element).includes('@')) {
-      element = fitEditable(withText(element, completeTextDates(textOf(element))));
-    }
-    const original = this.scene.get(element.id);
-    const empty = textOf(element).trim() === '';
-
-    if (element.type === 'text' && empty) {
-      if (original) this.history.commit(new Map([[element.id, null]]));
-      return;
-    }
-    // A shape without text stops having a label.
-    if (isContainer(element) && empty) element = { ...element, label: null };
-    // Any property counts (text, font, alignment, opacity…).
-    const unchanged = !!original && JSON.stringify(original) === JSON.stringify(element);
-    if (isNew || !unchanged) this.history.commit(new Map([[element.id, element]]));
-    if (selectResult) {
+    const { element, isNew } = editing;
+    const { changes, result } = finishEdit(element, this.scene.get(element.id), isNew);
+    if (changes) this.history.commit(changes);
+    if (result && selectResult) {
       this.toolRequest('select');
-      this.setSelection([element.id]);
+      this.setSelection([result.id]);
     }
   }
 
   private startEditing(element: EditableElement, isNew: boolean) {
     this.finishEditing(false);
     this.setSelection([]);
-    // A shape without text gets an empty one with the default style.
-    const ready =
-      isContainer(element) && !element.label
-        ? { ...element, label: defaultLabel(this.styles, this.camera.zoom) }
-        : element;
+    const ready = readyToEdit(element, this.styles, this.camera.zoom);
     // While it is written, its dates take the room of what is written, not of their labels.
     setTextInEditor(textOf(ready));
     this.setEditing({ element: textOf(ready).includes('@') ? fitEditable(ready) : ready, isNew });
