@@ -122,3 +122,12 @@ export function badgeAt(badges: LinkBadge[], p: Vec): LinkBadge | null {
   }
   return null;
 }
+
+/**
+ * Page of the link whose label is at this point, or null. The selection's labels don't
+ * count: there its handles win (its link opens from the panel).
+ */
+export function linkAt(badges: LinkBadge[], selection: ReadonlySet<string>, p: Vec) {
+  const free = badges.filter((b) => !b.ids.some((id) => selection.has(id)));
+  return badgeAt(free, p)?.link ?? null;
+}

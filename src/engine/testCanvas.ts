@@ -39,6 +39,7 @@ function fakeCanvas(): HTMLCanvasElement {
     addEventListener: noop,
     removeEventListener: noop,
     setPointerCapture: noop,
+    hasPointerCapture: () => false,
     releasePointerCapture: noop,
     getBoundingClientRect: () => ({
       left: 0,

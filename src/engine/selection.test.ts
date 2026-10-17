@@ -15,6 +15,7 @@ import {
   hitTestElement,
   pointInPolygon,
   resizeCursor,
+  privateBadgeAt,
   withGroups,
 } from './selection';
 import { strokeHitsSegment } from './strokes';
@@ -191,5 +192,37 @@ describe('selecting a group', () => {
     expect([...withGroups(scene, ['a'])].sort()).toEqual(['a', 'b']);
     expect([...withGroups(scene, ['h', 'c'])]).toEqual(['c']);
     expect([...withGroups(scene, [])]).toEqual([]);
+  });
+});
+
+describe("a shown private note's padlock", () => {
+  const note = (id: string, z: number, more: Partial<NoteElement> = {}): NoteElement => ({
+    ...line(id, 0, 0, z),
+    type: 'note',
+    variant: 'plain',
+    text: 'pin',
+    fontSize: 20,
+    color: 'yellow',
+    textColor: null,
+    font: 'inter',
+    align: 'left',
+    valign: 'top',
+    width: 200,
+    height: 200,
+    private: true,
+    ...more,
+  });
+  // The padlock sits near the bottom right corner (privateBadge).
+  const padlock = { x: 173, y: 173 };
+
+  it('is found on the topmost shown private note there', () => {
+    const scene = sceneWith(note('a', 1), note('b', 2));
+    expect(privateBadgeAt(scene, padlock)).toBe('b');
+    expect(privateBadgeAt(scene, { x: 20, y: 20 })).toBeNull();
+  });
+
+  it('not on a hidden one nor on one that is not private', () => {
+    const scene = sceneWith(note('h', 2, { concealed: true }), note('n', 1, { private: false }));
+    expect(privateBadgeAt(scene, padlock)).toBeNull();
   });
 });
