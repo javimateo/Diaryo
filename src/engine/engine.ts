@@ -54,9 +54,7 @@ import {
   type EditableElement,
   type ImageElement,
   NOTE_SIZE,
-  type NoteElement,
   type SceneElement,
-  type TextStyleFlags,
   type ToolStyles,
 } from './elements';
 import { unionBounds, type Bounds } from './geometry';
@@ -77,6 +75,7 @@ import { Scene, type Changes } from './scene';
 import { elementHitsSegment } from './hit';
 import { containerAt, hitTestElement } from './selection';
 import { applyStyle, patchMergeKey, type StylePatch } from './restyle';
+import * as edits from './selectionEdits';
 import {
   clearTextCache,
   completeTextDates,
@@ -198,7 +197,7 @@ export class Engine {
   /** The UI decides which tool is active; the engine can only ask for it. */
   private toolRequest: (tool: ToolId) => void = () => {};
   private contextMenuListener: (request: ContextMenuRequest) => void = () => {};
-  private copiedStyle: { patch: StylePatch; type: SceneElement['type'] } | null = null;
+  private copiedStyle: edits.CopiedStyle | null = null;
 
   private gesture: Gesture | null = null;
   /** Fingers on the screen (touch): where each one is, in canvas pixels. */
@@ -1056,18 +1055,11 @@ export class Engine {
 
   /** Groups the selection: from now on it is selected and moved together. */
   groupSelection(): boolean {
-    const elements = this.selectedElements().filter((el) => !isLocked(el));
-    if (elements.length < 2) return false;
-    const groupId = createId();
-    this.history.commit(new Map(elements.map((el) => [el.id, { ...el, groupId }])));
-    return true;
+    return this.commitEdit(edits.group(this.selectedElements()));
   }
 
   ungroupSelection(): boolean {
-    const elements = this.selectedElements().filter((el) => el.groupId);
-    if (elements.length === 0) return false;
-    this.history.commit(new Map(elements.map((el) => [el.id, { ...el, groupId: null }])));
-    return true;
+    return this.commitEdit(edits.ungroup(this.selectedElements()));
   }
 
   /** What is written in the selection (texts, notes, shapes), to read its dates. */
@@ -1087,33 +1079,28 @@ export class Engine {
 
   /** Marks these notes as private, or not (hidden ones don't change: they are locked). */
   setPrivate(ids: string[], on: boolean): boolean {
-    const notes = ids
-      .map((id) => this.scene.get(id))
-      .filter((el): el is NoteElement => el?.type === 'note' && !el.concealed);
-    if (notes.length === 0) return false;
-    this.history.commit(
-      new Map(
-        notes.map((el) => [el.id, on ? { ...el, private: true } : { ...el, private: undefined }]),
+    return this.commitEdit(
+      edits.markPrivate(
+        ids.map((id) => this.scene.get(id)),
+        on,
       ),
     );
-    return true;
   }
 
   /** Locks (or unlocks, if everything already was) the selection. */
   toggleLockSelection(): boolean {
-    const elements = this.selectedElements();
-    if (elements.length === 0) return false;
-    const locked = !elements.every((el) => el.locked);
-    this.history.commit(new Map(elements.map((el) => [el.id, { ...el, locked }])));
-    if (locked) this.setSelection([]);
+    const edit = edits.toggleLock(this.selectedElements());
+    if (!edit) return false;
+    this.history.commit(edit.changes);
+    if (edit.locked) this.setSelection([]);
     return true;
   }
 
   unlockAll(): boolean {
-    const locked = this.scene.all().filter((el) => el.locked);
-    if (locked.length === 0) return false;
-    this.history.commit(new Map(locked.map((el) => [el.id, { ...el, locked: false }])));
-    this.setSelection(locked.map((el) => el.id));
+    const changes = edits.unlockAll(this.scene.all());
+    if (!changes) return false;
+    this.history.commit(changes);
+    this.setSelection(changes.keys());
     return true;
   }
 
@@ -1134,31 +1121,7 @@ export class Engine {
   copyStyle(): boolean {
     const [el] = this.selectedElements();
     if (!el) return false;
-    const { zoom } = this.camera;
-    const patch: StylePatch = { opacity: el.opacity };
-    if (el.type === 'stroke') Object.assign(patch, { color: el.color, size: el.size * zoom });
-    if (el.type === 'text') {
-      Object.assign(patch, {
-        color: el.color,
-        size: el.fontSize * zoom,
-        font: el.font,
-        ...flagPatch(el),
-        align: el.align,
-      });
-    }
-    if (el.type === 'note') {
-      Object.assign(patch, {
-        noteColor: el.color,
-        noteVariant: el.variant,
-        noteTextColor: el.textColor,
-        size: el.fontSize * zoom,
-        font: el.font,
-        ...flagPatch(el),
-        align: el.align,
-        valign: el.valign,
-      });
-    }
-    this.copiedStyle = { patch, type: el.type };
+    this.copiedStyle = edits.copyStyle(el, this.camera.zoom);
     this.emitState();
     return true;
   }
@@ -1166,14 +1129,12 @@ export class Engine {
   pasteStyle(): boolean {
     const copied = this.copiedStyle;
     if (!copied || this.selection.size === 0) return false;
-    const changes: Changes = new Map();
-    for (const el of this.selectedElements()) {
-      // A stroke width makes no sense as a font size (nor the other way round).
-      const { size, ...rest } = copied.patch;
-      const patch = el.type === copied.type ? copied.patch : rest;
-      void size;
-      changes.set(el.id, applyStyle(el, patch, this.camera.zoom));
-    }
+    this.history.commit(edits.pasteStyle(this.selectedElements(), copied, this.camera.zoom));
+    return true;
+  }
+
+  private commitEdit(changes: Changes | null): boolean {
+    if (!changes) return false;
     this.history.commit(changes);
     return true;
   }
@@ -2193,10 +2154,3 @@ export class Engine {
 /** Thumbnails never show a private note's text, even while it can be seen. */
 const concealPrivate = (elements: SceneElement[]) =>
   elements.map((el) => (el.type === 'note' && el.private ? concealNote(el) : el));
-
-/** An element's bold, italic and underline as a style change (off ones too, to copy them). */
-const flagPatch = (el: TextStyleFlags): StylePatch => ({
-  bold: !!el.bold,
-  italic: !!el.italic,
-  underline: !!el.underline,
-});

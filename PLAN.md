@@ -805,6 +805,11 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             ajustes, el diario, los diálogos y el escritorio). Ningún uso cambia; antes,
             tests de cómo se comportaba (`store/ui.test.ts`).
       - [ ] **Partir `Engine`** (2 200 líneas) poco a poco, al tocar cada parte.
+        - [x] Lo que el menú contextual hace con la selección (agrupar, bloquear, privado,
+              copiar y pegar el estilo) va en `engine/selectionEdits.ts`, funciones puras con
+              sus tests; los métodos de `Engine` quedan con el mismo nombre. Antes, un test
+              de caracterización con un `Engine` de verdad en Node (`engine.test.ts`, con
+              lienzos falsos de `engine/testCanvas.ts`), que pasa igual antes y después.
       - [ ] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
             varios; los merge con `-m` o `--no-edit` (uno salió con la plantilla de git).
     - **Herramientas y orden**
