@@ -750,7 +750,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           la web, la página «Ayuda» (`/ayuda/` y `/en/help/`), en el menú y el pie, con lo
           mismo: los textos y las listas salen de `src/ui/helpContent.ts`, así que la app
           y la web dicen siempre lo mismo.
-  - [ ] **H. Revisión del código** (octubre de 2026): lo que encontró la revisión de
+  - [x] **H. Revisión del código** (octubre de 2026): lo que encontró la revisión de
         seguridad, privacidad y mantenibilidad, de más a menos urgente.
     - **Seguridad, privacidad y datos**
       - [x] **Empezar otro diario en la web**: descargaba el archivo y borraba el diario
@@ -804,7 +804,10 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             store escrito en cinco partes (`store/*Slice.ts`: el lienzo, el aspecto y los
             ajustes, el diario, los diálogos y el escritorio). Ningún uso cambia; antes,
             tests de cómo se comportaba (`store/ui.test.ts`).
-      - [ ] **Partir `Engine`** (2 200 líneas) poco a poco, al tocar cada parte.
+      - [x] **Partir `Engine`** (2 200 líneas) poco a poco, al tocar cada parte. Hecho lo
+            que tenía reglas (de 2 202 a 1 993 líneas, cada parte con sus tests); lo que
+            queda es conectar eventos, la animación y el dibujo de cada fotograma, que
+            comparten estado (el gesto, la cámara): se saca cuando haya que tocarlo.
         - [x] Lo que el menú contextual hace con la selección (agrupar, bloquear, privado,
               copiar y pegar el estilo) va en `engine/selectionEdits.ts`, funciones puras con
               sus tests; los métodos de `Engine` quedan con el mismo nombre. Antes, un test
@@ -822,14 +825,15 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         - [x] Lo que hay bajo el puntero, junto a lo suyo: la casilla de una tarea
               (`tasks.ts`), la etiqueta de un enlace (`links.ts`) y el candado de una nota
               privada (`selection.ts`), con tests y clics de verdad en el motor.
-      - [ ] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
+      - [x] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
             varios; los merge con `-m` o `--no-edit` (uno salió con la plantilla de git).
+            Así desde entonces: una rama y un commit por pieza.
     - **Herramientas y orden**
       - [x] **CI completa**: `prettier --check .`, `cargo clippy` (avisos como errores) y
             la web (`astro check` y el build), como pide CONTRIBUTING.
       - [x] **Formatear `cloud/stress.k6.js`**.
       - [x] **Comentarios de `Cargo.toml` en inglés**.
-      - [ ] **`cloud/google-logo.png`**, sin subir desde hace semanas: subirlo o quitarlo.
+      - [x] **`cloud/google-logo.png`**, sin subir desde hace semanas: quitado.
       - [x] **Límites en `docs/privacy.md`**: restos en IndexedDB tras activar el cifrado,
             que la protección en disco depende de la fuerza de la contraseña, y que no
             protege frente a quien escribe en el disco.
