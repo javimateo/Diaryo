@@ -2,10 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { drawnTexts, testCanvases } from './testCanvas';
 import { DEFAULT_BOOK_STYLE, type BookSpread } from './book';
 import { Engine, type EngineState } from './engine';
+import type { TextDates } from './text';
+import type { EditingState } from './types';
 import type {
   ArrowElement,
   NoteElement,
   SceneElement,
+  ShapeElement,
   StrokeElement,
   TextElement,
 } from './elements';
@@ -78,6 +81,25 @@ const arrow = (id: string, z: number, from: string | null, to: string | null): A
   seed: 1,
   startHead: 'none',
   endHead: 'arrow',
+});
+
+const shape = (id: string, z: number, more: Partial<ShapeElement> = {}): ShapeElement => ({
+  ...base,
+  id,
+  z,
+  type: 'shape',
+  shape: 'rect',
+  color: 'ink',
+  border: true,
+  strokeWidth: 2,
+  roughness: 1,
+  seed: 1,
+  fill: null,
+  fillStyle: 'solid',
+  label: null,
+  width: 200,
+  height: 100,
+  ...more,
 });
 
 let engine: Engine;
@@ -313,5 +335,115 @@ describe("the page's images never show a private note's text", () => {
   it('while the open page itself still shows it', () => {
     load(secret());
     expect(get('p')).toMatchObject({ text: 'pin 4321' });
+  });
+});
+
+describe('writing in a text, a note or a shape', () => {
+  let editing: EditingState | null = null;
+  beforeEach(() => {
+    engine.subscribeEditing((next) => (editing = next));
+  });
+  /** Edits the only element selected, writes this and finishes. */
+  const write = (id: string, text: string) => {
+    select(id);
+    expect(engine.editSelection()).toBe(true);
+    engine.updateEditingText(text);
+    engine.finishEditing();
+  };
+
+  it('keeps what was written, selects it, and undo brings the old text back', () => {
+    load(text('t', 1), stroke('s', 2));
+    select('t');
+    engine.editSelection();
+    expect(editing).toMatchObject({ isNew: false, element: { id: 't' } });
+    expect(state.selectionCount).toBe(0);
+    engine.updateEditingText('adiós');
+    expect(get('t')).toMatchObject({ text: 'hola' });
+    engine.finishEditing();
+    expect(editing).toBeNull();
+    expect(get('t')).toMatchObject({ text: 'adiós' });
+    expect(selected()).toEqual(['t']);
+    engine.undo();
+    expect(get('t')).toMatchObject({ text: 'hola' });
+  });
+
+  it('only edits one editable element', () => {
+    load(text('t', 1), text('u', 2), stroke('s', 3));
+    select('t', 'u');
+    expect(engine.editSelection()).toBe(false);
+    select('s');
+    expect(engine.editSelection()).toBe(false);
+  });
+
+  it('an emptied text is deleted (and undo brings it back); an empty note stays', () => {
+    load(text('t', 1), note('n', 2));
+    write('t', '   ');
+    expect(engine.allElements().map((el) => el.id)).toEqual(['n']);
+    expect(selected()).toEqual([]);
+    engine.undo();
+    expect(get('t')).toMatchObject({ text: 'hola' });
+    write('n', '');
+    expect(get('n')).toMatchObject({ text: '' });
+  });
+
+  it('leaves no step to undo when nothing changed', () => {
+    load(text('t', 1));
+    select('t');
+    engine.editSelection();
+    engine.finishEditing();
+    expect(state.canUndo).toBe(false);
+    expect(selected()).toEqual(['t']);
+  });
+
+  it('a shape gets an empty label to write in, and loses it if left empty', () => {
+    load(shape('r', 1));
+    select('r');
+    engine.editSelection();
+    expect(editing?.element).toMatchObject({ label: { text: '' } });
+    engine.finishEditing();
+    expect(get('r')).toMatchObject({ label: null });
+    expect(state.canUndo).toBe(false);
+    write('r', 'caja');
+    expect(get('r')).toMatchObject({ label: { text: 'caja' } });
+  });
+
+  it('writes the dates in full when it ends', () => {
+    engine.setDates({
+      today: '2026-10-17',
+      monthFirst: false,
+      label: () => ({ text: 'mañana', tone: 'soon' }),
+      complete: (text: string) => text.replace('@mañana', '@18/10/2026'),
+    } as unknown as TextDates);
+    load(text('t', 1));
+    write('t', 'cita @mañana');
+    expect(get('t')).toMatchObject({ text: 'cita @18/10/2026' });
+    engine.setDates(null);
+  });
+
+  it('while written, a date takes the room of what is written; then, of its label', () => {
+    engine.setDates({
+      today: '2026-10-17',
+      monthFirst: false,
+      label: () => ({ text: 'una etiqueta mucho más larga que la fecha', tone: 'soon' }),
+      complete: (text: string) => text,
+    } as unknown as TextDates);
+    load(text('t', 1, { text: 'cita @mañana' }));
+    select('t');
+    engine.editSelection();
+    const width = (el: unknown) => (el as TextElement).width;
+    const writing = width(editing!.element);
+    engine.finishEditing();
+    expect(width(get('t'))).toBeGreaterThan(writing * 2);
+    engine.setDates(null);
+  });
+
+  it('finishing without selecting leaves the selection alone', () => {
+    load(text('t', 1));
+    select('t');
+    engine.editSelection();
+    engine.updateEditingText('otra');
+    engine.finishEditing(false);
+    expect(get('t')).toMatchObject({ text: 'otra' });
+    expect(selected()).toEqual([]);
   });
 });
