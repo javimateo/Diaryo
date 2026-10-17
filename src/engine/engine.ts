@@ -33,7 +33,6 @@ import {
 } from './book';
 import { PageTurner, type TurnDirection, type TurnTarget } from './pageTurn';
 import { badgeAt, drawLinkBadge, linkBadges, type LinkLabel } from './links';
-import { detachMoved } from './arrows';
 import { AssetStore, isImageFile, loadImageFile } from './assets';
 import { parseElements, serializeElements } from './clipboard';
 import { brushCursor, eraserCursor } from './cursors';
@@ -43,7 +42,6 @@ import { createText, fitEditable, isEditable } from './editing';
 import {
   createId,
   DEFAULT_STYLES,
-  type ArrowBinding,
   concealNote,
   elementBounds,
   isConcealed,
@@ -73,7 +71,7 @@ import { resolveColor } from './palette';
 import { drawElement, type RenderContext } from './render';
 import { Scene, type Changes } from './scene';
 import { elementHitsSegment } from './hit';
-import { containerAt, hitTestElement } from './selection';
+import { containerAt, hitTestElement, withGroups } from './selection';
 import { applyStyle, patchMergeKey, type StylePatch } from './restyle';
 import * as edits from './selectionEdits';
 import {
@@ -87,7 +85,6 @@ import { taskAt, withTaskToggled } from './tasks';
 import { onTextureReady } from './textures';
 import { drawBackdrop, drawHighlight, type Backdrop } from './drawing';
 import { TOOL_CURSORS, type ToolId } from './tools';
-import { translateElement } from './transform';
 import { CameraMotion } from './cameraMotion';
 import { selectionStyle } from './selectionStyle';
 import type {
@@ -765,19 +762,9 @@ export class Engine {
 
   /** Moves the selection a few screen pixels (keyboard arrows). */
   nudgeSelection(dx: number, dy: number): boolean {
-    const elements = this.selectedElements().filter((el) => !isLocked(el));
-    if (elements.length === 0 || this.gesture?.type === 'tool') return false;
+    if (this.gesture?.type === 'tool') return false;
     const { zoom } = this.camera;
-    const moving = new Set(elements.map((el) => el.id));
-    this.history.commit(
-      new Map(
-        elements.map((el) => [
-          el.id,
-          detachMoved(translateElement(el, dx / zoom, dy / zoom), moving),
-        ]),
-      ),
-    );
-    return true;
+    return this.commitEdit(edits.nudge(this.selectedElements(), dx / zoom, dy / zoom));
   }
 
   /** Clipboard text with the selection, or null if there is no selection. */
@@ -1430,33 +1417,7 @@ export class Engine {
 
   /** Adds offset copies (new ids, on top of everything, same order) and selects them. */
   private insertCopies(elements: SceneElement[], dx: number, dy: number) {
-    let z = this.scene.nextZ();
-    // The copies form new groups (they don't mix with the originals).
-    const groups = new Map<string, string>();
-    const groupFor = (id: string | null) => {
-      if (!id) return null;
-      if (!groups.has(id)) groups.set(id, createId());
-      return groups.get(id)!;
-    };
-    // Copied arrows attach to the copies (or are detached if their element wasn't
-    // copied).
-    const ids = new Map(elements.map((el) => [el.id, createId()]));
-    const rebind = (b: ArrowBinding | null) =>
-      b && ids.has(b.elementId) ? { ...b, elementId: ids.get(b.elementId)! } : null;
-    const copies = [...elements]
-      .sort((a, b) => a.z - b.z)
-      .map((el): SceneElement => {
-        const copy = {
-          ...translateElement(el, dx, dy),
-          id: ids.get(el.id)!,
-          z: z++,
-          groupId: groupFor(el.groupId),
-          locked: false,
-        };
-        return copy.type === 'arrow'
-          ? { ...copy, start: rebind(copy.start), end: rebind(copy.end) }
-          : copy;
-      });
+    const copies = edits.copies(elements, dx, dy, this.scene.nextZ());
     this.history.commit(new Map(copies.map((el) => [el.id, el])));
     this.setSelection(copies.map((el) => el.id));
   }
@@ -1472,22 +1433,7 @@ export class Engine {
 
   /** Selects, always adding the other members of each group. */
   private setSelection(ids: Iterable<string>) {
-    // A hidden private note is never selected, not even with its group: nothing changes it.
-    const selectable = (id: string) => {
-      const el = this.scene.get(id);
-      return !el || !isConcealed(el);
-    };
-    const next = new Set([...ids].filter(selectable));
-    const groups = new Set<string>();
-    for (const id of next) {
-      const groupId = this.scene.get(id)?.groupId;
-      if (groupId) groups.add(groupId);
-    }
-    if (groups.size > 0) {
-      for (const el of this.scene.all()) {
-        if (el.groupId && groups.has(el.groupId) && !isConcealed(el)) next.add(el.id);
-      }
-    }
+    const next = withGroups(this.scene, ids);
     const same =
       next.size === this.selection.size && [...next].every((id) => this.selection.has(id));
     if (same) return;

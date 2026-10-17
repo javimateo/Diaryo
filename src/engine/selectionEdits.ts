@@ -1,17 +1,20 @@
 /**
- * The edits of the selection's menu (group, lock, private, copy and paste the style) as
- * plain functions: they get the elements and return the changes, or null if there is
+ * The edits of the selection (group, lock, private, copy and paste the style, duplicate,
+ * nudge) as plain functions: they get the elements and return the changes, or null if there is
  * nothing to change. The engine commits them to its history.
  */
+import { detachMoved } from './arrows';
 import {
   createId,
   isLocked,
+  type ArrowBinding,
   type NoteElement,
   type SceneElement,
   type TextStyleFlags,
 } from './elements';
 import { applyStyle, type StylePatch } from './restyle';
 import type { Changes } from './scene';
+import { translateElement } from './transform';
 
 /** A style copied from an element, and its type (a size only fits the same type). */
 export interface CopiedStyle {
@@ -101,3 +104,42 @@ const flagPatch = (el: TextStyleFlags): StylePatch => ({
   italic: !!el.italic,
   underline: !!el.underline,
 });
+
+/**
+ * Copies moved by (dx, dy): new ids, on top of everything from `z` in the same order, in
+ * new groups (they don't mix with the originals) and unlocked.
+ */
+export function copies(elements: SceneElement[], dx: number, dy: number, z: number) {
+  const groups = new Map<string, string>();
+  const groupFor = (id: string | null) => {
+    if (!id) return null;
+    if (!groups.has(id)) groups.set(id, createId());
+    return groups.get(id)!;
+  };
+  // Copied arrows attach to the copies (or are detached if their element wasn't copied).
+  const ids = new Map(elements.map((el) => [el.id, createId()]));
+  const rebind = (b: ArrowBinding | null) =>
+    b && ids.has(b.elementId) ? { ...b, elementId: ids.get(b.elementId)! } : null;
+  return [...elements]
+    .sort((a, b) => a.z - b.z)
+    .map((el): SceneElement => {
+      const copy = {
+        ...translateElement(el, dx, dy),
+        id: ids.get(el.id)!,
+        z: z++,
+        groupId: groupFor(el.groupId),
+        locked: false,
+      };
+      return copy.type === 'arrow'
+        ? { ...copy, start: rebind(copy.start), end: rebind(copy.end) }
+        : copy;
+    });
+}
+
+/** Moves what isn't locked; arrows let go of what doesn't move with them. */
+export function nudge(selected: SceneElement[], dx: number, dy: number): Changes | null {
+  const elements = selected.filter((el) => !isLocked(el));
+  if (elements.length === 0) return null;
+  const moving = new Set(elements.map((el) => el.id));
+  return new Map(elements.map((el) => [el.id, detachMoved(translateElement(el, dx, dy), moving)]));
+}

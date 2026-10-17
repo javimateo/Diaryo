@@ -810,6 +810,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
               sus tests; los métodos de `Engine` quedan con el mismo nombre. Antes, un test
               de caracterización con un `Engine` de verdad en Node (`engine.test.ts`, con
               lienzos falsos de `engine/testCanvas.ts`), que pasa igual antes y después.
+        - [x] Duplicar y pegar (las copias: ids nuevos, encima, grupos nuevos, flechas a las
+              copias) y mover con las flechas del teclado, también en `selectionEdits.ts`;
+              la regla de que seleccionar algo selecciona su grupo, en `selection.ts`.
       - [ ] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
             varios; los merge con `-m` o `--no-edit` (uno salió con la plantilla de git).
     - **Herramientas y orden**
