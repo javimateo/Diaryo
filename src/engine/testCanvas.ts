@@ -4,9 +4,13 @@
  */
 const noop = () => {};
 
+/** Every text drawn on any of these canvases, in order (tests empty it when they need). */
+export const drawnTexts: string[] = [];
+
 /** A 2D context that accepts any call or property (it only needs not to break). */
 function fakeContext(): CanvasRenderingContext2D {
   const target: Record<string | symbol, unknown> = {
+    fillText: (text: string) => drawnTexts.push(text),
     measureText: (text: string) => ({ width: text.length * 8, actualBoundingBoxAscent: 8 }),
     getImageData: () => ({ data: new Uint8ClampedArray(4) }),
     createLinearGradient: () => ({ addColorStop: noop }),
@@ -54,6 +58,8 @@ globalThis.ResizeObserver ??= class {
   unobserve = noop;
   disconnect = noop;
 } as unknown as typeof ResizeObserver;
+globalThis.ImageData ??= class {} as unknown as typeof ImageData;
+globalThis.DOMMatrix ??= class {} as unknown as typeof DOMMatrix;
 globalThis.requestAnimationFrame ??= (() => 0) as unknown as typeof requestAnimationFrame;
 globalThis.cancelAnimationFrame ??= noop;
 globalThis.matchMedia ??= (() => ({

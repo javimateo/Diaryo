@@ -813,6 +813,9 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
         - [x] Duplicar y pegar (las copias: ids nuevos, encima, grupos nuevos, flechas a las
               copias) y mover con las flechas del teclado, también en `selectionEdits.ts`;
               la regla de que seleccionar algo selecciona su grupo, en `selection.ts`.
+        - [x] Las imágenes de páginas (miniaturas, la portada cerrada, la hoja que gira) en
+              `engine/pageImages.ts`, con tests de que ninguna dibuja el texto de una nota
+              privada.
       - [ ] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
             varios; los merge con `-m` o `--no-edit` (uno salió con la plantilla de git).
     - **Herramientas y orden**

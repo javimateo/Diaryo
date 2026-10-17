@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { testCanvases } from './testCanvas';
+import { drawnTexts, testCanvases } from './testCanvas';
+import { DEFAULT_BOOK_STYLE, type BookSpread } from './book';
 import { Engine, type EngineState } from './engine';
 import type {
   ArrowElement,
@@ -256,5 +257,61 @@ describe('copying and selecting through the engine', () => {
     expect(get('r')).toMatchObject({ x: 5, start: { elementId: 'a' }, end: null });
     select('b');
     expect(engine.nudgeSelection(1, 0)).toBe(false);
+  });
+});
+
+describe("the page's images never show a private note's text", () => {
+  const book: BookSpread = {
+    style: DEFAULT_BOOK_STYLE,
+    date: '',
+    title: '',
+    today: false,
+    pageNumber: 1,
+    tabs: [],
+    labels: { today: '', cues: '', notes: '', summary: '', tasks: '' },
+  };
+  const secret = () => note('p', 1, { private: true, text: 'pin 4321', x: 20, y: -100 });
+  const plain = () => note('n', 2, { text: 'hola', x: 20, y: 150 });
+  /** What was drawn while making an image. */
+  const drawing = (make: () => unknown) => {
+    drawnTexts.length = 0;
+    const image = make();
+    return { image, texts: drawnTexts.join(' ') };
+  };
+
+  it('the thumbnail of a loose page, of an open diary and of a closed one', () => {
+    load(secret(), plain());
+    for (const spread of [null, book, { ...book, closed: true }]) {
+      engine.setBook(spread);
+      const { image, texts } = drawing(() => engine.thumbnail(200, 150));
+      expect(image).toEqual(expect.any(String));
+      expect(texts).toContain('hola');
+      expect(texts).not.toContain('4321');
+    }
+  });
+
+  it('an empty page has no thumbnail, except the closed diary (its cover)', () => {
+    load();
+    expect(engine.thumbnail(200, 150)).toBeNull();
+    engine.setBook(book);
+    expect(engine.thumbnail(200, 150)).toBeNull();
+    engine.setBook({ ...book, closed: true });
+    expect(engine.thumbnail(200, 150)).toEqual(expect.any(String));
+  });
+
+  it("another page's thumbnail and the cover image", () => {
+    const elements = [secret(), plain()];
+    const spread = drawing(() => engine.spreadThumbnail({ id: 'x', elements, book }, 200));
+    const cover = drawing(() => engine.coverImage(book, elements, 200));
+    for (const { image, texts } of [spread, cover]) {
+      expect(image).toEqual(expect.any(String));
+      expect(texts).toContain('hola');
+      expect(texts).not.toContain('4321');
+    }
+  });
+
+  it('while the open page itself still shows it', () => {
+    load(secret());
+    expect(get('p')).toMatchObject({ text: 'pin 4321' });
   });
 });
