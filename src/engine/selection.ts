@@ -1,6 +1,7 @@
 import { isClosedStroke } from './containers';
 import {
   elementBounds,
+  isConcealed,
   isLocked,
   toLocal,
   type ContainerElement,
@@ -222,4 +223,27 @@ export function drawSelectionBox(
     ctx.stroke();
   }
   ctx.restore();
+}
+
+/**
+ * What selecting these ids selects: also the other members of each group, but never a
+ * hidden private note (not even with its group: nothing changes it).
+ */
+export function withGroups(scene: Scene, ids: Iterable<string>): Set<string> {
+  const selectable = (id: string) => {
+    const el = scene.get(id);
+    return !el || !isConcealed(el);
+  };
+  const next = new Set([...ids].filter(selectable));
+  const groups = new Set<string>();
+  for (const id of next) {
+    const groupId = scene.get(id)?.groupId;
+    if (groupId) groups.add(groupId);
+  }
+  if (groups.size > 0) {
+    for (const el of scene.all()) {
+      if (el.groupId && groups.has(el.groupId) && !isConcealed(el)) next.add(el.id);
+    }
+  }
+  return next;
 }

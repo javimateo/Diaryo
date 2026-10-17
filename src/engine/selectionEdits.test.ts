@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 // Pasting a font size measures the text again, on a canvas.
 import './testCanvas';
-import type { NoteElement, StrokeElement, TextElement } from './elements';
+import type { ArrowElement, NoteElement, StrokeElement, TextElement } from './elements';
 import {
+  copies,
   copyStyle,
   group,
   markPrivate,
+  nudge,
   pasteStyle,
   toggleLock,
   ungroup,
@@ -59,6 +61,22 @@ const note = (id: string, more: Partial<NoteElement> = {}): NoteElement => ({
   width: 220,
   height: 220,
   ...more,
+});
+
+const arrow = (id: string, from: string | null, to: string | null): ArrowElement => ({
+  ...base,
+  id,
+  type: 'arrow',
+  points: [0, 0, 0, 100, 0, 0],
+  bend: 0,
+  start: from ? { elementId: from, focus: { x: 0.5, y: 0.5 } } : null,
+  end: to ? { elementId: to, focus: { x: 0.5, y: 0.5 } } : null,
+  color: 'ink',
+  size: 2,
+  roughness: 1,
+  seed: 1,
+  startHead: 'none',
+  endHead: 'arrow',
 });
 
 describe('grouping', () => {
@@ -152,5 +170,60 @@ describe('copying and pasting a style', () => {
     expect(pasteStyle([text('u', { italic: true })], copied, 1).get('u')).not.toMatchObject({
       italic: true,
     });
+  });
+});
+
+describe('copies', () => {
+  it('new ids, moved, on top in the same order, unlocked', () => {
+    const made = copies(
+      [stroke('b', { z: 7, locked: true }), stroke('a', { z: 2, x: 5 })],
+      10,
+      -3,
+      20,
+    );
+    expect(made.map((el) => el.z)).toEqual([20, 21]);
+    expect(made[0]).toMatchObject({ x: 15, y: -3, locked: false });
+    expect(made[1]).toMatchObject({ x: 10, y: -3, locked: false });
+    expect(made.map((el) => el.id)).not.toContain('a');
+    expect(new Set(made.map((el) => el.id)).size).toBe(2);
+  });
+
+  it('each group copied becomes one new group of its own', () => {
+    const made = copies(
+      [
+        stroke('a', { groupId: 'g' }),
+        stroke('b', { groupId: 'g' }),
+        stroke('c', { groupId: 'k' }),
+        stroke('d'),
+      ],
+      0,
+      0,
+      1,
+    );
+    const [a, b, c, d] = made.map((el) => el.groupId);
+    expect(a).toBeTruthy();
+    expect(a).not.toBe('g');
+    expect(b).toBe(a);
+    expect(c).not.toBe(a);
+    expect(d).toBeNull();
+  });
+
+  it('copied arrows point to the copies, or let go of what was not copied', () => {
+    const [a, r] = copies([stroke('a', { z: 1 }), arrow('r', 'a', 'x')], 0, 0, 1);
+    expect(r).toMatchObject({ start: { elementId: a.id, focus: { x: 0.5 } }, end: null });
+  });
+});
+
+describe('nudging', () => {
+  it('moves what is not locked; arrows let go of what stays', () => {
+    const changes = nudge(
+      [stroke('a'), stroke('b', { locked: true }), arrow('r', 'a', 'x')],
+      4,
+      2,
+    )!;
+    expect([...changes.keys()]).toEqual(['a', 'r']);
+    expect(changes.get('a')).toMatchObject({ x: 4, y: 2 });
+    expect(changes.get('r')).toMatchObject({ start: { elementId: 'a' }, end: null });
+    expect(nudge([stroke('b', { locked: true })], 1, 0)).toBeNull();
   });
 });

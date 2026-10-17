@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { testCanvases } from './testCanvas';
 import { Engine, type EngineState } from './engine';
-import type { NoteElement, SceneElement, StrokeElement, TextElement } from './elements';
+import type {
+  ArrowElement,
+  NoteElement,
+  SceneElement,
+  StrokeElement,
+  TextElement,
+} from './elements';
 
 const base = { rotation: 0, opacity: 1, groupId: null, locked: false, x: 0, y: 0 };
 
@@ -55,12 +61,31 @@ const note = (id: string, z: number, more: Partial<NoteElement> = {}): NoteEleme
   ...more,
 });
 
+/** An arrow from one element to another (null: a loose end). */
+const arrow = (id: string, z: number, from: string | null, to: string | null): ArrowElement => ({
+  ...base,
+  id,
+  z,
+  type: 'arrow',
+  points: [0, 0, 0, 100, 0, 0],
+  bend: 0,
+  start: from ? { elementId: from, focus: { x: 0.5, y: 0.5 } } : null,
+  end: to ? { elementId: to, focus: { x: 0.5, y: 0.5 } } : null,
+  color: 'ink',
+  size: 2,
+  roughness: 1,
+  seed: 1,
+  startHead: 'none',
+  endHead: 'arrow',
+});
+
 let engine: Engine;
 let state: EngineState;
 const get = (id: string) => engine.allElements().find((el) => el.id === id)!;
 /** Selects these elements (as a click would: the engine has no public way to). */
 const select = (...ids: string[]) =>
   (engine as unknown as { setSelection(ids: string[]): void }).setSelection(ids);
+const selected = () => [...(engine as unknown as { selection: Set<string> }).selection];
 const load = (...elements: SceneElement[]) => engine.loadPage(elements, { x: 0, y: 0, zoom: 2 });
 
 beforeEach(() => {
@@ -170,5 +195,66 @@ describe('editing the selection through the engine', () => {
     select('r');
     engine.pasteStyle();
     expect(get('r')).toMatchObject({ size: 6 });
+  });
+});
+
+describe('copying and selecting through the engine', () => {
+  it('selecting one of a group selects the group, never a hidden private note', () => {
+    load(
+      stroke('a', 1, { groupId: 'g' }),
+      stroke('b', 2, { groupId: 'g' }),
+      note('h', 3, { groupId: 'g', private: true, concealed: true }),
+      stroke('c', 4),
+    );
+    select('a');
+    expect(selected().sort()).toEqual(['a', 'b']);
+    select('h', 'c');
+    expect(selected()).toEqual(['c']);
+  });
+
+  it('duplicates on top, in a new group, with the arrows on the copies', () => {
+    load(
+      stroke('a', 5, { groupId: 'g', x: 10 }),
+      arrow('r', 6, 'a', 'c'),
+      arrow('q', 7, 'c', 'a'),
+      stroke('c', 9),
+      stroke('d', 3, { groupId: 'g', locked: true }),
+    );
+    select('a', 'r', 'q', 'd');
+    expect(engine.duplicateSelection()).toBe(true);
+    const copies = engine.allElements().filter((el) => !['a', 'r', 'q', 'c', 'd'].includes(el.id));
+    expect(copies.map((el) => el.z)).toEqual([10, 11, 12, 13]);
+    const [d, a, r, q] = copies.sort((x, y) => x.z - y.z);
+    expect(a).toMatchObject({ type: 'stroke', x: 18, y: 8, locked: false });
+    expect(d).toMatchObject({ locked: false });
+    expect(a.groupId).toBeTruthy();
+    expect(a.groupId).not.toBe('g');
+    expect(d.groupId).toBe(a.groupId);
+    expect(r).toMatchObject({ groupId: null, start: { elementId: a.id }, end: null });
+    expect(q).toMatchObject({ start: null, end: { elementId: a.id } });
+    expect(selected().sort()).toEqual(copies.map((el) => el.id).sort());
+    engine.undo();
+    expect(engine.allElements()).toHaveLength(5);
+  });
+
+  it('pastes what was copied as new elements', () => {
+    load(stroke('a', 1), stroke('b', 2));
+    select('a', 'b');
+    const copied = engine.copySelection()!;
+    expect(engine.paste(copied)).toBe(true);
+    expect(engine.allElements()).toHaveLength(4);
+    expect(selected()).toHaveLength(2);
+    expect(selected()).not.toContain('a');
+  });
+
+  it('nudges what is not locked, and loose arrows let go', () => {
+    load(stroke('a', 1), stroke('b', 2, { locked: true }), arrow('r', 3, 'a', 'c'), stroke('c', 4));
+    select('a', 'b', 'r');
+    expect(engine.nudgeSelection(10, -4)).toBe(true);
+    expect(get('a')).toMatchObject({ x: 5, y: -2 });
+    expect(get('b')).toMatchObject({ x: 0, y: 0 });
+    expect(get('r')).toMatchObject({ x: 5, start: { elementId: 'a' }, end: null });
+    select('b');
+    expect(engine.nudgeSelection(1, 0)).toBe(false);
   });
 });
