@@ -1,3 +1,4 @@
+import { useAccount } from '../cloud/account';
 import { useLock } from '../cloud/lockState';
 import { isDesktop, listen } from '../desktop/tauri';
 import { useUI } from '../store/ui';
@@ -12,7 +13,10 @@ const ACTIVITY = ['pointerdown', 'pointermove', 'keydown', 'wheel'] as const;
  * tray on the desktop). Returns how to stop.
  */
 export function startAutoLock(): () => void {
-  const active = () => useLock.getState().status === 'unlocked';
+  // Not while Google is open in the browser: locking reloads the page, and the server
+  // would no longer find it to say the sign-in is done ("Auth failed").
+  const active = () =>
+    useLock.getState().status === 'unlocked' && !useAccount.getState().googlePending;
   let timer = 0;
   let last = 0;
   const lock = () => {
