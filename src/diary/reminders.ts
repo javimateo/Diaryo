@@ -39,8 +39,10 @@ function placeOf(item: AgendaItem, pages: PageMeta[]) {
 }
 
 /**
- * The reminders to come of what is pending, `before` minutes before each one's time.
- * With `hidden` (the whole diary encrypted) or for a private note, without its words.
+ * The reminders to come, `before` minutes before each one's time, and those that came due
+ * after `since` (written right at their time: the desktop side shows them at once). Never
+ * of done tasks. With `hidden` (the whole diary encrypted) or for a private note, without
+ * its words.
  */
 export function buildReminders(
   items: AgendaItem[],
@@ -48,12 +50,14 @@ export function buildReminders(
   before: number,
   hidden: boolean,
   pages: PageMeta[],
+  since = now,
 ): Reminder[] {
   const r = t().reminders;
+  // An appointment without an end is over at its time, but just begun it still reminds.
   return items
-    .filter((item) => isPending(item, now))
+    .filter((item) => item.task !== 'done')
     .map((item) => ({ item, at: remindAt(item, before) }))
-    .filter(({ at }) => at > now)
+    .filter(({ at }) => at > since)
     .sort((a, b) => a.at - b.at)
     .slice(0, MAX_REMINDERS)
     .map(({ item, at }) => {

@@ -70,6 +70,18 @@ describe('buildReminders', () => {
     ]);
   });
 
+  it('also what came due since the list was last sent, still pending', () => {
+    const items = [
+      item('Recién escrita', '2026-10-12', { task: null, time: 12 * 60 + 29 }),
+      item('De antes', '2026-10-12', { task: null, time: 12 * 60 + 20 }),
+    ];
+    const since = at(12, 12, 25);
+    const titles = (from?: number) =>
+      buildReminders(items, NOW, 0, false, PAGES, from).map((r) => r.title);
+    expect(titles(since)).toEqual(['Recién escrita']);
+    expect(titles()).toEqual([]);
+  });
+
   it('keeps the same key for the same reminder', () => {
     const [a] = buildReminders([item('Pan', '2026-10-13')], NOW, 0, false, PAGES);
     const [b] = buildReminders([item('Pan', '2026-10-13')], NOW + 60_000, 0, false, PAGES);
