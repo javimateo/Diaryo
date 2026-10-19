@@ -9,6 +9,11 @@ import { revealElement } from './diaryActions';
 const OPENED = 'diaryo://reminder-opened';
 /** Until when the reminders were looked after (to tell those missed while closed). */
 const SEEN_KEY = 'diaryo:reminders-seen';
+/**
+ * Something written right at its time (or saved a moment after) arrives once its reminder
+ * is due: up to this late, it still reminds, at once.
+ */
+const LATE = 5 * 60_000;
 
 /**
  * Without their words with the whole diary encrypted: Windows keeps the notifications it
@@ -24,12 +29,17 @@ const withoutWords = () => useLock.getState().level === 'all';
  */
 export function startReminders(): () => void {
   let loaded = false;
+  // When the list was last sent: what came due since then wasn't in it yet.
+  let sentAt = 0;
   const now = () => Date.now();
   const send = () => {
     const { agenda, settings, diaryState } = useUI.getState();
     const hidden = withoutWords();
+    const time = now();
+    const since = Math.max(sentAt, time - LATE);
+    sentAt = time;
     const list = settings.reminders
-      ? buildReminders(agenda, now(), settings.remindBefore, hidden, diaryState.pages)
+      ? buildReminders(agenda, time, settings.remindBefore, hidden, diaryState.pages, since)
       : [];
     void call('set_reminders', { reminders: list }).catch(() => undefined);
   };
@@ -50,6 +60,8 @@ export function startReminders(): () => void {
           ? missedReminder(state.agenda, from, now(), remindBefore, hidden)
           : null;
       if (missed) void call('show_reminder', { reminder: missed }).catch(() => undefined);
+      // What was due until now is in that summary already.
+      sentAt = now();
       seen();
     }
     if (

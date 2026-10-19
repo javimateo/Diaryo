@@ -142,7 +142,8 @@ modes and backups, `desktop/deskLayer.ts` drives the desk window, and
 `desktop/updates.ts` checks GitHub for new versions (see [releasing](releasing.md)).
 `ui/reminders.ts` sends the desktop side the next reminders (`diary/reminders.ts` builds
 them from the agenda: without their words for private notes or with the whole diary
-encrypted, as Windows keeps the notifications it showed),
+encrypted, as Windows keeps the notifications it showed; what came due since the last
+list, up to five minutes late, too, so something written right at its time still reminds),
 tells in one notification those missed while diaryo was closed (within a day) and opens
 what a clicked reminder is about. Notifications have diaryo's name and icon only in the
 installed app; in development they come from PowerShell.
