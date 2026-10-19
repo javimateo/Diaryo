@@ -520,3 +520,25 @@ describe('clicking what is under the pointer', () => {
     expect(get('t')).toMatchObject({ text: '[ ] pan' });
   });
 });
+
+describe('exporting the page as a PNG', () => {
+  it('in the diary, with the book; without it, only what is written', async () => {
+    load(note('n', 1, { text: 'hola' }));
+    drawnTexts.length = 0;
+    await engine.exportPng();
+    expect(drawnTexts).not.toContain('martes');
+    engine.setBook({
+      style: DEFAULT_BOOK_STYLE,
+      date: 'martes',
+      title: '',
+      today: false,
+      pageNumber: 1,
+      tabs: [],
+      labels: { today: '', cues: '', notes: '', summary: '', tasks: '' },
+    });
+    drawnTexts.length = 0;
+    expect(await engine.exportPng()).toBeTruthy();
+    expect(drawnTexts).toContain('martes');
+    expect(drawnTexts.join(' ')).toContain('hola');
+  });
+});

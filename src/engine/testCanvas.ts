@@ -50,6 +50,7 @@ function fakeCanvas(): HTMLCanvasElement {
       bottom: 600,
     }),
     toDataURL: () => 'data:image/png;base64,',
+    toBlob: (done: (blob: Blob) => void) => done(new Blob([], { type: 'image/png' })),
     parentElement: { getBoundingClientRect: () => ({ width: 800, height: 600 }) },
   } as unknown as HTMLCanvasElement;
 }

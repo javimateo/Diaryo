@@ -1290,10 +1290,18 @@ export class Engine {
     this.zoomToFit();
   }
 
-  /** PNG image of the whole page (or null if it is empty). */
+  /** PNG image of the whole page (or null if it is empty): in the diary, with the book. */
   exportPng(): Promise<Blob | null> {
     const elements = this.scene.all();
     if (elements.length === 0) return Promise.resolve(null);
+    if (this.book) {
+      const { mode, background } = this.theme;
+      return pageImages.pageToPng(elements, this.book, this.deskIds, {
+        mode,
+        background,
+        assets: this.assets,
+      });
+    }
     return elementsToPng(elements, {
       mode: this.theme.mode,
       assets: this.assets,
