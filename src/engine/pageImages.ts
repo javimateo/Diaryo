@@ -1,9 +1,9 @@
 /**
- * Images of pages drawn off screen: thumbnails, the closed diary's cover and the double
- * page of the turning sheet. What is saved (thumbnails, covers) never shows a private
+ * Images of pages drawn off screen: thumbnails, the closed diary's cover, the double page
+ * of the turning sheet and the page exported as a PNG. What is saved (thumbnails, covers) never shows a private
  * note's text, even while it can be seen.
  */
-import { renderElements } from './arrange';
+import { MAX_SIDE, renderElements } from './arrange';
 import type { AssetStore } from './assets';
 import {
   bookBounds,
@@ -14,7 +14,9 @@ import {
   traceClosedCover,
   type BookSpread,
 } from './book';
-import { concealNote, type SceneElement } from './elements';
+import { drawBackdrop } from './drawing';
+import { concealNote, elementBounds, type SceneElement } from './elements';
+import { unionBounds } from './geometry';
 import type { TurnTarget } from './pageTurn';
 import type { ThemeMode } from './palette';
 import { drawElement, type RenderContext } from './render';
@@ -109,4 +111,58 @@ export function pageThumbnail(
     height,
   });
   return canvas.toDataURL('image/webp', 0.8);
+}
+
+/**
+ * The page in a PNG as the screen shows it: the desk with its texture, the book (open or
+ * closed) and everything on it and around it, at twice the size (smaller if it would be
+ * too large).
+ */
+export function pageToPng(
+  elements: SceneElement[],
+  book: BookSpread,
+  deskIds: ReadonlySet<string>,
+  options: { mode: ThemeMode; background: string; assets: AssetStore },
+): Promise<Blob | null> {
+  const padding = 32;
+  const bounds = elements.map(elementBounds).reduce(unionBounds, bookBounds(book));
+  const minX = bounds.minX - padding;
+  const minY = bounds.minY - padding;
+  const width = bounds.maxX - bounds.minX + padding * 2;
+  const height = bounds.maxY - bounds.minY + padding * 2;
+  const scale = Math.min(2, MAX_SIDE / width, MAX_SIDE / height);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  const ctx = canvas.getContext('2d')!;
+  const { mode, assets } = options;
+  drawBackdrop(
+    ctx,
+    canvas,
+    { kind: 'desk', style: book.style.desk },
+    options,
+    {
+      x: minX,
+      y: minY,
+      zoom: scale,
+    },
+    1,
+  );
+  ctx.setTransform(scale, 0, 0, scale, -minX * scale, -minY * scale);
+  drawBook(ctx, book, mode, scale);
+  const rc: RenderContext = { mode, pixelScale: scale, assets, editingId: null };
+  const sorted = [...elements].sort((a, b) => a.z - b.z);
+  // As on the screen: on the closed diary, what is stuck on the cover ends at its edge.
+  const closed = !!book.closed;
+  const loose = (el: SceneElement) => closed && deskIds.has(el.id);
+  for (const el of sorted) if (loose(el)) drawElement(ctx, el, rc);
+  if (closed) {
+    ctx.save();
+    traceClosedCover(ctx);
+    ctx.clip();
+  }
+  for (const el of sorted) if (!loose(el)) drawElement(ctx, el, rc);
+  if (closed) ctx.restore();
+  drawBinding(ctx, book, scale);
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
 }

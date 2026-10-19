@@ -3,7 +3,7 @@ import { drawnTexts } from './testCanvas';
 import { AssetStore } from './assets';
 import { DEFAULT_BOOK_STYLE, type BookSpread } from './book';
 import type { NoteElement } from './elements';
-import { concealPrivate, pageThumbnail } from './pageImages';
+import { concealPrivate, pageThumbnail, pageToPng } from './pageImages';
 
 const note = (id: string, more: Partial<NoteElement> = {}): NoteElement => ({
   id,
@@ -57,5 +57,26 @@ describe('images of pages', () => {
       // The open diary's, as a double page: its paper with the date.
       expect(drawnTexts.includes('sábado')).toBe(spread === book);
     }
+  });
+});
+
+describe('the page exported as a PNG', () => {
+  const options = { mode: 'light' as const, background: '#fff', assets: new AssetStore(() => {}) };
+
+  it('in the diary, with the book (its paper and date) under what is written', async () => {
+    drawnTexts.length = 0;
+    const blob = await pageToPng([note('n')], book, new Set(), options);
+    expect(blob?.type).toBe('image/png');
+    expect(drawnTexts.indexOf('sábado')).toBeGreaterThanOrEqual(0);
+    expect(drawnTexts.indexOf('sábado')).toBeLessThan(drawnTexts.indexOf('hola'));
+  });
+
+  it('closed, the cover and what is on the desk around it', async () => {
+    drawnTexts.length = 0;
+    const desk = note('d', { text: 'en la mesa', x: 900 });
+    await pageToPng([note('n'), desk], { ...book, closed: true }, new Set(['d']), options);
+    expect(drawnTexts.join(' ')).toContain('en la mesa');
+    expect(drawnTexts.join(' ')).toContain('hola');
+    expect(drawnTexts).not.toContain('sábado');
   });
 });

@@ -89,7 +89,8 @@ export function flip(elements: SceneElement[], axis: 'horizontal' | 'vertical'):
 }
 
 /** Largest side allowed for the exported image (browsers don't support more). */
-const MAX_SIDE = 8192;
+/** The longest side of an exported image (browsers refuse much larger canvases). */
+export const MAX_SIDE = 8192;
 
 /** Paints the elements into a PNG image, at double resolution and with a small margin. */
 export function elementsToPng(
