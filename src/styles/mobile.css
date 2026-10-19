@@ -64,6 +64,17 @@
     justify-content: center;
   }
 
+  /* Dressing up the cover, its bar (and the way back) takes the page navigation's place,
+     hidden meanwhile. */
+  .top-left:has(.cover-bar) {
+    display: flex;
+    top: auto;
+    right: 0;
+    bottom: 64px;
+    left: 0;
+    justify-content: center;
+  }
+
   .page-label {
     min-width: 0;
   }
@@ -212,6 +223,14 @@
     left: auto;
     right: 8px;
     bottom: 8px;
+  }
+
+  .top-left:has(.cover-bar) {
+    display: flex;
+    top: auto;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
   }
 
   /* Notices on the left, never under the page navigation. */
