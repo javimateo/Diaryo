@@ -173,7 +173,9 @@ style stay as they are, so it shows in its place with a padlock.
 - **Locking by itself** (Settings → Privacy, with the whole diary encrypted): after 5,
   15 or 60 minutes without using it (pointer, keys, wheel), and, with "Lock when put
   away", when the tab changes or it is minimized (on the desktop, also to the tray). It
-  is "Lock now" done for the user (`src/ui/autoLock.ts`). Off by default.
+  is "Lock now" done for the user (`src/ui/autoLock.ts`). Off by default. Not while
+  signing in with Google: the browser takes the user away from the diary, and locking
+  reloads the page, so the server couldn't hand it the sign-in ("Auth failed").
 - **Signing out, "Leave it encrypted and locked"**: the diary stays on the device, but
   the whole diary is encrypted first if it wasn't (with the cloud's diary password),
   and locked once signed out. It opens offline with that password (its vault is kept
