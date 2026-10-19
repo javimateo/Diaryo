@@ -7,7 +7,7 @@
   align-items: stretch;
   gap: 0;
   min-width: 250px;
-  max-height: calc(100vh - 16px);
+  max-height: calc(100dvh - 16px);
   padding: 6px;
   overflow-y: auto;
   animation: pop-in 120ms var(--ease);

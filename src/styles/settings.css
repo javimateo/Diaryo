@@ -2,7 +2,7 @@
 
 .settings-dialog {
   width: min(900px, 100%);
-  height: min(86vh, 660px);
+  height: min(86dvh, 660px);
   overflow: hidden;
 }
 
