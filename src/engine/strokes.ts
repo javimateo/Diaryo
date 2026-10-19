@@ -31,23 +31,37 @@ export interface StrokeInput {
   size: number;
 }
 
-function toTriples(points: number[]): number[][] {
+/**
+ * perfect-freehand has a few distances in absolute units (it drops the last 3 as noise,
+ * among others): right for a stroke drawn at 100 %, but one drawn very zoomed in is thin
+ * in world units and its ends twist. A stroke thinner than this is worked out larger, as
+ * if drawn at a normal size, and its outline brought back down.
+ */
+const MIN_OUTLINE_SIZE = 4;
+
+function toTriples(points: number[], scale: number): number[][] {
   const result: number[][] = [];
   for (let i = 0; i < points.length; i += 3) {
-    result.push([points[i], points[i + 1], points[i + 2]]);
+    result.push([points[i] * scale, points[i + 1] * scale, points[i + 2]]);
   }
   return result;
 }
 
-/** Stroke outline as a Path2D, in point coordinates. */
-export function buildStrokePath(stroke: StrokeInput, complete: boolean): Path2D {
-  const outline = getStroke(toTriples(stroke.points), {
+/** The points of a stroke's outline, in point coordinates. */
+export function strokeOutline(stroke: StrokeInput, complete: boolean): number[][] {
+  const scale = Math.max(1, MIN_OUTLINE_SIZE / stroke.size);
+  const outline = getStroke(toTriples(stroke.points, scale), {
     ...BASE_OPTIONS[stroke.kind],
-    size: stroke.size,
+    size: stroke.size * scale,
     simulatePressure: stroke.kind === 'pen' && stroke.simulatePressure,
     last: complete,
   });
-  return outlineToPath(outline);
+  return scale === 1 ? outline : outline.map(([x, y]) => [x / scale, y / scale]);
+}
+
+/** Stroke outline as a Path2D, in point coordinates. */
+export function buildStrokePath(stroke: StrokeInput, complete: boolean): Path2D {
+  return outlineToPath(strokeOutline(stroke, complete));
 }
 
 /** Joins the outline points with quadratic curves so the edge is smooth. */
