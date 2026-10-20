@@ -7,6 +7,10 @@ interface Props {
   theme: EngineTheme;
   /** Changing it plays the clip again from the start. */
   run?: number;
+  /** Plays again after this pause (ms), over and over (by default, once). */
+  loop?: number;
+  /** False: it stops where it is (out of view), and starts again when it is true. */
+  playing?: boolean;
   className?: string;
   /**
    * Laid over the canvas (e.g. the search palette), animated by its CSS (whose own style
@@ -19,9 +23,17 @@ const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').match
 
 /**
  * Plays a clip on an engine of its own that nothing can touch: once, staying on its last
- * frame. With reduced motion it shows that last frame straight away.
+ * frame, or in a loop. With reduced motion it shows that last frame straight away.
  */
-export function ClipView({ clip, theme, run = 0, className, children }: Props) {
+export function ClipView({
+  clip,
+  theme,
+  run = 0,
+  loop,
+  playing = true,
+  className,
+  children,
+}: Props) {
   const sceneRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const [engine, setEngine] = useState<Engine | null>(null);
@@ -67,11 +79,17 @@ export function ClipView({ clip, theme, run = 0, className, children }: Props) {
       show(clip.frame(clip.duration));
       return;
     }
-    const turns = [...(clip.turns ?? [])];
+    // Waiting (out of view): its first frame, the book as it starts.
+    if (!playing) {
+      show(clip.frame(0));
+      return;
+    }
+    let turns = [...(clip.turns ?? [])];
     let turning = false;
     let raf = 0;
+    let again = 0;
     let stopped = false;
-    const start = performance.now();
+    let start = performance.now();
     const tick = () => {
       const t = performance.now() - start;
       // While a sheet turns, the page under it stays: it changes when it lands.
@@ -90,14 +108,22 @@ export function ClipView({ clip, theme, run = 0, className, children }: Props) {
         });
       }
       if (t < clip.duration || turning || turns.length > 0) raf = requestAnimationFrame(tick);
+      else if (loop !== undefined) {
+        again = window.setTimeout(() => {
+          start = performance.now();
+          turns = [...(clip.turns ?? [])];
+          tick();
+        }, loop);
+      }
     };
     tick();
     return () => {
       stopped = true;
       cancelAnimationFrame(raf);
+      clearTimeout(again);
       engine.endPageTurn();
     };
-  }, [engine, clip, run]);
+  }, [engine, clip, run, loop, playing]);
 
   return (
     <div className={className}>

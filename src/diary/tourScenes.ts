@@ -36,7 +36,12 @@ export interface TourSceneContext {
 /** The top of the left page, with its date and the first lines. */
 const PAGE_TOP: Bounds = { minX: -760, minY: -500, maxX: 0, maxY: -60 };
 
-function spread(c: TourSceneContext, day: DayKey, pageNumber: number, style = c.style): BookSpread {
+export function spread(
+  c: TourSceneContext,
+  day: DayKey,
+  pageNumber: number,
+  style = c.style,
+): BookSpread {
   return {
     style,
     date: formatDay(day, c.today),
@@ -49,7 +54,7 @@ function spread(c: TourSceneContext, day: DayKey, pageNumber: number, style = c.
 }
 
 /** The title being written, its underline and a heart: the pen, the marker and text. */
-function sketch(c: TourSceneContext) {
+export function sketch(c: TourSceneContext) {
   return {
     title: text('title', 2, -700, -400, c.texts.title, 640, 90),
     line: highlight('highlight', 1, -705, -300, 280),

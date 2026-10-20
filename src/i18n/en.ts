@@ -519,6 +519,7 @@ export const en: Messages = {
       desk: 'Call the doctor',
       task: 'Water the plants',
       datedTask: 'Call Ana',
+      secret: 'Just for me',
       query: 'bread',
       results: [
         ['Today', 'Buy bread'],

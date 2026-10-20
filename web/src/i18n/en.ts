@@ -73,30 +73,8 @@ export const en: WebMessages = {
       notes: ['call Ana', 'water the plants', 'meeting at 5'],
     },
     scenes: {
-      tasks: {
-        lines: ['dentist', 'buy bread', 'hand in work'],
-        soon: 'tomorrow 10:00',
-        late: 'yesterday',
-        hint: 'type @ and the day',
-        reminder: 'Dentist',
-      },
-      cover: { title: 'Travels', engraved: 'My diary', label: 'Notes' },
-      private: { page: 'dear diary,\ntoday…', locked: 'Diary locked' },
       today: 'today',
       day: 'Saturday 26',
-      turn: {
-        left: ['Saturday 26', '· beach', '· movies'],
-        front: ['· call Ana', '· water plants'],
-        back: ['Sunday 27', '· walk'],
-        under: ['· museum', '· dinner'],
-      },
-      draw: {
-        heading: 'Weekend plan',
-        question: 'beach or mountains?',
-        tasks: ['call Ana', 'book a hotel'],
-        note: 'Hotel Mar · €80',
-        link: '↪ Friday 2',
-      },
       search: {
         query: 'beach',
         results: [
@@ -105,11 +83,6 @@ export const en: WebMessages = {
           ['task', 'buy sunscreen'],
         ],
       },
-      styles: [
-        ['Terracotta leather', 'Lined', 'Wood'],
-        ['Blue cloth', 'Grid', 'Cork'],
-        ['Cardboard', 'Dots', 'Linen'],
-      ],
     },
     news: [
       {

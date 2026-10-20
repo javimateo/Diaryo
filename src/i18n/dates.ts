@@ -1,5 +1,6 @@
 import { addDays, parseDay, todayKey, type DayKey } from '../lib/dates';
-import type { When } from '../lib/when';
+import type { TextDates } from '../engine/text';
+import { completeDates, dateTone, type When } from '../lib/when';
 import { getLanguage, locale, t } from './index';
 
 /** Dates as text, in the active language. */
@@ -98,4 +99,17 @@ export function formatWhenLong(when: When, today = todayKey()): string {
   if (when.time !== undefined) text += `, ${formatClock(when.time)}`;
   if (when.until !== undefined) text += `–${formatClock(when.until)}`;
   return text;
+}
+
+/** How the dates are labelled now, in the app's language. */
+export function dateLabels(now = Date.now()): TextDates {
+  const today = todayKey();
+  const language = getLanguage();
+  const monthFirst = language === 'en';
+  return {
+    today,
+    monthFirst,
+    label: (mark, task) => ({ text: formatWhen(mark, today), tone: dateTone(mark, task, now) }),
+    complete: (text) => completeDates(text, today, language, monthFirst),
+  };
 }
