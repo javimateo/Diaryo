@@ -362,11 +362,18 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           Antes, un arreglo de la nube: la página de ejemplo sin tocar no cuenta como
           diario en la primera sincronización (no sube nunca y deja sitio al de la nube sin
           preguntar), y al abrir una copia se cambia por ella sin guardarla ni fusionarla.
-    - [ ] **Vídeos de cada función para la web**: los mismos clips, hechos con el motor
-          (no grabados): en «Funciones» y en la página Ayuda («Verlo» en cada herramienta
-          y gesto), también en «Cómo se usa» de la app; en el móvil, el motor se baja solo
-          al acercarse a una escena. El diario flotante, la mesa en el escritorio y la nube
-          siguen en CSS. Y una página para grabarlos en WebM (README y redes).
+    - [x] **Escenas de la web** (octubre de 2026), con maqueta: en «Funciones», seis
+          tarjetas las dibuja el propio motor, en bucle y solo mientras se ven: dibujar y
+          conectar (un círculo, un post-it y una flecha), pasar la página, a tu gusto
+          (otras tapas, papeles y mesas), tareas y citas («mañana 10:00»), tu portada (la
+          tapa se decora) y privado (el post-it se cifra y queda con su candado). En los dos
+          idiomas, claro u oscuro como la web. Se cargan al acercarse, también en el móvil
+          (unos 200 KB comprimidos la primera vez: el motor y React). El diario flotante,
+          la mesa en el escritorio, mapa y búsqueda, y la nube siguen en CSS.
+          Descartado: «Verlo» en cada línea de la Ayuda (repetía lo que ya enseñan la
+          portada y el recorrido).
+    - [ ] **Grabar las escenas en vídeo** (WebM, para el README y las redes): una página de
+          desarrollo que las graba desde el motor.
 
 - [ ] **12. Hacia la versión 1.0.0**. Primero los arreglos y lo que no cambia el modelo
       de datos; lo grande (nube, macOS, recordatorios) con su propuesta antes. Orden:

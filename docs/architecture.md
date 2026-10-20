@@ -79,9 +79,10 @@ scrolling) and `noteSize`.
 function from the time to what the canvas shows (the usual elements, built a bit more each
 frame: a stroke drawn, a text written, a note dropping) plus the pages that turn on the
 way. `ui/ClipView.tsx` plays one on an engine of its own that takes no input
-(`Engine.setElements`, without history), once, staying on its last frame; with reduced
-motion it only shows that frame. The tour's are in `diary/tourScenes.ts`, made with the
-welcome page's elements, on the user's book and in their language.
+(`Engine.setElements`, without history), once (staying on its last frame) or in a loop,
+only while `playing`; with reduced motion it only shows the last frame. The tour's are in
+`diary/tourScenes.ts`, made with the welcome page's elements, on the user's book and in
+their language; the website's features, in `diary/featureScenes.ts`.
 
 ## The diary (`src/diary`, `src/storage`)
 
@@ -162,8 +163,10 @@ An [Astro](https://astro.build) site with static pages in Spanish (`/`) and Engl
 (`/en/`). The hero's live demo (`web/src/demo`) is a React island that imports the app's
 code through the `@app` alias (`../src`): the same engine and diary, with its own
 database that is emptied on every visit. It only loads on computers (`client:media`); on
-phones the page shows a picture instead. The feature scenes are CSS animations that play
-only while in view. When built, the site asks GitHub for the latest release to link the
+phones the page shows a picture instead. The features on the diary are clips
+(`featureScenes.ts`) played by the engine (`web/src/demo/Scene.tsx`, an island loaded with
+`client:visible` when the page gets near, phones too); the Windows desktop and the search
+are CSS animations. All of them play only while in view. When built, the site asks GitHub for the latest release to link the
 installer (`web/src/release.ts`).
 
 ## Tests

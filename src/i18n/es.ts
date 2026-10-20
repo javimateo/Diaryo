@@ -539,6 +539,7 @@ export const es = {
       desk: 'Llamar al médico',
       task: 'Regar las plantas',
       datedTask: 'Llamar a Ana',
+      secret: 'Solo para mí',
       query: 'pan',
       /** Where and what was found. */
       results: [

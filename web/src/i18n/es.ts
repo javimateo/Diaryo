@@ -75,31 +75,8 @@ export const es = {
     },
     /** What is written in the animated scenes. */
     scenes: {
-      tasks: {
-        lines: ['dentista', 'comprar pan', 'entregar trabajo'],
-        soon: 'mañana 10:00',
-        late: 'ayer',
-        hint: 'escribe @ y el día',
-        reminder: 'Dentista',
-      },
-      cover: { title: 'Viajes', engraved: 'Mi diario', label: 'Apuntes' },
-      private: { page: 'querido diario,\nhoy…', locked: 'Diario bloqueado' },
       today: 'hoy',
       day: 'sábado 26',
-      turn: {
-        // One double page per day: Saturday's two pages, then Sunday's.
-        left: ['sábado 26', '· playa', '· cine'],
-        front: ['· llamar a Ana', '· regar'],
-        back: ['domingo 27', '· paseo'],
-        under: ['· museo', '· cena'],
-      },
-      draw: {
-        heading: 'Plan del finde',
-        question: '¿playa o monte?',
-        tasks: ['llamar a Ana', 'reservar hotel'],
-        note: 'Hotel Mar · 80 €',
-        link: '↪ viernes 2',
-      },
       search: {
         query: 'playa',
         results: [
@@ -108,11 +85,6 @@ export const es = {
           ['tarea', 'comprar crema de sol'],
         ],
       },
-      styles: [
-        ['Cuero teja', 'Rayas', 'Madera'],
-        ['Tela azul', 'Cuadrícula', 'Corcho'],
-        ['Cartón', 'Puntos', 'Lino'],
-      ],
     },
     /** The newest features, in a row of their own with a "new" label. */
     news: [
