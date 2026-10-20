@@ -26,67 +26,128 @@
   background: var(--hover);
 }
 
-/* The welcome window, over the welcome page the first time. */
+/* The welcome window, over the welcome page the first time: the closed diary and, beside
+   it, a few words and what can be done. */
 .welcome-dialog {
-  width: min(420px, 100%);
-  padding-bottom: 18px;
-  overflow-y: auto;
+  position: relative;
+  flex-direction: row;
+  width: min(600px, 100%);
+  overflow: hidden auto;
 }
 
-/* Where there is little height it scrolls, without squeezing anything. */
-.welcome-dialog > * {
-  flex-shrink: 0;
+.welcome-cover {
+  display: grid;
+  flex: 0 0 230px;
+  place-items: center;
+  padding: 28px 20px;
+  background: var(--canvas-bg);
+}
+
+.welcome-cover img {
+  width: 170px;
+  filter: drop-shadow(0 14px 22px rgba(30, 18, 8, 0.35));
+}
+
+.welcome-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 44px 30px 22px;
+}
+
+.welcome-language {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.welcome-language .text-option {
+  height: 26px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.welcome-body h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .welcome-text {
-  margin: 0 22px 14px;
-  font-size: 14px;
-  line-height: 1.45;
+  margin: 6px 0 24px;
+  font-size: 15px;
   color: var(--text-muted);
 }
 
 .welcome-start {
-  margin: 0 22px;
+  height: 44px;
+  font-size: 15px;
 }
 
-.welcome-account {
-  margin: 18px 22px 8px;
-  font-size: 13px;
-}
-
-.welcome-cloud {
-  margin: 0 22px;
-}
-
-.welcome-row {
+.welcome-links {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 14px 22px 0;
+  gap: 6px 20px;
+  margin-top: 16px;
 }
 
-.welcome-copy {
+.welcome-links .account-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-size: 13.5px;
 }
 
 .welcome-local {
   display: flex;
-  gap: 8px;
-  margin: 14px 22px 0;
-  padding-top: 12px;
-  border-top: 1px solid var(--surface-border);
-  font-size: 12.5px;
-  line-height: 1.4;
+  align-items: center;
+  gap: 6px;
+  margin: 26px 0 0;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
 .welcome-local svg {
   flex-shrink: 0;
-  margin-top: 1px;
+}
+
+/* On a phone, the cover on top. */
+@media (max-width: 560px) {
+  .welcome-dialog {
+    flex-direction: column;
+  }
+
+  .welcome-cover {
+    flex-basis: auto;
+    padding: 22px 0 18px;
+  }
+
+  .welcome-cover img {
+    width: 112px;
+  }
+
+  .welcome-body {
+    padding: 22px 22px 18px;
+    text-align: center;
+  }
+
+  /* Below everything: over the cover it would cover it. */
+  .welcome-language {
+    position: static;
+    order: 1;
+    align-self: center;
+    margin-top: 14px;
+  }
+
+  .welcome-links {
+    justify-content: center;
+  }
+
+  .welcome-local {
+    justify-content: center;
+  }
 }
 
 /* The tour: a ring around what it points at and a bubble beside it. */
