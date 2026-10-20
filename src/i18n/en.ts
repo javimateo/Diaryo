@@ -499,6 +499,21 @@ export const en: Messages = {
     next: 'Next',
     done: 'Start',
     skip: 'Skip',
+    replay: 'Play again',
+    scenes: {
+      title: 'My day',
+      note: 'Buy bread',
+      yesterday: 'Walk by the river',
+      today: 'A new page',
+      desk: 'Call the doctor',
+      task: 'Water the plants',
+      datedTask: 'Call Ana',
+      query: 'bread',
+      results: [
+        ['Today', 'Buy bread'],
+        ['Oct 12', 'Rye bread recipe'],
+      ],
+    },
     steps: {
       tools: {
         title: 'Your tools',

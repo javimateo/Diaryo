@@ -75,6 +75,14 @@ Options: `transparent` (the floating diary over the desktop), `deskLayer` (only 
 desk, on the Windows desktop), `embedded` (the website demo: fixed view, the page keeps
 scrolling) and `noteSize`.
 
+**Clips** (`clips.ts`) are little scenes that play by themselves, like the tour's: a
+function from the time to what the canvas shows (the usual elements, built a bit more each
+frame: a stroke drawn, a text written, a note dropping) plus the pages that turn on the
+way. `ui/ClipView.tsx` plays one on an engine of its own that takes no input
+(`Engine.setElements`, without history), once, staying on its last frame; with reduced
+motion it only shows that frame. The tour's are in `diary/tourScenes.ts`, made with the
+welcome page's elements, on the user's book and in their language.
+
 ## The diary (`src/diary`, `src/storage`)
 
 `Diary` decides which pages exist and which one is open. Each page belongs to a day

@@ -339,8 +339,23 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             explicar en la web cómo pasar el aviso de SmartScreen.
   - [ ] **I. Enseñar a usarla**: recorrido la primera vez que se abre (pasos cortos con
         animaciones) y vídeos de cada función para la web, hechos con el mismo código.
-        El recorrido (sin animaciones) y la página de ejemplo, hechos en 12-G; quedan los
-        vídeos para la web.
+        El recorrido (sin animaciones) y la página de ejemplo, hechos en 12-G.
+    - [x] **Animaciones del recorrido** (octubre de 2026), con maqueta: cada burbuja lleva
+          una escena pequeña que dibuja el propio motor, con los elementos de la página de
+          ejemplo, sobre el libro del usuario y en su idioma: se escribe y se subraya un
+          título, se dibuja un corazón y cae un post-it; la hoja se pasa sola; un post-it
+          se queda en la mesa al pasarla; una tarea toma fecha («mañana 10:00») y otra se
+          marca; la paleta busca «pan»; el libro se prueba otras tapas, papeles y mesas y
+          vuelve al suyo; en Windows, Ctrl Alt D y el diario sobre otro programa. Se ve
+          una vez (2–3 s) y se queda quieta, con ↻ para verla otra vez; «Siguiente» no
+          espera. Con «reducir movimiento», solo la imagen final. Las escenas son «clips»
+          (`engine/clips.ts`, `ui/ClipView.tsx`, `diary/tourScenes.ts`), que servirán
+          también para la web.
+    - [ ] **Vídeos de cada función para la web**: los mismos clips, hechos con el motor
+          (no grabados): en «Funciones» y en la página Ayuda («Verlo» en cada herramienta
+          y gesto), también en «Cómo se usa» de la app; en el móvil, el motor se baja solo
+          al acercarse a una escena. El diario flotante, la mesa en el escritorio y la nube
+          siguen en CSS. Y una página para grabarlos en WebM (README y redes).
 
 - [ ] **12. Hacia la versión 1.0.0**. Primero los arreglos y lo que no cambia el modelo
       de datos; lo grande (nube, macOS, recordatorios) con su propuesta antes. Orden:

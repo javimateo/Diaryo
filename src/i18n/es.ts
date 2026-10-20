@@ -516,6 +516,23 @@ export const es = {
     next: 'Siguiente',
     done: 'Empezar',
     skip: 'Saltar',
+    replay: 'Ver otra vez',
+    /** What is written in the little scenes of each step. */
+    scenes: {
+      title: 'Mi día',
+      note: 'Comprar pan',
+      yesterday: 'Paseo por el río',
+      today: 'Página nueva',
+      desk: 'Llamar al médico',
+      task: 'Regar las plantas',
+      datedTask: 'Llamar a Ana',
+      query: 'pan',
+      /** Where and what was found. */
+      results: [
+        ['Hoy', 'Comprar pan'],
+        ['12 oct', 'Receta de pan de centeno'],
+      ] as [string, string][],
+    },
     steps: {
       tools: {
         title: 'Tus herramientas',

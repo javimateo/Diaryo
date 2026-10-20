@@ -1290,6 +1290,23 @@ export class Engine {
     this.zoomToFit();
   }
 
+  /**
+   * Shows exactly these elements, without history and without reporting changes: a scene
+   * that plays by itself (see `clips.ts`). Only what changed is touched.
+   */
+  setElements(elements: SceneElement[]) {
+    const changes: Changes = new Map();
+    const keep = new Set(elements.map((el) => el.id));
+    for (const el of this.scene.all()) if (!keep.has(el.id)) changes.set(el.id, null);
+    for (const el of elements) if (this.scene.get(el.id) !== el) changes.set(el.id, el);
+    if (changes.size === 0) return;
+    const notify = this.scene.onChange;
+    this.scene.onChange = () => {};
+    this.scene.apply(changes);
+    this.scene.onChange = notify;
+    this.invalidateScene();
+  }
+
   /** PNG image of the whole page (or null if it is empty): in the diary, with the book. */
   exportPng(): Promise<Blob | null> {
     const elements = this.scene.all();
