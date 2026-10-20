@@ -14,6 +14,7 @@ import { addDays, todayKey, type DayKey } from '../lib/dates';
 import { readJSON, writeJSON } from '../lib/saved';
 import { writeDate } from '../lib/when';
 import { DESK_ID, type DiaryoDB } from '../storage/db';
+import { pagePath } from '../storage/tracking';
 
 /**
  * The welcome page: a new diary starts with today's page full of examples to touch (and
@@ -271,4 +272,25 @@ export async function seedWelcome(
     ...desk.map((data) => ({ pageId: DESK_ID, id: data.id, data })),
   ]);
   return true;
+}
+
+/**
+ * Whether the diary is only the welcome page as it was put: its examples and nothing
+ * else, none of them changed (every change is tracked for the cloud, and the welcome page
+ * is written without it). It isn't a diary of one's own yet.
+ */
+export async function onlyWelcome(db: DiaryoDB): Promise<boolean> {
+  const [elements, pages, tracked, assets] = await Promise.all([
+    db.elements.toCollection().primaryKeys(),
+    db.pages.toCollection().primaryKeys(),
+    db.tracked.toCollection().primaryKeys(),
+    db.assets.count(),
+  ]);
+  return (
+    elements.length > 0 &&
+    assets === 0 &&
+    elements.every(([, id]) => id.startsWith(WELCOME_PREFIX)) &&
+    pages.every((id) => id === WELCOME_PAGE || id === DESK_ID) &&
+    !tracked.some((path) => path.startsWith('el/') || path === pagePath(WELCOME_PAGE))
+  );
 }

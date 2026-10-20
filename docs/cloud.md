@@ -152,7 +152,9 @@ the state the app shows). A round only runs with the keys of the account signed 
   comes. With a diary here, the user always chooses (it may be another account's, left
   on the device after signing out). With a diary in the cloud too: **merge** them
   (everything is pushed and pulled; the most recent wins) or **use the cloud's one**.
-  With an empty cloud: **upload this one**, or **start a new one**. Using the cloud's or
+  With an empty cloud: **upload this one**, or **start a new one**. The welcome page
+  alone, untouched (`onlyWelcome` in `src/diary/welcome.ts`), counts as nothing here: it
+  never goes up, and it is removed (without tombstones) when the cloud has a diary. Using the cloud's or
   starting anew keeps this device's diary in a `.diaryo` file first (the backups folder,
   or a download on the web), to open it whenever they like. Replacing the diary this way
   deletes nothing in the cloud; replacing it with a backup ("Open a copy") does: the
