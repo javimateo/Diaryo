@@ -25,6 +25,7 @@ import { TextEditor } from './ui/TextEditor';
 import { Toast } from './ui/Toast';
 import { Toolbar } from './ui/Toolbar';
 import { Tour } from './ui/Tour';
+import { WelcomeDialog } from './ui/WelcomeDialog';
 import { WelcomeNotice } from './ui/WelcomeNotice';
 import { Brand, TopActions } from './ui/TopBar';
 import { useShortcuts } from './ui/useShortcuts';
@@ -87,6 +88,7 @@ export function App() {
       <ContextMenu />
       <HelpDialog />
       <Tour />
+      <WelcomeDialog />
       <MapView />
       <LinkDialog />
       <OpenCopyDialog />

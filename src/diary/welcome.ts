@@ -13,7 +13,7 @@ import type { Language } from '../i18n';
 import { addDays, todayKey, type DayKey } from '../lib/dates';
 import { readJSON, writeJSON } from '../lib/saved';
 import { writeDate } from '../lib/when';
-import { DESK_ID, type DiaryoDB } from '../storage/db';
+import { DESK_ID, DESK_INFO, type DiaryDump, type DiaryoDB, type PageInfo } from '../storage/db';
 import { pagePath } from '../storage/tracking';
 
 /**
@@ -241,6 +241,37 @@ export const WELCOME_PAGE = `${WELCOME_PREFIX}page`;
 const DECIDED_KEY = 'diaryo:welcome';
 
 /**
+ * The welcome page (and its note on the desk) as a diary of its own, today being `today`:
+ * to put it, or to write it again in another language.
+ */
+export function welcomeDump(t: WelcomeTexts, today: DayKey, language: Language): DiaryDump {
+  const now = Date.now();
+  const { page, desk } = welcomeElements(t, today, language);
+  const row = (info: PageInfo) => ({
+    ...info,
+    createdAt: now,
+    updatedAt: now,
+    camera: null,
+    thumbnail: null,
+  });
+  const welcome = { id: WELCOME_PAGE, date: today, order: now, title: '' };
+  return {
+    pages: [
+      {
+        page: row(welcome),
+        elements: page.map((data) => ({ pageId: WELCOME_PAGE, id: data.id, data })),
+      },
+      {
+        page: row(DESK_INFO),
+        elements: desk.map((data) => ({ pageId: DESK_ID, id: data.id, data })),
+      },
+    ],
+    assets: [],
+    fonts: [],
+  };
+}
+
+/**
  * The first time the app opens: if the diary is empty, today's page is the welcome page.
  * It is written as it is, without marking it for the cloud: a new device that then joins
  * a diary in the cloud doesn't add it there (it goes up only if it is changed). Says
@@ -254,23 +285,9 @@ export async function seedWelcome(
   if (readJSON(DECIDED_KEY) !== null) return false;
   writeJSON(DECIDED_KEY, { at: Date.now() });
   if ((await db.pages.count()) > 0 || (await db.elements.count()) > 0) return false;
-  const today = todayKey();
-  const now = Date.now();
-  const { page, desk } = welcomeElements(t, today, language);
-  await db.pages.put({
-    id: WELCOME_PAGE,
-    date: today,
-    order: now,
-    title: '',
-    createdAt: now,
-    updatedAt: now,
-    camera: null,
-    thumbnail: null,
-  });
-  await db.elements.bulkPut([
-    ...page.map((data) => ({ pageId: WELCOME_PAGE, id: data.id, data })),
-    ...desk.map((data) => ({ pageId: DESK_ID, id: data.id, data })),
-  ]);
+  const { pages } = welcomeDump(t, todayKey(), language);
+  await db.pages.bulkPut(pages.map(({ page }) => page));
+  await db.elements.bulkPut(pages.flatMap(({ elements }) => elements));
   return true;
 }
 

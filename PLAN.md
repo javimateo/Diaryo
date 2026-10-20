@@ -351,6 +351,14 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           espera. Con «reducir movimiento», solo la imagen final. Las escenas son «clips»
           (`engine/clips.ts`, `ui/ClipView.tsx`, `diary/tourScenes.ts`), que servirán
           también para la web.
+    - [x] **Ventana de bienvenida** (octubre de 2026), con maqueta (propuesta B): la
+          primera vez, sobre la página de ejemplo, «Empezar mi diario» (y el recorrido),
+          «Entrar» y «Crear cuenta» (la ventana de la cuenta; si se cierra sin entrar,
+          vuelve), «Abrir una copia» y el idioma (la página de ejemplo se escribe otra vez
+          en él). Quien entra o abre una copia ve después «¿Quieres ver cómo se usa?».
+          Antes, un arreglo de la nube: la página de ejemplo sin tocar no cuenta como
+          diario en la primera sincronización (no sube nunca y deja sitio al de la nube sin
+          preguntar), y al abrir una copia se cambia por ella sin guardarla ni fusionarla.
     - [ ] **Vídeos de cada función para la web**: los mismos clips, hechos con el motor
           (no grabados): en «Funciones» y en la página Ayuda («Verlo» en cada herramienta
           y gesto), también en «Cómo se usa» de la app; en el móvil, el motor se baja solo
