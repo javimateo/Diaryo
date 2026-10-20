@@ -2,10 +2,11 @@ import { call, isDesktop, saveFileAs } from '../desktop/tauri';
 import { agendaItems, type AgendaItem } from '../diary/agenda';
 import type { Diary } from '../diary/diary';
 import { calendarFile } from '../diary/ics';
+import { onlyWelcome } from '../diary/welcome';
 import type { Engine } from '../engine/engine';
 import { fonts } from '../engine/fonts';
 import { useUI } from '../store/ui';
-import type { DiaryDump } from '../storage/db';
+import { getDB, type DiaryDump } from '../storage/db';
 import {
   datedName,
   downloadBlob,
@@ -135,6 +136,19 @@ export async function openCopyText(engine: Engine, text: string) {
     for (const asset of backup.page.assets) engine.assets.add(asset.src, asset.id);
     engine.replaceAll(backup.page.elements);
     showToast(t().toasts.copyOpened);
+    return;
+  }
+  // With only the welcome page here, the copy simply takes its place (the sample isn't kept
+  // nor merged, and it leaves no deletions for the cloud). Its window, if up, closes.
+  const { diary, setWelcomeOpen, setTour } = useUI.getState();
+  if (diary && (await onlyWelcome(getDB()))) {
+    await diary.replace({ pages: [], assets: [], fonts: [] }, false);
+    await diary.replace(backup.diary);
+    setWelcomeOpen(false);
+    showToast(t().welcome.dialog.copyOpened, {
+      label: t().welcome.dialog.showTour,
+      run: () => setTour(0),
+    });
     return;
   }
   // A whole diary: ask whether it replaces this one or merges with it (OpenCopyDialog).

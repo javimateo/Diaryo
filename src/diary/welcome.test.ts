@@ -2,8 +2,8 @@ import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementBounds } from '../engine/elements';
 import { es } from '../i18n/es';
-import { DESK_ID, DiaryoDB, loadPage } from '../storage/db';
-import { seedWelcome, WELCOME_PAGE, WELCOME_PREFIX, welcomeElements } from './welcome';
+import { DESK_ID, DiaryoDB, loadPage, saveChanges } from '../storage/db';
+import { onlyWelcome, seedWelcome, WELCOME_PAGE, WELCOME_PREFIX, welcomeElements } from './welcome';
 
 const texts = es.welcome.page;
 
@@ -73,5 +73,24 @@ describe('putting the welcome page', () => {
     });
     expect(await seedWelcome(db, texts, 'es')).toBe(false);
     expect(await db.pages.count()).toBe(1);
+  });
+
+  it('as it was put, it is only the sample; changed, it is a diary of its own', async () => {
+    const db = new DiaryoDB('welcome-3');
+    expect(await onlyWelcome(db)).toBe(false);
+    await seedWelcome(db, texts, 'es');
+    expect(await onlyWelcome(db)).toBe(true);
+    const [first] = (await loadPage(db, WELCOME_PAGE)).elements;
+    await saveChanges(
+      db,
+      { id: WELCOME_PAGE, date: '2026-10-20', order: 1, title: '' },
+      {
+        upserts: [{ ...first, x: first.x + 10 }],
+        deletes: [],
+        assets: [],
+        fonts: [],
+      },
+    );
+    expect(await onlyWelcome(db)).toBe(false);
   });
 });

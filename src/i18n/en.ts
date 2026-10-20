@@ -493,6 +493,20 @@ export const en: Messages = {
     notice: 'Sample page, to touch and try',
     clear: 'Start blank',
     cleared: 'Blank page',
+    dialog: {
+      title: 'Welcome to diaryo',
+      text: 'An endless diary: every day, a page to write, draw and stick whatever you like on. There is a sample one behind.',
+      start: 'Start my diary',
+      haveAccount: 'Already using diaryo on another device? Sign in and your diary will come.',
+      signIn: 'Sign in',
+      signUp: 'Create account',
+      openCopy: 'Open a copy',
+      local:
+        'Without an account, everything stays on this device. The encrypted cloud can be turned on whenever you like.',
+      tourOffer: 'Want to see how it works?',
+      copyOpened: 'Your diary is open',
+      showTour: 'Take the tour',
+    },
   },
 
   tour: {

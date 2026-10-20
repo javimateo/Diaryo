@@ -1,4 +1,4 @@
-/* ─── Welcome page notice and the tour ──────────────────────────── */
+/* ─── Welcome page notice and window, and the tour ──────────────── */
 
 /* Under the welcome page: it is a sample, and it can be cleared at once. */
 .welcome-notice {
@@ -24,6 +24,69 @@
 
 .welcome-clear:hover {
   background: var(--hover);
+}
+
+/* The welcome window, over the welcome page the first time. */
+.welcome-dialog {
+  width: min(420px, 100%);
+  padding-bottom: 18px;
+  overflow-y: auto;
+}
+
+/* Where there is little height it scrolls, without squeezing anything. */
+.welcome-dialog > * {
+  flex-shrink: 0;
+}
+
+.welcome-text {
+  margin: 0 22px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.welcome-start {
+  margin: 0 22px;
+}
+
+.welcome-account {
+  margin: 18px 22px 8px;
+  font-size: 13px;
+}
+
+.welcome-cloud {
+  margin: 0 22px;
+}
+
+.welcome-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 14px 22px 0;
+}
+
+.welcome-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.welcome-local {
+  display: flex;
+  gap: 8px;
+  margin: 14px 22px 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--surface-border);
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.welcome-local svg {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 /* The tour: a ring around what it points at and a bubble beside it. */

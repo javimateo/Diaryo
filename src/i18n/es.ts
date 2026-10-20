@@ -509,6 +509,21 @@ export const es = {
     notice: 'Página de ejemplo, para tocar y probar',
     clear: 'Empezar en blanco',
     cleared: 'Página en blanco',
+    /** The window over the welcome page, the first time. */
+    dialog: {
+      title: 'Te damos la bienvenida a diaryo',
+      text: 'Un diario infinito: cada día, una página para escribir, dibujar y pegar lo que quieras. Detrás tienes una de ejemplo.',
+      start: 'Empezar mi diario',
+      haveAccount: '¿Ya usas diaryo en otro dispositivo? Entra y llegará tu diario.',
+      signIn: 'Entrar',
+      signUp: 'Crear cuenta',
+      openCopy: 'Abrir una copia',
+      local:
+        'Sin cuenta, todo se queda en este dispositivo. La nube, cifrada, se activa cuando quieras.',
+      tourOffer: '¿Quieres ver cómo se usa?',
+      copyOpened: 'Tu diario está abierto',
+      showTour: 'Ver el recorrido',
+    },
   },
 
   /** The short tour of a new diary. */

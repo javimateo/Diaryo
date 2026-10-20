@@ -102,12 +102,12 @@ export function CanvasView() {
         })
       : null;
     updater?.start();
-    // A new diary starts with the welcome page and the tour.
+    // A new diary starts with the welcome page and, over it, the welcome window.
     void seedWelcome(getDB(), t().welcome.page, useUI.getState().settings.language)
       .catch(() => false)
       .then(async (welcome) => {
         await diary.start();
-        if (welcome) useUI.getState().setTour(0);
+        if (welcome) useUI.getState().setWelcomeOpen(true);
         await bridge?.start();
       });
     // Development only: access from the console for debugging and measuring.

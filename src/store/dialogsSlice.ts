@@ -88,6 +88,8 @@ export interface DialogsSlice {
   helpOpen: boolean;
   /** The Help window's tab (the last one seen). */
   helpTab: HelpTab;
+  /** The welcome window of a new diary, before the tour. */
+  welcomeOpen: boolean;
   /** The step of the tour being shown (null: no tour). */
   tour: number | null;
   /** Dialog to choose the page to link the selection to. */
@@ -109,6 +111,7 @@ export interface DialogsSlice {
   setSettingsSection: (section: SettingsSection) => void;
   /** Opens or closes Help, on a tab or on the last one seen. */
   setHelpOpen: (open: boolean, tab?: HelpTab) => void;
+  setWelcomeOpen: (open: boolean) => void;
   setTour: (step: number | null) => void;
   setLinkDialogOpen: (open: boolean) => void;
   setPendingCopy: (copy: DiaryDump | null) => void;
@@ -127,6 +130,7 @@ export const dialogsSlice: Slice<DialogsSlice> = (set, get) => ({
   settingsDirect: false,
   helpOpen: false,
   helpTab: 'howTo',
+  welcomeOpen: false,
   tour: null,
   linkDialogOpen: false,
   pendingCopy: null,
@@ -145,6 +149,7 @@ export const dialogsSlice: Slice<DialogsSlice> = (set, get) => ({
     })),
   setSettingsSection: (settingsSection) => set({ settingsSection }),
   setHelpOpen: (helpOpen, tab) => set(tab ? { helpOpen, helpTab: tab } : { helpOpen }),
+  setWelcomeOpen: (welcomeOpen) => set({ welcomeOpen }),
   setTour: (tour) => set({ tour }),
   setLinkDialogOpen: (linkDialogOpen) => set({ linkDialogOpen }),
   setPendingCopy: (pendingCopy) => set({ pendingCopy }),
