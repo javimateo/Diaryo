@@ -13,9 +13,28 @@ Thanks for wanting to help! Bug reports, ideas and pull requests are welcome.
 
 ## Setting up
 
-See [Getting started](README.md#getting-started): Node.js 22+, and Rust with the Visual
+See [Running it locally](README.md#running-it-locally): Node.js 22+, and Rust with the Visual
 Studio C++ tools for the desktop app. [docs/architecture.md](docs/architecture.md)
 explains how the code is organised.
+
+### The cloud locally
+
+To work on the sync, run a local [PocketBase](https://pocketbase.io) with the
+repository's schema and rules (`<a scratch folder>` keeps its data):
+
+```bash
+pocketbase serve --http=127.0.0.1:8091 --dir=<a scratch folder> --automigrate=false --migrationsDir=cloud/pb_migrations --hooksDir=cloud/pb_hooks
+```
+
+and point the app to it with `VITE_CLOUD_URL=http://127.0.0.1:8091` in `.env.local`
+(git-ignored). Without `--automigrate=false`, changes made in its admin panel write new
+migration files into the repository. See [docs/cloud.md](docs/cloud.md).
+
+### The README's animations
+
+They are recorded from the engine's scenes: after changing a scene, the book's look or
+its texts, run `npm run media` (about ten minutes) and check the new
+`docs/media/*.webp` before committing ([how it works](docs/architecture.md#the-readmes-animations)).
 
 ## Checks
 
@@ -70,3 +89,14 @@ Pull requests go to `develop` (hotfixes, to `main`).
 - The interface must work in light and dark themes, in both languages and, for the web
   app, on a phone.
 - Commit messages: a short sentence in English saying what changes.
+- Something users will notice goes in the `Unreleased` part of the
+  [CHANGELOG](CHANGELOG.md).
+
+## Security
+
+Never report a vulnerability in a public issue: see [SECURITY.md](SECURITY.md).
+
+## Behaviour
+
+Be kind and patient, assume good intent and keep discussions about the work. The
+maintainer may remove comments, or block people, that don't.

@@ -5,6 +5,25 @@ account, the diary is synced between devices (desktop app, web app, phone throug
 web). The local database stays the one the app uses; the cloud holds an **end-to-end
 encrypted** copy that every device keeps up to date.
 
+**Contents**: [Pieces](#pieces) · [Accounts](#accounts) · [Encryption](#encryption) ·
+[What is synced](#what-is-synced) · [Protocol](#protocol) ([edge cases](#edge-cases)) ·
+[Quota](#quota) · [Privacy](#privacy)
+
+```mermaid
+flowchart LR
+  subgraph A [Device A]
+    dbA[(IndexedDB)] --> trA[tracked changes] --> encA[encrypt<br/>AES-GCM]
+  end
+  subgraph S [Server: PocketBase]
+    items[(opaque keys +<br/>ciphertext)]
+  end
+  subgraph B [Device B]
+    decB[decrypt] --> dbB[(IndexedDB)]
+  end
+  encA -->|push| items -->|pull| decB
+  items -.->|realtime notice| B
+```
+
 ## Pieces
 
 | Piece  | What it is                                                                                |
@@ -42,6 +61,21 @@ ids. Nobody without the keys, the server's administrator included, can read a di
 
 All of it is in `src/cloud/crypto.ts` (Web Crypto, with tests); `src/cloud/vault.ts`
 keeps the vault and the device's keys.
+
+```mermaid
+flowchart TD
+  pw[Diary password] -->|PBKDF2-SHA-256<br/>600 000 iterations| kp[Password key]
+  rc[Recovery code] -->|HKDF| kr[Code key]
+  kp -->|unwraps| secret[Diary secret<br/>32 random bytes]
+  kr -->|unwraps| secret
+  secret -->|HKDF| dk[Diary key<br/>AES-GCM: encrypts items]
+  secret -->|HKDF| nk[Naming key<br/>HMAC: opaque item keys]
+  secret -->|HKDF| pk[Private key<br/>private notes]
+  secret -->|HKDF| devk[Wraps the device's key<br/>whole diary encrypted]
+```
+
+The vault on the server only holds the two wrapped copies of the secret; the last two
+keys are the ones [privacy](privacy.md) uses on the device.
 
 - **Diary secret**: 32 random bytes, created on the first device. Two keys come from
   it with HKDF-SHA-256: the **diary key** (AES-GCM 256), which encrypts every item, and

@@ -7,6 +7,32 @@ diaryo is one TypeScript codebase that runs in three places:
   (`src-tauri/`, in Rust) plus what only a desktop can do;
 - the **website** (`web/`), whose live demo reuses the app's engine and diary.
 
+**Contents**: [Layers](#layers) · [The canvas engine](#the-canvas-engine-srcengine) ·
+[The diary](#the-diary-srcdiary-srcstorage) · [The interface](#the-interface-srcui-srcstore) ·
+[The desktop app](#the-desktop-app-srcdesktop-src-tauri) · [The website](#the-website-web) ·
+[The README's animations](#the-readmes-animations) · [Tests](#tests)
+
+```mermaid
+flowchart TB
+  subgraph core [ ]
+    direction LR
+    lib --> engine --> i18n
+  end
+  subgraph data [ ]
+    direction LR
+    storage --> diary --> cloud
+  end
+  subgraph app [ ]
+    direction LR
+    store --> desktop --> ui
+  end
+  core --> data --> app
+  app --> webapp[Web app: IndexedDB in the browser]
+  app --> tauri[Desktop app: Tauri + Rust]
+  core --> website[Website demo: web/, Astro]
+  data <-->|encrypted items| pb[(PocketBase)]
+```
+
 ## Layers
 
 ```
@@ -27,6 +53,8 @@ src/
   fonts.ts   The bundled fonts (the website's demo imports it too)
 src-tauri/   The desktop side, in Rust
 web/         The website (Astro)
+cloud/       The cloud server's schema and rules (PocketBase)
+scripts/     media.mjs: the README's animations
 ```
 
 Each layer only uses the ones above it, in this order (the store only names the desktop's
@@ -168,6 +196,20 @@ phones the page shows a picture instead. The features on the diary are clips
 `client:visible` when the page gets near, phones too); the Windows desktop and the search
 are CSS animations. All of them play only while in view. When built, the site asks GitHub for the latest release to link the
 installer (`web/src/release.ts`).
+
+## The README's animations
+
+The animations in the README (`docs/media/<scene>.<lang>.webp`) are the same clips,
+recorded by `npm run media` (`scripts/media.mjs`): it serves `scenes.html` with Vite and
+opens it in a headless Chromium (Playwright) with `?capture`. That makes the page's
+clock (`performance.now` and `requestAnimationFrame`) move only when the script says, so
+every frame, the turning page's too, is drawn at its exact moment however long the
+screenshot takes, and two runs give the same pictures. The frames (800×450 at twice the
+density) are joined into an animated WebP with sharp. Without `?capture`, `scenes.html`
+(`npm run dev`) plays each scene in a loop, to look at one.
+
+Run it again when a scene, the book's look or the texts change, and check the result
+before committing (about 4 MB in all).
 
 ## Tests
 

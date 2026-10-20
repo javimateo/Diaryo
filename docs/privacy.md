@@ -1,5 +1,10 @@
 # The diary password on the device
 
+**Contents**: [One diary password](#one-diary-password) ·
+[What is encrypted](#what-is-encrypted) · [Locked and unlocked](#locked-and-unlocked) ·
+[Private notes](#private-notes) · [Shared computers](#shared-computers) ·
+[The Windows desktop](#the-windows-desktop) · [Outside the database](#outside-the-database)
+
 Optional, in Settings → Privacy, on three levels:
 
 - **Nothing**: the diary is saved readable on the device (IndexedDB, and the desktop's
@@ -32,7 +37,17 @@ Known limits, on purpose:
 ## One diary password
 
 The password and the recovery code are the cloud's ones (`src/cloud/crypto.ts`): one
-password and one code for the whole diary, on every device.
+password and one code for the whole diary, on every device (the diagram of how the keys
+come from them is in [cloud](cloud.md#encryption)).
+
+```mermaid
+flowchart LR
+  secret[Diary secret] -->|HKDF 'diaryo device'| wrap[Wrapping key]
+  wrap -->|wraps| dev[Device key<br/>32 random bytes, never changes]
+  dev -->|XChaCha20-Poly1305| rows[(Every IndexedDB row)]
+  secret -->|HKDF 'diaryo private'| priv[Private key]
+  priv -->|encrypts| box[A private note's text and link]
+```
 
 - **The device's key**: 32 random bytes that encrypt the diary on this device. It never
   changes: changing the password, making a new code or signing in with another account
