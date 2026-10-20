@@ -58,7 +58,7 @@ const base = (name: string, z: number, x: number, y: number, rotation = 0) => ({
 });
 
 /** Text in a box `width` wide (its height counted from its lines, without measuring). */
-function text(
+export function text(
   name: string,
   z: number,
   x: number,
@@ -83,7 +83,7 @@ function text(
   };
 }
 
-function note(
+export function note(
   name: string,
   z: number,
   x: number,
@@ -111,7 +111,13 @@ function note(
 }
 
 /** A highlighter stroke `width` long, a little wavy like a real one. */
-function highlight(name: string, z: number, x: number, y: number, width: number): StrokeElement {
+export function highlight(
+  name: string,
+  z: number,
+  x: number,
+  y: number,
+  width: number,
+): StrokeElement {
   const points: number[] = [];
   for (let i = 0; i <= 12; i++) {
     const t = i / 12;
@@ -132,7 +138,7 @@ function highlight(name: string, z: number, x: number, y: number, width: number)
 }
 
 /** A heart drawn with the pen, `size` wide, from its top left corner. */
-function heart(name: string, z: number, x: number, y: number, size: number): StrokeElement {
+export function heart(name: string, z: number, x: number, y: number, size: number): StrokeElement {
   const k = size / 34;
   const points: number[] = [];
   for (let i = 0; i <= 64; i++) {
