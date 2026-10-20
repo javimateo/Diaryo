@@ -12,6 +12,21 @@ Both images are built from the repository root: the website's demo uses the app'
 so its image installs both sets of dependencies. `.dockerignore` keeps local builds and
 `node_modules` out.
 
+**Contents**: [DNS](#dns) · [Coolify](#coolify) · [Visits (Umami)](#visits-umami) ·
+[Cloud server](#cloud-server-pocketbase) · [Caching](#caching) ·
+[Content Security Policy](#content-security-policy) · [Where the data lives](#where-the-data-lives)
+
+```mermaid
+flowchart LR
+  gh[GitHub<br/>branch main] -->|push: build image| coolify[Coolify on the VPS]
+  coolify --> web[diaryo.javiermateo.dev<br/>website, nginx]
+  coolify --> app[app.diaryo.javiermateo.dev<br/>web app, nginx]
+  coolify --> cloud[cloud.diaryo.javiermateo.dev<br/>PocketBase + volume]
+  coolify --> stats[stats.javiermateo.dev<br/>Umami]
+  web -.->|at build: latest release| ghapi[GitHub API]
+  cloud -->|SMTP| resend[Resend]
+```
+
 ## DNS
 
 Two `A` records on `javiermateo.dev`, pointing to the VPS: `diaryo` and `app.diaryo`.

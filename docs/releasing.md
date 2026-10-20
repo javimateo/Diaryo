@@ -3,6 +3,19 @@
 New versions are built by GitHub Actions and delivered to the installed apps by the
 Tauri updater. The website links the latest installer.
 
+**Contents**: [Version numbers](#version-numbers) · [Publishing a version](#publishing-a-version) ·
+[Automatic updates](#automatic-updates) · [The Windows warning](#the-windows-warning) ·
+[The icon and the installer images](#the-icon-and-the-installer-images)
+
+```mermaid
+flowchart LR
+  dev[develop] --> rel[release/X.Y.Z<br/>version + CHANGELOG] --> main[main]
+  main --> tag[tag vX.Y.Z] --> wf[Release workflow<br/>build + sign] --> draft[Draft release<br/>.exe, .sig, latest.json]
+  draft -->|publish| pub[GitHub Release]
+  pub --> apps[Installed apps<br/>update themselves]
+  pub --> site[Website<br/>redeploy in Coolify]
+```
+
 ## Version numbers
 
 [Semantic versioning](https://semver.org): `MAJOR.MINOR.PATCH`. While diaryo is in beta
@@ -17,8 +30,9 @@ The version lives in three files, which must match:
 
 ## Publishing a version
 
-1. From `develop`, create `release/X.Y.Z`, update the version in the three files and
-   commit. Merge it into `main` (and back into `develop`) and push both.
+1. From `develop`, create `release/X.Y.Z`, update the version in the three files, move
+   the `Unreleased` part of [CHANGELOG.md](../CHANGELOG.md) under the new version (with
+   its date) and commit. Merge it into `main` (and back into `develop`) and push both.
 2. Tag the merge commit on `main` and push the tag:
 
    ```bash
