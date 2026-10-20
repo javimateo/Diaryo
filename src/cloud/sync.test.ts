@@ -16,6 +16,8 @@ import {
   type PageInfo,
 } from '../storage/db';
 import { dirtyPaths, trackEverything } from '../storage/tracking';
+import { seedWelcome, WELCOME_PAGE } from '../diary/welcome';
+import { es } from '../i18n/es';
 import { useAccount } from './account';
 import { pb } from './client';
 import { createVault, encrypt, itemName, newSecret, type DiaryKeys } from './crypto';
@@ -779,6 +781,34 @@ describe('what the user is asked, and what each answer does', () => {
     await save(b.db, 'p2', [stroke('s2')]);
     expect((await session(b, server).round()).question).toBe('empty');
     expect(server.items).toEqual([]);
+  });
+
+  it('the welcome page alone makes way for the cloud diary, without asking', async () => {
+    const { server, a, b } = setUp();
+    await save(a.db, 'p1', [stroke('s1')]);
+    await a.push();
+    await seedWelcome(b.db, es.welcome.page, 'es');
+    expect((await session(b, server).round()).question).toBeNull();
+    expect(await pageIds(b)).toEqual(['p1']);
+    expect(await b.db.elements.count()).toBe(1);
+    expect(server.items).toHaveLength(2); // Nothing of the welcome page went up.
+  });
+
+  it('with an empty cloud the welcome page stays here, and nothing goes up', async () => {
+    const { server, b } = setUp();
+    await seedWelcome(b.db, es.welcome.page, 'es');
+    expect((await session(b, server).round()).question).toBeNull();
+    expect(await pageIds(b)).toEqual([WELCOME_PAGE]);
+    expect(server.items).toEqual([]);
+  });
+
+  it('once something on the welcome page changes, it is a diary here: it asks', async () => {
+    const { server, a, b } = setUp();
+    await save(a.db, 'p1', [stroke('s1')]);
+    await a.push();
+    await seedWelcome(b.db, es.welcome.page, 'es');
+    await save(b.db, WELCOME_PAGE, [stroke('mine')]);
+    expect((await session(b, server).round()).question).toBe('first');
   });
 
   it("taking the cloud's diary replaces this one and deletes nothing up there", async () => {

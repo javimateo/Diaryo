@@ -1,3 +1,4 @@
+import { onlyWelcome } from '../diary/welcome';
 import { asRecord, readJSON, readText, writeJSON, writeText } from '../lib/saved';
 import { cleanUpDiary, type DiaryDump, type DiaryoDB } from '../storage/db';
 import {
@@ -96,12 +97,15 @@ export interface RoundOptions {
 /**
  * The first sync with this account: with nothing here, the cloud's diary comes. With a
  * diary here, the user chooses what to do with it: it may be another account's, or one
- * they don't want in this account.
+ * they don't want in this account. The welcome page alone, untouched, is nothing here:
+ * it never goes up, and it makes way for the cloud's diary if there is one.
  */
-async function begin(db: DiaryoDB, remote: Remote): Promise<Question | null> {
-  if (await hasContent(db)) {
-    return (await remote.listAfter(START, 1)).length > 0 ? 'first' : 'empty';
-  }
+async function begin(db: DiaryoDB, remote: Remote, diary: SyncedDiary): Promise<Question | null> {
+  const content = await hasContent(db);
+  const welcome = content && (await onlyWelcome(db));
+  const inCloud = async () => (await remote.listAfter(START, 1)).length > 0;
+  if (content && !welcome) return (await inCloud()) ? 'first' : 'empty';
+  if (welcome && (await inCloud())) await diary.replace(EMPTY, false);
   await db.tracked.clear();
   return null;
 }
@@ -117,7 +121,7 @@ export async function syncRound(
 ): Promise<RoundResult> {
   const saved = loadSaved(account);
   if (!saved.began) {
-    const question = await begin(db, remote);
+    const question = await begin(db, remote, diary);
     if (question) return { question, pending: 0 };
     writeText(askKey(account), '');
     saved.began = true;
