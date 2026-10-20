@@ -351,11 +351,14 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           espera. Con «reducir movimiento», solo la imagen final. Las escenas son «clips»
           (`engine/clips.ts`, `ui/ClipView.tsx`, `diary/tourScenes.ts`), que servirán
           también para la web.
-    - [x] **Ventana de bienvenida** (octubre de 2026), con maqueta (propuesta B): la
-          primera vez, sobre la página de ejemplo, «Empezar mi diario» (y el recorrido),
-          «Entrar» y «Crear cuenta» (la ventana de la cuenta; si se cierra sin entrar,
-          vuelve), «Abrir una copia» y el idioma (la página de ejemplo se escribe otra vez
-          en él). Quien entra o abre una copia ve después «¿Quieres ver cómo se usa?».
+    - [x] **Ventana de bienvenida** (octubre de 2026), con maqueta (propuesta C, tras
+          descartar una primera versión con demasiado texto): la primera vez, sobre la
+          página de ejemplo, la portada cerrada (las tapas del usuario con «diaryo» en
+          tiza) y al lado «Tu diario te espera», «Abrirlo» (y el recorrido), «Tengo cuenta»
+          (la ventana de la cuenta, donde también se crea; si se cierra sin entrar, vuelve),
+          «Abrir una copia», el idioma (la página de ejemplo se escribe otra vez en él) y
+          «Sin cuenta, todo se queda en este dispositivo». En el móvil, la portada arriba.
+          Quien entra o abre una copia ve después «¿Quieres ver cómo se usa?».
           Antes, un arreglo de la nube: la página de ejemplo sin tocar no cuenta como
           diario en la primera sincronización (no sube nunca y deja sitio al de la nube sin
           preguntar), y al abrir una copia se cambia por ella sin guardarla ni fusionarla.
