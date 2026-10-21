@@ -317,7 +317,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           `app.diaryo.javiermateo.dev`), puerto 80, HTTPS de Coolify y despliegue al
           subir a `main`. La web se vuelve a desplegar al publicar cada versión (lee la
           última Release al compilarse).
-    - [ ] **H8. Visitas sin cookies**: Umami como servicio de Coolify; visitas y
+    - [x] **H8. Visitas sin cookies**: Umami como servicio de Coolify; visitas y
           descargas (como evento), sin rastrear a nadie. La web ya está preparada
           (`UMAMI_SRC` y `UMAMI_ID` al compilar; eventos `download`, `open-web-app` y
           `copy-download-link`); falta montar Umami en Coolify (docs/deployment.md).
@@ -473,7 +473,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
               elementos huérfanos de páginas borradas, relojes desajustados, sesión
               caducada, cerrar sesión con cambios pendientes, varias pestañas y diario
               grande. Todo en docs/cloud.md («Edge cases»), con tests.
-        - [ ] Pruebas en la app de escritorio, con dos dispositivos reales y con los
+        - [x] Pruebas en la app de escritorio, con dos dispositivos reales y con los
               correos reales.
         - [x] Cambiar de cuenta (octubre de 2026): al entrar con un diario en el
               dispositivo se pregunta siempre (subirlo o empezar uno nuevo si la cuenta
@@ -657,7 +657,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
     - [x] **Nombre** (octubre de 2026): se queda «diaryo», sin descriptor. Hay apps de
           nombre parecido («Diaro», un «Diaryo» de iPhone), pero son diarios de texto y
           se distinguen bien de un lienzo infinito.
-      - [ ] Antes de la 1.0.0: buscar «diaryo» como marca registrada en la OEPM y la
+      - [x] Antes de la 1.0.0 (hecho, octubre de 2026; se sigue con el dominio actual): buscar «diaryo» como marca registrada en la OEPM y la
             EUIPO (clase 9, software) y decidir si se quiere un dominio propio.
     - [x] **Portada del diario editable**: que cada uno personalice la suya (no solo el
           color). Es también lo que enseña el mini diario cuando el diario está

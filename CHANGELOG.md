@@ -4,12 +4,20 @@ What changes in each version of diaryo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [semantic versioning](https://semver.org) (see [releasing](docs/releasing.md)).
 
-## [Unreleased] — 1.0.0
+## [Unreleased]
+
+## [1.0.0] — 2026-10-20
 
 The first stable version.
 
 ### Added
 
+- **The cloud** (optional): an account with email and password or Google, and the diary
+  synced between the desktop app, the web and the phone, **end-to-end encrypted** with a
+  diary password only you know (and a recovery code). Works offline and catches up
+  later; the most recent change wins, element by element. Images are compressed and
+  unused ones cleaned up. Your data can be downloaded and the account deleted at any
+  time; privacy policy and terms on the website.
 - **Tasks and appointments**: an `@` date in a line (with a picker while typing it) makes
   a dated task or an appointment, shown as a label like "tomorrow 10:00". **Upcoming**
   lists what is pending; the desktop app reminds you with Windows notifications (also
@@ -61,5 +69,6 @@ The first stable version.
 
 See the [release notes on GitHub](https://github.com/javimateo/Diaryo/releases/tag/v0.2.0).
 
-[Unreleased]: https://github.com/javimateo/Diaryo/compare/v0.2.0...develop
+[Unreleased]: https://github.com/javimateo/Diaryo/compare/v1.0.0...develop
+[1.0.0]: https://github.com/javimateo/Diaryo/releases/tag/v1.0.0
 [0.2.0]: https://github.com/javimateo/Diaryo/releases/tag/v0.2.0
