@@ -3,13 +3,7 @@ import '@app/styles/text-editor.css';
 import { Diary } from '@app/diary/diary';
 import { bookBounds, DEFAULT_BOOK_STYLE } from '@app/engine/book';
 import { DEFAULT_STYLES, type ToolStyles } from '@app/engine/elements';
-import {
-  Engine,
-  type EditingState,
-  type EngineState,
-  type EngineTheme,
-  type ScreenRect,
-} from '@app/engine/engine';
+import { Engine, type EditingState, type EngineState, type ScreenRect } from '@app/engine/engine';
 import { fonts } from '@app/engine/fonts';
 import type { ThemeMode } from '@app/engine/palette';
 import type { ToolId } from '@app/engine/tools';
@@ -21,6 +15,7 @@ import { Redo2, Undo2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { texts, type Lang } from '../i18n';
 import { DESK_RIGHT, seedDiary, TODAY_PAGE } from './sample';
+import { siteTheme, THEMES } from './themes';
 import './demo.css';
 
 interface Props {
@@ -32,24 +27,6 @@ const DB_NAME = 'diaryo-demo';
 
 /** The tools the demo offers (the app has a few more). */
 const DEMO_TOOLS: ToolId[] = ['select', 'pen', 'marker', 'eraser', 'text', 'note', 'arrow', 'rect'];
-
-/** The app's canvas colors (src/styles/tokens.css). */
-const THEMES: Record<ThemeMode, EngineTheme> = {
-  light: {
-    mode: 'light',
-    background: '#e7e2d8',
-    dots: '#c4bdb1',
-    accent: '#5b5bd6',
-    handleFill: '#ffffff',
-  },
-  dark: {
-    mode: 'dark',
-    background: '#131210',
-    dots: '#34322e',
-    accent: '#8b8cf5',
-    handleFill: '#262522',
-  },
-};
 
 /**
  * The app's tool sizes are in screen pixels and the demo shows the whole book small, so
@@ -66,10 +43,6 @@ const STYLES: ToolStyles = {
   arrow: { ...arrow, size: 1.5 },
 };
 const NOTE_SIZE = 120;
-
-/** The website's theme (light unless the visitor chose dark). */
-const siteTheme = (): ThemeMode =>
-  document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 
 const isTyping = (target: EventTarget | null) =>
   target instanceof HTMLElement &&

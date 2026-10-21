@@ -19,7 +19,14 @@ export type ShapeKind = 'rect' | 'ellipse';
 export type Roughness = 0 | 1 | 2;
 
 /** Text inside a shape (the shape acts as a container). It uses the stroke color. */
-export interface Label {
+/** The whole text's style (each one absent when off: older elements have none). */
+export interface TextStyleFlags {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+}
+
+export interface Label extends TextStyleFlags {
   text: string;
   /** In world units. */
   fontSize: number;
@@ -40,12 +47,12 @@ export interface StrokeStyle {
   opacity: number;
 }
 
-export interface TextStyle extends StrokeStyle {
+export interface TextStyle extends StrokeStyle, TextStyleFlags {
   font: string;
   align: TextAlign;
 }
 
-export interface NoteStyle {
+export interface NoteStyle extends TextStyleFlags {
   variant: NoteVariant;
   color: NoteFill;
   /** Text color; null = automatic dark ink. */
@@ -206,7 +213,7 @@ interface BoxElement extends BaseElement {
   height: number;
 }
 
-export interface TextElement extends BoxElement {
+export interface TextElement extends BoxElement, TextStyleFlags {
   type: 'text';
   text: string;
   /** In world units. */
@@ -221,7 +228,7 @@ export interface TextElement extends BoxElement {
   wrap: boolean;
 }
 
-export interface NoteElement extends BoxElement {
+export interface NoteElement extends BoxElement, TextStyleFlags {
   type: 'note';
   /** Sticky note style: plain, with a pin, tape, clip… */
   variant: NoteVariant;
@@ -233,12 +240,57 @@ export interface NoteElement extends BoxElement {
   font: string;
   align: TextAlign;
   valign: VerticalAlign;
+  /**
+   * Private: its text (and link) are encrypted apart and need the diary password to be
+   * seen (docs/privacy.md). Where they can't be read, `concealed` is set, the text is
+   * empty and `box` carries them encrypted, as they are.
+   */
+  private?: boolean;
+  concealed?: boolean;
+  box?: string;
 }
+
+/**
+ * Locked: nothing changes it (it isn't selected, moved, erased or deleted). A private note
+ * whose text is hidden counts as locked too, until the diary password shows it.
+ */
+export const isLocked = (el: SceneElement) =>
+  el.locked || (el.type === 'note' && el.concealed === true);
+
+/** A private note, shown or not: deleting it needs the diary password. */
+export const isPrivateNote = (el: SceneElement): el is NoteElement =>
+  el.type === 'note' && el.private === true;
+
+/** A hidden private note (its text can't be seen here). */
+export const isConcealed = (el: SceneElement): el is NoteElement =>
+  el.type === 'note' && el.concealed === true;
+
+/**
+ * The open padlock in the corner of a private note that is shown (element coordinates):
+ * a click there hides it again.
+ */
+export function privateBadge(el: NoteElement) {
+  const r = Math.min(el.width, el.height) * 0.075;
+  return { x: el.width - r * 1.8, y: el.height - r * 1.8, r };
+}
+
+/** A private note, as it shows where its text can't be seen (thumbnails, locked). */
+export function concealNote(el: NoteElement): NoteElement {
+  return { ...el, text: '', link: null, concealed: true };
+}
+
+/** A photo's frame: drawn inside its box (changing it doesn't move or resize it). */
+export type ImageFrame = 'polaroid' | 'border' | 'rounded';
+export const IMAGE_FRAMES: ImageFrame[] = ['polaroid', 'border', 'rounded'];
 
 export interface ImageElement extends BoxElement {
   type: 'image';
   /** Reference to the image in the asset store (shared between copies). */
   assetId: string;
+  /** Absent: no frame (as before). */
+  frame?: ImageFrame;
+  /** A soft shadow under it. */
+  shadow?: boolean;
 }
 
 export interface ShapeElement extends BoxElement {

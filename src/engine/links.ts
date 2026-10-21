@@ -12,7 +12,7 @@ export interface LinkLabel {
 const HEIGHT = 22;
 const PADDING = 8;
 const FONT_SIZE = 12.5;
-const FONT = `600 ${FONT_SIZE}px "Inter Variable", system-ui, sans-serif`;
+const FONT = `600 ${FONT_SIZE}px "Nunito Sans Variable", system-ui, sans-serif`;
 /** Offset above the top right corner (it leaves that corner's handle free). */
 const LIFT = 10;
 const OUTSET = 4;
@@ -121,4 +121,13 @@ export function badgeAt(badges: LinkBadge[], p: Vec): LinkBadge | null {
     if (p.x >= r.minX && p.x <= r.maxX && p.y >= r.minY && p.y <= r.maxY) return badges[i];
   }
   return null;
+}
+
+/**
+ * Page of the link whose label is at this point, or null. The selection's labels don't
+ * count: there its handles win (its link opens from the panel).
+ */
+export function linkAt(badges: LinkBadge[], selection: ReadonlySet<string>, p: Vec) {
+  const free = badges.filter((b) => !b.ids.some((id) => selection.has(id)));
+  return badgeAt(free, p)?.link ?? null;
 }

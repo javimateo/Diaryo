@@ -1,5 +1,13 @@
 import { isClosedStroke } from './containers';
-import { elementBounds, toLocal, type ContainerElement, type SceneElement } from './elements';
+import {
+  elementBounds,
+  isConcealed,
+  isLocked,
+  privateBadge,
+  toLocal,
+  type ContainerElement,
+  type SceneElement,
+} from './elements';
 import { pointInPolygon, type Bounds } from './geometry';
 
 export { pointInPolygon };
@@ -96,7 +104,7 @@ export function hitTestElement(
     maxY: world.y + tolerance,
   });
   for (let i = candidates.length - 1; i >= 0; i--) {
-    if (candidates[i].locked && !includeLocked) continue;
+    if (isLocked(candidates[i]) && !includeLocked) continue;
     if (elementHitsSegment(candidates[i], world, world, tolerance)) return candidates[i];
   }
   return null;
@@ -127,7 +135,7 @@ export function containerAt(scene: Scene, world: Vec): ContainerElement | null {
   const candidates = scene.search({ minX: world.x, minY: world.y, maxX: world.x, maxY: world.y });
   for (let i = candidates.length - 1; i >= 0; i--) {
     const el = candidates[i];
-    if (el.locked) continue;
+    if (isLocked(el)) continue;
     const container =
       el.type === 'shape' || (el.type === 'stroke' && isClosedStroke(el)) ? el : null;
     if (container && insideContainer(container, toLocal(container, world))) return container;
@@ -138,7 +146,7 @@ export function containerAt(scene: Scene, world: Vec): ContainerElement | null {
 /** Elements completely inside the rectangle. */
 export function elementsInRect(scene: Scene, rect: Bounds): SceneElement[] {
   return scene.search(rect).filter((el) => {
-    if (el.locked) return false;
+    if (isLocked(el)) return false;
     const b = elementBounds(el);
     return b.minX >= rect.minX && b.maxX <= rect.maxX && b.minY >= rect.minY && b.maxY <= rect.maxY;
   });
@@ -164,7 +172,7 @@ export function elementsInLasso(scene: Scene, polygon: Vec[]): SceneElement[] {
     { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
   );
   return scene.search(bounds).filter((el) => {
-    if (el.locked) return false;
+    if (isLocked(el)) return false;
     const samples = elementSamples(el, LASSO_MAX_SAMPLES);
     const inside = samples.filter((p) => pointInPolygon(p, polygon)).length;
     return inside / samples.length >= LASSO_THRESHOLD;
@@ -216,4 +224,40 @@ export function drawSelectionBox(
     ctx.stroke();
   }
   ctx.restore();
+}
+
+/**
+ * What selecting these ids selects: also the other members of each group, but never a
+ * hidden private note (not even with its group: nothing changes it).
+ */
+export function withGroups(scene: Scene, ids: Iterable<string>): Set<string> {
+  const selectable = (id: string) => {
+    const el = scene.get(id);
+    return !el || !isConcealed(el);
+  };
+  const next = new Set([...ids].filter(selectable));
+  const groups = new Set<string>();
+  for (const id of next) {
+    const groupId = scene.get(id)?.groupId;
+    if (groupId) groups.add(groupId);
+  }
+  if (groups.size > 0) {
+    for (const el of scene.all()) {
+      if (el.groupId && groups.has(el.groupId) && !isConcealed(el)) next.add(el.id);
+    }
+  }
+  return next;
+}
+
+/** The shown private note whose open padlock is at this point (topmost first), or null. */
+export function privateBadgeAt(scene: Scene, world: Vec): string | null {
+  const near = { minX: world.x - 1, minY: world.y - 1, maxX: world.x + 1, maxY: world.y + 1 };
+  const candidates = scene.search(near).sort((a, b) => b.z - a.z);
+  for (const el of candidates) {
+    if (el.type !== 'note' || !el.private || el.concealed) continue;
+    const badge = privateBadge(el);
+    const p = toLocal(el, world);
+    if (Math.hypot(p.x - badge.x, p.y - badge.y) <= badge.r * 1.3) return el.id;
+  }
+  return null;
 }

@@ -27,6 +27,12 @@ button {
   color: inherit;
 }
 
+/* The password fields have their own button to show what was typed (not the browser's). */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 kbd {
   display: inline-block;
   min-width: 20px;

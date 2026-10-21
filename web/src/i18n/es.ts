@@ -8,6 +8,7 @@ export const es = {
   nav: {
     features: 'Funciones',
     download: 'Descargar',
+    help: 'Ayuda',
     privacy: 'Privacidad',
     source: 'GitHub',
     downloadShort: 'Descargar',
@@ -24,7 +25,7 @@ export const es = {
     /** `{version}` and `{size}` are filled in. */
     downloadInfo: 'v{version} · {size} · gratis',
     tryWeb: 'Usar en el navegador',
-    points: ['Código a la vista', 'Sin cuentas', 'Tus notas no salen de tu PC'],
+    points: ['Código a la vista', 'Sin cuenta, si no quieres', 'Nube opcional y cifrada'],
   },
   /** What is written in the diary of the hero. */
   book: {
@@ -54,7 +55,10 @@ export const es = {
   strip: [
     { title: 'Hecho a mano', text: 'Motor de dibujo propio, fluido con miles de trazos.' },
     { title: 'Código a la vista', text: 'Léelo, cámbialo y compártelo, sin fines comerciales.' },
-    { title: 'Sin cuentas ni nube', text: 'Todo se guarda en tu ordenador, con copias diarias.' },
+    {
+      title: 'Tuyo de verdad',
+      text: 'En tu ordenador, con copias diarias. La nube es opcional y cifrada.',
+    },
     { title: 'Español e inglés', text: 'Eliges el idioma en Ajustes.' },
   ],
   features: {
@@ -73,20 +77,6 @@ export const es = {
     scenes: {
       today: 'hoy',
       day: 'sábado 26',
-      turn: {
-        // One double page per day: Saturday's two pages, then Sunday's.
-        left: ['sábado 26', '· playa', '· cine'],
-        front: ['· llamar a Ana', '· regar'],
-        back: ['domingo 27', '· paseo'],
-        under: ['· museo', '· cena'],
-      },
-      draw: {
-        heading: 'Plan del finde',
-        question: '¿playa o monte?',
-        tasks: ['llamar a Ana', 'reservar hotel'],
-        note: 'Hotel Mar · 80 €',
-        link: '↪ viernes 2',
-      },
       search: {
         query: 'playa',
         results: [
@@ -95,12 +85,26 @@ export const es = {
           ['tarea', 'comprar crema de sol'],
         ],
       },
-      styles: [
-        ['Cuero teja', 'Rayas', 'Madera'],
-        ['Tela azul', 'Cuadrícula', 'Corcho'],
-        ['Cartón', 'Puntos', 'Lino'],
-      ],
     },
+    /** The newest features, in a row of their own with a "new" label. */
+    news: [
+      {
+        id: 'tasks',
+        title: 'Tareas y citas',
+        text: 'Escribe «@mañana 10» en una línea y ya tiene fecha. «Próximo» te enseña lo que viene, Windows te avisa a su hora y lo llevas a tu calendario.',
+      },
+      {
+        id: 'cover',
+        title: 'Tu portada',
+        text: 'Decora la tapa como un diario de verdad: fotos, texto, dibujos y post-its, o empieza de una plantilla. La ves al abrirlo y en tu escritorio.',
+      },
+      {
+        id: 'private',
+        title: 'Privado de verdad',
+        text: 'Cifra en tu ordenador solo lo privado o el diario entero, con su contraseña. Los post-its privados se ven con un candado hasta que los abres.',
+      },
+    ],
+    newBadge: 'nuevo',
     small: [
       {
         id: 'turn',
@@ -120,14 +124,33 @@ export const es = {
       {
         id: 'style',
         title: 'A tu gusto',
-        text: 'Tapas de cuero o tela, papel de rayas, cuadros, Cornell o agenda, y mesa de madera, corcho o lino.',
+        text: 'Tapas de cuero, tela, lona, vaquero o cartón; papel de rayas, cuadros, Cornell o agenda; y siete mesas, de la madera al mármol.',
       },
     ],
+  },
+  cloud: {
+    eyebrow: 'Nube',
+    title: 'En todos tus dispositivos, y solo tú lo lees',
+    text: 'Si quieres, crea una cuenta y tu diario se sincroniza entre el PC, el navegador y el móvil. Antes de salir de tu dispositivo se cifra con tu contraseña del diario: el servidor solo guarda datos ilegibles.',
+    points: [
+      { title: 'Opcional', text: 'Sin cuenta, todo sigue igual: el diario vive en tu ordenador.' },
+      {
+        title: 'Cifrado de extremo a extremo',
+        text: 'Ni el administrador del servidor puede leerlo.',
+      },
+      {
+        title: '50 MB gratis',
+        text: 'Para años de texto y dibujos; las imágenes se comprimen.',
+      },
+      { title: 'Sin conexión, también', text: 'Escribes igual y se sincroniza al volver.' },
+    ],
+    server: 'Servidor',
+    caption: 'la misma página, en los dos',
   },
   download: {
     eyebrow: 'Descargar',
     title: 'diaryo para Windows',
-    text: 'Windows 10 y 11, 64 bits. Se instala sin permisos de administrador y arranca con Windows, escondido y listo para el atajo.',
+    text: 'Windows 10 y 11, 64 bits. Se instala sin permisos de administrador y arranca con Windows, escondido y listo para el atajo. La primera vez te recibe una página de ejemplo y un recorrido corto.',
     button: 'Descargar v{version}',
     releases: 'Novedades y versiones anteriores',
     otherSystems: '¿Mac o Linux? Por ahora, úsalo en el navegador.',
@@ -145,28 +168,49 @@ export const es = {
   privacy: {
     eyebrow: 'Privacidad',
     title: 'Tus notas son tuyas',
-    text: 'Sin cuentas, sin servidores y sin anuncios. El diario se guarda en tu ordenador y cada día deja una copia en Documentos. Puedes llevártelo entero en un archivo cuando quieras. Esta web solo cuenta visitas y descargas, de forma anónima y sin cookies; la app no envía nada.',
+    text: 'Sin anuncios ni rastreo. El diario se guarda en tu ordenador y cada día deja una copia en Documentos; puedes llevártelo entero en un archivo cuando quieras. Si quieres, se cifra también en tu ordenador (solo lo privado o todo) y se bloquea con su contraseña. Si usas la nube, tu diario viaja cifrado: sin tu contraseña del diario nadie puede leerlo, tampoco nosotros. Esta web solo cuenta visitas y descargas, de forma anónima y sin cookies.',
     source: 'Ver el código en GitHub',
+    policy: 'Política de privacidad',
+    terms: 'Condiciones',
   },
   faq: {
     title: 'Preguntas frecuentes',
     items: [
       {
         q: '¿Es gratis?',
-        a: 'Sí, del todo: sin anuncios ni versiones de pago. Y su código es público (para uso no comercial).',
+        a: 'Sí: la app es gratis del todo, sin anuncios, y la nube trae 50 MB gratis. Y su código es público (para uso no comercial).',
       },
       {
         q: '¿Dónde se guardan mis notas?',
         a: 'En tu ordenador. La app de escritorio deja además una copia cada día en Documentos\\diaryo (puedes elegir otra carpeta).',
       },
-      { q: '¿Funciona sin internet?', a: 'Sí. diaryo no necesita conexión para nada.' },
+      {
+        q: '¿Funciona sin internet?',
+        a: 'Sí. Solo la nube, si la usas, necesita conexión para sincronizar; mientras tanto escribes igual.',
+      },
+      {
+        q: '¿Me avisa de mis tareas?',
+        a: 'Sí: escribe @ y el día (y la hora, si quieres) en una tarea o una cita, y en Windows te sale un aviso a su hora, aunque el diario esté escondido. También puedes llevarlas a tu calendario.',
+      },
+      {
+        q: '¿Puedo cifrar el diario en mi ordenador?',
+        a: 'Sí: en Ajustes → Privacidad eliges cifrar solo los post-its privados o el diario entero, con su contraseña. Cifrado entero, se bloquea solo cuando quieras y nadie lo lee sin ella.',
+      },
       {
         q: '¿Paso mi diario de un ordenador a otro?',
-        a: 'Guarda una copia (un archivo .diaryo) desde el menú y ábrela en el otro.',
+        a: 'Con la nube (opcional) se sincroniza solo. Sin ella, guarda una copia (un archivo .diaryo) desde el menú y ábrela en el otro.',
+      },
+      {
+        q: '¿Quién puede leer mi diario en la nube?',
+        a: 'Solo tú. Se cifra en tu dispositivo con tu contraseña del diario antes de salir, y el servidor guarda datos ilegibles. Ni siquiera nosotros podemos abrirlo.',
+      },
+      {
+        q: '¿Qué pasa si olvido la contraseña del diario?',
+        a: 'Al activar la nube te damos una clave de recuperación para guardarla. Sin la contraseña ni la clave, el diario de la nube no se puede recuperar; el de tus dispositivos sigue ahí.',
       },
       {
         q: '¿Y la versión web?',
-        a: 'Es la misma app. Guarda el diario en tu navegador: nada sale de él.',
+        a: 'Es la misma app. Guarda el diario en tu navegador; con la nube, lo tienes también en el PC y en el móvil.',
         web: true,
       },
     ],
@@ -179,6 +223,22 @@ export const es = {
   footer: {
     made: 'Hecho con cariño · Código disponible para uso no comercial',
     language: 'English',
+    privacy: 'Privacidad',
+    terms: 'Condiciones',
+  },
+  /** The help page (the lists themselves are the app's, from its own texts). */
+  help: {
+    title: 'Cómo se usa diaryo',
+    lead: 'Lo mismo que la ayuda de la app (en Ajustes → Ayuda, o con ?), para leerlo antes de instalarla o tenerlo a mano.',
+    shortcuts: 'Atajos de teclado',
+    windows:
+      'Los atajos del diario flotante y de la mesa en el escritorio son los de la app de Windows, y se cambian en Ajustes → Escritorio.',
+  },
+  legal: {
+    back: 'Volver a diaryo',
+    /** `{date}` is filled in. */
+    updated: 'Última actualización: {date}',
+    summary: 'En resumen',
   },
 };
 

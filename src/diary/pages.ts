@@ -43,6 +43,22 @@ export function pagesOfDay(pages: PageMeta[], date: DayKey): PageMeta[] {
   return sortPages(pages.filter((page) => page.date === date));
 }
 
+/**
+ * The page to open instead of a blank one (nothing on it, no title) because a page of that
+ * same day came from another device: the last one of the day, among `arrived` if given.
+ */
+export function arrivedInstead(
+  pages: PageMeta[],
+  current: PageMeta,
+  blank: boolean,
+  arrived?: ReadonlySet<string>,
+): PageMeta | undefined {
+  if (!blank || current.title) return undefined;
+  return pagesOfDay(pages, current.date)
+    .filter((page) => page.id !== current.id && (!arrived || arrived.has(page.id)))
+    .at(-1);
+}
+
 const withPage = (pages: PageMeta[], page: PageMeta) =>
   pages.some((p) => p.id === page.id) ? pages : [...pages, page];
 

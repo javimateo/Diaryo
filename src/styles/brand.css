@@ -1,11 +1,58 @@
 /* ─── Brand, hints and toasts ────────────────────────────────── */
 
 .brand {
-  padding: 8px 4px;
-  font-size: 17px;
-  font-weight: 650;
-  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  padding: 6px 4px;
   pointer-events: none;
+}
+
+/* Dressing up the cover: its name, a warning and the way back. */
+.cover-bar {
+  gap: 10px;
+  padding: 5px 5px 5px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  pointer-events: auto;
+}
+
+.cover-bar-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Narrower, the warning stays in the name's tip: the tools need the room. */
+@media (max-width: 1200px) {
+  .cover-bar-hint {
+    display: none;
+  }
+}
+
+.cover-bar-done {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.brand-mark {
+  flex: none;
+  margin-right: 8px;
+}
+
+/* The name is set in Lora, like the website's titles. */
+.brand-name {
+  font-family: 'Lora Variable', Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 /* On wood, cork or linen, the name and the status go in a pill so they are easy to read. */
@@ -18,17 +65,6 @@
   background: color-mix(in srgb, var(--surface) 82%, transparent);
   box-shadow: var(--shadow);
   backdrop-filter: blur(8px);
-}
-
-.brand::before {
-  content: '';
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  vertical-align: 2px;
 }
 
 .hint {
@@ -62,7 +98,7 @@
 }
 
 .save-status[data-status='error'] {
-  color: #e03131;
+  color: var(--danger);
   opacity: 1;
 }
 
@@ -74,6 +110,87 @@
 
 .file-menu {
   position: relative;
+}
+
+/* Search is the most used action: it says so, with its shortcut. */
+.search-btn {
+  display: inline-flex;
+  gap: 8px;
+  width: auto;
+  padding: 0 9px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.search-btn kbd {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.file-menu .icon-btn[data-active] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.menu-heading {
+  margin: 6px 10px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.menu-choice {
+  padding: 2px 4px 4px;
+}
+
+.menu-choice .segmented-group .text-option {
+  flex: 1 1 auto;
+  padding: 0 6px;
+  font-size: 12.5px;
+}
+
+/* Below ~1080 px (with the desktop app's window buttons) the tools would be pushed aside: only icons. */
+@media (max-width: 1080px) {
+  .search-label,
+  .save-status-text {
+    display: none;
+  }
+
+  .search-btn {
+    width: 36px;
+    padding: 0;
+  }
+}
+
+/* Narrower still, the brand is only its mark. */
+@media (max-width: 920px) {
+  .brand-name {
+    display: none;
+  }
+}
+
+/*
+ * And below that (phones too) the tools slide sideways. The scroll would cut their tooltips,
+ * and their hidden boxes would let it scroll into blank space, so they go.
+ */
+@media (max-width: 880px) {
+  .toolbar {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .toolbar [data-tip]::after {
+    display: none;
+  }
+
+  .toolbar .tool-btn {
+    flex-shrink: 0;
+  }
 }
 
 .dropdown {

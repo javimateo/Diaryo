@@ -46,6 +46,32 @@ fn is_backup(name: &str) -> bool {
         .is_some_and(is_day)
 }
 
+/// A moment: YYYY-MM-DD-HHMMSS.
+fn is_moment(moment: &str) -> bool {
+    moment.len() == 17
+        && is_day(&moment[..10])
+        && moment[10..].starts_with('-')
+        && moment[11..].chars().all(|c| c.is_ascii_digit())
+}
+
+/// Saves the whole diary as it was right before replacing it with another one, under its
+/// own name (`diaryo-<label>-<moment>.diaryo`): it isn't a daily backup, so it is never
+/// pruned nor overwritten.
+pub fn write_before_opening(
+    dir: &Path,
+    label: &str,
+    moment: &str,
+    contents: &str,
+) -> Result<PathBuf, String> {
+    if !is_moment(moment) {
+        return Err(format!("\"{moment}\" is not a moment"));
+    }
+    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("diaryo-{label}-{moment}.diaryo"));
+    fs::write(&path, contents).map_err(|e| e.to_string())?;
+    Ok(path)
+}
+
 /// Saves the day's backup (replacing the earlier one of that same day) and deletes the
 /// oldest ones.
 pub fn write(dir: &Path, day: &str, contents: &str) -> Result<PathBuf, String> {
@@ -121,6 +147,19 @@ mod tests {
             "new"
         );
         assert!(write(&dir, "../outside", "{}").is_err());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_copy_before_opening_is_never_pruned() {
+        let dir = temp_dir("before");
+        let copy =
+            write_before_opening(&dir, "before-opening", "2026-09-01-093000", "old").unwrap();
+        for day in 1..=20 {
+            write(&dir, &format!("2026-09-{day:02}"), "{}").unwrap();
+        }
+        assert_eq!(fs::read_to_string(&copy).unwrap(), "old");
+        assert!(write_before_opening(&dir, "before-opening", "../../x", "{}").is_err());
         let _ = fs::remove_dir_all(&dir);
     }
 }

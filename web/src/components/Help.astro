@@ -1,0 +1,192 @@
+---
+import { homeHref, texts, type Lang } from '../i18n';
+import Layout from '../layouts/Layout.astro';
+import { HelpLists } from './HelpLists';
+
+interface Props {
+  lang: Lang;
+}
+
+/** The help page: how each tool and gesture is used, and the keyboard shortcuts. */
+const { lang } = Astro.props;
+const t = texts(lang);
+const h = t.help;
+---
+
+<Layout lang={lang} page="help" title={h.title}>
+  <article class="help wrap">
+    <a class="back" href={homeHref(lang)}>← {t.legal.back}</a>
+    <span class="eyebrow">{t.nav.help}</span>
+    <h1>{h.title}</h1>
+    <p class="lead">{h.lead}</p>
+    <HelpLists lang={lang} shortcutsTitle={h.shortcuts} />
+    <p class="note">{h.windows}</p>
+  </article>
+</Layout>
+
+<style>
+  .help {
+    max-width: 980px;
+    padding-top: 32px;
+    padding-bottom: 40px;
+  }
+
+  .back {
+    display: inline-block;
+    margin-bottom: 20px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  h1 {
+    margin: 6px 0 10px;
+    font-family: var(--font-title);
+    font-size: clamp(32px, 5vw, 46px);
+    line-height: 1.1;
+  }
+
+  .lead {
+    max-width: 640px;
+    margin: 0 0 28px;
+    color: var(--text-soft);
+  }
+
+  .note {
+    max-width: 640px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .help :global(.help-toc) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .help :global(.help-toc a) {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--text-soft);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .help :global(.help-card) {
+    scroll-margin-top: 24px;
+    margin-bottom: 20px;
+    padding: 22px 26px;
+    border-radius: 22px;
+    background: var(--card);
+  }
+
+  .help :global(.help-card h2) {
+    margin: 0 0 10px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .help :global(.help-howto) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+    gap: 4px 32px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .help :global(.help-howto li) {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 2px 12px;
+    padding: 9px 0;
+  }
+
+  .help :global(.help-icon) {
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--cover) 14%, transparent);
+    color: var(--cover);
+  }
+
+  .help :global(.help-title) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .help :global(.help-text) {
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+
+  .help :global(.help-columns) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+    gap: 0 32px;
+  }
+
+  .help :global(.help-columns h3) {
+    margin: 14px 0 4px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .help :global(.help-shortcuts) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .help :global(.help-shortcuts li) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 7px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--muted) 18%, transparent);
+    font-size: 14px;
+  }
+
+  .help :global(.help-combos),
+  .help :global(.help-combos > span) {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .help :global(.help-or) {
+    margin: 0 4px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .help :global(kbd) {
+    padding: 0 6px;
+    border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--muted) 6%, transparent);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 20px;
+    white-space: nowrap;
+  }
+</style>

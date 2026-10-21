@@ -7,6 +7,14 @@
  * with two fingers, so the zoom buttons go.
  */
 @media (max-width: 640px) {
+  .top-bar {
+    display: contents;
+  }
+
+  .top-bar > .layer {
+    position: absolute;
+  }
+
   .top-left,
   .hint,
   .theme-btn,
@@ -56,6 +64,17 @@
     justify-content: center;
   }
 
+  /* Dressing up the cover, its bar (and the way back) takes the page navigation's place,
+     hidden meanwhile. */
+  .top-left:has(.cover-bar) {
+    display: flex;
+    top: auto;
+    right: 0;
+    bottom: 64px;
+    left: 0;
+    justify-content: center;
+  }
+
   .page-label {
     min-width: 0;
   }
@@ -73,10 +92,24 @@
 
   .props-panel {
     width: 100%;
-    max-height: 45vh;
+    max-height: 45dvh;
   }
 
-  /* Folded: a small pill above the page navigation. */
+  .side-right {
+    top: 56px;
+    left: 10px;
+    right: 10px;
+    bottom: 116px;
+  }
+
+  .diary-panel {
+    width: 100%;
+  }
+}
+
+/* The folded style panel, on a phone held either way. */
+@media (max-width: 640px), (max-height: 500px) and (orientation: landscape) {
+  /* Folded: a small pill. */
   .props-pill {
     gap: 8px;
     height: 36px;
@@ -110,15 +143,159 @@
     font-weight: 600;
     cursor: pointer;
   }
+}
 
+/* ─── Phone on its side (short screens) ──────────────────────── */
+
+/*
+ * Wide but only ~360–430 px tall: the desktop layout doesn't fit in that height. One row of
+ * bars at the top (undo, tools, actions) and one at the bottom (notices, page navigation),
+ * so the canvas keeps the middle. Desktop windows are never this short (520 px minimum) and
+ * tablets are taller either way. Comes after the narrow rules, which it partly undoes for
+ * the few phones that are also narrower than 640 px on their side.
+ */
+@media (max-height: 500px) and (orientation: landscape) {
+  .top-bar {
+    display: contents;
+  }
+
+  .top-bar > .layer {
+    position: absolute;
+  }
+
+  .top-left,
+  .hint,
+  .theme-btn,
+  .bottom-left > :not(.undo-controls),
+  .search-label,
+  .tool-key,
+  .context-menu .menu-item kbd {
+    display: none;
+  }
+
+  /* The brand is hidden, so the cloud lives with the actions. */
+  .top-actions .sync-indicator {
+    display: inline-grid;
+    margin-left: 0;
+  }
+
+  .search-btn {
+    width: 36px;
+    padding: 0;
+  }
+
+  .bottom-left {
+    top: 8px;
+    bottom: auto;
+    left: 8px;
+  }
+
+  .top-right {
+    top: 8px;
+    right: 8px;
+  }
+
+  /* Between the undo controls and the actions; on the smallest phones it slides sideways. */
+  .top-center {
+    top: 8px;
+    bottom: auto;
+    left: 100px;
+    right: 220px;
+    align-items: flex-start;
+  }
+
+  .toolbar {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .toolbar .tool-btn {
+    flex-shrink: 0;
+  }
+
+  .toolbar [data-tip]::after {
+    display: none;
+  }
+
+  .bottom-right {
+    left: auto;
+    right: 8px;
+    bottom: 8px;
+  }
+
+  .top-left:has(.cover-bar) {
+    display: flex;
+    top: auto;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+  }
+
+  /* Notices on the left, never under the page navigation. */
+  .bottom-center {
+    left: 8px;
+    right: 320px;
+    bottom: 8px;
+    align-items: flex-start;
+  }
+
+  .welcome-notice {
+    padding: 4px;
+  }
+
+  .welcome-notice span {
+    display: none;
+  }
+
+  /* Side panels below the top bar, scrolling inside. The style one stops above the notices. */
+  .side-left {
+    top: 60px;
+    right: auto;
+    bottom: 60px;
+    left: 8px;
+  }
+
+  .props-panel {
+    width: 232px;
+    max-height: 100%;
+  }
+
+  /* Over the page navigation while open: the index takes its place. */
   .side-right {
-    top: 56px;
-    left: 10px;
-    right: 10px;
-    bottom: 116px;
+    z-index: 1;
+    top: 60px;
+    right: 8px;
+    bottom: 8px;
+    left: auto;
   }
 
   .diary-panel {
-    width: 100%;
+    width: 292px;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+
+  /* The whole panel scrolls, so the list keeps its height. */
+  .diary-panel > .page-list {
+    flex-shrink: 0;
+  }
+
+  .dropdown {
+    max-height: calc(100dvh - 72px);
+    overflow-y: auto;
+  }
+
+  .dialog-backdrop {
+    padding: 8px;
+  }
+
+  .dialog {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .settings-dialog {
+    height: calc(100dvh - 16px);
   }
 }

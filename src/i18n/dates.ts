@@ -1,4 +1,6 @@
 import { addDays, parseDay, todayKey, type DayKey } from '../lib/dates';
+import type { TextDates } from '../engine/text';
+import { completeDates, dateTone, type When } from '../lib/when';
 import { getLanguage, locale, t } from './index';
 
 /** Dates as text, in the active language. */
@@ -67,3 +69,47 @@ export function weekdayInitials(weekStart: 0 | 1 = 1): string[] {
 
 /** To compare texts ignoring case (search). */
 export const lower = (text: string) => text.toLocaleLowerCase(getLanguage());
+
+/** "9:00" / "9:00 AM", from minutes since 0:00. */
+export const formatClock = (minutes: number) =>
+  format({ hour: 'numeric', minute: '2-digit' }).format(new Date(2000, 0, 1, 0, minutes));
+
+/**
+ * A task's or an appointment's date, short: "hoy 10:00", "mañana", "sáb 21:30", "17 oct",
+ * "3 ene 2027 9:00–10:30".
+ */
+export function formatWhen(when: When, today = todayKey()): string {
+  const { day } = when;
+  let text = relativeDay(day, today)?.toLocaleLowerCase(locale());
+  const inWeek = [2, 3, 4, 5, 6].some((n) => addDays(today, n) === day);
+  if (!text && inWeek) text = format({ weekday: 'short' }).format(parseDay(day)).replace('.', '');
+  if (!text && day.slice(0, 4) === today.slice(0, 4)) text = formatDayMonth(day);
+  text ??= format({ day: 'numeric', month: 'short', year: 'numeric' })
+    .format(parseDay(day))
+    .replace('.', '')
+    .replace(' de ', ' ');
+  if (when.time !== undefined) text += ` ${formatClock(when.time)}`;
+  if (when.until !== undefined) text += `–${formatClock(when.until)}`;
+  return text;
+}
+
+/** "Martes, 13 de octubre, 10:00–11:30" (the date being written, in full). */
+export function formatWhenLong(when: When, today = todayKey()): string {
+  let text = formatDay(when.day, today);
+  if (when.time !== undefined) text += `, ${formatClock(when.time)}`;
+  if (when.until !== undefined) text += `–${formatClock(when.until)}`;
+  return text;
+}
+
+/** How the dates are labelled now, in the app's language. */
+export function dateLabels(now = Date.now()): TextDates {
+  const today = todayKey();
+  const language = getLanguage();
+  const monthFirst = language === 'en';
+  return {
+    today,
+    monthFirst,
+    label: (mark, task) => ({ text: formatWhen(mark, today), tone: dateTone(mark, task, now) }),
+    complete: (text) => completeDates(text, today, language, monthFirst),
+  };
+}

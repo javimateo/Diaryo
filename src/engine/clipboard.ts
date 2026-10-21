@@ -1,9 +1,11 @@
+import { IMAGE_FRAMES } from './elements';
 import type {
   ArrowBinding,
   ArrowElement,
   ArrowHead,
   FillStyle,
   ImageElement,
+  ImageFrame,
   Label,
   NoteElement,
   Roughness,
@@ -59,6 +61,9 @@ function textProps(v: Raw) {
   return {
     font: typeof v.font === 'string' ? v.font : DEFAULT_FONT,
     align: ALIGNS.includes(v.align as TextAlign) ? (v.align as TextAlign) : 'left',
+    ...(v.bold === true && { bold: true }),
+    ...(v.italic === true && { italic: true }),
+    ...(v.underline === true && { underline: true }),
   };
 }
 
@@ -192,13 +197,29 @@ function parseNote(v: Raw): NoteElement | null {
     color: v.color,
     textColor: isColor(v.textColor) ? v.textColor : null,
     valign: VALIGNS.includes(v.valign as VerticalAlign) ? (v.valign as VerticalAlign) : 'top',
+    ...privacy(v),
   };
+}
+
+/** A private note keeps its mark, and its encrypted text where it can't be read. */
+function privacy(v: Raw): Partial<NoteElement> {
+  if (v.private !== true) return {};
+  if (v.concealed !== true) return { private: true };
+  return typeof v.box === 'string'
+    ? { private: true, concealed: true, box: v.box, text: '', link: null }
+    : {};
 }
 
 function parseImage(v: Raw, hasAsset: (id: string) => boolean): ImageElement | null {
   const b = parseBox(v);
   if (!b || typeof v.assetId !== 'string' || !hasAsset(v.assetId)) return null;
-  return { ...b, type: 'image', assetId: v.assetId };
+  return {
+    ...b,
+    type: 'image',
+    assetId: v.assetId,
+    ...(IMAGE_FRAMES.includes(v.frame as ImageFrame) && { frame: v.frame as ImageFrame }),
+    ...(v.shadow === true && { shadow: true }),
+  };
 }
 
 function parseAssets(value: unknown): Record<string, string> {

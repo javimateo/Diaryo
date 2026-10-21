@@ -26,5 +26,8 @@ export default defineConfig({
       dedupe: ['react', 'react-dom'],
     },
     server: { fs: { allow: ['..'] } },
+    // Bundled when building the pages too, so the icons use that same React (the help page
+    // draws them on the server).
+    ssr: { noExternal: ['lucide-react'] },
   },
 });

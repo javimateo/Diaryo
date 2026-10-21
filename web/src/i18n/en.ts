@@ -10,6 +10,7 @@ export const en: WebMessages = {
   nav: {
     features: 'Features',
     download: 'Download',
+    help: 'Help',
     privacy: 'Privacy',
     source: 'GitHub',
     downloadShort: 'Download',
@@ -25,7 +26,7 @@ export const en: WebMessages = {
     download: 'Download for Windows',
     downloadInfo: 'v{version} · {size} · free',
     tryWeb: 'Use it in the browser',
-    points: ['Code in the open', 'No accounts', 'Your notes never leave your PC'],
+    points: ['Code in the open', "No account if you don't want one", 'Optional encrypted cloud'],
   },
   book: {
     today: 'today',
@@ -54,8 +55,8 @@ export const en: WebMessages = {
     { title: 'Handmade', text: 'Its own drawing engine, smooth with thousands of strokes.' },
     { title: 'Code in the open', text: 'Read it, change it and share it, for non-commercial use.' },
     {
-      title: 'No accounts, no cloud',
-      text: 'Everything is saved on your computer, with daily backups.',
+      title: 'Truly yours',
+      text: 'On your computer, with daily backups. The cloud is optional and encrypted.',
     },
     { title: 'English and Spanish', text: 'Pick the language in Settings.' },
   ],
@@ -74,19 +75,6 @@ export const en: WebMessages = {
     scenes: {
       today: 'today',
       day: 'Saturday 26',
-      turn: {
-        left: ['Saturday 26', '· beach', '· movies'],
-        front: ['· call Ana', '· water plants'],
-        back: ['Sunday 27', '· walk'],
-        under: ['· museum', '· dinner'],
-      },
-      draw: {
-        heading: 'Weekend plan',
-        question: 'beach or mountains?',
-        tasks: ['call Ana', 'book a hotel'],
-        note: 'Hotel Mar · €80',
-        link: '↪ Friday 2',
-      },
       search: {
         query: 'beach',
         results: [
@@ -95,12 +83,25 @@ export const en: WebMessages = {
           ['task', 'buy sunscreen'],
         ],
       },
-      styles: [
-        ['Terracotta leather', 'Lined', 'Wood'],
-        ['Blue cloth', 'Grid', 'Cork'],
-        ['Cardboard', 'Dots', 'Linen'],
-      ],
     },
+    news: [
+      {
+        id: 'tasks',
+        title: 'Tasks and appointments',
+        text: 'Type “@tomorrow 10” in a line and it has a date. “Upcoming” shows what is coming, Windows reminds you on time and you can add it to your calendar.',
+      },
+      {
+        id: 'cover',
+        title: 'Your cover',
+        text: 'Dress up the cover like a real diary: photos, text, drawings and sticky notes, or start from a template. You see it when you open it and on your desktop.',
+      },
+      {
+        id: 'private',
+        title: 'Truly private',
+        text: 'Encrypt only what is private or the whole diary on your computer, with its password. Private sticky notes show a padlock until you open them.',
+      },
+    ],
+    newBadge: 'new',
     small: [
       {
         id: 'turn',
@@ -120,14 +121,30 @@ export const en: WebMessages = {
       {
         id: 'style',
         title: 'Make it yours',
-        text: 'Leather or cloth covers, lined, grid, Cornell or planner paper, and a wood, cork or linen desk.',
+        text: 'Leather, cloth, canvas, denim or cardboard covers; lined, grid, Cornell or planner paper; and seven desks, from wood to marble.',
       },
     ],
+  },
+  cloud: {
+    eyebrow: 'Cloud',
+    title: 'On all your devices, and only you can read it',
+    text: 'If you like, create an account and your diary syncs between your PC, the browser and your phone. Before it leaves your device it is encrypted with your diary password: the server only keeps unreadable data.',
+    points: [
+      {
+        title: 'Optional',
+        text: 'Without an account nothing changes: the diary lives on your computer.',
+      },
+      { title: 'End-to-end encrypted', text: "Not even the server's administrator can read it." },
+      { title: '50 MB free', text: 'Years of text and drawings; images are compressed.' },
+      { title: 'Offline too', text: 'You write as usual and it syncs when you are back.' },
+    ],
+    server: 'Server',
+    caption: 'the same page, on both',
   },
   download: {
     eyebrow: 'Download',
     title: 'diaryo for Windows',
-    text: 'Windows 10 and 11, 64-bit. Installs without admin rights and starts with Windows, hidden and ready for the shortcut.',
+    text: 'Windows 10 and 11, 64-bit. Installs without admin rights and starts with Windows, hidden and ready for the shortcut. The first time, a sample page and a short tour welcome you.',
     button: 'Download v{version}',
     releases: 'Release notes and older versions',
     otherSystems: 'Mac or Linux? For now, use it in the browser.',
@@ -145,28 +162,49 @@ export const en: WebMessages = {
   privacy: {
     eyebrow: 'Privacy',
     title: 'Your notes are yours',
-    text: 'No accounts, no servers and no ads. The diary is saved on your computer and leaves a copy in Documents every day. You can take the whole thing with you in one file whenever you want. This website only counts visits and downloads, anonymously and without cookies; the app sends nothing.',
+    text: 'No ads and no tracking. The diary is saved on your computer and leaves a copy in Documents every day; you can take the whole thing with you in one file whenever you want. If you want, it is also encrypted on your computer (only what is private, or all of it) and locks with its password. If you use the cloud, your diary travels encrypted: without your diary password nobody can read it, us included. This website only counts visits and downloads, anonymously and without cookies.',
     source: 'See the code on GitHub',
+    policy: 'Privacy policy',
+    terms: 'Terms',
   },
   faq: {
     title: 'Questions',
     items: [
       {
         q: 'Is it free?',
-        a: 'Completely: no ads and no paid versions. And its code is public (for non-commercial use).',
+        a: 'Yes: the app is completely free, with no ads, and the cloud comes with 50 MB free. And its code is public (for non-commercial use).',
       },
       {
         q: 'Where are my notes saved?',
         a: 'On your computer. The desktop app also leaves a copy every day in Documents\\diaryo (you can pick another folder).',
       },
-      { q: 'Does it work offline?', a: "Yes. diaryo doesn't need a connection for anything." },
+      {
+        q: 'Does it work offline?',
+        a: 'Yes. Only the cloud, if you use it, needs a connection to sync; meanwhile you write as usual.',
+      },
+      {
+        q: 'Does it remind me of my tasks?',
+        a: 'Yes: type @ and the day (and the time, if you like) in a task or an appointment, and Windows shows a reminder on time, even with the diary hidden. You can also add them to your calendar.',
+      },
+      {
+        q: 'Can I encrypt the diary on my computer?',
+        a: 'Yes: in Settings → Privacy, choose to encrypt only the private sticky notes or the whole diary, with its password. Fully encrypted, it locks when you want and nobody reads it without it.',
+      },
       {
         q: 'Can I move my diary to another computer?',
-        a: 'Save a copy (a .diaryo file) from the menu and open it on the other one.',
+        a: 'With the cloud (optional) it syncs by itself. Without it, save a copy (a .diaryo file) from the menu and open it on the other one.',
+      },
+      {
+        q: 'Who can read my diary in the cloud?',
+        a: 'Only you. It is encrypted on your device with your diary password before it leaves, and the server keeps unreadable data. Not even we can open it.',
+      },
+      {
+        q: 'What if I forget my diary password?',
+        a: "When you turn on the cloud you get a recovery code to keep. Without the password or the code, the cloud's diary can't be recovered; the one on your devices is still there.",
       },
       {
         q: 'What about the web version?',
-        a: "It's the same app. It saves the diary in your browser: nothing leaves it.",
+        a: "It's the same app. It saves the diary in your browser; with the cloud, you also have it on your PC and your phone.",
         web: true,
       },
     ],
@@ -179,5 +217,19 @@ export const en: WebMessages = {
   footer: {
     made: 'Made with care · Source available for non-commercial use',
     language: 'Español',
+    privacy: 'Privacy',
+    terms: 'Terms',
+  },
+  help: {
+    title: 'How to use diaryo',
+    lead: 'The same as the help in the app (in Settings → Help, or with ?), to read before installing it or to keep at hand.',
+    shortcuts: 'Keyboard shortcuts',
+    windows:
+      'The shortcuts of the floating diary and the desk on the desktop are the Windows app’s, and they change in Settings → Desktop.',
+  },
+  legal: {
+    back: 'Back to diaryo',
+    updated: 'Last updated: {date}',
+    summary: 'In short',
   },
 };

@@ -6,15 +6,19 @@ import {
   deletePage,
   DESK_INFO,
   DiaryoDB,
+  dropOpeningLeftovers,
   dumpDiary,
   listLinks,
   listPages,
   listTexts,
   loadPage,
   mergeDiary,
+  openingDB,
   pruneEmptyPages,
+  replaceDiary,
   restorePage,
   saveChanges,
+  toggleSavedTask,
   updatePage,
   type PageInfo,
 } from './db';
@@ -58,6 +62,10 @@ const image: ImageElement = {
 };
 
 let db: DiaryoDB;
+
+const never = (): never => {
+  throw new Error('unreachable');
+};
 afterEach(async () => {
   await db?.delete();
 });
@@ -178,6 +186,50 @@ describe("a page's own paper", () => {
     if (parsed?.kind !== 'diary') throw new Error('copia no válida');
     expect(parsed.diary.pages[0].page.paper).toBeNull();
   });
+
+  it('a page whose id is not one of diaryo is not read from a backup', () => {
+    const page = { id: 'x', date: '2026-09-24', elements: [] };
+    const file = (id: string) =>
+      JSON.stringify({ type: 'diaryo/diary', version: 1, pages: [page, { ...page, id }] });
+    const ids = (text: string) => {
+      const backup = parseBackup(text);
+      return backup?.kind === 'diary' ? backup.diary.pages.map((p) => p.page.id) : null;
+    };
+    expect(ids(file('a"><img src=x onerror=alert(1)>'))).toEqual(['x']);
+    expect(ids(file('0b7c6a8e-1f2d-4c3b-9a8e-7d6c5b4a3f2e'))).toHaveLength(2);
+  });
+});
+
+describe('tasks on pages that are not open', () => {
+  it('ticks one and lets the other devices know', async () => {
+    db = new DiaryoDB('test-tasks');
+    const note = {
+      id: 'n',
+      type: 'note' as const,
+      z: 1,
+      x: 0,
+      y: 0,
+      rotation: 0,
+      opacity: 1,
+      groupId: null,
+      locked: false,
+      variant: 'plain' as const,
+      text: 'Hoy\n[ ] Dentista @13 oct 2026 10:00',
+      fontSize: 20,
+      color: 'yellow' as const,
+      textColor: null,
+      font: 'inter',
+      align: 'left' as const,
+      valign: 'top' as const,
+      width: 220,
+      height: 220,
+    };
+    await saveChanges(db, info('p'), { ...empty, upserts: [note] });
+    await db.tracked.clear();
+    await toggleSavedTask(db, 'p', 'n', 1);
+    expect((await listTexts(db))[0].text).toBe('Hoy\n[x] Dentista @13 oct 2026 10:00');
+    expect((await db.tracked.toArray()).length).toBe(2);
+  });
 });
 
 describe('search', () => {
@@ -245,6 +297,63 @@ describe('diary backups', () => {
     expect((await loadPage(db, 'q')).elements).toHaveLength(1);
   });
 
+  it('the desk travels in the backup file and comes back when opening it', async () => {
+    const note = {
+      id: 'note',
+      type: 'note' as const,
+      z: 3,
+      x: 900,
+      y: 100,
+      rotation: 0,
+      opacity: 1,
+      groupId: null,
+      locked: false,
+      variant: 'plain' as const,
+      text: 'on the desk',
+      fontSize: 20,
+      color: 'yellow' as const,
+      textColor: null,
+      font: 'inter',
+      align: 'left' as const,
+      valign: 'top' as const,
+      width: 220,
+      height: 220,
+    };
+    const home = new DiaryoDB('test-17');
+    await saveChanges(home, DESK_INFO, { ...empty, upserts: [note, stroke('s')] });
+    const file = serializeDiary(await dumpDiary(home));
+    home.close();
+    await Dexie.delete('test-17');
+
+    const backup = parseBackup(file);
+    expect(backup?.kind).toBe('diary');
+    db = new DiaryoDB('test-18');
+    expect(await mergeDiary(db, backup!.kind === 'diary' ? backup!.diary : never())).toEqual([
+      DESK_INFO.id,
+    ]);
+    const desk = (await loadPage(db, DESK_INFO.id)).elements;
+    expect(desk.map((el) => el.id).sort()).toEqual(['note', 's']);
+  });
+
+  it('replacing leaves only the backup: its pages and its desk', async () => {
+    const other = new DiaryoDB('test-19');
+    await saveChanges(other, info('theirs'), { ...empty, upserts: [stroke('t')] });
+    await saveChanges(other, DESK_INFO, { ...empty, upserts: [stroke('their-note')] });
+    const copy = await dumpDiary(other);
+    other.close();
+    await Dexie.delete('test-19');
+
+    db = new DiaryoDB('test-20');
+    await saveChanges(db, info('mine'), { ...empty, upserts: [stroke('m')] });
+    await saveChanges(db, DESK_INFO, { ...empty, upserts: [stroke('my-note')] });
+    await replaceDiary(db, copy);
+
+    expect((await listPages(db)).map((p) => p.id)).toEqual(['theirs']);
+    expect((await loadPage(db, 'mine')).elements).toHaveLength(0);
+    const desk = (await loadPage(db, DESK_INFO.id)).elements;
+    expect(desk.map((el) => el.id)).toEqual(['their-note']);
+  });
+
   it('the desk merges with the one here: no note from either is lost', async () => {
     // On the web: the notes "a" and "b" on the desk.
     const web = new DiaryoDB('test-15');
@@ -266,6 +375,22 @@ describe('diary backups', () => {
   });
 });
 
+describe('databases left behind', () => {
+  it('drops those a locked diary was being opened in, and nothing else', async () => {
+    const left = openingDB();
+    await left.open();
+    left.close();
+    const other = new DiaryoDB('test-keeps');
+    await other.open();
+    other.close();
+    await dropOpeningLeftovers();
+    const names = (await indexedDB.databases()).map((d) => d.name);
+    expect(names).not.toContain(left.name);
+    expect(names).toContain('test-keeps');
+    await Dexie.delete('test-keeps');
+  });
+});
+
 describe('file backups', () => {
   it('round trip', () => {
     const text = serializePage({
@@ -276,6 +401,18 @@ describe('file backups', () => {
     const page = parsePage(text)!;
     expect(page.elements).toHaveLength(2);
     expect(page.fonts[0].name).toBe('Mía');
+  });
+
+  it('reads a font only from inside the file, never from an address', () => {
+    const text = serializePage({
+      elements: [],
+      assets: [],
+      fonts: [
+        { id: 'custom-1', name: 'Dentro', src: 'data:font/ttf;base64,AAAA' },
+        { id: 'custom-2', name: 'Fuera', src: 'https://example.com/font.woff2' },
+      ],
+    });
+    expect(parsePage(text)!.fonts.map((f) => f.name)).toEqual(['Dentro']);
   });
 
   it("rejects files that aren't from diaryo", () => {

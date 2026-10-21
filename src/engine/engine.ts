@@ -2,6 +2,7 @@ import {
   cameraAt,
   cameraCenter,
   clampZoom,
+  minZoomFor,
   fitCamera,
   panBy,
   screenToWorld,
@@ -9,31 +10,36 @@ import {
   zoomAt,
   type Camera,
 } from './camera';
-import { arrange, elementsToPng, flip, renderElements, type ArrangeMode } from './arrange';
+import { arrange, elementsToPng, fillBehind, flip, type ArrangeMode } from './arrange';
 import {
   bookBounds,
+  CLOSED_COVER,
   drawBinding,
+  PAGES,
   isOnPage,
   tabAt,
+  traceClosedCover,
   drawBook,
   PAGE_HEIGHT,
   PAGE_WIDTH,
   type BookSpread,
 } from './book';
+import * as pageImages from './pageImages';
 import { PageTurner, type TurnDirection, type TurnTarget } from './pageTurn';
-import { badgeAt, drawLinkBadge, linkBadges, type LinkLabel } from './links';
-import { detachMoved } from './arrows';
+import { drawLinkBadge, linkAt, linkBadges, type LinkLabel } from './links';
 import { AssetStore, isImageFile, loadImageFile } from './assets';
 import { parseElements, serializeElements } from './clipboard';
 import { brushCursor, eraserCursor } from './cursors';
 import { isEditableTarget } from './dom';
-import { defaultLabel, isContainer, textOf, withText } from './containers';
-import { createText, fitEditable, isEditable } from './editing';
+import { textOf, withText } from './containers';
+import { createText, finishEdit, fitEditable, isEditable, readyToEdit } from './editing';
 import {
   createId,
   DEFAULT_STYLES,
-  type ArrowBinding,
   elementBounds,
+  isConcealed,
+  isLocked,
+  isPrivateNote,
   type EditableElement,
   type ImageElement,
   NOTE_SIZE,
@@ -56,13 +62,14 @@ import { resolveColor } from './palette';
 import { drawElement, type RenderContext } from './render';
 import { Scene, type Changes } from './scene';
 import { elementHitsSegment } from './hit';
-import { containerAt, hitTestElement } from './selection';
+import { containerAt, hitTestElement, privateBadgeAt, withGroups } from './selection';
 import { applyStyle, patchMergeKey, type StylePatch } from './restyle';
-import { clearTextCache } from './text';
-import { taskAt, withTaskToggled } from './tasks';
+import * as edits from './selectionEdits';
+import { clearTextCache, setTextDates, setTextInEditor, type TextDates } from './text';
+import { taskUnder, withTaskToggled } from './tasks';
+import { onTextureReady } from './textures';
 import { drawBackdrop, drawHighlight, type Backdrop } from './drawing';
 import { TOOL_CURSORS, type ToolId } from './tools';
-import { translateElement } from './transform';
 import { CameraMotion } from './cameraMotion';
 import { selectionStyle } from './selectionStyle';
 import type {
@@ -149,7 +156,7 @@ export class Engine {
     mode: 'light',
     background: '#faf9f6',
     dots: '#cdc8bf',
-    accent: '#5b5bd6',
+    accent: '#b8573f',
     handleFill: '#ffffff',
   };
   private styles: ToolStyles = DEFAULT_STYLES;
@@ -163,15 +170,23 @@ export class Engine {
   private lastPointer: Vec | null = null;
   private editing: EditingState | null = null;
   private readonly editingListeners = new Set<EditingListener>();
+  /** Who shows a hidden private note (with the diary password), see `subscribeReveal`. */
+  private readonly revealListeners = new Set<(id: string) => void>();
+  /** Who hides a private note again (its open padlock was clicked). */
+  private readonly hideListeners = new Set<(id: string) => void>();
+  /** Who confirms deleting private notes (with the diary password), see `deleteSelection`. */
+  private readonly deleteListeners = new Set<(ids: string[], notes: string[]) => void>();
   /** The UI decides which tool is active; the engine can only ask for it. */
   private toolRequest: (tool: ToolId) => void = () => {};
   private contextMenuListener: (request: ContextMenuRequest) => void = () => {};
-  private copiedStyle: { patch: StylePatch; type: SceneElement['type'] } | null = null;
+  private copiedStyle: edits.CopiedStyle | null = null;
 
   private gesture: Gesture | null = null;
   /** Fingers on the screen (touch): where each one is, in canvas pixels. */
   private readonly touches = new Map<number, Vec>();
   private longPress: { timer: ReturnType<typeof setTimeout>; start: Vec } | null = null;
+  /** How far out one may zoom, worked out at most every few moments (see `minZoom`). */
+  private zoomFloor = { value: 0, at: -Infinity };
   /** Last touch: the browser's own long-press menu is ignored after it (ours opens). */
   private lastTouch = -Infinity;
   /** What the camera does by itself: smooth zoom and panning, inertia and flights. */
@@ -199,7 +214,8 @@ export class Engine {
   /** When the window is resized, frame the whole book again. */
   private fitOnResize: (() => Camera) | null = null;
   private readonly pageTurner = new PageTurner({
-    renderTexture: (target, scale) => this.renderSpread(target, scale),
+    renderTexture: (target, scale) =>
+      pageImages.renderSpread(target, scale, this.theme.mode, this.assets),
     invalidate: () => this.invalidateOverlay(),
     onTurn: (dir) => this.pageTurnListener(dir),
   });
@@ -244,6 +260,10 @@ export class Engine {
     this.listen(overlay, 'pointermove', this.onPointerMove);
     this.listen(overlay, 'pointerup', this.onPointerUp);
     this.listen(overlay, 'pointercancel', this.onPointerUp);
+    // A finger lifted somewhere else (on the menu its long press opened, on a button…)
+    // is lifted for the canvas too; otherwise it would think it is still down.
+    this.listen(window, 'pointerup', this.onFingerLiftedElsewhere, { capture: true });
+    this.listen(window, 'pointercancel', this.onFingerLiftedElsewhere, { capture: true });
     // Prevents Windows autoscroll with the middle button.
     this.listen(overlay, 'mousedown', (e: MouseEvent) => {
       if (e.button === 1) e.preventDefault();
@@ -271,6 +291,9 @@ export class Engine {
 
     this.resize();
     this.updateCursor();
+
+    // The cover and desk textures get sharper as they are made for the zoom.
+    this.cleanups.push(onTextureReady(() => this.invalidateScene()));
 
     // Text measurements depend on the font: redo them when each one finishes loading. The
     // bundled ones are preloaded so they are ready when chosen.
@@ -359,6 +382,23 @@ export class Engine {
     if (!this.book) return;
     this.stopMotion();
     this.setCamera(fitCamera(bookBounds(this.book), this.viewport, this.fitPadding()));
+  }
+
+  /**
+   * How far out the user may zoom: until the book and everything there is take a quarter
+   * of what they take fitted (further out the book gets lost). It is recalculated at most
+   * every half second: the wheel sends many events and the content hardly changes
+   * meanwhile. Never above the current zoom, so it doesn't push the view in by itself.
+   */
+  private minZoom(): number {
+    const now = performance.now();
+    if (now - this.zoomFloor.at > 500) {
+      const content = this.scene.contentBounds();
+      const book = this.book ? bookBounds(this.book) : null;
+      const bounds = content && book ? unionBounds(content, book) : (content ?? book);
+      this.zoomFloor = { value: minZoomFor(bounds, this.viewport), at: now };
+    }
+    return Math.min(this.zoomFloor.value, this.camera.zoom);
   }
 
   /** The margin when framing: less on a small screen (a phone), where every pixel counts. */
@@ -485,6 +525,12 @@ export class Engine {
     this.invalidateScene();
   }
 
+  /** How the dates of tasks and appointments are labelled (null: as written). */
+  setDates(dates: TextDates | null) {
+    setTextDates(dates);
+    this.invalidateScene();
+  }
+
   /** Notifies when a link label is clicked. */
   onLinkOpen(listener: (pageId: string) => void) {
     this.linkListener = listener;
@@ -505,22 +551,22 @@ export class Engine {
 
   /** Page of the link whose label is under the point, or null. */
   private linkUnder(world: Vec): string | null {
-    // On the selection its handles win (its link opens from the panel).
-    const badges = this.visibleBadges().filter((b) => !b.ids.some((id) => this.selection.has(id)));
-    return badgeAt(badges, world)?.link ?? null;
+    return linkAt(this.visibleBadges(), this.selection, world);
   }
 
-  /** Task whose checkbox is under the point (topmost first), or null. */
+  /** Task whose checkbox is under the point, with the selection tools; or null. */
   private taskUnder(world: Vec): { el: SceneElement; paragraph: number } | null {
     if (this.tool !== 'select' && this.tool !== 'lasso') return null;
-    const slop = 4 / this.camera.zoom;
-    const near = { minX: world.x - 1, minY: world.y - 1, maxX: world.x + 1, maxY: world.y + 1 };
-    const candidates = this.scene.search(near).sort((a, b) => b.z - a.z);
-    for (const el of candidates) {
-      const paragraph = taskAt(el, world, slop);
-      if (paragraph !== null) return { el, paragraph };
-    }
-    return null;
+    return taskUnder(this.scene, world, 4 / this.camera.zoom);
+  }
+
+  /** Ticks or unticks a task (its line `paragraph`) of something here; false if it isn't. */
+  toggleTask(elementId: string, paragraph: number): boolean {
+    const el = this.scene.get(elementId);
+    if (!el) return false;
+    const toggled = withTaskToggled(el, paragraph);
+    this.history.commit(new Map([[toggled.id, toggled]]));
+    return true;
   }
 
   /** Notifies when a marked page's tab is clicked. */
@@ -548,25 +594,12 @@ export class Engine {
 
   /** Thumbnail of another page (its double page in small), at that width. */
   spreadThumbnail(target: TurnTarget, width: number): string {
-    return this.renderSpread(target, width / (PAGE_WIDTH * 2)).toDataURL('image/webp', 0.85);
+    return pageImages.spreadThumbnail(target, width, this.theme.mode, this.assets);
   }
 
-  /** Draws a double page (paper and content, without covers) for the turning sheet. */
-  private renderSpread(target: TurnTarget, scale: number): HTMLCanvasElement {
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(PAGE_WIDTH * 2 * scale);
-    canvas.height = Math.round(PAGE_HEIGHT * scale);
-    const ctx = canvas.getContext('2d')!;
-    ctx.setTransform(scale, 0, 0, scale, PAGE_WIDTH * scale, (PAGE_HEIGHT / 2) * scale);
-    drawBook(ctx, target.book, this.theme.mode, scale, true);
-    const rc: RenderContext = {
-      mode: this.theme.mode,
-      pixelScale: scale,
-      assets: this.assets,
-      editingId: null,
-    };
-    for (const el of [...target.elements].sort((a, b) => a.z - b.z)) drawElement(ctx, el, rc);
-    return canvas;
+  /** The closed diary's cover as an image, at that width. */
+  coverImage(book: BookSpread, elements: SceneElement[], width: number): string {
+    return pageImages.coverImage(book, elements, width, this.assets);
   }
 
   private fitCamera(): Camera {
@@ -614,7 +647,7 @@ export class Engine {
     this.setSelection(
       this.scene
         .all()
-        .filter((el) => !el.locked)
+        .filter((el) => !isLocked(el))
         .map((el) => el.id),
     );
   }
@@ -625,12 +658,30 @@ export class Engine {
 
   deleteSelection(): boolean {
     const ids = this.selectedElements()
-      .filter((el) => !el.locked)
+      .filter((el) => !isLocked(el))
       .map((el) => el.id);
     if (ids.length === 0 || this.gesture?.type === 'tool') return false;
+    // Private notes need the diary password first (the whole selection waits for it).
+    const notes = ids.filter((id) => isPrivateNote(this.scene.get(id)!));
+    if (notes.length > 0) {
+      this.deleteListeners.forEach((listener) => listener(ids, notes));
+      return true;
+    }
     const changes: Changes = new Map(ids.map((id) => [id, null]));
     this.setSelection([]);
     this.history.commit(changes);
+    return true;
+  }
+
+  /** Deletes these elements, if they can be (private notes, once the password was typed). */
+  deleteElements(ids: string[]): boolean {
+    const gone = ids.filter((id) => {
+      const el = this.scene.get(id);
+      return el && !isLocked(el);
+    });
+    if (gone.length === 0) return false;
+    this.setSelection([...this.selection].filter((id) => !gone.includes(id)));
+    this.history.commit(new Map(gone.map((id) => [id, null])));
     return true;
   }
 
@@ -644,19 +695,9 @@ export class Engine {
 
   /** Moves the selection a few screen pixels (keyboard arrows). */
   nudgeSelection(dx: number, dy: number): boolean {
-    const elements = this.selectedElements().filter((el) => !el.locked);
-    if (elements.length === 0 || this.gesture?.type === 'tool') return false;
+    if (this.gesture?.type === 'tool') return false;
     const { zoom } = this.camera;
-    const moving = new Set(elements.map((el) => el.id));
-    this.history.commit(
-      new Map(
-        elements.map((el) => [
-          el.id,
-          detachMoved(translateElement(el, dx / zoom, dy / zoom), moving),
-        ]),
-      ),
-    );
-    return true;
+    return this.commitEdit(edits.nudge(this.selectedElements(), dx / zoom, dy / zoom));
   }
 
   /** Clipboard text with the selection, or null if there is no selection. */
@@ -742,8 +783,17 @@ export class Engine {
    */
   restyleSelection(patch: StylePatch) {
     const changes: Changes = new Map();
+    const newlyFilled: SceneElement[] = [];
     for (const el of this.selectedElements()) {
-      changes.set(el.id, applyStyle(el, patch, this.camera.zoom));
+      const styled = applyStyle(el, patch, this.camera.zoom);
+      changes.set(el.id, styled);
+      const hadFill = 'fill' in el && el.fill;
+      if ('fill' in styled && styled.fill && !hadFill) newlyFilled.push(styled);
+    }
+    // A fill would cover what the container holds: it goes behind it (same undo step).
+    for (const [id, z] of fillBehind(this.scene.all(), newlyFilled)) {
+      const el = changes.get(id);
+      if (el) changes.set(id, { ...el, z });
     }
     this.history.commit(changes, patchMergeKey(patch));
   }
@@ -754,6 +804,27 @@ export class Engine {
     this.editingListeners.add(listener);
     listener(this.editing);
     return () => this.editingListeners.delete(listener);
+  }
+
+  /** The user wants to see a private note whose text is hidden (to edit it, for example). */
+  subscribeReveal(listener: (id: string) => void): () => void {
+    this.revealListeners.add(listener);
+    return () => this.revealListeners.delete(listener);
+  }
+
+  /**
+   * The user deletes something with private notes in it (`notes`): nothing goes until the
+   * diary password is typed, and then `deleteElements` with all the `ids`.
+   */
+  subscribeDeletePrivate(listener: (ids: string[], notes: string[]) => void): () => void {
+    this.deleteListeners.add(listener);
+    return () => this.deleteListeners.delete(listener);
+  }
+
+  /** The user hides a private note that is shown (its open padlock). */
+  subscribeHide(listener: (id: string) => void): () => void {
+    this.hideListeners.add(listener);
+    return () => this.hideListeners.delete(listener);
   }
 
   /** The UI learns that the engine wants to change the tool. */
@@ -771,6 +842,7 @@ export class Engine {
 
   updateEditingText(text: string) {
     if (!this.editing) return;
+    setTextInEditor(text);
     this.setEditing({
       ...this.editing,
       element: fitEditable(withText(this.editing.element, text)),
@@ -792,40 +864,29 @@ export class Engine {
   finishEditing(selectResult = true) {
     const editing = this.editing;
     if (!editing) return;
+    // Out of the editor first: the dates are measured again as labels.
     this.setEditing(null);
-    const { isNew } = editing;
-    let { element } = editing;
-    const original = this.scene.get(element.id);
-    const empty = textOf(element).trim() === '';
-
-    if (element.type === 'text' && empty) {
-      if (original) this.history.commit(new Map([[element.id, null]]));
-      return;
-    }
-    // A shape without text stops having a label.
-    if (isContainer(element) && empty) element = { ...element, label: null };
-    // Any property counts (text, font, alignment, opacity…).
-    const unchanged = !!original && JSON.stringify(original) === JSON.stringify(element);
-    if (isNew || !unchanged) this.history.commit(new Map([[element.id, element]]));
-    if (selectResult) {
+    const { element, isNew } = editing;
+    const { changes, result } = finishEdit(element, this.scene.get(element.id), isNew);
+    if (changes) this.history.commit(changes);
+    if (result && selectResult) {
       this.toolRequest('select');
-      this.setSelection([element.id]);
+      this.setSelection([result.id]);
     }
   }
 
   private startEditing(element: EditableElement, isNew: boolean) {
     this.finishEditing(false);
     this.setSelection([]);
-    // A shape without text gets an empty one with the default style.
-    const ready =
-      isContainer(element) && !element.label
-        ? { ...element, label: defaultLabel(this.styles, this.camera.zoom) }
-        : element;
-    this.setEditing({ element: ready, isNew });
+    const ready = readyToEdit(element, this.styles, this.camera.zoom);
+    // While it is written, its dates take the room of what is written, not of their labels.
+    setTextInEditor(textOf(ready));
+    this.setEditing({ element: textOf(ready).includes('@') ? fitEditable(ready) : ready, isNew });
   }
 
   private setEditing(editing: EditingState | null) {
     this.editing = editing;
+    if (!editing) setTextInEditor(null);
     this.invalidateScene();
     this.invalidateOverlay();
     this.editingListeners.forEach((listener) => listener(editing));
@@ -836,6 +897,12 @@ export class Engine {
     const world = screenToWorld(this.camera, this.localPoint(e));
     const hit = hitTestElement(this.scene, world, 4 / this.camera.zoom);
     // Inside a shape (even without a fill) you write in it.
+    // A hidden private note asks for the password (it is locked, so not hit above).
+    const hidden = hit ? null : hitTestElement(this.scene, world, 4 / this.camera.zoom, true);
+    if (hidden && isConcealed(hidden)) {
+      this.revealListeners.forEach((listener) => listener(hidden.id));
+      return;
+    }
     const target = hit && isEditable(hit) ? hit : hit ? null : containerAt(this.scene, world);
     if (target) this.startEditing(target, false);
     else if (!hit) {
@@ -876,35 +943,52 @@ export class Engine {
 
   /** Groups the selection: from now on it is selected and moved together. */
   groupSelection(): boolean {
-    const elements = this.selectedElements().filter((el) => !el.locked);
-    if (elements.length < 2) return false;
-    const groupId = createId();
-    this.history.commit(new Map(elements.map((el) => [el.id, { ...el, groupId }])));
-    return true;
+    return this.commitEdit(edits.group(this.selectedElements()));
   }
 
   ungroupSelection(): boolean {
-    const elements = this.selectedElements().filter((el) => el.groupId);
-    if (elements.length === 0) return false;
-    this.history.commit(new Map(elements.map((el) => [el.id, { ...el, groupId: null }])));
-    return true;
+    return this.commitEdit(edits.ungroup(this.selectedElements()));
+  }
+
+  /** What is written in the selection (texts, notes, shapes), to read its dates. */
+  selectedTexts(): { id: string; text: string; private: boolean }[] {
+    return this.selectedElements()
+      .filter(isEditable)
+      .map((el) => ({ id: el.id, text: textOf(el), private: el.type === 'note' && !!el.private }))
+      .filter(({ text }) => text.trim() !== '');
+  }
+
+  /** The ids of the selected notes (to mark them as private). */
+  selectedNotes(): string[] {
+    return this.selectedElements()
+      .filter((el) => el.type === 'note')
+      .map((el) => el.id);
+  }
+
+  /** Marks these notes as private, or not (hidden ones don't change: they are locked). */
+  setPrivate(ids: string[], on: boolean): boolean {
+    return this.commitEdit(
+      edits.markPrivate(
+        ids.map((id) => this.scene.get(id)),
+        on,
+      ),
+    );
   }
 
   /** Locks (or unlocks, if everything already was) the selection. */
   toggleLockSelection(): boolean {
-    const elements = this.selectedElements();
-    if (elements.length === 0) return false;
-    const locked = !elements.every((el) => el.locked);
-    this.history.commit(new Map(elements.map((el) => [el.id, { ...el, locked }])));
-    if (locked) this.setSelection([]);
+    const edit = edits.toggleLock(this.selectedElements());
+    if (!edit) return false;
+    this.history.commit(edit.changes);
+    if (edit.locked) this.setSelection([]);
     return true;
   }
 
   unlockAll(): boolean {
-    const locked = this.scene.all().filter((el) => el.locked);
-    if (locked.length === 0) return false;
-    this.history.commit(new Map(locked.map((el) => [el.id, { ...el, locked: false }])));
-    this.setSelection(locked.map((el) => el.id));
+    const changes = edits.unlockAll(this.scene.all());
+    if (!changes) return false;
+    this.history.commit(changes);
+    this.setSelection(changes.keys());
     return true;
   }
 
@@ -915,7 +999,7 @@ export class Engine {
   }
 
   flipSelection(axis: 'horizontal' | 'vertical'): boolean {
-    const elements = this.selectedElements().filter((el) => !el.locked);
+    const elements = this.selectedElements().filter((el) => !isLocked(el));
     if (elements.length === 0) return false;
     this.history.commit(flip(elements, axis));
     return true;
@@ -925,29 +1009,7 @@ export class Engine {
   copyStyle(): boolean {
     const [el] = this.selectedElements();
     if (!el) return false;
-    const { zoom } = this.camera;
-    const patch: StylePatch = { opacity: el.opacity };
-    if (el.type === 'stroke') Object.assign(patch, { color: el.color, size: el.size * zoom });
-    if (el.type === 'text') {
-      Object.assign(patch, {
-        color: el.color,
-        size: el.fontSize * zoom,
-        font: el.font,
-        align: el.align,
-      });
-    }
-    if (el.type === 'note') {
-      Object.assign(patch, {
-        noteColor: el.color,
-        noteVariant: el.variant,
-        noteTextColor: el.textColor,
-        size: el.fontSize * zoom,
-        font: el.font,
-        align: el.align,
-        valign: el.valign,
-      });
-    }
-    this.copiedStyle = { patch, type: el.type };
+    this.copiedStyle = edits.copyStyle(el, this.camera.zoom);
     this.emitState();
     return true;
   }
@@ -955,14 +1017,12 @@ export class Engine {
   pasteStyle(): boolean {
     const copied = this.copiedStyle;
     if (!copied || this.selection.size === 0) return false;
-    const changes: Changes = new Map();
-    for (const el of this.selectedElements()) {
-      // A stroke width makes no sense as a font size (nor the other way round).
-      const { size, ...rest } = copied.patch;
-      const patch = el.type === copied.type ? copied.patch : rest;
-      void size;
-      changes.set(el.id, applyStyle(el, patch, this.camera.zoom));
-    }
+    this.history.commit(edits.pasteStyle(this.selectedElements(), copied, this.camera.zoom));
+    return true;
+  }
+
+  private commitEdit(changes: Changes | null): boolean {
+    if (!changes) return false;
     this.history.commit(changes);
     return true;
   }
@@ -998,6 +1058,13 @@ export class Engine {
     const world = screenToWorld(this.camera, local);
     // The menu also reaches locked elements (to be able to unlock them).
     const hit = hitTestElement(this.scene, world, 6 / this.camera.zoom, true);
+    // A hidden private note isn't selected (nothing changes it): its own menu.
+    if (hit && isConcealed(hit)) {
+      this.setSelection([]);
+      this.lastPointer = local;
+      this.contextMenuListener({ x: clientX, y: clientY, onElement: false, hiddenNote: hit.id });
+      return;
+    }
     if (hit && !this.selection.has(hit.id)) this.setSelection([hit.id]);
     if (!hit) this.setSelection([]);
     if (hit && !SELECTION_TOOLS.includes(this.tool)) this.toolRequest('select');
@@ -1058,7 +1125,7 @@ export class Engine {
     const zoomed = zoomAt(
       this.camera,
       gesture.center,
-      this.camera.zoom * (distance / gesture.distance),
+      Math.max(this.camera.zoom * (distance / gesture.distance), this.minZoom()),
     );
     this.setCamera(panBy(zoomed, center.x - gesture.center.x, center.y - gesture.center.y));
     gesture.center = center;
@@ -1076,6 +1143,19 @@ export class Engine {
     if (e.pointerId === gesture.pointerId || e.pointerId === gesture.other) this.gesture = null;
     return true;
   }
+
+  private onFingerLiftedElsewhere = (e: PointerEvent) => {
+    if (e.pointerType !== 'touch' || e.target === this.overlayCanvas) return;
+    if (!this.touches.delete(e.pointerId)) return;
+    this.clearLongPress();
+    const gesture = this.gesture;
+    if (
+      gesture?.type === 'pinch' &&
+      (e.pointerId === gesture.pointerId || e.pointerId === gesture.other)
+    ) {
+      this.gesture = null;
+    }
+  };
 
   private fireLongPress(pointerId: number, clientX: number, clientY: number) {
     this.longPress = null;
@@ -1101,7 +1181,9 @@ export class Engine {
   pageElements(): SceneElement[] {
     const all = this.scene.all();
     const desk = this.deskIds;
-    return this.book ? all.filter((el) => !desk.has(el.id) && isOnPage(elementBounds(el))) : all;
+    const book = this.book;
+    if (!book) return all;
+    return all.filter((el) => !desk.has(el.id) && isOnPage(elementBounds(el), book.closed));
   }
 
   /**
@@ -1138,8 +1220,11 @@ export class Engine {
     this.cancelGesture();
     this.finishEditing(false);
     this.setSelection([]);
-    // In the diary, what is on the desk stays: only what is inside the book changes.
-    const leaving = this.book ? this.pageElements() : this.scene.all();
+    // In the diary, what is on the desk stays: only the page's elements change (by what
+    // they are, not where: the book may have just closed or opened).
+    const leaving = this.book
+      ? this.scene.all().filter((el) => !this.deskIds.has(el.id))
+      : this.scene.all();
     const changes: Changes = new Map(leaving.map((el) => [el.id, null]));
     for (const el of elements) changes.set(el.id, el);
     const notify = this.scene.onChange;
@@ -1163,20 +1248,16 @@ export class Engine {
     this.invalidateScene();
   }
 
-  /** Thumbnail of the whole page (always in the light theme), or null if it is empty. */
+  /** Thumbnail of the open page, or null if it is empty. */
   thumbnail(width: number, height: number): string | null {
-    const elements = this.pageElements();
-    if (elements.length === 0) return null;
-    // In the diary, the double page in small (paper, date and content in place).
-    if (this.book) {
-      const spread = this.renderSpread(
-        { id: '', elements, book: this.book },
-        width / (PAGE_WIDTH * 2),
-      );
-      return spread.toDataURL('image/webp', 0.85);
-    }
-    const canvas = renderElements(elements, { mode: 'light', assets: this.assets, width, height });
-    return canvas.toDataURL('image/webp', 0.8);
+    const size = { width, height };
+    return pageImages.pageThumbnail(
+      this.pageElements(),
+      this.book,
+      size,
+      this.theme.mode,
+      this.assets,
+    );
   }
 
   /** Where the two pages are in the window (px), to animate entering the map. */
@@ -1185,6 +1266,18 @@ export class Engine {
     const a = worldToScreen(this.camera, { x: -PAGE_WIDTH, y: -PAGE_HEIGHT / 2 });
     const b = worldToScreen(this.camera, { x: PAGE_WIDTH, y: PAGE_HEIGHT / 2 });
     return { x: a.x + this.origin.x, y: a.y + this.origin.y, width: b.x - a.x, height: b.y - a.y };
+  }
+
+  /**
+   * Puts these elements in place of the open page's (what is on the desk stays), e.g. a
+   * cover template. It can be undone.
+   */
+  replacePage(elements: SceneElement[]) {
+    this.finishEditing(false);
+    this.setSelection([]);
+    const changes: Changes = new Map(this.pageElements().map((el) => [el.id, null]));
+    for (const el of elements) changes.set(el.id, el);
+    this.history.commit(changes);
   }
 
   /** Replaces the whole page (e.g. when opening a backup). It can be undone. */
@@ -1197,10 +1290,35 @@ export class Engine {
     this.zoomToFit();
   }
 
-  /** PNG image of the whole page (or null if it is empty). */
+  /**
+   * Shows exactly these elements, without history and without reporting changes: a scene
+   * that plays by itself (see `clips.ts`). Only what changed is touched.
+   */
+  setElements(elements: SceneElement[]) {
+    const changes: Changes = new Map();
+    const keep = new Set(elements.map((el) => el.id));
+    for (const el of this.scene.all()) if (!keep.has(el.id)) changes.set(el.id, null);
+    for (const el of elements) if (this.scene.get(el.id) !== el) changes.set(el.id, el);
+    if (changes.size === 0) return;
+    const notify = this.scene.onChange;
+    this.scene.onChange = () => {};
+    this.scene.apply(changes);
+    this.scene.onChange = notify;
+    this.invalidateScene();
+  }
+
+  /** PNG image of the whole page (or null if it is empty): in the diary, with the book. */
   exportPng(): Promise<Blob | null> {
     const elements = this.scene.all();
     if (elements.length === 0) return Promise.resolve(null);
+    if (this.book) {
+      const { mode, background } = this.theme;
+      return pageImages.pageToPng(elements, this.book, this.deskIds, {
+        mode,
+        background,
+        assets: this.assets,
+      });
+    }
     return elementsToPng(elements, {
       mode: this.theme.mode,
       assets: this.assets,
@@ -1219,33 +1337,7 @@ export class Engine {
 
   /** Adds offset copies (new ids, on top of everything, same order) and selects them. */
   private insertCopies(elements: SceneElement[], dx: number, dy: number) {
-    let z = this.scene.nextZ();
-    // The copies form new groups (they don't mix with the originals).
-    const groups = new Map<string, string>();
-    const groupFor = (id: string | null) => {
-      if (!id) return null;
-      if (!groups.has(id)) groups.set(id, createId());
-      return groups.get(id)!;
-    };
-    // Copied arrows attach to the copies (or are detached if their element wasn't
-    // copied).
-    const ids = new Map(elements.map((el) => [el.id, createId()]));
-    const rebind = (b: ArrowBinding | null) =>
-      b && ids.has(b.elementId) ? { ...b, elementId: ids.get(b.elementId)! } : null;
-    const copies = [...elements]
-      .sort((a, b) => a.z - b.z)
-      .map((el): SceneElement => {
-        const copy = {
-          ...translateElement(el, dx, dy),
-          id: ids.get(el.id)!,
-          z: z++,
-          groupId: groupFor(el.groupId),
-          locked: false,
-        };
-        return copy.type === 'arrow'
-          ? { ...copy, start: rebind(copy.start), end: rebind(copy.end) }
-          : copy;
-      });
+    const copies = edits.copies(elements, dx, dy, this.scene.nextZ());
     this.history.commit(new Map(copies.map((el) => [el.id, el])));
     this.setSelection(copies.map((el) => el.id));
   }
@@ -1261,17 +1353,7 @@ export class Engine {
 
   /** Selects, always adding the other members of each group. */
   private setSelection(ids: Iterable<string>) {
-    const next = new Set(ids);
-    const groups = new Set<string>();
-    for (const id of next) {
-      const groupId = this.scene.get(id)?.groupId;
-      if (groupId) groups.add(groupId);
-    }
-    if (groups.size > 0) {
-      for (const el of this.scene.all()) {
-        if (el.groupId && groups.has(el.groupId)) next.add(el.id);
-      }
-    }
+    const next = withGroups(this.scene, ids);
     const same =
       next.size === this.selection.size && [...next].every((id) => this.selection.has(id));
     if (same) return;
@@ -1296,6 +1378,12 @@ export class Engine {
         return engine.styles;
       },
       noteSize: this.noteSize,
+      get pageAreas() {
+        const book = engine.book;
+        if (!book) return [];
+        return book.closed ? [CLOSED_COVER] : [PAGES.left, PAGES.right];
+      },
+      isOnDesk: (id) => engine.deskIds.has(id),
       get mode() {
         return engine.theme.mode;
       },
@@ -1350,6 +1438,10 @@ export class Engine {
       selectionStyle: selectionStyle(this.selectedElements()),
       selectionGrouped: this.selectedElements().some((el) => el.groupId),
       selectionLocked: this.selection.size > 0 && this.selectedElements().every((el) => el.locked),
+      selectionPrivate: (() => {
+        const notes = this.selectedElements().filter((el) => el.type === 'note');
+        return notes.length === 0 ? null : notes.every((el) => el.private);
+      })(),
       hasLocked: this.scene.all().some((el) => el.locked),
       hasCopiedStyle: this.copiedStyle !== null,
       selectionHasLink: this.selectedElements().some((el) => el.link),
@@ -1395,6 +1487,13 @@ export class Engine {
     // Grab the corner of the sheet to turn the page (with any tool).
     if (e.button === 0 && !this.editing && !this.spaceHeld && this.tool !== 'hand') {
       const world = screenToWorld(this.camera, this.localPoint(e));
+      // A shown private note's open padlock hides it again.
+      const shown = privateBadgeAt(this.scene, world);
+      if (shown) {
+        e.preventDefault();
+        this.hideListeners.forEach((listener) => listener(shown));
+        return;
+      }
       // A link label leads to its page.
       const link = this.linkUnder(world);
       if (link) {
@@ -1417,7 +1516,8 @@ export class Engine {
         if (!tab.current) this.bookTabListener(tab.pageId);
         return;
       }
-      if (this.book && this.pageTurner.grab(world, this.camera.zoom)) {
+      // A closed diary has no sheets to turn.
+      if (this.book && !this.book.closed && this.pageTurner.grab(world, this.camera.zoom)) {
         e.preventDefault();
         try {
           this.overlayCanvas.setPointerCapture(e.pointerId);
@@ -1550,7 +1650,10 @@ export class Engine {
     if (zooming) {
       const smooth = Math.abs(dy) >= WHEEL_SMOOTH_THRESHOLD;
       const factor = Math.exp(-dy * (smooth ? WHEEL_ZOOM_SPEED : PINCH_ZOOM_SPEED));
-      const zoom = clampZoom(this.motion.zoomTarget(this.camera.zoom) * factor);
+      const zoom = Math.max(
+        clampZoom(this.motion.zoomTarget(this.camera.zoom) * factor),
+        this.minZoom(),
+      );
       if (smooth) {
         this.motion.zoomTo(zoom, p);
         this.requestFrame();
@@ -1596,7 +1699,11 @@ export class Engine {
 
   private zoomBy(factor: number) {
     const center = { x: this.viewport.width / 2, y: this.viewport.height / 2 };
-    this.motion.zoomTo(clampZoom(this.motion.zoomTarget(this.camera.zoom) * factor), center);
+    const zoom = Math.max(
+      clampZoom(this.motion.zoomTarget(this.camera.zoom) * factor),
+      this.minZoom(),
+    );
+    this.motion.zoomTo(zoom, center);
     this.requestFrame();
   }
 
@@ -1625,6 +1732,7 @@ export class Engine {
       time: e.timeStamp,
       shiftKey: e.shiftKey,
       altKey: e.altKey,
+      ctrlKey: e.ctrlKey || e.metaKey,
     };
   }
 
@@ -1632,7 +1740,8 @@ export class Engine {
   private updateHover(e: PointerEvent) {
     const handler = this.activeHandler;
     // Near the corner of a sheet, it lifts and can be grabbed.
-    const canTurn = !!this.book && !this.editing && !this.spaceHeld && this.tool !== 'hand';
+    const canTurn =
+      !!this.book && !this.book.closed && !this.editing && !this.spaceHeld && this.tool !== 'hand';
     if (canTurn) this.pageTurner.setScale(this.dpr * this.camera.zoom);
     const world = screenToWorld(this.camera, this.localPoint(e));
     const onCorner = this.pageTurner.hover(canTurn ? world : null, this.camera.zoom);
@@ -1757,15 +1866,27 @@ export class Engine {
       assets: this.assets,
       editingId: editing?.id ?? null,
     };
-    for (const el of this.scene.search(this.visibleBounds())) {
+    const visible = this.scene.search(this.visibleBounds());
+    // On the closed diary, the desk around it as usual, and what is stuck on the cover
+    // ending at its edge, like on a real one.
+    const closed = !!book?.closed;
+    const desk = closed ? visible.filter((el) => this.deskIds.has(el.id)) : [];
+    for (const el of desk) drawElement(ctx, el, rc, handler?.elementOpacity?.(el.id) ?? 1);
+    if (closed) {
+      ctx.save();
+      traceClosedCover(ctx);
+      ctx.clip();
+    }
+    for (const el of visible) {
       // What is being edited is drawn in its current version (it may have grown).
-      if (el.id === editing?.id) continue;
+      if (el.id === editing?.id || (closed && this.deskIds.has(el.id))) continue;
       drawElement(ctx, el, rc, handler?.elementOpacity?.(el.id) ?? 1);
     }
     // Notes and shapes (the editor draws the text); a loose text is only the editor.
     if (editing && editing.type !== 'text') drawElement(ctx, editing, rc);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
+    if (book?.closed) ctx.restore();
     if (book) drawBinding(ctx, book, pixelScale);
     // Link labels, always on top (and the same size on screen).
     for (const badge of this.visibleBadges()) {

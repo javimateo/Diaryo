@@ -3,6 +3,19 @@
 New versions are built by GitHub Actions and delivered to the installed apps by the
 Tauri updater. The website links the latest installer.
 
+**Contents**: [Version numbers](#version-numbers) · [Publishing a version](#publishing-a-version) ·
+[Automatic updates](#automatic-updates) · [The Windows warning](#the-windows-warning) ·
+[The icon and the installer images](#the-icon-and-the-installer-images)
+
+```mermaid
+flowchart LR
+  dev[develop] --> rel[release/X.Y.Z<br/>version + CHANGELOG] --> main[main]
+  main --> tag[tag vX.Y.Z] --> wf[Release workflow<br/>build + sign] --> draft[Draft release<br/>.exe, .sig, latest.json]
+  draft -->|publish| pub[GitHub Release]
+  pub --> apps[Installed apps<br/>update themselves]
+  pub --> site[Website<br/>redeploy in Coolify]
+```
+
 ## Version numbers
 
 [Semantic versioning](https://semver.org): `MAJOR.MINOR.PATCH`. While diaryo is in beta
@@ -17,8 +30,10 @@ The version lives in three files, which must match:
 
 ## Publishing a version
 
-1. Update the version in the three files, commit and push.
-2. Tag the commit and push the tag:
+1. From `develop`, create `release/X.Y.Z`, update the version in the three files, move
+   the `Unreleased` part of [CHANGELOG.md](../CHANGELOG.md) under the new version (with
+   its date) and commit. Merge it into `main` (and back into `develop`) and push both.
+2. Tag the merge commit on `main` and push the tag:
 
    ```bash
    git tag v0.2.1
@@ -50,7 +65,7 @@ The desktop app (`src/desktop/updates.ts`) checks
 `https://github.com/javimateo/Diaryo/releases/latest/download/latest.json` twenty
 seconds after starting and every six hours.
 
-- **Update automatically** on (the default, in Settings → Desktop): the new version
+- **Update automatically** on (the default, in Settings → General): the new version
   downloads in the background and installs the next time the diary is hidden. The
   pending changes and a backup are saved first; the installer shows a small progress bar
   and reopens diaryo.
@@ -70,5 +85,35 @@ Updates are signed: the app only installs files signed with the project's privat
 
 The installer is not code-signed yet, so Windows SmartScreen warns the first time it is
 run ("More info" → "Run anyway"); the website explains this. Updates don't show it.
-Signing the installer (for example with a free open-source signing program or Azure
-Trusted Signing) would remove it.
+
+Signing options, as reviewed in September 2026:
+
+- **SignPath Foundation** (free): requires an OSI-approved license, so not with PolyForm
+  Noncommercial.
+- **Azure Artifact Signing** (~10 €/month): individual developers only in the USA and
+  Canada; in the EU, organizations only.
+- **A certificate from a CA** (Certum, Sectigo…, ~100–300 €/year, on a hardware token or
+  a cloud HSM): available to individuals.
+
+None removes the warning at once: SmartScreen reputation still builds with downloads.
+
+## The icon and the installer images
+
+The mark (the terracotta notebook) is drawn in `src-tauri/icons/icon.svg`; the same drawing
+is `src/ui/BrandMark.tsx` (the app and the website) and the two `favicon.svg`. After
+changing it, regenerate every size, and give the `.ico` the simpler drawing
+(`icon-small.svg`, without the stroke on the cover) for 16 and 24 px, where the full one
+blurs:
+
+```bash
+npx tauri icon src-tauri/icons/icon.svg
+npx tauri icon src-tauri/icons/icon-small.svg -o <a temporary folder>
+node src-tauri/icons/build-ico.mjs <that folder>/icon.ico
+```
+
+`tauri icon` also writes Android and iOS icons: delete them, the app doesn't use them.
+
+The installer's images are `src-tauri/installer/sidebar.svg` (164×314, the welcome and
+finish pages) and `header.svg` (150×57, the other pages). NSIS only takes 24-bit BMP:
+export each SVG at its exact size to PNG (for example with a browser's screenshot) and save
+it as `.bmp` next to it.

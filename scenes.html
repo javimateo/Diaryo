@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>diaryo · scenes</title>
+    <script>
+      // With ?capture (scripts/media.mjs), time only moves when the script says so: every
+      // frame is drawn at its exact moment, however long the screenshot takes.
+      if (new URLSearchParams(location.search).has('capture')) {
+        let now = 0;
+        let queue = [];
+        let next = 0;
+        performance.now = () => now;
+        window.requestAnimationFrame = (cb) => (queue.push([++next, cb]), next);
+        window.cancelAnimationFrame = (id) => (queue = queue.filter(([i]) => i !== id));
+        window.__advance = (ms) => {
+          now += ms;
+          const due = queue;
+          queue = [];
+          for (const [, cb] of due) cb(now);
+        };
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Development only (`npm run dev`, /scenes.html): the build takes index.html alone. -->
+    <div id="root"></div>
+    <script type="module" src="/src/ui/dev/sceneRecorder.tsx"></script>
+  </body>
+</html>

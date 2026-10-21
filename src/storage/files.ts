@@ -1,7 +1,16 @@
 import { isPaperStyle } from '../engine/book';
 import { parseElement } from '../engine/clipboard';
 import type { SceneElement } from '../engine/elements';
-import type { AssetRow, DiaryDump, FontRow, PageRow, StoredPage } from './db';
+import {
+  RAW_TABLES,
+  type AssetRow,
+  type DiaryDump,
+  type FontRow,
+  type PageRow,
+  type RawTables,
+  type StoredPage,
+} from './db';
+import { fromBase64, openBytes, sealBytes, toBase64 } from './sealing';
 
 /** Backup format: a readable JSON with everything needed to restore it. */
 const FILE_TYPE = 'diaryo/page';
@@ -40,7 +49,75 @@ export function serializeDiary(dump: DiaryDump): string {
   });
 }
 
-export type Backup = { kind: 'page'; page: PageFile } | { kind: 'diary'; diary: DiaryDump };
+/**
+ * A backup encrypted like the diary on the device it comes from (docs/privacy.md): its
+ * contents, sealed with that device's key, and `lock`, which says how to get that key
+ * back with the diary password or the recovery code (cloud/lock.ts reads it).
+ */
+const SEALED_TYPE = 'diaryo/sealed';
+
+/**
+ * Encrypted backups: a sealed copy of the diary (`data`) or, of a locked diary, its rows
+ * as they were stored (`rows`). Both open with the key that `lock` gives back.
+ */
+export type SealedBackup =
+  | { lock: Record<string, unknown>; data: Uint8Array }
+  | { lock: Record<string, unknown>; rows: RawTables };
+
+/**
+ * A locked diary taken as it is (it can't be read without its password): its rows, still
+ * sealed, and how to get its key back. It opens like an encrypted backup.
+ */
+const LOCKED_TYPE = 'diaryo/locked';
+
+/** The sealed rows' bytes, written as text. */
+const BYTES = '$bytes';
+
+/** The file of a locked diary (`readRawTables`' rows and the lock to open them). */
+export function serializeLocked(rows: RawTables, lock: Record<string, unknown>): string {
+  return JSON.stringify(
+    { type: LOCKED_TYPE, version: 1, exportedAt: new Date().toISOString(), lock, rows },
+    (_, value) => (value instanceof Uint8Array ? { [BYTES]: toBase64(value) } : value),
+  );
+}
+
+function parseLocked(text: string): SealedBackup | null {
+  const data = JSON.parse(text, (_, value) =>
+    value && typeof value === 'object' && typeof value[BYTES] === 'string'
+      ? fromBase64(value[BYTES])
+      : value,
+  ) as Record<string, unknown>;
+  const rows = data.rows as Partial<RawTables> | undefined;
+  if (!rows || typeof data.lock !== 'object' || !data.lock) return null;
+  const tables = Object.fromEntries(
+    RAW_TABLES.map((name) => [name, Array.isArray(rows[name]) ? rows[name] : []]),
+  ) as RawTables;
+  return { lock: data.lock as Record<string, unknown>, rows: tables };
+}
+
+const sealedContext = new TextEncoder().encode(SEALED_TYPE);
+
+/** Encrypts a backup (`serializeDiary`'s text) with a device's key. */
+export function serializeSealed(text: string, key: Uint8Array, lock: Record<string, unknown>) {
+  const data = sealBytes(key, new TextEncoder().encode(text), sealedContext);
+  return JSON.stringify({
+    type: SEALED_TYPE,
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    lock,
+    data: toBase64(data),
+  });
+}
+
+/** The backup's text, with the key it was encrypted with. Throws with another one. */
+export function openSealed(backup: { data: Uint8Array }, key: Uint8Array): string {
+  return new TextDecoder().decode(openBytes(key, backup.data, sealedContext));
+}
+
+export type Backup =
+  | { kind: 'page'; page: PageFile }
+  | { kind: 'diary'; diary: DiaryDump }
+  | { kind: 'sealed'; sealed: SealedBackup };
 
 function parseJson(text: string): Record<string, unknown> | null {
   try {
@@ -61,11 +138,15 @@ function parseAssets(raw: unknown): AssetRow[] {
   return assets;
 }
 
+/** The fonts' files go inside the backup (a data URL): one that points elsewhere isn't read. */
 function parseFonts(raw: unknown): FontRow[] {
   return Array.isArray(raw)
     ? raw.filter(
         (f): f is FontRow =>
-          typeof f?.id === 'string' && typeof f?.name === 'string' && typeof f?.src === 'string',
+          typeof f?.id === 'string' &&
+          typeof f?.name === 'string' &&
+          typeof f?.src === 'string' &&
+          f.src.startsWith('data:'),
       )
     : [];
 }
@@ -78,13 +159,20 @@ function parseElements(raw: unknown[], assets: AssetRow[]): SceneElement[] {
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+/** A page's id as diaryo makes them (a UUID, or `desk`): anything else isn't from diaryo. */
+const PAGE_ID = /^[\w-]{1,64}$/;
 const num = (value: unknown, fallback: number) =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
 function parseStoredPage(raw: unknown, assets: AssetRow[]): StoredPage | null {
   if (!raw || typeof raw !== 'object') return null;
   const data = raw as Record<string, unknown>;
-  if (typeof data.id !== 'string' || typeof data.date !== 'string' || !DAY.test(data.date)) {
+  if (
+    typeof data.id !== 'string' ||
+    !PAGE_ID.test(data.id) ||
+    typeof data.date !== 'string' ||
+    !DAY.test(data.date)
+  ) {
     return null;
   }
   const camera = data.camera as PageRow['camera'];
@@ -123,6 +211,22 @@ export function parseBackup(text: string): Backup | null {
       kind: 'page',
       page: { elements: parseElements(data.elements, assets), assets, fonts },
     };
+  }
+  if (data.type === LOCKED_TYPE) {
+    try {
+      const sealed = parseLocked(text);
+      return sealed ? { kind: 'sealed', sealed } : null;
+    } catch {
+      return null;
+    }
+  }
+  if (data.type === SEALED_TYPE && typeof data.data === 'string' && typeof data.lock === 'object') {
+    try {
+      const lock = (data.lock ?? {}) as Record<string, unknown>;
+      return { kind: 'sealed', sealed: { lock, data: fromBase64(data.data) } };
+    } catch {
+      return null;
+    }
   }
   if (data.type === DIARY_TYPE && Array.isArray(data.pages)) {
     const pages = data.pages

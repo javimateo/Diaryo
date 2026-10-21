@@ -3,10 +3,12 @@ import type { Engine } from '../engine/engine';
 import { todayKey } from '../lib/dates';
 import { serializeDiary } from '../storage/files';
 import { useUI } from '../store/ui';
-import { readDeskView, writeDeskView, writeToday, type TodayCard } from './saved';
+import { readDeskView, shareToday, writeDeskView, writeToday, type TodayCard } from './saved';
 import type { DesktopInfo, DesktopMode } from './settings';
-import { call, listen, onDeskChangedElsewhere } from './tauri';
+import { call, currentWindow, listen, onDeskChangedElsewhere } from './tauri';
 import { t } from '../i18n';
+import { sealCopy } from '../cloud/lock';
+import { sealedHere, useLock } from '../cloud/lockState';
 
 /** How often the diary is backed up if there were changes (besides when hiding it or quitting). */
 const BACKUP_EVERY = 30 * 60 * 1000;
@@ -47,6 +49,8 @@ export class DesktopBridge {
     if (this.stopped) return;
     useUI.getState().setDesktop(info);
     this.applyMode(info.mode);
+    // Opened from the lock screen, the window is already visible: no "shown" will come.
+    if (await (await currentWindow()).isVisible()) requestAnimationFrame(() => setAway(false));
     // The texts of the desktop side (the tray, the errors), in the same language.
     void call('set_language', { language: useUI.getState().settings.language });
 
@@ -70,6 +74,8 @@ export class DesktopBridge {
       () => window.clearInterval(backupTimer),
       () => window.clearTimeout(this.todayTimer),
       unsubscribe,
+      // Turning encryption on or off changes what the mini diary may show.
+      useLock.subscribe(() => this.publishToday(0)),
     );
 
     const unlisten = await Promise.all([
@@ -77,14 +83,16 @@ export class DesktopBridge {
         this.applyMode(mode);
         void call('frontend_ready');
       }),
-      // The window is already visible: the floating diary fades in.
-      listen('diaryo://shown', () => {
+      // The window is already visible: the floating diary fades in. It comes with the mode
+      // it is shown in: if a change of mode was missed, the page catches up first.
+      listen<DesktopMode>('diaryo://shown', (mode) => {
         this.closing = false;
+        if (mode && isWidgetLook() !== (mode === 'widget')) this.applyMode(mode);
         requestAnimationFrame(() => setAway(false));
       }),
       // Put the floating diary away (with the shortcut or when switching to another app):
       // first, the fade.
-      listen('diaryo://closing', () => void this.hide()),
+      listen<number>('diaryo://closing', (shows) => void this.hide(shows)),
       // When hidden, whatever changed is backed up. The floating diary goes back to the
       // pinned view: it will open like that next time.
       listen('diaryo://hidden', () => {
@@ -104,6 +112,23 @@ export class DesktopBridge {
       listen<DesktopInfo>('diaryo://info', (next) => useUI.getState().setDesktop(next)),
     ]);
     this.cleanups.push(...unlisten);
+    // Safety net: whenever the window comes forward (also from the taskbar, which doesn't
+    // go through "shown"), the page takes the desktop side's mode and shows itself. A
+    // missed event used to leave a shown window with an invisible page.
+    const onForward = () => {
+      if (document.visibilityState !== 'visible' || this.closing) return;
+      void call<DesktopInfo>('desktop_info').then((info) => {
+        if (this.closing || this.stopped) return;
+        if (isWidgetLook() !== (info.mode === 'widget')) this.applyMode(info.mode);
+        requestAnimationFrame(() => setAway(false));
+      });
+    };
+    window.addEventListener('focus', onForward);
+    document.addEventListener('visibilitychange', onForward);
+    this.cleanups.push(
+      () => window.removeEventListener('focus', onForward),
+      () => document.removeEventListener('visibilitychange', onForward),
+    );
     if (this.stopped) return this.stop();
     // The window can be shown now (with today's page loaded).
     void call('frontend_ready');
@@ -118,13 +143,16 @@ export class DesktopBridge {
     return useUI.getState().desktop?.mode;
   }
 
-  /** Puts the diary away: the floating one, with a fade before hiding the window. */
-  async hide() {
+  /**
+   * Puts the diary away: the floating one, with a fade before hiding the window. `shows`
+   * is the showing the desktop side asked from: shown again meanwhile, it stays.
+   */
+  async hide(shows?: number) {
     if (this.mode !== 'widget') return call('hide_window');
     this.closing = true;
     setAway(true);
     await new Promise((resolve) => window.setTimeout(resolve, FADE));
-    if (this.closing) await call('hide_window');
+    if (this.closing) await call('hide_window', { shows });
     this.closing = false;
   }
 
@@ -148,7 +176,9 @@ export class DesktopBridge {
     this.backingUp = (async () => {
       try {
         await this.diary.flush();
-        const contents = serializeDiary(await this.diary.dump());
+        const text = serializeDiary(await this.diary.dump());
+        // Encrypted like the diary, if it is encrypted here.
+        const contents = sealCopy(text) ?? text;
         await call<string>('write_backup', { day: todayKey(), contents });
         useUI.getState().setDesktop({ lastBackup: Date.now() });
       } catch (error) {
@@ -186,16 +216,26 @@ export class DesktopBridge {
     window.clearTimeout(this.todayTimer);
     this.todayTimer = window.setTimeout(async () => {
       try {
+        const cover = useUI.getState().bookStyle.cover;
         const preview = await this.diary.todayPreview(TODAY_WIDTH);
+        const coverImage = await this.diary.coverPicture();
         this.todayShown = preview.day;
-        const card: TodayCard = { ...preview, cover: useUI.getState().bookStyle.cover };
-        writeToday(card);
+        const card: TodayCard = { ...preview, cover, ...(coverImage && { coverImage }) };
+        // With the whole diary encrypted, today's page isn't left readable on disk: only
+        // its cover; the page itself goes to the desk's window in memory.
+        if (sealedHere()) {
+          writeToday({ ...card, image: '', pending: 0 });
+          shareToday(card);
+        } else writeToday(card);
       } catch (error) {
         console.error("Couldn't prepare the mini diary", error);
       }
     }, delay);
   }
 }
+
+/** The page looks like the floating diary (transparent, over the desktop). */
+const isWidgetLook = () => document.documentElement.hasAttribute('data-widget');
 
 /** The floating diary isn't visible yet (or is going away): that way it fades in. */
 function setAway(away: boolean, instant = false) {
@@ -211,8 +251,11 @@ function setAway(away: boolean, instant = false) {
 
 const bridge = () => useUI.getState().desktopBridge;
 
-/** Hides the diary (it stays in the tray, ready for the shortcut). */
-export const hideDesktop = () => bridge()?.hide() ?? Promise.resolve();
+/**
+ * Hides the diary (it stays in the tray, ready for the shortcut). Without the bridge (the
+ * locked diary shows only its lock screen), straight away.
+ */
+export const hideDesktop = () => bridge()?.hide() ?? call('hide_window');
 
 /** Saves today's backup even if nothing changed. */
 export async function backupDesktop() {

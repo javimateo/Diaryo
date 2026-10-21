@@ -1,4 +1,5 @@
 import type { Camera } from '../camera';
+import type { Bounds } from '../geometry';
 import type { EditableElement, ToolStyles } from '../elements';
 import type { Vec } from '../math';
 import type { ThemeMode } from '../palette';
@@ -15,6 +16,8 @@ export interface PointerInput {
   time: number;
   shiftKey: boolean;
   altKey: boolean;
+  /** Ctrl (or Cmd): place freely, without the guides. */
+  ctrlKey: boolean;
 }
 
 /** What the engine offers each tool. */
@@ -22,6 +25,10 @@ export interface ToolContext {
   readonly camera: Camera;
   readonly scene: Scene;
   readonly styles: ToolStyles;
+  /** The book's pages (or the closed cover): their edges and centers are guides too. */
+  readonly pageAreas: readonly Bounds[];
+  /** Whether an element belongs to the desk (outside the book), not to the page. */
+  isOnDesk(id: string): boolean;
   /** Side of new notes, in screen pixels. */
   readonly noteSize: number;
   readonly mode: ThemeMode;

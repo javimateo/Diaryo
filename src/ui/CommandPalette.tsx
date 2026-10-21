@@ -11,19 +11,15 @@ import {
 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { todayKey, type DayKey } from '../lib/dates';
+import { parseDayQuery } from '../lib/when';
 import { formatDay, formatDayMonth, relativeDay } from '../i18n/dates';
 import { comparePages, pagesOfDay, type PageMeta } from '../diary/pages';
-import {
-  findInText,
-  matchesPrefixes,
-  parseDayQuery,
-  queryWords,
-  type Snippet,
-} from '../diary/search';
+import { findInText, matchesPrefixes, queryWords, type Snippet } from '../diary/search';
 import type { SceneElement } from '../engine/elements';
 import { DESK_ID, type TextEntry } from '../storage/db';
 import { useUI } from '../store/ui';
 import { getCommands, type Command, type CommandPrompt } from './commands';
+import { revealElement } from './diaryActions';
 import { pageName } from './LinkDialog';
 import { getLanguage, t } from '../i18n';
 import { useT } from './useT';
@@ -493,14 +489,10 @@ function buildSections(
 
 /** Goes to the chosen item: a page, a day or something written (which lights up on arrival). */
 async function reveal(result: Result) {
-  const { diary, engine, diaryState, mapOpen, setMapOpen } = useUI.getState();
-  if (!diary || !engine) return;
+  const { diary, mapOpen, setMapOpen } = useUI.getState();
+  if (!diary) return;
   if (mapOpen) setMapOpen(false);
   if (result.kind === 'day') await diary.goToDay(result.date);
   else if (result.kind === 'page') await diary.goToPage(result.page.id);
-  else if (result.kind === 'text') {
-    const { pageId, elementId } = result.entry;
-    if (pageId !== DESK_ID && pageId !== diaryState.current?.id) await diary.goToPage(pageId);
-    engine.focusElement(elementId);
-  }
+  else if (result.kind === 'text') await revealElement(result.entry.pageId, result.entry.elementId);
 }

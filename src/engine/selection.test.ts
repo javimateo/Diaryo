@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { parseElements, serializeElements } from './clipboard';
-import { elementBounds, toWorld, type StrokeElement } from './elements';
+import {
+  elementBounds,
+  toWorld,
+  type NoteElement,
+  type SceneElement,
+  type StrokeElement,
+} from './elements';
 import { Scene } from './scene';
 import {
   elementsInLasso,
@@ -9,6 +15,8 @@ import {
   hitTestElement,
   pointInPolygon,
   resizeCursor,
+  privateBadgeAt,
+  withGroups,
 } from './selection';
 import { strokeHitsSegment } from './strokes';
 import { rotateElement, scaleElement, selectionBox, translateElement } from './transform';
@@ -36,7 +44,7 @@ function line(id: string, x: number, y: number, z = 1): StrokeElement {
   };
 }
 
-const sceneWith = (...elements: StrokeElement[]) => {
+const sceneWith = (...elements: SceneElement[]) => {
   const scene = new Scene();
   scene.apply(new Map(elements.map((el) => [el.id, el])));
   return scene;
@@ -152,5 +160,69 @@ describe('clipboard', () => {
   it("ignores text that doesn't come from diaryo", () => {
     expect(parseElements('hola')).toBeNull();
     expect(parseElements('{"type":"otra-app"}')).toBeNull();
+  });
+});
+
+describe('selecting a group', () => {
+  const hidden: NoteElement = {
+    ...line('h', 0, 0),
+    type: 'note',
+    groupId: 'g',
+    variant: 'plain',
+    text: '',
+    fontSize: 20,
+    color: 'yellow',
+    textColor: null,
+    font: 'inter',
+    align: 'left',
+    valign: 'top',
+    width: 220,
+    height: 220,
+    private: true,
+    concealed: true,
+  };
+  const scene = sceneWith(
+    { ...line('a', 0, 0), groupId: 'g' },
+    { ...line('b', 0, 0), groupId: 'g' },
+    hidden,
+    line('c', 0, 0),
+  );
+
+  it('selects the rest of each group, never a hidden private note', () => {
+    expect([...withGroups(scene, ['a'])].sort()).toEqual(['a', 'b']);
+    expect([...withGroups(scene, ['h', 'c'])]).toEqual(['c']);
+    expect([...withGroups(scene, [])]).toEqual([]);
+  });
+});
+
+describe("a shown private note's padlock", () => {
+  const note = (id: string, z: number, more: Partial<NoteElement> = {}): NoteElement => ({
+    ...line(id, 0, 0, z),
+    type: 'note',
+    variant: 'plain',
+    text: 'pin',
+    fontSize: 20,
+    color: 'yellow',
+    textColor: null,
+    font: 'inter',
+    align: 'left',
+    valign: 'top',
+    width: 200,
+    height: 200,
+    private: true,
+    ...more,
+  });
+  // The padlock sits near the bottom right corner (privateBadge).
+  const padlock = { x: 173, y: 173 };
+
+  it('is found on the topmost shown private note there', () => {
+    const scene = sceneWith(note('a', 1), note('b', 2));
+    expect(privateBadgeAt(scene, padlock)).toBe('b');
+    expect(privateBadgeAt(scene, { x: 20, y: 20 })).toBeNull();
+  });
+
+  it('not on a hidden one nor on one that is not private', () => {
+    const scene = sceneWith(note('h', 2, { concealed: true }), note('n', 1, { private: false }));
+    expect(privateBadgeAt(scene, padlock)).toBeNull();
   });
 });

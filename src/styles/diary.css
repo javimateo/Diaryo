@@ -91,7 +91,8 @@
   align-items: stretch;
   gap: 0;
   width: 292px;
-  max-height: 100%;
+  /* Its content's height: the list scrolls inside. */
+  max-height: min(100%, 560px);
   padding: 6px 10px 10px;
   overflow: hidden;
   animation: slide-in-right 160ms var(--ease);
@@ -233,7 +234,54 @@
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
+/* The cover as it is now, beside the button to edit it. */
+.cover-now {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.cover-picture {
+  flex: none;
+  width: 72px;
+  border-radius: 3px;
+  box-shadow: 0 2px 6px rgba(40, 25, 10, 0.2);
+}
+
+.cover-now-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cover-template {
+  display: block;
+  height: auto;
+  border-radius: 2px;
+}
+
+.style-tile:hover .cover-template {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* A small cover: its grain blends with the cover color. */
+.cover-preview {
+  display: block;
+  width: 34px;
+  height: 46px;
+  border-radius: 2px 6px 6px 2px;
+  background: var(--cover) 0 0 / 96px;
+  background-blend-mode: soft-light;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 2px 5px rgba(40, 25, 10, 0.18);
+}
+
 .style-tile[data-active] .paper-preview,
+.style-tile[data-active] .cover-preview,
 .style-tile[data-active] .desk-preview {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -310,7 +358,23 @@
   height: 4px;
   margin-left: -2px;
   border-radius: 50%;
+  background: var(--text-muted);
+}
+
+/* Days with appointments or pending tasks: a terracotta dot at the top right. */
+.calendar-day[data-dated]::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
   background: var(--accent);
+}
+
+.calendar-day[aria-current='date'][data-dated]::before {
+  background: var(--on-accent);
 }
 
 .calendar-day[data-today] {
@@ -321,7 +385,7 @@
 
 .calendar-day[aria-current='date'] {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 650;
 }
 
@@ -507,4 +571,205 @@
   font-size: 13px;
   outline: none;
   user-select: text;
+}
+
+/* ─── Próximo: what is pending with a date ─────────────────────── */
+
+.upcoming-btn {
+  position: relative;
+}
+
+.upcoming-badge {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* The index sits down by the page footer that opens it; "Próximo", up by its button. */
+.diary-panel:not(.upcoming-panel) {
+  align-self: flex-end;
+}
+
+/* Only the list gives up room when the panel is full. */
+.diary-panel > :not(.page-list) {
+  flex-shrink: 0;
+}
+
+.diary-tabs {
+  margin: 2px 0 4px;
+}
+
+.diary-panel h3[data-late] {
+  color: var(--danger);
+}
+
+.upcoming-item {
+  display: flex;
+  align-items: flex-start;
+  border-radius: var(--radius-sm);
+}
+
+.upcoming-item:hover {
+  background: var(--hover);
+}
+
+/* The task's checkbox, as on the page. */
+.upcoming-check {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.upcoming-check::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  width: 13px;
+  height: 13px;
+  border: 1.6px solid var(--text);
+  border-radius: 3.5px;
+  opacity: 0.75;
+}
+
+.upcoming-check:hover::before {
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+.upcoming-icon {
+  flex: none;
+  margin: 8px 8px 0;
+  color: var(--accent);
+}
+
+.upcoming-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 6px 8px 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.upcoming-check:focus-visible,
+.upcoming-main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+
+.upcoming-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.upcoming-text,
+.upcoming-place {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upcoming-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.upcoming-when {
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* "Add to my calendar" takes the time's place while the row is pointed at. */
+.upcoming-item {
+  position: relative;
+}
+
+.upcoming-add {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  background: var(--surface);
+  color: var(--accent-text);
+  opacity: 0;
+}
+
+.upcoming-item:hover .upcoming-add,
+.upcoming-add:focus-visible {
+  opacity: 1;
+}
+
+.upcoming-item:hover .upcoming-when {
+  visibility: hidden;
+}
+
+/* Touch screens can't point at a row: there it is always there, after the time. */
+@media (hover: none) {
+  .upcoming-add {
+    position: static;
+    align-self: center;
+    flex: none;
+    opacity: 1;
+  }
+
+  .upcoming-item:hover .upcoming-when {
+    visibility: visible;
+  }
+}
+
+.upcoming-when[data-late] {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.upcoming-place {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.upcoming-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 18px 8px 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.upcoming-empty svg {
+  margin-bottom: 6px;
+  color: var(--accent);
 }

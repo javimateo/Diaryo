@@ -1,7 +1,7 @@
 /* ─── Tokens ─────────────────────────────────────────────────── */
 
 :root {
-  --font: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font: 'Nunito Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* The desk the diary sits on. */
   --canvas-bg: #e7e2d8;
@@ -17,9 +17,14 @@
   --text-muted: #8c877e;
   --hover: rgba(28, 25, 20, 0.055);
 
-  --accent: #5b5bd6;
-  --accent-soft: #ebebfc;
-  --accent-text: #4545c0;
+  /* Terracotta, the color of the diary's leather cover. */
+  --accent: #b8573f;
+  --accent-soft: #f4e3db;
+  --accent-text: #9c4532;
+  /* Text on an accent background. */
+  --on-accent: #ffffff;
+  /* Deleting and errors: a cool crimson, so it is never mistaken for the terracotta. */
+  --danger: #c2255c;
 
   --tooltip-bg: #23211d;
   --tooltip-text: #faf9f6;
@@ -47,9 +52,11 @@
   --text-muted: #8e8a83;
   --hover: rgba(255, 255, 255, 0.065);
 
-  --accent: #8b8cf5;
-  --accent-soft: rgba(139, 140, 245, 0.17);
-  --accent-text: #b8b9ff;
+  --accent: #e3876c;
+  --accent-soft: rgba(227, 135, 108, 0.18);
+  --accent-text: #f0a58e;
+  --on-accent: #1f1b17;
+  --danger: #f06595;
 
   --tooltip-bg: #ecebe8;
   --tooltip-text: #1b1a18;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { neighbor, newPage, positionInDay, type PageMeta } from './pages';
+import { arrivedInstead, neighbor, newPage, positionInDay, type PageMeta } from './pages';
 
 const page = (id: string, date: string, order = 1): PageMeta => ({
   id,
@@ -29,5 +29,21 @@ describe('page order', () => {
   it('position within the day', () => {
     expect(positionInDay(pages, pages[0])).toEqual({ index: 2, total: 2 });
     expect(positionInDay(pages, pages[1])).toBeNull();
+  });
+});
+
+describe('a page of the day made on another device', () => {
+  const blank = newPage('2026-10-07');
+  const theirs = page('theirs', '2026-10-07');
+  const pages = [page('other-day', '2026-10-06'), theirs];
+
+  it('opens in place of the blank one open here', () => {
+    expect(arrivedInstead(pages, blank, true, new Set(['theirs']))?.id).toBe('theirs');
+  });
+
+  it('not if the open one has something or a title, or it came for another day', () => {
+    expect(arrivedInstead(pages, blank, false, new Set(['theirs']))).toBeUndefined();
+    expect(arrivedInstead(pages, { ...blank, title: 'Mía' }, true)).toBeUndefined();
+    expect(arrivedInstead(pages, blank, true, new Set(['other-day']))).toBeUndefined();
   });
 });

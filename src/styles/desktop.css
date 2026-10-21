@@ -82,7 +82,7 @@
 }
 
 .shortcut-field[data-error] {
-  border-color: #e03131;
+  border-color: var(--danger);
 }
 
 .settings-buttons {
@@ -128,6 +128,25 @@
   pointer-events: none;
 }
 
+/* Locked: the closed diary, with its cover. */
+.mini-diary[data-closed] {
+  width: 170px;
+}
+
+.mini-diary-cover {
+  display: block;
+  width: 100%;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
+}
+
+.mini-diary-closed {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 2;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .mini-diary-meta {
   display: flex;
   justify-content: space-between;
@@ -135,6 +154,9 @@
 }
 
 .mini-diary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 3px 10px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface) 88%, transparent);

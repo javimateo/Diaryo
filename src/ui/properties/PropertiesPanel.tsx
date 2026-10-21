@@ -13,15 +13,24 @@ import { type TextAlign, type VerticalAlign } from '../../engine/elements';
 import { resolveColor, resolveNoteColor, type Color, type NoteFill } from '../../engine/palette';
 import { NOTE_VARIANTS } from '../../engine/notes';
 import type { StylePatch } from '../../engine/restyle';
-import { ColorRow, FontButton, Section, Segmented, SizeControls } from './controls';
+import {
+  ColorRow,
+  FontButton,
+  Section,
+  Segmented,
+  SizeControls,
+  TextStyleToggles,
+  FrameTiles,
+} from './controls';
+import { Switch } from '../Switch';
 import { LinkSection } from './LinkSection';
 import { refocusEditor, usePanelModel, type ColorModel } from './model';
 import { FILL_STYLES, HEADS, ROUGHNESS, VARIANT_ICONS } from './options';
 import { useUI } from '../../store/ui';
 import { useT } from '../useT';
 
-/** A phone: the panel starts folded, so it doesn't cover what is being edited. */
-const NARROW = '(max-width: 640px)';
+/** A phone, held either way: the panel starts folded, so it doesn't cover what is being edited. */
+const NARROW = '(max-width: 640px), (max-height: 500px) and (orientation: landscape)';
 
 function useNarrow() {
   const [narrow, setNarrow] = useState(() => matchMedia(NARROW).matches);
@@ -72,7 +81,7 @@ export function PropertiesPanel() {
     );
   }
   const { noteVariant, colors, size, fillStyle, roughness, labelSize, heads } = model;
-  const { font, align, valign, opacity, apply } = model;
+  const { font, textStyle, image, align, valign, opacity, apply } = model;
 
   return (
     <aside
@@ -208,6 +217,11 @@ export function PropertiesPanel() {
           <FontButton value={font} onChange={(value) => apply({ font: value })} />
         </Section>
       )}
+      {textStyle !== undefined && (
+        <Section title={t.props.textStyle}>
+          <TextStyleToggles value={textStyle} onChange={(patch) => apply(patch)} />
+        </Section>
+      )}
       {align !== undefined && (
         <Section title={t.props.align}>
           <div className="segmented">
@@ -232,6 +246,19 @@ export function PropertiesPanel() {
               />
             )}
           </div>
+        </Section>
+      )}
+      {image && (
+        <Section title={t.props.frame}>
+          <FrameTiles value={image.frame} onChange={(frame) => apply({ frame })} />
+          <label className="frame-shadow">
+            {t.props.shadow}
+            <Switch
+              checked={image.shadow}
+              label={t.props.shadow}
+              onChange={(shadow) => apply({ shadow })}
+            />
+          </label>
         </Section>
       )}
       <Section title={t.props.opacity}>

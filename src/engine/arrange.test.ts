@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrange, flip } from './arrange';
+import { arrange, fillBehind, flip } from './arrange';
 import type { StrokeElement } from './elements';
 import { toWorld } from './elements';
 
@@ -63,5 +63,32 @@ describe('flip', () => {
     // The one on the left goes to the right.
     const start = toWorld(fa, { x: fa.points[0], y: fa.points[1] });
     expect(start.x).toBeCloseTo(300, 0);
+  });
+});
+
+describe('filling a container', () => {
+  /** A square outline of side `size` at (x, y), drawn with a pen. */
+  const square = (id: string, z: number, x: number, y: number, size: number): StrokeElement => ({
+    ...line(id, z, x),
+    y,
+    points: [0, 0, 0.5, size, 0, 0.5, size, size, 0.5, 0, size, 0.5, 0, 0, 0.5],
+  });
+
+  it('goes behind what it holds, and no further', () => {
+    const behind = square('behind', 1, -50, -50, 400);
+    const held = square('held', 2, 20, 20, 30);
+    const outside = square('outside', 3, 500, 500, 30);
+    const container = square('container', 4, 0, 0, 100);
+    const moved = fillBehind([behind, held, outside, container], [container]);
+    const z = moved.get('container')!;
+    expect(z).toBeLessThan(held.z);
+    expect(z).toBeGreaterThan(behind.z);
+    expect(moved.size).toBe(1);
+  });
+
+  it('stays where it is when it covers nothing', () => {
+    const container = square('container', 4, 0, 0, 100);
+    const outside = square('outside', 5, 500, 500, 30);
+    expect(fillBehind([container, outside], [container]).size).toBe(0);
   });
 });

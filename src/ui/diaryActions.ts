@@ -1,7 +1,10 @@
 import type { PaperStyle } from '../engine/book';
+import { coverTemplate, type CoverTemplate } from '../engine/coverTemplates';
 import { useUI } from '../store/ui';
 import { pageName } from './LinkDialog';
 import { t } from '../i18n';
+import { DESK_ID, getDB, privateNoteIds } from '../storage/db';
+import { askToDelete } from './privateActions';
 
 /** Diary actions shared by the buttons and the shortcuts (with their toasts). */
 
@@ -14,12 +17,36 @@ export async function turnPage(direction: 1 | -1) {
   }
 }
 
+/** Goes to something written: its page turns and it lights up a moment. */
+export async function revealElement(pageId: string, elementId: string) {
+  const { diary, engine, diaryState, mapOpen, setMapOpen } = useUI.getState();
+  if (!diary || !engine) return;
+  if (mapOpen) setMapOpen(false);
+  if (pageId !== DESK_ID && pageId !== diaryState.current?.id) await diary.goToPage(pageId);
+  engine.focusElement(elementId);
+}
+
 export function goToToday() {
   void useUI.getState().diary?.goToToday();
 }
 
 export function addPage() {
   void useUI.getState().diary?.addPage();
+}
+
+/** Starts the cover from a template (it opens to change it; it can be undone). */
+export async function startCover(template: CoverTemplate) {
+  const { diary, showToast, setSettingsOpen } = useUI.getState();
+  if (!diary) return;
+  const texts = t();
+  setSettingsOpen(false);
+  await diary.startCover(
+    coverTemplate(template, texts.cover.templateTexts, new Date().getFullYear()),
+  );
+  showToast(texts.cover.started(texts.cover.templates[template]), {
+    label: texts.commands.undo,
+    run: () => useUI.getState().engine?.undo(),
+  });
 }
 
 /** Marks the page as important (its tab shows on the edge) or unmarks it. */
@@ -68,6 +95,16 @@ export async function followLink(pageId: string) {
 }
 
 export async function deletePage(id: string) {
+  const { diary } = useUI.getState();
+  if (!diary) return;
+  // Private notes don't go without the diary password.
+  await diary.flush();
+  const notes = await privateNoteIds(getDB(), id);
+  if (notes.length > 0) askToDelete(notes, () => void removePage(id));
+  else await removePage(id);
+}
+
+async function removePage(id: string) {
   const { diary, showToast } = useUI.getState();
   if (!diary) return;
   const stored = await diary.remove(id);

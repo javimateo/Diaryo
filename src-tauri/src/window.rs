@@ -77,20 +77,25 @@ pub fn show(app: &AppHandle, mode: Mode) {
         reveal(app);
         return;
     }
+    let minimized = window.is_minimized().unwrap_or(false);
     let _ = window.hide();
     match mode {
         Mode::Widget => {
             // The position is the outer one (with the frame) and the size the inner one:
-            // those are the ones set later with `set_position` and `set_size`.
+            // those are the ones set later with `set_position` and `set_size`. Minimized,
+            // Windows reports it far off screen (-32000): the last good place is kept (or,
+            // without one, the window comes back centered).
             let place = match (window.outer_position(), window.inner_size()) {
-                (Ok(position), Ok(size)) => Some(Place {
+                (Ok(position), Ok(size)) if !minimized => Some(Place {
                     position,
                     size,
                     maximized: window.is_maximized().unwrap_or(false),
                 }),
                 _ => None,
             };
-            *state.place.lock().unwrap() = place;
+            if place.is_some() || !minimized {
+                *state.place.lock().unwrap() = place;
+            }
             let monitor = window
                 .current_monitor()
                 .ok()
@@ -173,6 +178,10 @@ fn reveal(app: &AppHandle) {
     if let Some(window) = main_window(app) {
         // If the window was maximized, when unmaximizing Windows restores its earlier
         // size (sometimes after setting it to full screen): it is set again.
+        let _ = window.show();
+        // Restored first: sized while minimized, Windows would give it back its earlier
+        // size when restoring it.
+        let _ = window.unminimize();
         if state.mode() == Mode::Widget {
             if window.is_maximized().unwrap_or(false) {
                 let _ = window.unmaximize();
@@ -181,12 +190,11 @@ fn reveal(app: &AppHandle) {
                 fill_screen(&window, screen);
             }
         }
-        let _ = window.show();
-        let _ = window.unminimize();
         let _ = window.set_focus();
         state.shows.fetch_add(1, Ordering::SeqCst);
-        // The page fades it in.
-        let _ = app.emit("diaryo://shown", ());
+        // The page fades it in, in the mode it is shown in: if it missed a change of mode
+        // (it was loading, for example), it catches up now.
+        let _ = app.emit("diaryo://shown", state.mode());
     }
 }
 
@@ -202,7 +210,9 @@ pub fn hide(app: &AppHandle) {
         return;
     }
     let shows = state.shows.load(Ordering::SeqCst);
-    let _ = app.emit("diaryo://closing", ());
+    // With which showing it goes: if it is shown again meanwhile, the page's late request to
+    // hide it is ignored (`hide_if_current`).
+    let _ = app.emit("diaryo://closing", shows);
     let app = app.clone();
     std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(500));
@@ -210,6 +220,15 @@ pub fn hide(app: &AppHandle) {
             hide_now(&app);
         }
     });
+}
+
+/// Hides the diary, unless it was shown again since `shows` (the page asked when the fade
+/// of an earlier showing ended).
+pub fn hide_if_current(app: &AppHandle, shows: Option<u32>) {
+    let current = app.state::<Windowing>().shows.load(Ordering::SeqCst);
+    if shows.is_none_or(|shows| shows == current) {
+        hide_now(app);
+    }
 }
 
 /// Hides the diary right away (it stays in the tray, ready for the shortcut) and tells

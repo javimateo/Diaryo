@@ -1,6 +1,7 @@
 import type { Binding, PaperColor, PaperStyle } from '../engine/book';
 import type { FillStyle } from '../engine/elements';
 import type { CoverMaterial } from '../engine/cover';
+import type { CoverTemplate } from '../engine/coverTemplates';
 import type { DeskStyle } from '../engine/desk';
 import type { FontCategory } from '../engine/fonts';
 import type { NoteVariant } from '../engine/notes';
@@ -11,6 +12,415 @@ import type { ToolId } from '../engine/tools';
 export const es = {
   common: {
     close: 'Cerrar',
+  },
+
+  openCopy: {
+    title: 'Abrir una copia del diario',
+    text: '¿Qué quieres hacer con el diario que tienes ahora?',
+    fileUntouched:
+      'El archivo de la copia no se modifica: lo que cambies después se guarda en diaryo, no en él.',
+    replace: 'Reemplazar mi diario por esta copia',
+    replaceHint:
+      'Tu diario pasa a ser el de la copia. Antes se guarda una copia del actual, por si acaso.',
+    merge: 'Combinar con mi diario',
+    mergeHint:
+      'Añade lo que falte y deja lo más reciente de cada página. Para recuperar algo de una copia antigua.',
+    cancel: 'Cancelar',
+    /** Part of the name of the copy saved before replacing. */
+    fileLabel: 'antes-de-abrir',
+    downloads: 'tus descargas',
+    replaced: (where: string) => `Diario reemplazado · el anterior está en ${where}`,
+    beforeFailed: 'No se ha podido guardar una copia del diario actual: no se ha reemplazado',
+  },
+
+  account: {
+    intro:
+      'Opcional. Sincroniza tu diario entre el ordenador, la web y el móvil. Se cifra en tu dispositivo: nadie más puede leerlo. Sin cuenta, todo sigue igual.',
+    google: 'Continuar con Google',
+    signInOrUp: 'Entrar o crear cuenta',
+    signInTitle: 'Entrar en diaryo',
+    signUpTitle: 'Crear cuenta',
+    orEmail: 'o con tu email',
+    email: 'Email',
+    emailPlaceholder: 'tu@email.com',
+    password: 'Contraseña',
+    newPassword: 'Contraseña nueva',
+    passwordHint: (min: number) => `Al menos ${min} caracteres.`,
+    showPassword: 'Mostrar contraseña',
+    hidePassword: 'Ocultar contraseña',
+    signIn: 'Entrar',
+    signUp: 'Crear cuenta',
+    forgot: '¿Olvidaste la contraseña?',
+    noAccount: 'Crear cuenta',
+    haveAccount: 'Ya tengo cuenta',
+    back: 'Volver',
+    signUpNote: 'Te enviaremos un correo para confirmar tu email.',
+    verifySentTitle: 'Revisa tu correo',
+    verifySent: (email: string) =>
+      `Te hemos enviado un enlace a ${email} para confirmar tu email. Ya has entrado: puedes confirmarlo cuando quieras.`,
+    done: 'Entendido',
+    forgotTitle: 'Recuperar la contraseña',
+    forgotText: 'Escribe el email de tu cuenta y te enviaremos un enlace para elegir otra.',
+    sendLink: 'Enviar enlace',
+    newLink: 'Pedir otro enlace',
+    forgotSentTitle: 'Revisa tu correo',
+    forgotSent: (email: string) =>
+      `Si hay una cuenta con ${email}, te llegará un enlace para elegir una contraseña nueva. Mira también en el spam.`,
+    resetTitle: 'Contraseña nueva',
+    resetText: 'Elige la contraseña nueva de tu cuenta.',
+    save: 'Guardar',
+    resetDone: 'Contraseña cambiada: ya puedes entrar con ella.',
+    googleWaiting: (desktop: boolean) =>
+      desktop
+        ? 'Continúa en tu navegador. Cuando termines, vuelve aquí.'
+        : 'Continúa en la ventana de Google.',
+    cancel: 'Cancelar',
+    signedIn: (email: string) => `Has entrado como ${email}`,
+    plans: { free: 'Plan gratis' } as Record<string, string>,
+    planOf: (quota: string) => `${quota} en la nube`,
+    signOut: 'Cerrar sesión',
+    signedOut: 'Has cerrado la sesión',
+    unverified: 'Confirma tu email',
+    unverifiedHint: 'Te enviamos un enlace al crear la cuenta.',
+    resend: 'Reenviar correo',
+    resent: 'Correo enviado',
+    verified: 'Email confirmado',
+    dataRow: 'Tus datos',
+    dataHint:
+      'Lo que el servidor guarda de tu cuenta. Tu diario, legible, está en «Guardar una copia».',
+    download: 'Descargar',
+    /** Written inside the downloaded file. */
+    dataNote:
+      'Esto es lo que el servidor de diaryo guarda de tu cuenta. Tu diario está allí solo cifrado (nadie puede leerlo sin tu contraseña del diario); su copia legible se guarda desde el menú, con «Guardar una copia».',
+    deleteRow: 'Borrar la cuenta',
+    deleteHint: 'Borra la cuenta y el diario de la nube. El de tus dispositivos se queda.',
+    deleteStart: 'Borrar…',
+    deleteWarning: 'Se borrarán para siempre la cuenta y el diario de la nube.',
+    deleteDetail:
+      'No se puede deshacer. El diario de este dispositivo y de los demás se queda tal cual, sin la nube.',
+    deleteType: 'Escribe tu email para confirmar:',
+    deleteConfirm: 'Borrar la cuenta',
+    deleted: 'Cuenta borrada. Tu diario sigue aquí.',
+    legal: {
+      /** `{terms}` and `{privacy}` become the links. */
+      note: 'Al continuar aceptas las {terms} y la {privacy}.',
+      terms: 'condiciones',
+      privacy: 'política de privacidad',
+      termsPage: 'Condiciones',
+      privacyPage: 'Política de privacidad',
+      termsUrl: 'https://diaryo.javiermateo.dev/condiciones/',
+      privacyUrl: 'https://diaryo.javiermateo.dev/privacidad/',
+    },
+    errors: {
+      offline: 'No se ha podido conectar. Comprueba tu conexión.',
+      cancelled: '',
+      credentials: 'El email o la contraseña no son correctos.',
+      emailTaken: 'Ya hay una cuenta con ese email. Entra con él.',
+      invalidEmail: 'Ese email no es válido.',
+      invalidLink: 'El enlace ha caducado o ya se usó. Pide otro.',
+      tooMany: 'Demasiados intentos. Espera un momento.',
+      unknown: 'Algo ha fallado. Inténtalo de nuevo.',
+      shortPassword: (min: number) => `La contraseña necesita al menos ${min} caracteres.`,
+    },
+  },
+
+  vault: {
+    createTitle: 'Protege tu diario en la nube',
+    createText:
+      'Tu diario se cifra con una contraseña que solo tú sabes. Es distinta de la de tu cuenta: nadie, ni siquiera diaryo, puede leerlo ni recuperarla.',
+    password: 'Contraseña del diario',
+    repeat: 'Repítela',
+    passwordHint: 'Mejor una frase que recuerdes: al menos 8 caracteres.',
+    next: 'Continuar',
+    codeTitle: 'Guarda tu clave de recuperación',
+    codeText:
+      'Si olvidas la contraseña del diario, esta clave es la única forma de volver a abrirlo en la nube. Solo se muestra ahora.',
+    download: 'Descargar',
+    print: 'Imprimir',
+    copy: 'Copiar',
+    copied: 'Clave copiada',
+    saved: 'La he guardado en un lugar seguro',
+    activate: 'Activar la nube',
+    done: 'Hecho',
+    unlockTitle: 'Desbloquea tu diario',
+    unlockText: 'Escribe la contraseña del diario. Solo hace falta una vez en este dispositivo.',
+    onceText: 'Escribe la contraseña del diario para sincronizar. Este dispositivo no la guarda.',
+    onceSubmit: 'Sincronizar',
+    unlock: 'Desbloquear',
+    forgot: 'La he olvidado: usar la clave de recuperación',
+    recoverTitle: 'Usar la clave de recuperación',
+    recoverText: 'Escribe tu clave de recuperación y elige una contraseña nueva para el diario.',
+    code: 'Clave de recuperación',
+    newPassword: 'Contraseña nueva del diario',
+    recover: 'Recuperar',
+    back: 'Volver',
+    changeTitle: 'Cambiar la contraseña del diario',
+    current: 'Contraseña actual',
+    change: 'Cambiar',
+    newCodeTitle: 'Clave de recuperación nueva',
+    newCodeText:
+      'Se crea una clave nueva y la anterior deja de servir. Escribe la contraseña del diario para continuar.',
+    makeCode: 'Crear la clave',
+    unlocked: 'Diario desbloqueado en este dispositivo',
+    ready: 'La nube está lista',
+    changed: 'Contraseña del diario cambiada',
+    section: 'Cifrado',
+    stateNone: 'Elige la contraseña del diario para usar la nube.',
+    stateLocked: 'Bloqueado en este dispositivo.',
+    stateUnlocked: (desktop: boolean) =>
+      desktop ? 'Desbloqueado en este equipo' : 'Desbloqueado en este navegador',
+    stateUnknown: 'No se ha podido comprobar. Revisa tu conexión.',
+    setUp: 'Activar',
+    passwordRow: 'Contraseña del diario',
+    codeRow: 'Clave de recuperación',
+    newCode: 'Crear una nueva',
+    fileName: 'diaryo-clave-de-recuperacion',
+    file: (email: string, code: string, date: string) =>
+      `diaryo · Clave de recuperación\n\nCuenta: ${email}\nCreada: ${date}\n\n${code}\n\nSi olvidas la contraseña del diario, esta clave es la única forma de volver a abrirlo en la nube.\nGuárdala en un lugar seguro y no la compartas.\n`,
+    errors: {
+      mismatch: 'Las contraseñas no coinciden.',
+      wrongPassword: 'Esa no es la contraseña del diario.',
+      wrongCode: 'Esa clave de recuperación no es correcta.',
+      exists: 'Ya hay un diario en la nube de esta cuenta: desbloquéalo con su contraseña.',
+      changed:
+        'La contraseña o la clave de recuperación acaban de cambiar en otro dispositivo: vuelve a intentarlo con la actual.',
+      privateHidden:
+        'Antes muestra tus post-its privados (Ajustes → Privacidad): su texto tiene que pasar a la contraseña del diario de esta cuenta.',
+    },
+  },
+
+  lock: {
+    level: 'Qué se cifra en este dispositivo',
+    levels: { off: 'Nada', private: 'Solo lo privado', all: 'Todo el diario' },
+    levelHints: {
+      off: 'Como hasta ahora: el diario se guarda legible en este dispositivo.',
+      private:
+        'Los post-its marcados como privados se cifran y piden la contraseña del diario para verse.',
+      all: 'Todo lo guardado aquí va cifrado, y pide la contraseña del diario al abrirlo.',
+    },
+    privateTitle: 'Contraseña para lo privado',
+    privateText:
+      'Los post-its privados se cifran con la contraseña del diario. Si la olvidas, solo la clave de recuperación los abre: nadie más puede.',
+    privateCloudText:
+      'Se usa la contraseña del diario de tu nube, la misma en todas partes. Escríbela para continuar.',
+    privateDone: 'Contraseña puesta: lo privado se cifra en este dispositivo',
+    downTitle: 'Cifrar solo lo privado',
+    downText:
+      'El diario vuelve a guardarse legible en este dispositivo, salvo los post-its privados. Escribe la contraseña del diario para continuar.',
+    down: 'Cifrar solo lo privado',
+    downDone: 'Ya solo se cifra lo privado',
+    offTitle: 'Quitar la contraseña del diario',
+    offText:
+      'Ya no se cifrará nada en este dispositivo. Escribe la contraseña del diario para continuar.',
+    offNotes: (count: number) =>
+      count === 1
+        ? 'Tienes un post-it privado. ¿Qué hacemos con él?'
+        : `Tienes ${count} post-its privados. ¿Qué hacemos con ellos?`,
+    keepNotes: (count: number) =>
+      count === 1 ? 'Dejarlo como un post-it normal' : 'Dejarlos como post-its normales',
+    keepNotesHint: 'Su texto se queda en el diario, sin cifrar.',
+    deleteNotes: (count: number) => (count === 1 ? 'Borrarlo' : 'Borrarlos'),
+    deleteNotesHint: (count: number) =>
+      count === 1
+        ? 'Desaparece de este diario, también en tus otros dispositivos.'
+        : 'Desaparecen de este diario, también en tus otros dispositivos.',
+    off: 'Quitar la contraseña',
+    revealTitle: 'Mostrar lo privado',
+    revealText: 'Escribe la contraseña del diario para ver todos los post-its privados.',
+    revealOneText: 'Escribe la contraseña del diario para ver este post-it.',
+    showThis: 'Mostrar este post-it',
+    deleteTitle: (count: number) =>
+      count === 1 ? 'Borrar un post-it privado' : `Borrar ${count} post-its privados`,
+    deleteText: (count: number) =>
+      count === 1
+        ? 'Es privado: escribe la contraseña del diario para borrarlo.'
+        : 'Son privados: escribe la contraseña del diario para borrarlos.',
+    delete: 'Borrar',
+    hideThis: 'Ocultar este post-it',
+    reveal: 'Mostrar',
+    revealed: 'Lo privado está a la vista',
+    hidden: 'Lo privado vuelve a estar oculto',
+    hidePrivate: 'Volver a ocultar lo privado',
+    hidePrivateOptions: { 30: 'A los 30 s', 60: 'Al minuto', 300: 'A los 5 min' },
+    hidePrivateHint: 'Cada post-it, desde que lo abres. Mientras lo editas, espera.',
+    hidePrivateAway: 'Ocultar todo al esconder el diario',
+    hidePrivateAwayHint: 'Al minimizarlo, cambiar de pestaña o guardarlo en la bandeja.',
+    privateRow: 'Post-its privados',
+    privateAll: 'Todos a la vez',
+    show: 'Mostrar todo',
+    hide: 'Ocultar todo',
+    autoLock: 'Bloquear solo',
+    autoLockHint: 'Tras un rato sin usar el diario.',
+    autoLockOptions: { 0: 'Nunca', 5: '5 min', 15: '15 min', 60: '1 h' },
+    lockAway: 'Bloquear al esconderlo',
+    lockAwayHint: (desktop: boolean) =>
+      desktop ? 'Al minimizarlo o mandarlo a la bandeja.' : 'Al cambiar de pestaña o minimizarlo.',
+    lockNow: 'Bloquear ahora',
+    lockNowHint: 'Cierra el diario: hará falta la contraseña para volver a abrirlo.',
+    lockGroup: 'Bloqueo',
+    cloudPassword:
+      'Es la contraseña del diario de tu nube: se cambia en «Cuenta y nube», y cambia en los dos sitios.',
+    enableTitle: 'Cifrar el diario en este dispositivo',
+    enableText:
+      'Todo lo que guardas aquí se cifra con la contraseña del diario. Si la olvidas, solo la clave de recuperación lo abre: nadie más puede.',
+    enableCloudText:
+      'Se usa la contraseña del diario de tu nube, la misma en todas partes. Escríbela para continuar.',
+    enable: 'Cifrar',
+    encrypting: 'Cifrando el diario…',
+    decrypting: 'Quitando el cifrado…',
+    keepOpen: 'No cierres diaryo hasta que termine.',
+    enabled: 'Diario cifrado en este dispositivo',
+    enabledBackups:
+      'Diario cifrado. Las copias de antes siguen legibles en su carpeta; las nuevas, cifradas.',
+    openBackups: 'Abrir la carpeta',
+    disabled: 'Ya no se cifra nada en este dispositivo',
+    codeText:
+      'Si olvidas la contraseña del diario, esta clave es la única forma de volver a abrirlo. Solo se muestra ahora.',
+    file: (code: string, date: string) =>
+      `diaryo · Clave de recuperación\n\nCreada: ${date}\n\n${code}\n\nSi olvidas la contraseña del diario, esta clave es la única forma de volver a abrirlo.\nGuárdala en un lugar seguro y no la compartas.\n`,
+    lockedTitle: 'Tu diario está bloqueado',
+    lockedText: 'Escribe la contraseña del diario.',
+    open: 'Abrir',
+    forgotBoth: 'No recuerdo ni la contraseña ni la clave',
+    forgotTitle: 'Sin contraseña ni clave',
+    forgotText:
+      'Sin ellas no hay forma de abrir este diario: está cifrado y no se guarda ninguna copia de la contraseña. Puedes borrarlo de este dispositivo y empezar uno nuevo. Si lo tienes abierto en otro dispositivo, allí sigue.',
+    erase: 'Borrar el diario de este dispositivo',
+    eraseConfirm: 'Sí, borrarlo para siempre',
+    /** The ways out of the lock screen without the password. */
+    otherOptions: 'Otras opciones',
+    optionsText: 'Sin la contraseña el diario no se puede leer, pero sí apartarlo.',
+    signOut: 'Cerrar sesión',
+    signOutHint: (email: string) =>
+      `Sales de tu cuenta (${email}). El diario sigue aquí, bloqueado.`,
+    startOver: 'Empezar otro diario',
+    startOverHint: 'Este se guarda cifrado en un archivo y aquí empieza uno en blanco.',
+    eraseHint: 'Sin guardar nada. No se puede deshacer.',
+    startOverText: (desktop: boolean) =>
+      desktop
+        ? 'Guardamos este diario tal cual, cifrado, en la carpeta de las copias.'
+        : 'Guardamos este diario tal cual, cifrado, en un archivo que se descarga.',
+    startOverOpen:
+      'Se abre cuando quieras con «Abrir una copia» y su contraseña o su clave de recuperación.',
+    startOverButton: 'Guardar y empezar otro',
+    startOverDownload: 'Descargar el diario',
+    startOverCheck:
+      'Comprueba que el archivo está en tus descargas: al seguir, este diario se borra de aquí.',
+    startOverConfirm: 'Ya lo tengo: empezar otro',
+    startOverAgain: 'Descargarlo otra vez',
+    startOverFailed: 'No se ha podido guardar el diario, así que no se ha borrado nada.',
+    ownVaultText:
+      'Tu diario ya tiene contraseña en este dispositivo: la nube usará la misma, con la misma clave de recuperación.',
+    adopted:
+      'Desde ahora, la contraseña del diario en este dispositivo es la de la nube de esta cuenta.',
+    saveTitle: 'Guardar una copia del diario',
+    saveText: 'Tu diario está cifrado en este dispositivo. ¿Cómo quieres la copia?',
+    sealed: 'Cifrada',
+    sealedHint: 'Se abre con la contraseña del diario o la clave de recuperación.',
+    readable: 'Legible',
+    readableHint: 'Un archivo abierto: cualquiera que lo tenga puede leerlo.',
+    openTitle: 'Abrir una copia cifrada',
+    openText:
+      'Esta copia está cifrada. Escribe la contraseña que tenía el diario cuando se hizo, o su clave de recuperación.',
+    useCode: 'Usar la clave de recuperación',
+    usePassword: 'Usar la contraseña',
+  },
+
+  sync: {
+    row: 'Sincronización',
+    modes: { auto: 'Automática', manual: 'Manual', password: 'Con contraseña' },
+    modeHints: {
+      auto: 'Se sincroniza sola tras cada cambio y cuando otro dispositivo cambia algo.',
+      manual: 'Solo cuando pulsas «Sincronizar ahora».',
+      password:
+        'Solo cuando pulsas «Sincronizar ahora», y pide la contraseña del diario cada vez: este dispositivo no guarda la llave.',
+    },
+    now: 'Sincronizar ahora',
+    status: {
+      off: '',
+      idle: 'Al día',
+      syncing: 'Sincronizando…',
+      offline: 'Sin conexión · se hará al volver',
+      full: 'Espacio lleno',
+      error: 'No se ha podido sincronizar',
+    },
+    last: (when: string) => `Última vez: ${when}`,
+    never: 'Aún no se ha sincronizado',
+    progress: (done: number, total: number) => `Subiendo ${done} de ${total}`,
+    pending: (n: number) =>
+      n === 1 ? '1 cambio esperando a subir' : `${n} cambios esperando a subir`,
+    space: 'Espacio',
+    spaceOf: (used: string, quota: string) => `${used} de ${quota}`,
+    fullTitle: 'Tu espacio en la nube está lleno.',
+    fullText:
+      'Tu diario sigue guardándose en este dispositivo, pero lo nuevo no se sube. Borra páginas o imágenes que no necesites para liberar espacio.',
+    spaceWarning: (percent: number) => `Has usado el ${percent} % de tu espacio en la nube`,
+    seeSpace: 'Ver',
+    locked: 'No se sincroniza: desbloquea para subir y bajar los cambios.',
+    otherTodayPage: 'Ha llegado otra página de hoy desde otro dispositivo',
+    seePage: 'Ir a ella',
+    lowSpace: (free: string) =>
+      `Te queda poco espacio en la nube: ${free} libres. Borra páginas o imágenes que no necesites.`,
+    rejected: (n: number) =>
+      n === 1 ? '1 cambio no se ha podido subir' : `${n} cambios no se han podido subir`,
+    sessionEnded:
+      'Tu sesión ha caducado: vuelve a entrar para sincronizar. Lo pendiente se guarda aquí.',
+    leaveTitle: '¿Qué hacemos con el diario de este dispositivo?',
+    leavePending: (n: number) =>
+      n === 1 ? 'Hay 1 cambio sin subir a la nube.' : `Hay ${n} cambios sin subir a la nube.`,
+    leaveKeep: 'Dejarlo aquí',
+    leaveKeepHint: 'Sigues escribiendo sin cuenta; no se sincroniza.',
+    leaveKeepPendingHint: 'Los cambios se quedan aquí y suben cuando vuelvas a entrar.',
+    leaveRemove: 'Quitarlo de aquí',
+    leaveLock: 'Dejarlo cifrado y bloqueado',
+    leaveLockHint: 'Se queda aquí, pero solo se abre con la contraseña del diario.',
+    keepSession: 'Mantener la sesión en este navegador',
+    keepSessionHint:
+      'Apagado: la sesión y las llaves del diario solo duran mientras esté abierta esta pestaña. Para ordenadores compartidos.',
+    leaveSyncRemove: 'Sincronizar y quitarlo de aquí',
+    leaveRemoveHint: (desktop: boolean) =>
+      'Se abre un diario en blanco. El tuyo sigue en la nube y vuelve al entrar.' +
+      (desktop ? ' Las copias diarias de Documentos se quedan.' : ''),
+    leaveSyncRemoveHint: 'Primero se suben los cambios; si no se puede, no se borra nada.',
+    leaveFailed: 'No se han podido subir los cambios: el diario sigue aquí.',
+    leftRemoved: 'Sesión cerrada · el diario ya no está en este dispositivo',
+    passwordMode: 'Se pide la contraseña al sincronizar',
+    firstTitle: 'Ya hay un diario en la nube',
+    firstText: 'Este dispositivo también tiene uno. ¿Qué hacemos?',
+    merge: 'Combinar los dos',
+    mergeHint: 'Se juntan todas las páginas; si algo cambió en los dos, gana lo más reciente.',
+    useCloud: 'Usar el de la nube y guardar el mío',
+    useCloudHint:
+      'El diario de este dispositivo se guarda en un archivo .diaryo (puedes abrirlo cuando quieras) y aquí queda el de la nube.',
+    returnTitle: 'Hay cambios sin subir',
+    returnText: (n: number) =>
+      n === 1
+        ? 'Este dispositivo tiene 1 cambio que no está en la nube (hecho sin la sesión iniciada o que quedó pendiente). ¿Qué hacemos con él?'
+        : `Este dispositivo tiene ${n} cambios que no están en la nube (hechos sin la sesión iniciada o que quedaron pendientes). ¿Qué hacemos con ellos?`,
+    keepMine: 'Subir mis cambios',
+    keepMineHint:
+      'Se juntan con el diario de la nube; si algo cambió en los dos, gana lo más reciente.',
+    useCloudReturnHint:
+      'Tus cambios no se suben: el diario de este dispositivo se guarda en un archivo .diaryo (puedes abrirlo cuando quieras) y aquí queda el de la nube.',
+    emptyTitle: 'Esta cuenta aún no tiene diario',
+    emptyText: 'En este dispositivo hay un diario. ¿Qué hacemos con él?',
+    upload: 'Subir este diario',
+    uploadHint: 'Pasa a ser el diario de esta cuenta y se sincroniza con tus otros dispositivos.',
+    startNew: 'Empezar uno nuevo y guardar este',
+    startNewHint:
+      'Este diario se guarda en un archivo .diaryo (puedes abrirlo cuando quieras) y la cuenta empieza en blanco.',
+    later: 'Ahora no',
+    keptCopy: (where: string) => `Tu diario anterior está en ${where} · llega el de la nube`,
+    keptCopyNew: (where: string) => `Tu diario anterior está en ${where} · empiezas en blanco`,
+    tips: {
+      idle: (when: string) => `Nube al día · ${when}`,
+      syncing: 'Sincronizando con la nube…',
+      offline: 'Sin conexión: los cambios se subirán al volver',
+      full: 'Espacio en la nube lleno: lo nuevo no se sube',
+      error: 'No se ha podido sincronizar',
+      manual: (n: number) => (n === 0 ? 'Nube al día' : `${n} cambios sin sincronizar`),
+      locked: 'La nube no se sincroniza · Desbloquear',
+    },
   },
 
   dates: {
@@ -80,12 +490,128 @@ export const es = {
     closeTip: 'Cerrar — diaryo sigue junto al reloj',
   },
 
+  /** The welcome page of a new diary (examples to touch) and its notice. */
+  welcome: {
+    page: {
+      title: '¡Hola! Este es tu diario',
+      intro: 'Cada día tiene su página. Escribe donde quieras: doble clic, o la tecla T.',
+      tasks: ['Abrir diaryo', 'Escribir algo de hoy', 'Pegar una foto (Ctrl V)'],
+      datedTask: 'Ponerle fecha a una tarea con @',
+      draw: 'Dibuja con la P (con el ratón, el dedo o un lápiz)',
+      noteMoves: 'Los post-its se mueven y giran. Sácalos del libro: se quedan en la mesa.',
+      arrows: 'Las flechas unen cosas y las siguen',
+      ideas: 'Ideas',
+      photo: 'tu foto',
+      appointment: 'Café con Ana',
+      search: 'Ctrl K: buscar en todo el diario y cualquier comando',
+      desk: 'En la mesa, lo que quieres a mano en todas las páginas',
+    },
+    notice: 'Página de ejemplo, para tocar y probar',
+    clear: 'Empezar en blanco',
+    cleared: 'Página en blanco',
+    /** The window over the welcome page, the first time. */
+    dialog: {
+      title: 'Tu diario te espera',
+      text: 'Cada día, una página en blanco.',
+      start: 'Abrirlo',
+      /** Signing in to the account (where one can also be created). */
+      account: 'Tengo cuenta',
+      openCopy: 'Abrir una copia',
+      local: 'Sin cuenta, todo se queda en este dispositivo',
+      tourOffer: '¿Quieres ver cómo se usa?',
+      copyOpened: 'Tu diario está abierto',
+      showTour: 'Ver el recorrido',
+    },
+  },
+
+  /** The short tour of a new diary. */
+  tour: {
+    next: 'Siguiente',
+    done: 'Empezar',
+    skip: 'Saltar',
+    replay: 'Ver otra vez',
+    /** What is written in the little scenes of each step. */
+    scenes: {
+      title: 'Mi día',
+      note: 'Comprar pan',
+      yesterday: 'Paseo por el río',
+      today: 'Página nueva',
+      desk: 'Llamar al médico',
+      task: 'Regar las plantas',
+      datedTask: 'Llamar a Ana',
+      secret: 'Solo para mí',
+      query: 'pan',
+      /** Where and what was found. */
+      results: [
+        ['Hoy', 'Comprar pan'],
+        ['12 oct', 'Receta de pan de centeno'],
+      ] as [string, string][],
+    },
+    steps: {
+      tools: {
+        title: 'Tus herramientas',
+        text: 'Lápiz, rotulador, texto, post-its, flechas y formas. Cada una tiene su tecla (pasa el ratón por encima).',
+      },
+      pages: {
+        title: 'Un día, una página',
+        text: 'Cada día empieza una página nueva. Aquí vas a otros días; también puedes arrastrar la esquina de la hoja.',
+      },
+      desk: {
+        title: 'La mesa',
+        text: 'Lo que dejas fuera del libro se queda en la mesa, abras la página que abras.',
+      },
+      upcoming: {
+        title: 'Tareas y citas',
+        text: 'Escribe @ y un día en una línea («@mañana 10») y tendrá fecha. Aquí ves lo que viene y lo que se ha pasado.',
+      },
+      search: {
+        title: 'Buscar y comandos',
+        text: 'Ctrl K busca en todo el diario y encuentra cualquier cosa que se pueda hacer.',
+      },
+      settings: {
+        title: 'A tu gusto',
+        text: 'En Ajustes: tapas, papel, mesa, la portada, la nube y la privacidad.',
+      },
+      floating: {
+        title: 'Desde cualquier programa',
+        text: 'Ctrl Alt D abre el diario sobre lo que estés haciendo, y la mesa vive en tu escritorio. Las tareas con hora te avisan.',
+      },
+    },
+  },
+
+  /** Editing the closed diary's cover. */
+  cover: {
+    title: 'Portada',
+    hint: 'Se ve con el diario bloqueado: no pongas nada privado',
+    done: 'Listo',
+    edit: 'Editar la portada',
+    note: 'Como una página más: fotos, texto, dibujos y post-its sobre la tapa. Se ve aunque el diario esté bloqueado: no pongas nada privado.',
+    templatesTitle: 'Empezar de una plantilla (después se cambia todo)',
+    templates: {
+      blank: 'En blanco',
+      engraved: 'Grabado',
+      gilded: 'Dorado',
+      label: 'Etiqueta',
+      photos: 'Fotos',
+      chalk: 'Tiza',
+    } satisfies Record<CoverTemplate, string>,
+    /** What each template writes on the cover. */
+    templateTexts: {
+      engraved: 'Mi diario',
+      gilded: 'Recuerdos',
+      label: 'Apuntes',
+      chalk: 'Viajes',
+    },
+    started: (name: string) => `Portada: plantilla «${name}»`,
+  },
+
   topBar: {
     search: 'Buscar y comandos',
-    theme: (dark: boolean) => `Tema ${dark ? 'claro' : 'oscuro'}`,
     settings: 'Ajustes',
     menu: 'Menú',
-    menuTip: 'Imágenes, copias y exportar',
+    menuTip: 'Imágenes, copias, tema y atajos',
+    searchLabel: 'Buscar',
+    copies: 'Copias',
     savedWhere: (desktop: boolean) =>
       `Todo se guarda solo ${desktop ? 'en esta app' : 'en este navegador'}.`,
     saveCopy: 'Guardar una copia del diario',
@@ -96,23 +622,34 @@ export const es = {
 
   settings: {
     title: 'Ajustes',
-    appearance: 'Apariencia',
+    sections: {
+      general: 'General',
+      look: 'Aspecto del diario',
+      desktop: 'Escritorio',
+      privacy: 'Privacidad',
+      account: 'Cuenta y nube',
+      data: 'Copias y datos',
+      help: 'Ayuda',
+    },
+    back: 'Volver a los ajustes',
+    onWindows: 'En Windows',
+    more: 'Más opciones',
     language: 'Idioma',
     theme: 'Tema',
     themes: { light: 'Claro', dark: 'Oscuro', system: 'Como el sistema' },
-    bookLook: 'Aspecto del diario',
-    diary: 'Diario',
     weekStart: 'La semana empieza en',
     monday: 'Lunes',
     sunday: 'Domingo',
     turnPage: 'Pasar página',
     turnPageHint: 'Con los botones, el teclado o al ir a otro día.',
     turnSpeeds: { normal: 'Con animación', fast: 'Rápido', off: 'Sin animación' },
-    help: 'Ayuda',
-    shortcuts: 'Atajos de teclado',
-    shortcutsHint: 'También con ? en cualquier momento.',
-    showShortcuts: 'Ver atajos',
-    storage: 'Guardado',
+    shortcuts: 'Ayuda',
+    shortcutsHint:
+      'Para qué sirve cada herramienta, los gestos y los atajos (los atajos, también con ?).',
+    showShortcuts: 'Abrir la ayuda',
+    tour: 'Recorrido',
+    tourHint: 'Lo principal en unos pasos, como la primera vez.',
+    showTour: 'Ver el recorrido',
     savedWhere: (desktop: boolean, size: string | null) =>
       `Todo se guarda solo ${desktop ? 'en esta app' : 'en este navegador'}` +
       (size ? ` y ahora ocupa ${size}.` : '.'),
@@ -125,6 +662,21 @@ export const es = {
     backup: 'Copia de seguridad',
     backupHint: 'Un archivo con todo el diario, para guardarlo aparte.',
     saveCopy: 'Guardar una copia',
+    openCopy: 'Abrir una copia',
+    openCopyHint: 'Reemplazar tu diario por la copia, o combinarlos.',
+    open: 'Abrir',
+    about: 'Acerca de diaryo',
+    website: 'La web de diaryo',
+    websiteUrl: 'https://diaryo.javiermateo.dev/',
+    source: 'El código, en GitHub',
+    sourceUrl: 'https://github.com/javimateo/Diaryo',
+    restoreRow: 'Volver a como venía',
+    restoreHint: 'Lo de este apartado vuelve a sus valores de siempre. Se puede deshacer.',
+    restoreHintPrivacy:
+      'Bloqueo y post-its privados vuelven a sus valores de siempre; lo que se cifra y la contraseña no cambian. Se puede deshacer.',
+    restore: 'Restablecer',
+    restored: 'Apartado restablecido',
+    undo: 'Deshacer',
   },
 
   /** Names of keys and gestures (in the help and in shortcuts). */
@@ -154,7 +706,7 @@ export const es = {
   },
 
   help: {
-    title: 'Atajos de teclado',
+    title: 'Ayuda',
     or: 'o',
     tools: 'Herramientas',
     writing: 'Escribir',
@@ -179,6 +731,7 @@ export const es = {
     scaleFree: 'Escalar sin mantener proporción',
     scaleFromCenter: 'Escalar desde el centro',
     rotateSnap: 'Girar de 15 en 15°',
+    noGuides: 'Colocar sin pegarse a las guías',
     group: 'Agrupar / desagrupar',
     bringForward: 'Traer adelante / enviar atrás',
     bringToFront: 'Al frente / al fondo',
@@ -220,14 +773,85 @@ export const es = {
     floatingDiary: 'Diario flotante (desde cualquier sitio)',
     hideFloatingDiary: 'Apartar el diario flotante',
     toggleDeskLayer: 'Enseñar o esconder la mesa en el escritorio',
+    tabs: { howTo: 'Cómo se usa', shortcuts: 'Atajos' },
+    /** What each tool is for, in a line. */
+    toolUses: {
+      hand: 'Mueve el lienzo. También Espacio + arrastrar, o el botón central del ratón.',
+      select: 'Elige, mueve, gira y cambia el tamaño. Doble clic para escribir.',
+      lasso: 'Rodea a mano alzada lo que quieras elegir.',
+      pen: 'Escribe y dibuja a mano; con un lápiz digital, cuenta la presión.',
+      marker: 'Subraya y resalta por detrás de lo escrito, sin taparlo.',
+      eraser: 'Pasa por encima de un trazo para borrarlo entero.',
+      text: 'Clic y escribe; arrastra para una caja de un ancho.',
+      note: 'Notas de colores, con cinta, chincheta o clip. Pueden ser privadas.',
+      arrow: 'De una cosa a otra: se queda unida y las sigue al moverlas.',
+      rect: 'Recuadros para enmarcar o agrupar; doble clic para escribir dentro.',
+      ellipse: 'Círculos y óvalos para rodear; también se escribe dentro.',
+    } satisfies Record<ToolId, string>,
+    gesturesTitle: 'Gestos y trucos',
+    gestures: {
+      turn: { title: 'Pasar la hoja', text: 'Tira de la esquina de abajo, como en un cuaderno.' },
+      desk: {
+        title: 'La mesa',
+        text: 'Lo que sacas del libro se queda en la mesa, abras la página que abras.',
+      },
+      tasks: {
+        title: 'Tareas y listas',
+        text: 'Escribe [] y espacio para una casilla, o - para una lista; con Enter sigue sola.',
+      },
+      dates: {
+        title: 'Fechas y avisos',
+        text: 'Escribe @ y un día en una línea («@mañana 10»): sale en «Próximo» y te avisa a su hora.',
+      },
+      private: {
+        title: 'Post-its privados',
+        text: 'Clic derecho → «Marcar como privado»: se ve un candado hasta que lo abres con la contraseña.',
+      },
+      link: {
+        title: 'Enlazar días',
+        text: 'Clic derecho → «Enlazar con otra página»: una etiqueta te lleva hasta ella.',
+      },
+      images: {
+        title: 'Fotos',
+        text: 'Pégalas con Ctrl V o arrástralas; en el panel, un marco polaroid, de borde o redondo.',
+      },
+      search: {
+        title: 'Buscar',
+        text: 'Encuentra palabras, días («martes»), tareas y cualquier cosa que se pueda hacer.',
+      },
+      map: {
+        title: 'Mapa e índice',
+        text: 'Todo el diario de un vistazo, o por días en el calendario del índice.',
+      },
+      copyStyle: {
+        title: 'Copiar el estilo',
+        text: 'Lleva el color, el tamaño y la letra de una cosa a otras.',
+      },
+      guides: {
+        title: 'Guías',
+        text: 'Al mover, se pega a los bordes y al centro de lo que hay alrededor; con Ctrl, no.',
+      },
+      floating: {
+        title: 'Diario flotante',
+        text: 'Desde cualquier programa, el atajo abre el diario sobre tu escritorio (en Windows).',
+      },
+    },
   },
 
   desktop: {
-    title: 'Escritorio',
     floatingDiary: 'Diario flotante',
     floatingDiaryHint: 'Aparece sobre el escritorio desde cualquier sitio. Esc lo esconde.',
     shortcutTaken: 'Otra app ya usa este atajo: elige otro.',
     deskLayer: 'Mesa en el escritorio',
+    deskPrivate: 'Post-its privados en el escritorio',
+    deskPrivateHint: 'En el diario siempre se ven con su candado.',
+    deskPrivateOptions: { lock: 'Con candado', hide: 'No se ven' },
+    deskLocked: 'La mesa con el diario bloqueado',
+    deskLockedHint:
+      'Visible: la mesa no se cifra con el resto del diario (sus post-its privados, sí).',
+    deskLockedOptions: { clear: 'Visible', sealed: 'Oculta hasta abrir' },
+    miniLocked: 'Mini diario con el diario bloqueado',
+    miniLockedOptions: { cover: 'Portada', hide: 'Oculto' },
     deskLayerHint:
       'Lo que hay en la mesa, sobre el fondo del escritorio. El atajo la enseña o la esconde.',
     autostart: 'Arrancar con Windows',
@@ -260,6 +884,7 @@ export const es = {
     openLabel: 'Abrir el diario en la página de hoy',
     today: 'Hoy',
     tasks: (n: number) => `Hoy · ${n} ${n === 1 ? 'tarea' : 'tareas'}`,
+    locked: 'Bloqueado',
   },
 
   /** Names of what can be chosen: papers, colors, covers, desks, notes and fonts. */
@@ -286,6 +911,8 @@ export const es = {
     materials: {
       leather: 'Cuero',
       cloth: 'Tela',
+      canvas: 'Lona',
+      denim: 'Vaquero',
       kraft: 'Cartón',
       plain: 'Lisa',
     } satisfies Record<CoverMaterial, string>,
@@ -296,6 +923,10 @@ export const es = {
       wood: 'Madera',
       cork: 'Corcho',
       linen: 'Lino',
+      walnut: 'Nogal',
+      marble: 'Mármol',
+      felt: 'Fieltro',
+      concrete: 'Hormigón',
     } satisfies Record<DeskStyle, string>,
     noteVariants: {
       plain: 'Lisa',
@@ -343,7 +974,7 @@ export const es = {
     binding: 'Encuadernación',
     cover: 'Tapas',
     coverMaterial: 'Material de las tapas',
-    kraftNote: 'El cartón tiene su propio color.',
+    ownColorNote: 'Tiene su propio color.',
     elastic: 'Goma elástica',
     desk: 'Mesa',
   },
@@ -383,6 +1014,15 @@ export const es = {
     roughnessNames: ['Limpio', 'A mano', 'Muy a mano'],
     labelSize: 'Tamaño del texto',
     font: 'Fuente',
+    textStyle: 'Estilo del texto',
+    frame: 'Marco',
+    frames: { none: 'Ninguno', polaroid: 'Polaroid', border: 'Borde', rounded: 'Redondo' },
+    shadow: 'Sombra',
+    bold: 'Negrita',
+    italic: 'Cursiva',
+    underline: 'Subrayado',
+    /** The letter on each button (as in Spanish word processors). */
+    styleKeys: { bold: 'N', italic: 'K', underline: 'S' },
     align: 'Alineación',
     left: 'Izquierda',
     center: 'Centro',
@@ -444,6 +1084,7 @@ export const es = {
     bookmark: 'Marcar la página como importante',
     map: 'Mapa del diario',
     index: 'Índice y calendario',
+    upcoming: 'Próximo: tareas y citas',
     deletePage: 'Borrar esta página',
     duplicate: 'Duplicar',
     changeLink: 'Cambiar el enlace…',
@@ -456,6 +1097,14 @@ export const es = {
     flipH: 'Voltear en horizontal',
     flipV: 'Voltear en vertical',
     lock: 'Bloquear',
+    lockDiary: 'Bloquear el diario',
+    editCover: 'Editar la portada',
+    doneCover: 'Terminar la portada',
+    coverTemplate: (name: string) => `Portada: plantilla ${name}`,
+    showPrivate: 'Mostrar todo lo privado',
+    hidePrivate: 'Ocultar todo lo privado',
+    markPrivate: 'Marcar como privado',
+    unmarkPrivate: 'Dejar de ser privado',
     unlock: 'Desbloquear',
     copyPng: 'Copiar como imagen',
     imageCopied: 'Imagen copiada',
@@ -473,6 +1122,8 @@ export const es = {
     themeSystem: 'Tema como el sistema',
     settings: 'Ajustes',
     shortcuts: 'Atajos de teclado',
+    tour: 'Ver el recorrido',
+    howTo: 'Cómo se usa diaryo',
     diaryPaper: (name: string) => `Hoja del diario: ${name}`,
     pagePaper: (name: string) => `Hoja de esta página: ${name}`,
     pagePaperDefault: 'Hoja de esta página: la del diario',
@@ -495,6 +1146,19 @@ export const es = {
 
   /** Other words that find each command in the palette. */
   commandKeywords: {
+    /** Each page of the settings. */
+    settingsSections: {
+      general: 'idioma tema semana pasar página arrancar actualizar',
+      look: 'hoja papel tapas encuadernación mesa portada',
+      desktop: 'diario flotante atajo mesa escritorio windows',
+      privacy: 'contraseña cifrar bloquear clave recuperación privado',
+      account: 'cuenta nube sesión sincronizar email espacio',
+      data: 'copia seguridad backup guardar abrir espacio navegador',
+      help: 'atajos teclas web código privacidad condiciones',
+    },
+    lockDiary: 'contraseña cerrar privacidad cifrar',
+    editCover: 'tapa portada cubierta fotos personalizar decorar',
+    private: 'privado post-it contraseña secreto ver',
     newPage: 'hoja añadir crear',
     turn: 'pasar hoja',
     turnBack: 'pasar hoja volver',
@@ -502,6 +1166,7 @@ export const es = {
     bookmark: 'pestaña marcador favorita',
     map: 'todas las páginas vista general',
     index: 'lista páginas meses',
+    upcoming: 'agenda citas tareas fechas pendientes calendario',
     deletePage: 'eliminar hoja',
     link: 'enlace vincular',
     layerUp: 'capa encima',
@@ -518,6 +1183,7 @@ export const es = {
     system: 'automático modo apariencia',
     settings: 'configuración preferencias opciones',
     help: 'ayuda teclas',
+    tour: 'recorrido ayuda guía bienvenida empezar aprender',
     paper: 'papel fondo',
     binding: 'libreta cuaderno',
     material: 'material',
@@ -572,6 +1238,8 @@ export const es = {
 
   toasts: {
     allSaved: 'Todo está guardado · se guarda solo',
+    savedTo: (where: string) => `Guardado en ${where}`,
+    saveFailed: 'No se ha podido guardar el archivo',
     lastPage: 'Es la última página · Alt+N para una nueva',
     firstPage: 'Es la primera página',
     bookmarked: 'Página marcada · tiene su pestaña en el canto',
@@ -604,6 +1272,14 @@ export const es = {
     shape: 'Texto de la figura',
   },
 
+  /** The picker that opens when typing "@" in a text: a date for a task or an appointment. */
+  datePicker: {
+    label: 'Fecha',
+    hint: 'Escribe una fecha: mañana 10, vie 17:30, 15/10',
+    noTime: 'Sin hora',
+    accept: 'para ponerla',
+  },
+
   /** The hint at the bottom of an empty page: "P para dibujar · T o doble clic…". */
   hint: {
     draw: 'para dibujar',
@@ -612,8 +1288,67 @@ export const es = {
     shortcuts: 'atajos',
   },
 
+  /** What is pending with a date: tasks and appointments of the whole diary. */
+  upcoming: {
+    title: 'Próximo',
+    open: 'Próximo: tareas y citas',
+    close: 'Cerrar Próximo',
+    /** The index's tab. */
+    tab: 'Tareas',
+    pending: (n: number) => (n === 1 ? '1 pendiente' : `${n} pendientes`),
+    /** The button's number: late or for today. */
+    soon: (n: number) => (n === 1 ? '1 vencida o de hoy' : `${n} vencidas o de hoy`),
+    groups: {
+      late: 'Vencido',
+      today: 'Hoy',
+      tomorrow: 'Mañana',
+      week: 'Esta semana',
+      later: 'Más adelante',
+    },
+    allDay: 'todo el día',
+    tick: 'Marcar como hecha',
+    empty: 'Nada pendiente con fecha.',
+    emptyHint: 'Escribe «@» y una fecha en una tarea o un post-it.',
+    /** On a calendar day. */
+    dayHas: (n: number) => (n === 1 ? '1 cita o tarea' : `${n} citas o tareas`),
+  },
+
+  /** Tasks and appointments to the calendar app (an .ics file). */
+  calendar: {
+    add: 'Añadir a mi calendario',
+    addAll: 'Añadir todo a mi calendario',
+    opened: (n: number) =>
+      n === 1 ? 'Abierto en tu calendario: 1 cita' : `Abierto en tu calendario: ${n} citas`,
+    downloaded: 'diaryo.ics descargado: ábrelo para añadirlo',
+    failed: 'No se ha podido abrir el calendario',
+  },
+
+  /** Desktop app: Windows notifications of tasks and appointments. */
+  reminders: {
+    group: 'Recordatorios',
+    enabled: 'Avisar de tareas y citas',
+    enabledHint:
+      'Una notificación de Windows a su hora, aunque diaryo esté escondido en la bandeja. Sin hora, a las 9:00. Con todo el diario cifrado, sin su texto (Windows guarda las notificaciones).',
+    when: 'Cuándo avisar',
+    whenHint: 'A su hora o ese tiempo antes. Las tareas hechas no avisan.',
+    /** How long before its time. */
+    before: { 0: 'A la hora', 10: '10 min', 30: '30 min', 60: '1 h', 1440: '1 día' },
+    /** "Hoy a las 10:00", "Mañana, todo el día". */
+    atTime: (day: string, time: string) => `${day} a las ${time}`,
+    allDay: (day: string) => `${day}, todo el día`,
+    /** From a private note or with the whole diary encrypted: without its words. */
+    hidden: 'Tienes un recordatorio',
+    openToSee: 'Ábrelo en diaryo para verlo',
+    missed: (n: number) =>
+      n === 1
+        ? '1 aviso mientras diaryo estaba cerrado'
+        : `${n} avisos mientras diaryo estaba cerrado`,
+  },
+
   diary: {
     title: 'Diario',
+    /** The index's tab with the pages (the other one has the tasks). */
+    pagesTab: 'Páginas',
     index: 'Índice del diario',
     calendar: 'Calendario',
     closeIndex: 'Cerrar el índice',

@@ -64,8 +64,16 @@ export class AssetStore {
   }
 }
 
-/** Maximum side when importing: larger images are scaled down (and take much less space). */
-const MAX_SIDE = 2560;
+/**
+ * How images are kept: at most this side, as WebP with this quality. A phone photo goes
+ * from several MB to a few hundred KB, with no visible loss at the size it is drawn.
+ */
+const MAX_SIDE = 2048;
+const QUALITY = 0.85;
+/** Files this small are kept as they are (they are light already). */
+const KEEP_BELOW = 200 * 1024;
+/** Formats that are kept as they are: re-encoding would lose the animation or the vectors. */
+const KEEP_TYPES = new Set(['image/gif', 'image/svg+xml']);
 
 export interface LoadedImage {
   src: string;
@@ -77,23 +85,58 @@ export function isImageFile(file: File): boolean {
   return file.type.startsWith('image/');
 }
 
-/** Reads an image file as a data URL, scaling it down if it is huge. */
+/** Draws an image at most `MAX_SIDE` wide or high, as WebP. */
+function encode(source: CanvasImageSource, width: number, height: number): LoadedImage {
+  const scale = Math.min(1, MAX_SIDE / Math.max(width, height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  const ctx = canvas.getContext('2d')!;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return {
+    src: canvas.toDataURL('image/webp', QUALITY),
+    width: canvas.width,
+    height: canvas.height,
+  };
+}
+
+/** Reads an image file as a data URL, made smaller unless it is light already. */
 export async function loadImageFile(file: File): Promise<LoadedImage> {
   const bitmap = await createImageBitmap(file);
   const { width, height } = bitmap;
-  const scale = Math.min(1, MAX_SIDE / Math.max(width, height));
   try {
-    if (scale === 1) return { src: await readAsDataUrl(file), width, height };
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(width * scale);
-    canvas.height = Math.round(height * scale);
-    const ctx = canvas.getContext('2d')!;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    return { src: canvas.toDataURL('image/webp', 0.9), width: canvas.width, height: canvas.height };
+    const fits = Math.max(width, height) <= MAX_SIDE;
+    if (KEEP_TYPES.has(file.type) || (fits && file.size <= KEEP_BELOW)) {
+      return { src: await readAsDataUrl(file), width, height };
+    }
+    const encoded = encode(bitmap, width, height);
+    // A small image that WebP doesn't make smaller stays as it was.
+    if (fits) {
+      const original = await readAsDataUrl(file);
+      if (original.length <= encoded.src.length) return { src: original, width, height };
+    }
+    return encoded;
   } finally {
     bitmap.close();
   }
+}
+
+/**
+ * The same image, smaller (for images saved before they were compressed). Returns null
+ * if it can't be made smaller.
+ */
+export async function shrinkImage(src: string): Promise<string | null> {
+  if (/^data:image\/(gif|svg)/.test(src)) return null;
+  const image = new Image();
+  image.src = src;
+  try {
+    await image.decode();
+  } catch {
+    return null;
+  }
+  const encoded = encode(image, image.naturalWidth, image.naturalHeight);
+  return encoded.src.length < src.length ? encoded.src : null;
 }
 
 function readAsDataUrl(file: Blob): Promise<string> {

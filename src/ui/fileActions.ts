@@ -1,7 +1,12 @@
+import { call, isDesktop, saveFileAs } from '../desktop/tauri';
+import { agendaItems, type AgendaItem } from '../diary/agenda';
 import type { Diary } from '../diary/diary';
+import { calendarFile } from '../diary/ics';
+import { onlyWelcome } from '../diary/welcome';
 import type { Engine } from '../engine/engine';
 import { fonts } from '../engine/fonts';
 import { useUI } from '../store/ui';
+import { getDB, type DiaryDump } from '../storage/db';
 import {
   datedName,
   downloadBlob,
@@ -9,27 +14,118 @@ import {
   parseBackup,
   serializeDiary,
 } from '../storage/files';
-import { t } from '../i18n';
+import { getLanguage, t } from '../i18n';
+import { todayKey } from '../lib/dates';
+import { lockedDiaryFile, openSealedCopy, sealCopy } from '../cloud/lock';
+import { sealedHere } from '../cloud/lockState';
 
-/** Downloads a backup of the whole diary, with images and fonts. */
-export async function saveCopy(diary: Diary) {
-  const dump = await diary.dump();
-  downloadBlob(
-    new Blob([serializeDiary(dump)], { type: 'application/json' }),
-    datedName() + FILE_EXTENSION,
+/**
+ * Tasks and appointments to the calendar app: on the desktop the file opens in it right
+ * away; on the web it is downloaded (a phone offers to add it).
+ */
+export async function addToCalendar(items: AgendaItem[]) {
+  const { showToast } = useUI.getState();
+  const texts = t().calendar;
+  const contents = calendarFile(items, Date.now());
+  try {
+    if (isDesktop()) {
+      await call('open_calendar_file', { contents });
+      showToast(texts.opened(items.length));
+    } else {
+      downloadBlob(new Blob([contents], { type: 'text/calendar' }), 'diaryo.ics');
+      showToast(texts.downloaded);
+    }
+  } catch (error) {
+    console.error("Couldn't open the calendar", error);
+    showToast(texts.failed);
+  }
+}
+
+/** The dates written in the selection (not the done tasks), to add them to the calendar. */
+export function selectionDates(): AgendaItem[] {
+  const { engine, diary } = useUI.getState();
+  if (!engine || !diary) return [];
+  const entries = engine.selectedTexts().flatMap(({ id, text, private: hidden }) => {
+    const pageId = diary.pageOf(id);
+    if (!pageId) return [];
+    return [
+      {
+        pageId,
+        elementId: id,
+        type: 'text' as const,
+        text,
+        ...(hidden && { private: true as const }),
+      },
+    ];
+  });
+  return agendaItems(entries, todayKey(), getLanguage() === 'en').filter(
+    (item) => item.task !== 'done',
   );
 }
 
 /**
- * Opens a backup. A whole-diary one is merged with what is here (each page that is
- * missing or newer goes in, so nothing recent is lost). A single-page one replaces the
- * open page and can be undone.
+ * Saves a file the user asked for: downloaded on the web; on the desktop, where they
+ * choose (and a notice says where it went).
  */
-export async function openCopy(engine: Engine, diary: Diary, file: File) {
+export async function saveFile(blob: Blob, name: string) {
+  if (!isDesktop()) return downloadBlob(blob, name);
   const { showToast } = useUI.getState();
-  const backup = parseBackup(await file.text());
+  try {
+    const where = await saveFileAs(blob, name);
+    if (where) showToast(t().toasts.savedTo(where));
+  } catch (error) {
+    console.error("Couldn't save the file", error);
+    showToast(t().toasts.saveFailed);
+  }
+}
+
+/**
+ * Downloads a backup of the whole diary, with images and fonts. With the diary encrypted
+ * here, the user chooses first: encrypted like the diary, or readable.
+ */
+export async function saveCopy(diary: Diary, readable?: boolean) {
+  if (sealedHere() && readable === undefined) {
+    useUI.getState().setCopyPrivacy({ kind: 'save' });
+    return;
+  }
+  const text = serializeDiary(await diary.dump());
+  const contents = (!readable && sealCopy(text)) || text;
+  await saveFile(new Blob([contents], { type: 'application/json' }), datedName() + FILE_EXTENSION);
+}
+
+/**
+ * Opens a backup. A single-page one replaces the open page and can be undone. For a
+ * whole-diary one the user chooses: replace this diary with it, or merge the two.
+ */
+export const openCopy = async (engine: Engine, file: File) =>
+  openCopyText(engine, await file.text());
+
+/** Opens the file picker to open a backup of the diary. */
+export function pickCopy() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = `${FILE_EXTENSION},application/json`;
+  input.onchange = () => {
+    const file = input.files?.[0];
+    const { engine } = useUI.getState();
+    if (file && engine) void openCopy(engine, file);
+  };
+  input.click();
+}
+
+/** Opens a backup's text (an encrypted one, once opened, comes here again). */
+export async function openCopyText(engine: Engine, text: string) {
+  const { showToast } = useUI.getState();
+  const backup = parseBackup(text);
   if (!backup) {
     showToast(t().toasts.notABackup);
+    return;
+  }
+  if (backup.kind === 'sealed') {
+    // This diary's (or one opened here): at once. Otherwise its password is asked for.
+    const opened = await openSealedCopy(backup.sealed).catch(() => null);
+    if (opened !== null) return openCopyText(engine, opened);
+    useUI.getState().setCopyPrivacy({ kind: 'open', backup: backup.sealed });
     return;
   }
   const data = backup.kind === 'page' ? backup.page : backup.diary;
@@ -42,8 +138,83 @@ export async function openCopy(engine: Engine, diary: Diary, file: File) {
     showToast(t().toasts.copyOpened);
     return;
   }
-  const { pages, desk } = await diary.merge(backup.diary);
-  showToast(t().toasts.merged(pages, desk));
+  // With only the welcome page here, the copy simply takes its place (the sample isn't kept
+  // nor merged, and it leaves no deletions for the cloud). Its window, if up, closes.
+  const { diary, setWelcomeOpen, setTour } = useUI.getState();
+  if (diary && (await onlyWelcome(getDB()))) {
+    await diary.replace({ pages: [], assets: [], fonts: [] }, false);
+    await diary.replace(backup.diary);
+    setWelcomeOpen(false);
+    showToast(t().welcome.dialog.copyOpened, {
+      label: t().welcome.dialog.showTour,
+      run: () => setTour(0),
+    });
+    return;
+  }
+  // A whole diary: ask whether it replaces this one or merges with it (OpenCopyDialog).
+  useUI.getState().setPendingCopy(backup.diary);
+}
+
+/** Now, for file names: YYYY-MM-DD-HHMMSS (local time). */
+function moment(date = new Date()): string {
+  const two = (n: number) => String(n).padStart(2, '0');
+  const day = `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}`;
+  return `${day}-${two(date.getHours())}${two(date.getMinutes())}${two(date.getSeconds())}`;
+}
+
+/**
+ * Keeps a copy of the whole diary before it is replaced: in the backups folder (desktop)
+ * or downloaded (web). Returns where, to tell the user; throws if it couldn't be kept.
+ */
+export async function keepCopyOfDiary(diary: Diary): Promise<string> {
+  const texts = t().openCopy;
+  const text = serializeDiary(await diary.dump());
+  const contents = sealCopy(text) ?? text;
+  if (isDesktop()) {
+    return call<string>('write_copy_before_opening', { moment: moment(), contents });
+  }
+  const name = `diaryo-${texts.fileLabel}-${moment()}${FILE_EXTENSION}`;
+  downloadBlob(new Blob([contents], { type: 'application/json' }), name);
+  return texts.downloads;
+}
+
+/**
+ * Keeps the locked diary as it is, encrypted, in a file (`lockedDiaryFile`): in the
+ * backups folder (desktop) or downloaded (web). Throws if it couldn't be kept.
+ */
+export async function keepLockedDiary(): Promise<void> {
+  const contents = await lockedDiaryFile();
+  if (isDesktop()) {
+    await call<string>('write_copy_before_opening', { moment: moment(), contents });
+    return;
+  }
+  const name = `diaryo-${t().openCopy.fileLabel}-${moment()}${FILE_EXTENSION}`;
+  downloadBlob(new Blob([contents], { type: 'application/json' }), name);
+}
+
+/**
+ * Replaces the diary with a backup. First the current one is kept: in the backups folder
+ * (desktop) or downloaded (web). If that can't be done, nothing is replaced.
+ */
+export async function replaceWithCopy(diary: Diary, copy: DiaryDump) {
+  const { showToast } = useUI.getState();
+  const texts = t().openCopy;
+  let where: string;
+  try {
+    where = await keepCopyOfDiary(diary);
+  } catch (error) {
+    console.error("Couldn't back up the diary before replacing it", error);
+    showToast(texts.beforeFailed);
+    return;
+  }
+  await diary.replace(copy);
+  showToast(texts.replaced(where));
+}
+
+/** Merges a backup with the diary: whatever is missing, and the most recent of each page. */
+export async function mergeWithCopy(diary: Diary, copy: DiaryDump) {
+  const { pages, desk } = await diary.merge(copy);
+  useUI.getState().showToast(t().toasts.merged(pages, desk));
 }
 
 export async function exportPng(engine: Engine) {
@@ -52,5 +223,5 @@ export async function exportPng(engine: Engine) {
     useUI.getState().showToast(t().toasts.emptyPage);
     return;
   }
-  downloadBlob(blob, datedName() + '.png');
+  await saveFile(blob, datedName() + '.png');
 }

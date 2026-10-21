@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_ZOOM,
   MIN_ZOOM,
+  minZoomFor,
   cameraAt,
   cameraCenter,
   fitCamera,
@@ -37,6 +38,17 @@ describe('camera', () => {
     const cam: Camera = { x: 0, y: 0, zoom: 1 };
     expect(zoomAt(cam, { x: 0, y: 0 }, 1e6).zoom).toBe(MAX_ZOOM);
     expect(zoomAt(cam, { x: 0, y: 0 }, 1e-6).zoom).toBe(MIN_ZOOM);
+  });
+
+  it('zooming out stops when everything takes a quarter of the screen', () => {
+    const viewport = { width: 1000, height: 800 };
+    // 2000 wide just fits at 0.5: it may shrink to a quarter of that.
+    expect(minZoomFor({ minX: 0, minY: 0, maxX: 2000, maxY: 1000 }, viewport)).toBe(0.125);
+    // A huge desk: down to the general limit, never beyond.
+    expect(minZoomFor({ minX: 0, minY: 0, maxX: 1e7, maxY: 1e7 }, viewport)).toBe(MIN_ZOOM);
+    // Very little: 25% is always allowed.
+    expect(minZoomFor({ minX: 0, minY: 0, maxX: 10, maxY: 10 }, viewport)).toBe(0.25);
+    expect(minZoomFor(null, viewport)).toBe(MIN_ZOOM);
   });
 
   it('panBy moves the world along with the pointer', () => {

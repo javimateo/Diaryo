@@ -16,6 +16,24 @@ export interface Camera {
 
 export const clampZoom = (zoom: number) => clamp(zoom, MIN_ZOOM, MAX_ZOOM);
 
+/** Zooming out, what fits the screen may shrink to this share (room to arrange around it). */
+const ZOOM_OUT_ROOM = 0.25;
+/** Zooming out down to this is always allowed, however little there is. */
+const ZOOM_OUT_ALWAYS = 0.25;
+
+/**
+ * How far out one may zoom: until `bounds` (everything there is) takes a quarter of what
+ * it takes when it just fits the screen. Further out there is only empty space and the book
+ * gets lost. With nothing, the general limit.
+ */
+export function minZoomFor(bounds: Bounds | null, viewport: Size): number {
+  if (!bounds || viewport.width <= 0 || viewport.height <= 0) return MIN_ZOOM;
+  const width = Math.max(bounds.maxX - bounds.minX, 1);
+  const height = Math.max(bounds.maxY - bounds.minY, 1);
+  const fit = Math.min(viewport.width / width, viewport.height / height);
+  return clamp(fit * ZOOM_OUT_ROOM, MIN_ZOOM, ZOOM_OUT_ALWAYS);
+}
+
 export function screenToWorld(cam: Camera, p: Vec): Vec {
   return { x: p.x / cam.zoom + cam.x, y: p.y / cam.zoom + cam.y };
 }

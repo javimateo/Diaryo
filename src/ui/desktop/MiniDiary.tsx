@@ -1,5 +1,8 @@
+import { LockKeyhole } from 'lucide-react';
 import { forwardRef, useEffect, useRef, useState, type PointerEvent } from 'react';
-import { readToday, TODAY_KEY, type TodayCard } from '../../desktop/saved';
+import { onSharedToday, readToday, TODAY_KEY, type TodayCard } from '../../desktop/saved';
+import { useLock } from '../../cloud/lockState';
+import { useUI } from '../../store/ui';
 import { call, emit } from '../../desktop/tauri';
 import { asRecord, readJSON, writeJSON } from '../../lib/saved';
 import { useT } from '../useT';
@@ -37,7 +40,18 @@ async function openToday() {
 export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desktop: boolean }>(
   function MiniDiary({ onChange, desktop }, ref) {
     const t = useT();
-    const [card, setCard] = useState<TodayCard | null>(readToday);
+    const [saved, setCard] = useState<TodayCard | null>(readToday);
+    // With the whole diary encrypted: today's page in memory while it is open; locked, the
+    // cover or nothing, as the settings say.
+    const [shared, setShared] = useState<TodayCard | null>(null);
+    const sealed = useLock((s) => s.level === 'all');
+    const locked = useLock((s) => s.status === 'locked');
+    const hideLocked = useUI((s) => s.settings.miniLocked === 'hide');
+    useEffect(() => onSharedToday(setShared), []);
+    const card =
+      sealed && !locked && shared && saved && shared.day === saved.day
+        ? { ...shared, cover: saved.cover }
+        : saved;
     const [place, setPlace] = useState<Place>(readPlace);
     const drag = useRef<{ x: number; y: number; from: Place; moved: boolean } | null>(null);
 
@@ -52,7 +66,7 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
     // Wherever it is (and when the image loads), it takes the mouse there.
     useEffect(onChange, [onChange, card, place]);
 
-    if (!card) return null;
+    if (!card || (sealed && locked && hideLocked)) return null;
 
     const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
       if (e.button !== 0) return;
@@ -86,6 +100,7 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
       <div
         ref={ref}
         className="mini-diary"
+        data-closed={!card.image || undefined}
         style={{ right: place.right, top: place.top }}
         role="button"
         aria-label={t.miniDiary.openLabel}
@@ -94,11 +109,36 @@ export const MiniDiary = forwardRef<HTMLDivElement, { onChange: () => void; desk
         onPointerUp={onPointerUp}
         onPointerCancel={() => (drag.current = null)}
       >
-        <div className="mini-diary-book" style={{ background: card.cover }}>
-          <img src={card.image} alt="" draggable={false} onLoad={onChange} />
-        </div>
+        {card.image ? (
+          <div className="mini-diary-book" style={{ background: card.cover }}>
+            <img src={card.image} alt="" draggable={false} onLoad={onChange} />
+          </div>
+        ) : card.coverImage ? (
+          // The diary is encrypted and locked: its cover, closed, as it was dressed up.
+          <img
+            className="mini-diary-cover"
+            src={card.coverImage}
+            alt=""
+            draggable={false}
+            onLoad={onChange}
+          />
+        ) : (
+          <div className="mini-diary-book" style={{ background: card.cover }}>
+            <div className="mini-diary-closed">
+              <LockKeyhole size={22} strokeWidth={1.75} aria-hidden />
+            </div>
+          </div>
+        )}
         <div className="mini-diary-meta">
-          <span className="mini-diary-chip">{tasks}</span>
+          <span className="mini-diary-chip">
+            {card.image ? (
+              tasks
+            ) : (
+              <>
+                <LockKeyhole size={12} strokeWidth={2} aria-hidden /> {t.miniDiary.locked}
+              </>
+            )}
+          </span>
           <span className="mini-diary-chip">{t.miniDiary.open}</span>
         </div>
       </div>

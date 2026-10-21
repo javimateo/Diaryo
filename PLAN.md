@@ -317,7 +317,7 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
           `app.diaryo.javiermateo.dev`), puerto 80, HTTPS de Coolify y despliegue al
           subir a `main`. La web se vuelve a desplegar al publicar cada versión (lee la
           última Release al compilarse).
-    - [ ] **H8. Visitas sin cookies**: Umami como servicio de Coolify; visitas y
+    - [x] **H8. Visitas sin cookies**: Umami como servicio de Coolify; visitas y
           descargas (como evento), sin rastrear a nadie. La web ya está preparada
           (`UMAMI_SRC` y `UMAMI_ID` al compilar; eventos `download`, `open-web-app` y
           `copy-download-link`); falta montar Umami en Coolify (docs/deployment.md).
@@ -339,6 +339,540 @@ Elemento → tipo (trazo|texto|nota|flecha|forma|imagen), posición, tamaño,
             explicar en la web cómo pasar el aviso de SmartScreen.
   - [ ] **I. Enseñar a usarla**: recorrido la primera vez que se abre (pasos cortos con
         animaciones) y vídeos de cada función para la web, hechos con el mismo código.
+        El recorrido (sin animaciones) y la página de ejemplo, hechos en 12-G.
+    - [x] **Animaciones del recorrido** (octubre de 2026), con maqueta: cada burbuja lleva
+          una escena pequeña que dibuja el propio motor, con los elementos de la página de
+          ejemplo, sobre el libro del usuario y en su idioma: se escribe y se subraya un
+          título, se dibuja un corazón y cae un post-it; la hoja se pasa sola; un post-it
+          se queda en la mesa al pasarla; una tarea toma fecha («mañana 10:00») y otra se
+          marca; la paleta busca «pan»; el libro se prueba otras tapas, papeles y mesas y
+          vuelve al suyo; en Windows, Ctrl Alt D y el diario sobre otro programa. Se ve
+          una vez (2–3 s) y se queda quieta, con ↻ para verla otra vez; «Siguiente» no
+          espera. Con «reducir movimiento», solo la imagen final. Las escenas son «clips»
+          (`engine/clips.ts`, `ui/ClipView.tsx`, `diary/tourScenes.ts`), que servirán
+          también para la web.
+    - [x] **Ventana de bienvenida** (octubre de 2026), con maqueta (propuesta C, tras
+          descartar una primera versión con demasiado texto): la primera vez, sobre la
+          página de ejemplo, la portada cerrada (las tapas del usuario con «diaryo» en
+          tiza) y al lado «Tu diario te espera», «Abrirlo» (y el recorrido), «Tengo cuenta»
+          (la ventana de la cuenta, donde también se crea; si se cierra sin entrar, vuelve),
+          «Abrir una copia», el idioma (la página de ejemplo se escribe otra vez en él) y
+          «Sin cuenta, todo se queda en este dispositivo». En el móvil, la portada arriba.
+          Quien entra o abre una copia ve después «¿Quieres ver cómo se usa?».
+          Antes, un arreglo de la nube: la página de ejemplo sin tocar no cuenta como
+          diario en la primera sincronización (no sube nunca y deja sitio al de la nube sin
+          preguntar), y al abrir una copia se cambia por ella sin guardarla ni fusionarla.
+    - [x] **Escenas de la web** (octubre de 2026), con maqueta: en «Funciones», seis
+          tarjetas las dibuja el propio motor, en bucle y solo mientras se ven: dibujar y
+          conectar (un círculo, un post-it y una flecha), pasar la página, a tu gusto
+          (otras tapas, papeles y mesas), tareas y citas («mañana 10:00»), tu portada (la
+          tapa se decora) y privado (el post-it se cifra y queda con su candado). En los dos
+          idiomas, claro u oscuro como la web. Se cargan al acercarse, también en el móvil
+          (unos 200 KB comprimidos la primera vez: el motor y React). El diario flotante,
+          la mesa en el escritorio, mapa y búsqueda, y la nube siguen en CSS.
+          Descartado: «Verlo» en cada línea de la Ayuda (repetía lo que ya enseñan la
+          portada y el recorrido).
+    - [ ] **Grabar las escenas en vídeo** (WebM, para el README y las redes): una página de
+          desarrollo que las graba desde el motor.
+
+- [ ] **12. Hacia la versión 1.0.0**. Primero los arreglos y lo que no cambia el modelo
+      de datos; lo grande (nube, macOS, recordatorios) con su propuesta antes. Orden:
+      A, B (instalador), C (nube), D (privacidad, sobre la nube), E (macOS), F (tareas
+      y citas), G (marca y diseño).
+  - [x] **A. Arreglos**
+    - [x] **Contenedores dibujados a mano**: no era un fallo: el contenedor, dibujado
+          después, quedaba encima de lo que rodea y su relleno lo tapaba. Ahora, al
+          ponerle relleno a una figura o trazo cerrado, pasa detrás de lo que tiene dentro
+          (`fillBehind`), en el mismo paso de deshacer.
+    - [x] **Límite de zoom**: alejarse se para cuando el libro y todo lo que hay en la
+          mesa ocupan una cuarta parte de lo que ocupan encuadrados (`minZoomFor`), sin
+          impedir nunca bajar al 25 %; igual con la rueda, los botones y el pellizco.
+    - [x] **La mesa salta al frente un momento**: al moverse por el explorador de
+          archivos (sobre todo cuando tarda, como al cambiar de disco), los post-its del
+          escritorio aparecían un segundo por encima de las ventanas. El explorador
+          reordena un instante las ventanas del escritorio al recargar y
+          `follow_show_desktop` lo tomaba por `Win+D`. Ahora solo sube la mesa si el
+          escritorio además es la ventana activa y dura dos comprobaciones (~200 ms).
+    - [x] **Abrir una copia mezclaba los diarios**: abrir una copia del diario entero la
+          combinaba siempre con el actual (páginas y mesa sumadas). Ahora pregunta:
+          «Reemplazar mi diario por esta copia» (antes guarda una copia del actual: en la
+          carpeta de copias en el escritorio, descargada en la web) o «Combinar con mi
+          diario» (lo de antes). Test del viaje de la mesa por el archivo `.diaryo`.
+  - [ ] **B. Instalador**
+    - [x] **Licencia en el instalador**: el instalador muestra la licencia (PolyForm
+          Noncommercial) y hay que aceptarla (`bundle.licenseFile`).
+    - [ ] **Firma de código** (aplazada): quitaría el aviso de SmartScreen solo con el
+          tiempo (la reputación se gana con descargas, también firmando). Opciones
+          revisadas (septiembre de 2026):
+      - SignPath Foundation: no, exige una licencia aprobada por la OSI.
+      - Azure Artifact Signing (~10 €/mes): particulares solo de EE. UU. y Canadá; en la
+        UE, solo organizaciones (serviría si hubiera una empresa o autónomo).
+      - Un certificado de una autoridad (Certum, Sectigo…, ~100–300 €/año, con token o
+        HSM en la nube): posible para particulares, sin reputación inmediata.
+      - Mientras tanto, la web explica cómo pasar el aviso.
+  - [ ] **C. Nube (inicio de sesión)**: sincronizar el diario entre dispositivos
+        (escritorio, web, móvil vía web). La nube es opcional: sin cuenta y sin conexión
+        todo sigue funcionando; el diario local sigue siendo el que se usa y la nube es
+        su copia sincronizada. Decidido (octubre de 2026):
+    - **Servidor**: PocketBase en el VPS (Coolify), con sus migraciones y ganchos en el
+      repositorio (imagen propia), para que el esquema y las reglas sean reproducibles.
+    - **Acceso**: email y contraseña (con verificación y recuperación) y Google.
+    - **Cifrado de extremo a extremo**: todo se cifra en el dispositivo (AES-GCM) con
+      una clave del diario; esa clave va envuelta con una **contraseña del diario**
+      (distinta de la de la cuenta: con Google no hay contraseña) y con una **clave de
+      recuperación** que se imprime o se guarda. El servidor solo ve datos ilegibles.
+      Sin contraseña ni clave de recuperación, la nube no se recupera.
+    - **Sincronización por elemento**: cada elemento, página e imagen es un registro
+      cifrado con su fecha de cambio; gana el cambio más reciente del mismo elemento; lo
+      borrado deja una marca. Identificadores opacos (no dejan ver qué es cada cosa).
+    - **Espacio**: 50 MB gratis por cuenta (eran 100 MB hasta octubre de 2026; las cuentas ya creadas los conservan); un plan de pago con más espacio, más
+      adelante (necesita alta como autónomo y un servicio de pagos que gestione el IVA,
+      como Paddle o Lemon Squeezy).
+    - **Primer inicio de sesión** con diario local y diario en la nube: el diálogo de
+      reemplazar o combinar.
+    - Fases (cada una en su rama):
+      - [x] **C1. Diseño y servidor**: `docs/cloud.md` (cifrado, esquema y protocolo
+            de sincronización); PocketBase (`cloud/`: migraciones y ganchos;
+            `deploy/cloud.Dockerfile`) con colecciones `vaults` e `items`, reglas (cada
+            uno solo ve lo suyo), cuota de 100 MB y «gana el cambio más reciente».
+            `cloud/check.mjs` comprueba todo eso contra un servidor. Montado en
+            Coolify (`cloud.diaryo.javiermateo.dev`, correo por Resend).
+      - [x] **C2. Cuenta**: «Cuenta y nube» en Ajustes y el diálogo para entrar o
+            crear la cuenta (email y contraseña, o Google: ventana en la web, navegador
+            en el escritorio); salir; confirmar el email y recuperar la contraseña con
+            enlaces que abren la web app; la sesión dura 30 días desde el último uso.
+            Google está en modo de prueba hasta la C7 (política de privacidad).
+      - [x] **C3. Cifrado**: contraseña del diario (distinta de la de la cuenta), clave
+            de recuperación de 12 bloques (descargar, imprimir o copiar; se muestra una
+            vez), desbloqueo en cada dispositivo (las llaves quedan en IndexedDB, no
+            exportables), recuperar con la clave, cambiar la contraseña y crear otra
+            clave; en Ajustes y al entrar en la cuenta. `src/cloud/crypto.ts`, con tests.
+      - [ ] **Más adelante: desbloquear con biometría** (Windows Hello, Touch ID, huella
+            del móvil) en vez de escribir la contraseña en cada dispositivo nuevo, con
+            WebAuthn PRF (una passkey que además da una llave para envolver el secreto).
+      - [x] **C4. Sincronización** (con las imágenes y las fuentes): cada página,
+            elemento, imagen y fuente es un registro cifrado; la base local anota cada
+            cambio en la misma operación; subir y bajar, marcas de borrado, gana el más
+            reciente, sin conexión, aviso en tiempo real entre dispositivos y recarga de
+            la página abierta. Modo automático (por defecto), manual o manual con
+            contraseña (no guarda la llave). Primera vez con diario en los dos lados:
+            combinar o usar el de la nube guardando el local en un archivo. Espacio
+            lleno: se para la subida, el diario sigue y lo pendiente sube al haber
+            sitio. La vista y las miniaturas no se suben. Con tests (servidor falso y
+            dos dispositivos).
+      - [x] **C5. Imágenes grandes**: al insertarlas, 2048 px como mucho y WebP (salvo
+            las ligeras, los GIF y los SVG); las ya guardadas se reducen una vez antes de
+            subirlas. Un registro que el servidor rechaza no frena el resto. Las
+            imágenes que ya no usa nada se limpian (aquí y en la nube; deshacer las
+            recupera) y los archivos se cifran como bytes (un 25 % menos de espacio).
+      - [x] **C6. Espacio**: aviso al 80 % y al 95 % (una vez cada uno) y, en Ajustes,
+            cuánto queda, con la barra en ámbar.
+      - [ ] **Revisión de la nube** antes de abrirla: casos límite y pulido.
+        - [x] Revisión del código y pruebas (octubre de 2026): cambios guardados tarde
+              que se perdían al bajar, bucle entre pestañas, cortar a quien escribe,
+              elementos huérfanos de páginas borradas, relojes desajustados, sesión
+              caducada, cerrar sesión con cambios pendientes, varias pestañas y diario
+              grande. Todo en docs/cloud.md («Edge cases»), con tests.
+        - [x] Pruebas en la app de escritorio, con dos dispositivos reales y con los
+              correos reales.
+        - [x] Cambiar de cuenta (octubre de 2026): al entrar con un diario en el
+              dispositivo se pregunta siempre (subirlo o empezar uno nuevo si la cuenta
+              está vacía; combinar o usar el de la nube si no), y al cerrar sesión, si
+              dejar el diario o quitarlo del dispositivo.
+      - [x] **C7. RGPD y web**: borrar la cuenta, exportar los datos, política de
+            privacidad y condiciones; la web explica la nube (opcional, cifrada).
+        - [x] En Ajustes → Cuenta y nube: «Tus datos» (un JSON con lo que el servidor
+              sabe de la cuenta; el diario legible es «Guardar una copia») y «Borrar la
+              cuenta» (escribiendo el email; se borran la cuenta, la bóveda y los
+              elementos; el diario local se queda). Con Google ya no se guardan el nombre
+              ni la foto (migración `1790900002_privacy.js`).
+        - [x] Política de privacidad y condiciones en la web (`/privacidad`,
+              `/condiciones`, `/en/privacy`, `/en/terms`), enlazadas al entrar en la
+              cuenta y en Ajustes. Contacto: `privacidad@javiermateo.dev`.
+        - [x] La web explica la nube: sección «Nube», textos que decían «sin nube» y
+              preguntas nuevas.
+        - [x] Tras publicar: el reenvío de `privacidad@javiermateo.dev` (Cloudflare
+              Email Routing) y la app de Google publicada (`docs/deployment.md`).
+              Probado: entrar con Google, descargar los datos y borrar la cuenta.
+      - [ ] **Revisión legal** de la política de privacidad y las condiciones, por
+            alguien que sepa: sobre todo si la LSSI pide el domicilio o el NIF del
+            responsable (ahora solo están el nombre y el email).
+      - [ ] **C8. Pagos** (más adelante).
+  - [x] **D. Privacidad del diario**, después de la nube: el cifrado y la contraseña
+        dependen de cómo se sincronice. Decidido (octubre de 2026):
+    - **Una sola contraseña del diario**, la misma en el dispositivo y en la nube, con
+      la misma clave de recuperación (también sin cuenta: se muestra siempre al ponerla).
+      Lo local se cifra con una llave local aleatoria, envuelta con el secreto del
+      diario: cambiar de cuenta solo la vuelve a envolver, nunca se recifra todo. Sin
+      cuenta, la bóveda vive en el dispositivo y, al activar la nube, se sube esa.
+    - **Cifrar es opcional y por niveles**: nada; solo ciertos post-its o páginas
+      (privados, p. ej. contraseñas en un post-it de la mesa); o todo el diario, que
+      pide la contraseña al abrir. Solo cifrado de verdad (sin candado que no cifre).
+    - **Lo que queda en claro**: los ids y el día de cada página (son índices); el
+      contenido, las miniaturas, las imágenes y las fuentes van cifrados, con un filtro
+      de Dexie que cifra dentro de las transacciones (síncrono: WebCrypto no puede ir
+      dentro). La búsqueda lee los textos descifrados, como antes.
+    - **Olvidar la contraseña y la clave**: no hay forma de abrirlo, tampoco en la nube
+      (va cifrada con el mismo secreto); sigue en los dispositivos donde está abierto. La
+      pantalla de bloqueo ofrece borrarlo de este dispositivo y empezar uno nuevo.
+    - Fases (cada una en su rama), en este orden: D1, D4, D2, D3.
+    - [x] **D1. Contraseña y cifrado local** (`docs/privacy.md`): un filtro de Dexie
+          cifra cada fila con XChaCha20 (`@noble/ciphers`, síncrono para ir dentro de las
+          transacciones; solo quedan en claro los índices); activarlo cifra lo que hay y
+          quitarlo lo descifra, por tandas y reanudable; pantalla de bloqueo (con la
+          clave de recuperación y «borrar el diario» si se olvidan las dos); Ajustes →
+          Privacidad y «Bloquear el diario» en la paleta; la bóveda local sigue a la de
+          la nube; las llaves de la nube ya no quedan en el disco; el secreto pasa entre
+          pestañas y a la mesa por `BroadcastChannel`; copias `.diaryo` cifradas (las
+          diarias, y «Guardar una copia» pregunta cifrada o legible); el mini diario
+          solo enseña la portada. Tests: los de `storage`, el diario y la sincronización
+          otra vez con todo cifrado (proyecto `sealed` de Vitest) y `lock.test.ts`.
+          Probado en la app de escritorio y contra un PocketBase local (dos dispositivos).
+    - [x] **D4. Post-its privados**: Ajustes → Privacidad pasa a tres niveles (nada,
+          solo lo privado, todo el diario). Un post-it privado (menú contextual o paleta)
+          guarda su texto y su enlace cifrados aparte con una llave del secreto del
+          diario, la misma en todos los dispositivos. **Cada uno se abre por separado**:
+          doble clic o «Mostrar este post-it» pide la contraseña y enseña solo ese; abrir
+          otro la vuelve a pedir. «Mostrar todo lo privado» es un atajo. El que está a la
+          vista lleva un candado abierto en la esquina: pulsarlo lo vuelve a bloquear; y
+          cada uno se oculta solo a los 30 s, al minuto (por defecto) o a los 5 min de
+          abrirlo (mientras se edita, espera); además, todos al esconder el diario
+          (minimizarlo, otra pestaña, o a la bandeja en el escritorio), con un
+          interruptor. En la mesa del escritorio, el doble clic pide la contraseña allí
+          mismo, con el diario escondido.
+          **Oculto, nada lo cambia**: cuenta como bloqueado (no se selecciona, ni con su
+          grupo, ni se mueve o borra, ni con el borrador ni seleccionando todo).
+          **Borrar un privado siempre pide la contraseña**, a la vista u oculto (también
+          cortar o borrar la página que lo tiene; el borrador no lo toca). Copiar uno a la
+          vista copia su texto legible (decidido así). Viaja a la nube y a las copias `.diaryo` (también las legibles) con el
+          texto cifrado. Las miniaturas y el mini diario siempre lo dibujan con candado;
+          la búsqueda solo encuentra los que están a la vista. Al quitar la contraseña,
+          se elige: dejarlos como post-its normales o borrarlos. Con la contraseña de
+          otra cuenta, su texto pasa a la llave nueva (si están ocultos, pide mostrarlos
+          antes). Tests en `sealing.test.ts`, `lock.test.ts`, `sync.test.ts` y
+          `privateNotes.test.ts`.
+      - [ ] Más adelante: **páginas privadas** (índice, mapa, miniaturas, pasar página).
+    - [x] **D2. Qué se ve en el escritorio** (`docs/privacy.md`, «The Windows desktop»):
+          con «Todo el diario», la mesa queda fuera del cifrado por defecto y se ve (y se
+          usa) con el diario bloqueado: sus post-its normales, sus imágenes y las fuentes
+          se guardan legibles; sus privados siguen cifrados. En Ajustes → Escritorio se
+          elige «Visible» u «Oculta hasta abrir». El mini diario, con el diario abierto,
+          recibe la página de hoy en memoria (nunca en el disco); bloqueado, la portada u
+          oculto. Para cualquier nivel: los privados en el escritorio «Con candado» o «No
+          se ven». La llave llega a la mesa por `BroadcastChannel` (probado en WebView2) y
+          abrir un privado desde la mesa ya está hecho en D4.
+    - [x] **D3. Ordenadores compartidos** (`docs/privacy.md`): con «Todo el diario»,
+          «Bloquear solo» tras 5, 15 o 60 min sin usarlo (por defecto, nunca) y
+          «Bloquear al esconderlo» (otra pestaña, minimizar o la bandeja), como «Bloquear
+          ahora». Al cerrar sesión, una tercera opción: «Dejarlo cifrado y bloqueado» (si
+          no lo estaba, se cifra con la contraseña del diario de la nube). En la web,
+          «Mantener la sesión en este navegador»: apagado, la sesión vive en el
+          `sessionStorage` de la pestaña y las llaves de la nube solo en memoria.
+    - [x] **No quedarse atrapado en la pantalla de contraseña**: cuando se pide la
+          contraseña del diario (al abrir la app, al desbloquear…), poder también
+          **cerrar sesión o cambiar de cuenta** y **empezar otro diario** en ese
+          dispositivo (guardando antes, cifrado, el que hay). Si no, quien olvide la
+          contraseña, o encuentre un diario que no es suyo, no puede hacer nada con la
+          app.
+          Hecho (octubre de 2026), con maqueta: en la tarjeta de la contraseña, «Otras
+          opciones»: **cerrar sesión** (con cuenta; el diario se queda aquí, bloqueado),
+          **empezar otro diario** (antes se guarda tal cual, cifrado: en Windows en la
+          carpeta de las copias, en la web se descarga; si no se puede guardar, no se
+          borra nada) y **borrar el diario de este dispositivo** (lo de antes). El archivo
+          lleva las filas como estaban guardadas y se abre con «Abrir una copia» y su
+          contraseña o su clave de recuperación. `readRawTables` y `lockedDiaryFile`,
+          con un test de ida y vuelta.
+  - [ ] **E. macOS**: Tauri compila para macOS casi sin cambios; lo que es solo de
+        Windows (la mesa en el escritorio, `windows-sys`) necesita su versión o quedarse
+        fuera al principio. Para distribuirlo hace falta la cuenta de desarrollador de
+        Apple (99 $/año) para firmar y notarizar; si no, macOS lo bloquea. Compilar en
+        GitHub Actions (`macos-latest`) y un segundo `latest.json` para las
+        actualizaciones.
+  - [x] **F. Tareas y citas**: tareas con fecha y hora, citas (médico…), vista de
+        calendario, recordatorios (notificación del sistema en el escritorio; por correo
+        necesitaría la nube de C) e importar/exportar calendarios (.ics, Google Calendar).
+        Decidido (octubre de 2026), por partes:
+    - Decidido con maquetas (octubre de 2026): la fecha se escribe en el texto de cada
+      línea tras una `@` («@mañana 10», «@vie 17:30», «@15/10 10:00-11:30»), con un
+      selector que sale al escribir la `@`. Una línea con casilla y fecha es una tarea;
+      sin casilla, una cita. En el lienzo se ve como una etiqueta relativa («mañana
+      10:00»). «Próximo» va en un botón arriba a la derecha, junto a Buscar. Los avisos
+      de post-its privados o con el diario bloqueado salen sin texto. Sin hora, el aviso
+      es a las 9:00; avisar antes, un ajuste general; en el .ics, 1 h si no hay hora de
+      fin.
+    - [x] **F1. Fecha y hora** en tareas y post-its (citas), guardadas en el propio
+          elemento (así se sincronizan y cifran como todo). La fecha va en el texto tras
+          una `@`; al escribirla sale un selector (lo entendido, un mes y unas horas; Tab o
+          Enter la ponen, Esc lo aparta) y al terminar de editar se escribe completa
+          («@mañana 10» → «@13 oct 2026 10:00»: mañana no cambia de día, y en los dos
+          idiomas se lee igual). En el lienzo, una etiqueta con reloj (o calendario sin
+          hora): terracota lo que viene, carmesí la tarea vencida, en gris lo hecho o
+          pasado; ocupa su sitio en la línea y, al editar, se ve el texto completo.
+          `lib/when.ts` (con tests; el lector de días de la búsqueda pasa aquí y entiende
+          también «vie», «lun»…).
+    - [x] **F2. Vista «Próximo»**: lo pendiente con fecha de todo el diario, y el
+          calendario marca los días con citas. El índice tiene abajo dos pestañas,
+          «Páginas | Tareas» (recuerda la última); un botón junto a Buscar (con cuántas
+          están vencidas o son de hoy) lo abre en «Tareas»: vencido, hoy, mañana, esta
+          semana y más adelante, cada una con su hora y dónde está. La casilla
+          marca la tarea ahí mismo, en cualquier página (en la abierta o la mesa se puede
+          deshacer); la fila lleva hasta ella. Salen las tareas sin hacer y las citas que no
+          han pasado. En el calendario del índice, un punto terracota arriba en los días con
+          citas o tareas (el de las páginas, abajo, pasa a gris); también «Próximo» en
+          Ctrl K. El índice ya no lleva el botón de aspecto del diario (está en Ajustes),
+          mide lo que su contenido (560 px como mucho) y su lista se desliza con la rueda
+          (antes se la quedaba el lienzo). De paso, arreglado «Guardando…» que a veces se
+          quedaba fijo. Se vuelve a leer al guardar y cuando llegan cambios de la nube, de otra
+          pestaña o de la mesa del escritorio. `diary/agenda.ts`, con tests.
+    - [x] **F3. Recordatorios en el escritorio**: notificación de Windows a la hora,
+          aunque el diario esté oculto. Ajustes → Escritorio → «Recordatorios»: encendido
+          por defecto y cuándo (a la hora, 10 o 30 min, 1 h o 1 día antes); sin hora, a las
+          9:00. La página manda la lista a Rust (`reminders.rs`, solo en memoria) y un hilo
+          mira el reloj cada 20 s; al pulsar el aviso se abre el diario flotante en lo que
+          avisa. De un post-it privado o con el diario bloqueado, sin el texto. Al abrir
+          diaryo, un aviso con los que se pasaron con la app cerrada (del último día). Con
+          `tauri-winrt-notification` (el plugin de Tauri no sabe en Windows si se pulsa).
+          Rust 1.82 como mínimo.
+    - [x] **F4. Exportar a calendario** (.ics): «Añadir a mi calendario». En «Próximo»,
+          «Añadir todo» (lo pendiente, sin los post-its privados) y el icono de cada fila
+          (al pasar el ratón; en pantallas táctiles, siempre); con clic derecho, las fechas
+          de lo seleccionado (sin las tareas hechas). Cada línea es un evento (todo el día
+          sin hora, una hora sin fin) con un identificador fijo; en el escritorio se abre en
+          la app de calendario y en la web se descarga. `diary/ics.ts`, con tests. De paso,
+          el botón «Próximo» vuelve a abrir su propio panel, solo con la lista (el
+          calendario está en el índice).
+    - Aparcado: recordatorios con la app cerrada en web/móvil (push con servidor; choca
+      con el cifrado) y sincronizar con Google Calendar en las dos direcciones (permiso
+      sensible con verificación de Google; sacaría las citas del cifrado).
+  - [ ] **G. Marca y diseño**, lo último antes de publicar la 1.0.0 (con maqueta antes de
+        cada cambio):
+    - [x] **Marca**: logo, icono, colores y tipografía coherentes en la app, la web y el
+          instalador. Elegida la dirección «Cuaderno» (octubre de 2026) entre tres
+          maquetas: el cuaderno terracota con goma es el símbolo (app, bandeja, favicon,
+          instalador con imagen lateral y de cabecera; a 16 y 24 px, sin el trazo de la
+          tapa); el índigo se retira y el acento es el terracota de la tapa; el nombre en
+          Lora y la interfaz en Nunito Sans, como la web; borrar y los errores pasan a un
+          carmesí que no se confunde con el terracota. Cómo regenerar el icono, en
+          `docs/releasing.md`.
+    - [x] **Nombre** (octubre de 2026): se queda «diaryo», sin descriptor. Hay apps de
+          nombre parecido («Diaro», un «Diaryo» de iPhone), pero son diarios de texto y
+          se distinguen bien de un lienzo infinito.
+      - [x] Antes de la 1.0.0 (hecho, octubre de 2026; se sigue con el dominio actual): buscar «diaryo» como marca registrada en la OEPM y la
+            EUIPO (clase 9, software) y decidir si se quiere un dominio propio.
+    - [x] **Portada del diario editable**: que cada uno personalice la suya (no solo el
+          color). Es también lo que enseña el mini diario cuando el diario está
+          bloqueado (D2). Decidido (octubre de 2026): la portada es un lienzo más, sobre
+          la tapa cerrada, con las herramientas de siempre (fotos, texto, dibujo,
+          post-its); seis plantillas para empezar (en blanco, grabado, dorado, etiqueta,
+          fotos con solo el marco, tiza); se guarda sin cifrar, como la mesa, porque se ve
+          con el diario bloqueado (y lo avisa).
+      - [x] **1. Motor**: el diario cerrado (`closed`): solo la tapa delantera, con su
+            material, color y goma por encima; lo pegado se recorta en su borde; ahí no
+            se pasan páginas.
+      - [x] **2. Diario y guardado**: la página `cover` (como `desk`, fuera del índice,
+            de la búsqueda y del mapa). «Editar la portada» (Ctrl K) cierra el diario;
+            «Listo» vuelve a la página que estaba abierta. La mesa sigue alrededor: lo que
+            sale de la tapa va a la mesa, como con el libro abierto. Su imagen (520 px,
+            WebP) se guarda al cerrarla, al cambiar las tapas y cuando llega de otro
+            dispositivo (cada uno dibuja la suya). **Solo esa imagen queda en claro**
+            (`sealing.ts`); lo pegado en la portada se cifra como todo, porque solo se
+            edita con el diario abierto. Viaja en copias y nube como una página más.
+      - [x] **Antes de la fase 3, herramientas para componer** (decidido en octubre de
+            2026; valen para todo el diario y las plantillas las usarán):
+        - [x] **Guías al colocar**: al mover, los bordes y el centro de la selección se
+              pegan a los de lo que hay alrededor y a los de la página (o la tapa); al
+              redimensionar, el borde que se arrastra (una foto estirada hasta el borde
+              de un post-it se queda en él). Lo de la página solo se pega a la página y
+              lo de la mesa a la mesa. Se ve la línea guía; con Ctrl, sin guías
+              (Alt ya es «desde el centro»). `src/engine/snap.ts`, con tests.
+        - [x] **Texto**: negrita, cursiva y subrayado para todo el texto (textos,
+              post-its y etiquetas de las formas), en el panel («Estilo del texto»: N,
+              K, S) y, al escribir, Ctrl B, Ctrl I y Ctrl U (fuera de la escritura, Ctrl
+              B sigue abriendo el índice). Las herramientas los recuerdan y «copiar
+              estilo» los lleva. El subrayado se dibuja a mano (el lienzo no lo tiene).
+              8 letras libres más: Playfair Display, Merriweather, Dancing Script, Amatic
+              SC, Kalam, Shadows Into Light, Pacifico y Space Mono; con su negrita y
+              cursiva propias donde las hay (también las de antes). La parte web de la
+              app pasa de 2,1 a 5,3 MB.
+        - [x] **Marcos para las fotos**: ninguno, polaroid (con hueco abajo para
+              escribir encima), borde blanco y redondo, y sombra suave aparte. El marco se
+              adapta a la foto: al cambiarlo, la caja cambia de alto (mismo ancho) para que
+              la foto se vea entera y con sus proporciones; si se estira a mano, se recorta,
+              nunca se deforma (también sin marco). `src/engine/frames.ts`, con tests.
+        - [x] **Más tapas y mesas** (texturas generadas, sin imágenes).
+          - [x] **Texturas nítidas con cualquier zoom**: la tapa de cuero se veía a
+                cuadros al acercarse (ruido del tamaño de un píxel, en una imagen fija de
+                256). Ahora cada textura es una fórmula de relieve (alto y tono) con luz
+                desde arriba a la izquierda, y se vuelve a calcular más grande al
+                acercarse (256 → 512 → 1024, la madera hasta 2048), en segundo plano (un
+                Web Worker), de un tamaño en otro. Los detalles demasiado finos para el
+                tamaño se apagan, así no salen rejillas de lejos. Rehechos el cuero, la
+                tela, el cartón, la madera, el corcho y el lino. `noise.ts`, `textures.ts`.
+          - [x] Tapas nuevas de lona y vaquero (con pespunte dorado); mesas nuevas de
+                nogal, mármol, fieltro y hormigón, de día y de noche. Las tapas se eligen
+                con casillas (como la mesa) que muestran su textura. El ante y el papel
+                marmolado se probaron y se quitaron.
+      - [x] **3. Ajustes**: en Aspecto del diario, el grupo «Portada»: cómo está ahora,
+            «Editar la portada» con su aviso y seis plantillas (en blanco, grabado,
+            dorado, etiqueta, fotos y tiza), dibujadas con las tapas elegidas. Una
+            plantilla pone sus elementos en la portada (textos, trazos y post-its con
+            cinta como marcos de foto: todo se cambia después), la abre y avisa con
+            «Deshacer». También en Ctrl K. `src/engine/coverTemplates.ts`, con tests.
+      - [x] **4. Dónde se ve**: la pantalla de bloqueo enseña la portada junto a la
+            tarjeta de la contraseña (encima y más pequeña en el móvil; en ventanas bajas,
+            como el diario flotante, solo la tarjeta). El mini diario del escritorio,
+            bloqueado, es la portada cerrada con «Bloqueado» y «Abrir» (antes, un
+            rectángulo del color de la tapa con un candado, que queda si aún no hay
+            portada). La imagen viaja con la tarjeta de hoy, que ya se guardaba en claro.
+            Con la mesa «Oculta hasta abrir», el mini diario sale igual (solo la mesa
+            espera).
+      - [x] **Que la portada parezca un diario cerrado**: al editarla se veía solo la tapa,
+            plana, como un cartón suelto. Hecho (octubre de 2026), con maqueta (propuesta
+            A, «el canto de las hojas»): bajo la tapa asoman, a la derecha y abajo, el
+            bloque de hojas con una raya por hoja (papel de noche en el tema oscuro) y el
+            borde de la tapa de atrás; el bloque echa la sombra grande. La tapa, lo que se
+            pega en ella, las plantillas y la goma no cambian; el encuadre y la imagen de
+            la portada (pantalla de bloqueo, mini diario, Ajustes) incluyen el canto. Las
+            imágenes ya guardadas se rehacen al cambiar la portada o las tapas.
+      - Descartado (octubre de 2026): **«Abrir con la portada»**, que el diario se
+        abriera girando la tapa al arrancar. Para que se viera bien hacía falta tapar la
+        mitad izquierda del libro mientras la tapa gira y seguir a la cámara; demasiado
+        trabajo y recursos para lo que aporta.
+    - [x] **Diario de demostración**: al empezar, una plantilla o demo que enseñe lo que
+          se puede hacer (dibujo, post-its, conexiones, páginas, la mesa…), fácil de
+          borrar o de empezar en blanco. Hecho (octubre de 2026), con maqueta: un diario
+          nuevo (vacío, la primera vez) empieza con la página de hoy de ejemplo, hecha con
+          elementos normales: título con rotulador, tareas (una con fecha para mañana),
+          un dibujo, un post-it, una flecha que une un texto con un recuadro, un marco de
+          foto, una cita con fecha y Ctrl K; en la mesa, un post-it. Abajo, «Página de
+          ejemplo» con «Empezar en blanco» (lo quita todo, con «Deshacer»); si se escribe
+          algo propio, el aviso se va. Se escribe sin marcar para la nube: un dispositivo
+          nuevo que se une a un diario de la nube no lo sube. Después, un recorrido de
+          seis pasos (siete en Windows) con «Siguiente» y «Saltar» (Esc): herramientas,
+          pasar página, la mesa, tareas y citas, Ctrl K y Ajustes; en Windows, Ctrl Alt D
+          y los avisos. Se vuelve a ver en Ajustes → Ayuda y con Ctrl K.
+          `src/diary/welcome.ts` (con tests) y `src/ui/Tour.tsx`.
+    - [x] **Mejorar la web**: qué es diaryo, capturas o vídeo, descargas, la nube. Hecho
+          (octubre de 2026), con maqueta: en «Funciones», una fila nueva con «nuevo»:
+          tareas y citas (con fecha, «Próximo», avisos y calendario), tu portada y
+          privado de verdad (cifrado en el ordenador, bloqueo y post-its privados), con
+          dibujos en CSS. «A tu gusto» con las tapas y mesas de ahora, la privacidad con
+          el cifrado en el dispositivo, dos preguntas nuevas (avisos y cifrado) y, en
+          «Descargar», la página de ejemplo y el recorrido. En español e inglés.
+    - [x] **Ventana de ajustes**: ha crecido demasiado y es densa; reorganizarla
+          (secciones o pestañas, lo avanzado aparte) para que se encuentre todo. Hecho
+          (octubre de 2026): siete páginas a la izquierda (General, Aspecto del diario,
+          Escritorio solo en Windows, Privacidad, Cuenta y nube, Copias y datos, Ayuda),
+          con grupos dentro; en el móvil, la lista y «atrás». Arrancar y actualizar pasan
+          a General; las copias automáticas, a Copias y datos (con «Abrir una copia»);
+          tus datos y borrar la cuenta, plegados en «Más opciones»; la web, el código y
+          las páginas legales, en Ayuda. Se abre en la última página vista, la nube
+          lleva a «Cuenta y nube» y Ctrl K tiene un comando por página. La contraseña
+          del diario de la nube sigue en «Cuenta y nube» (va con la sincronización):
+          Privacidad lleva hasta allí. Al final de cada página, «Volver a como venía»
+          restablece sus valores (con «Deshacer»); en Privacidad, solo el bloqueo y los
+          post-its privados, nunca lo que se cifra ni la contraseña.
+    - [x] **Botones de arriba a la derecha**: «Buscar» con su nombre y Ctrl K; el menú ≡
+          por grupos (insertar imagen; copias y exportar; el tema, que deja de ser un
+          botón suelto; bloquear el diario; atajos); ajustes aparte. Por debajo de 900 px
+          «Buscar» y «Guardado» quedan en icono, y por debajo de 760 el nombre en su
+          símbolo, para no montarse sobre las herramientas.
+    - [x] **Explicar mejor las funciones**: ayuda dentro de la app y en la web (atajos,
+          gestos, para qué sirve cada herramienta). Hecho (octubre de 2026), con maqueta:
+          la ventana de atajos pasa a ser «Ayuda» con dos pestañas, «Cómo se usa» (cada
+          herramienta y once gestos y trucos, con su icono, su tecla y una frase; en
+          Windows, también el diario flotante) y «Atajos» (la lista de antes). Recuerda la
+          última pestaña; «?» abre los atajos; Ajustes → Ayuda y Ctrl K, «Cómo se usa». En
+          la web, la página «Ayuda» (`/ayuda/` y `/en/help/`), en el menú y el pie, con lo
+          mismo: los textos y las listas salen de `src/ui/helpContent.ts`, así que la app
+          y la web dicen siempre lo mismo.
+  - [x] **H. Revisión del código** (octubre de 2026): lo que encontró la revisión de
+        seguridad, privacidad y mantenibilidad, de más a menos urgente.
+    - **Seguridad, privacidad y datos**
+      - [x] **Empezar otro diario en la web**: descargaba el archivo y borraba el diario
+            enseguida; si el navegador aún lo estaba guardando, se perdían los dos. Ahora
+            se borra solo cuando el usuario dice que ya tiene el archivo (y puede bajarlo
+            otra vez).
+      - [x] **La mesa sin cifrar en la web**: con «Todo el diario», la mesa, sus imágenes
+            y las fuentes quedaban en claro (solo sirve en el escritorio, y en la web no
+            había opción). Ahora en la web van cifradas con el resto, y un diario web
+            cifrado antes cifra su mesa la próxima vez que se abre.
+      - [x] **Copias legibles de antes del cifrado**: al activarlo, las copias diarias
+            legibles siguen en la carpeta hasta 14 días y las de «antes de abrir», siempre.
+            No las reescribimos (las hace la app, pero borrarlas es cosa del usuario): al
+            cifrar en el escritorio, un aviso lo dice y ofrece abrir la carpeta.
+      - [x] **Los avisos en el historial de Windows**: guardaba su texto aunque el diario
+            estuviera cifrado. Ahora, con «Todo el diario», los avisos salen sin palabras
+            («Tienes un recordatorio»), y Ajustes → Recordatorios lo dice.
+      - [x] **El `.ics` en la carpeta temporal**: no se borraba nunca. Ahora se borra a los
+            10 minutos (y al arrancar, los que quedaran); y `ics.ts` escapa también un
+            `\r` suelto.
+      - [x] **Tope a las iteraciones de PBKDF2** que vienen en un archivo cifrado (uno
+            manipulado podía colgar la pestaña): como mucho 10 millones (hoy, 600 000);
+            fuera de eso, como una contraseña equivocada.
+      - [x] **Filas sin cifrar en un diario cifrado**: se queda como límite documentado
+            (`docs/privacy.md`): cambiarlo toca la parte más delicada del cifrado por algo
+            (la integridad frente a quien escribe en el disco) que no se promete.
+      - [x] **Borrar desde la pantalla de bloqueo**: descartado. En el escritorio ya están
+            las copias diarias (cifradas) y «Empezar otro diario», que guarda una antes; en
+            la web es lo mismo que borrar los datos del sitio desde el navegador, y la
+            confirmación evita el borrado sin querer.
+      - [x] **Bases temporales huérfanas** (`diaryo-opening-*`) si se cierra la app a mitad
+            de abrir un diario bloqueado: se borran al arrancar (`dropOpeningLeftovers`).
+      - [x] **Prueba de carga** (`cloud/stress.k6.js`): el ejemplo apunta a un servidor
+            local y explica por qué no a producción; la limpieza se para (y lo dice) si una
+            petición falla, en vez de insistir sin fin.
+    - **Mantenibilidad**
+      - [x] **Los atajos en un solo sitio**: la paleta (`commands.ts`), la ayuda y el teclado
+            (`useShortcuts.ts`) los repetían. Ahora están en `ui/shortcuts.ts`: la paleta y la
+            ayuda los leen de ahí, y un test comprueba que el teclado hace lo que dice cada
+            combinación (el manejador no se reescribe: su lógica depende del contexto).
+      - [x] **Un formulario de contraseña** compartido por `LockDialog`, `VaultDialog`,
+            `LockScreen` y `CopyPrivacyDialog`, que lo copiaban: sus piezas en
+            `ui/passwordForm.tsx` (campos, error, botón), las reglas en `ui/passwordRules.ts`
+            y la clave de recuperación en `ui/RecoveryCode.tsx`. Mismo HTML que antes.
+      - [x] **Tests para la lógica de `ui/`**: había 24 módulos y un test. Ahora los tienen
+            el teclado, la paleta (qué ofrece según el estado), «Restaurar» de cada página
+            de Ajustes, el aviso de espacio y las utilidades (colores, tamaños, tiempos,
+            teclas). Fuera, a propósito: los hooks de React (piden jsdom y Testing Library)
+            y las acciones que solo encadenan capas que ya tienen sus tests.
+      - [x] **Partir `store/ui.ts`** (74 campos, lo que más cambia) por temas: un mismo
+            store escrito en cinco partes (`store/*Slice.ts`: el lienzo, el aspecto y los
+            ajustes, el diario, los diálogos y el escritorio). Ningún uso cambia; antes,
+            tests de cómo se comportaba (`store/ui.test.ts`).
+      - [x] **Partir `Engine`** (2 200 líneas) poco a poco, al tocar cada parte. Hecho lo
+            que tenía reglas (de 2 202 a 1 993 líneas, cada parte con sus tests); lo que
+            queda es conectar eventos, la animación y el dibujo de cada fotograma, que
+            comparten estado (el gesto, la cámara): se saca cuando haya que tocarlo.
+        - [x] Lo que el menú contextual hace con la selección (agrupar, bloquear, privado,
+              copiar y pegar el estilo) va en `engine/selectionEdits.ts`, funciones puras con
+              sus tests; los métodos de `Engine` quedan con el mismo nombre. Antes, un test
+              de caracterización con un `Engine` de verdad en Node (`engine.test.ts`, con
+              lienzos falsos de `engine/testCanvas.ts`), que pasa igual antes y después.
+        - [x] Duplicar y pegar (las copias: ids nuevos, encima, grupos nuevos, flechas a las
+              copias) y mover con las flechas del teclado, también en `selectionEdits.ts`;
+              la regla de que seleccionar algo selecciona su grupo, en `selection.ts`.
+        - [x] Las imágenes de páginas (miniaturas, la portada cerrada, la hoja que gira) en
+              `engine/pageImages.ts`, con tests de que ninguna dibuja el texto de una nota
+              privada.
+        - [x] Las reglas de empezar y terminar de escribir (las fechas completas, un texto
+              vacío se borra, una forma vacía pierde su etiqueta, sin cambios no hay paso que
+              deshacer) en `editing.ts`, con tests, también del orden en que se miden.
+        - [x] Lo que hay bajo el puntero, junto a lo suyo: la casilla de una tarea
+              (`tasks.ts`), la etiqueta de un enlace (`links.ts`) y el candado de una nota
+              privada (`selection.ts`), con tests y clics de verdad en el motor.
+      - [x] **Commits más pequeños**: los arreglos en el suyo y las funciones grandes en
+            varios; los merge con `-m` o `--no-edit` (uno salió con la plantilla de git).
+            Así desde entonces: una rama y un commit por pieza.
+    - **Herramientas y orden**
+      - [x] **CI completa**: `prettier --check .`, `cargo clippy` (avisos como errores) y
+            la web (`astro check` y el build), como pide CONTRIBUTING.
+      - [x] **Formatear `cloud/stress.k6.js`**.
+      - [x] **Comentarios de `Cargo.toml` en inglés**.
+      - [x] **`cloud/google-logo.png`**, sin subir desde hace semanas: quitado.
+      - [x] **Límites en `docs/privacy.md`**: restos en IndexedDB tras activar el cifrado,
+            que la protección en disco depende de la fuerza de la contraseña, y que no
+            protege frente a quien escribe en el disco.
 
 Tras la fase 5 ya es una app usable para tomar notas.
 

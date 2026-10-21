@@ -1,6 +1,6 @@
 import type { Camera } from '../engine/camera';
 import { isOnPage } from '../engine/book';
-import { elementBounds } from '../engine/elements';
+import { elementBounds, type SceneElement } from '../engine/elements';
 import type { Engine } from '../engine/engine';
 import { fonts } from '../engine/fonts';
 import {
@@ -55,6 +55,9 @@ export class Autosave {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private saving: Promise<void> = Promise.resolve();
   private stopped = false;
+  /** Saves under way; and whether the last one to end couldn't say "Saved" yet. */
+  private writing = 0;
+  private untold = false;
   private readonly cleanups: (() => void)[] = [];
 
   constructor(
@@ -67,6 +70,13 @@ export class Autosave {
     private readonly restoreCamera = true,
     /** In the diary: whatever ends up outside the book is saved on the desk. */
     private readonly desk: Desk | null = null,
+    /**
+     * What is loaded into the engine (the desk on the Windows desktop may leave the private
+     * notes out). What isn't loaded is never touched: only changes are saved.
+     */
+    private readonly shows: (el: SceneElement) => boolean = () => true,
+    /** The diary is closed: the page is its front cover (see isOnPage). */
+    private readonly closed = false,
   ) {}
 
   /** Loads the page into the engine and starts saving its changes. */
@@ -81,11 +91,12 @@ export class Autosave {
       }
       if (this.stopped) return false;
       for (const asset of page.assets) this.engine.assets.add(asset.src, asset.id, false);
-      this.engine.loadPage(page.elements, this.restoreCamera ? page.camera : null);
+      const shown = page.elements.filter(this.shows);
+      this.engine.loadPage(shown, this.restoreCamera ? page.camera : null);
       this.listen();
       // Whatever was drawn outside the book before the desk existed moves to it.
       if (this.desk) {
-        const outside = page.elements.filter((el) => !isOnPage(elementBounds(el)));
+        const outside = page.elements.filter((el) => !isOnPage(elementBounds(el), this.closed));
         for (const el of page.elements) {
           if (!outside.includes(el)) this.desk.onPage.set(el.id, true);
         }
@@ -108,6 +119,8 @@ export class Autosave {
   /** Saves what is pending right now (when closing or hiding the window). */
   flush(): Promise<void> {
     clearTimeout(this.timer);
+    // No save is waiting any more: when this one ends, the status can say "Saved".
+    this.timer = undefined;
     const upserts = [];
     const deletes = [];
     const deskUpserts = [];
@@ -117,7 +130,8 @@ export class Autosave {
       const el = this.engine.scene.get(id);
       // If it moves from the desk to the page (or the other way round), it leaves the
       // other one.
-      const toDesk = !!el && !!desk && belongsToDesk(desk, id, isOnPage(elementBounds(el)));
+      const toDesk =
+        !!el && !!desk && belongsToDesk(desk, id, isOnPage(elementBounds(el), this.closed));
       if (!el) desk?.onPage.delete(id);
       if (el && toDesk && desk) {
         deskUpserts.push(el);
@@ -133,7 +147,13 @@ export class Autosave {
     }
     const deskSave =
       deskUpserts.length || deskDeletes.length
-        ? { upserts: deskUpserts, deletes: deskDeletes, assets: [], fonts: [] }
+        ? {
+            upserts: deskUpserts,
+            deletes: deskDeletes,
+            assets: [],
+            fonts: [],
+            restore: this.imagesOf(deskUpserts),
+          }
         : null;
     const fontsToSave: FontRow[] = fonts
       .customFonts()
@@ -144,6 +164,7 @@ export class Autosave {
       assets: this.assets.splice(0),
       fonts: fontsToSave,
       camera: this.camera,
+      restore: this.imagesOf(upserts),
     };
     this.dirty.clear();
     this.camera = undefined;
@@ -153,10 +174,19 @@ export class Autosave {
       !save.assets.length &&
       !fontsToSave.length &&
       !save.camera;
-    if (pageEmpty && !deskSave) return this.saving;
+    if (pageEmpty && !deskSave) {
+      // A save ended while this one was waiting, so it didn't say "Saved": this one does
+      // (with nothing to save, e.g. after a font loaded).
+      if (this.untold && this.writing === 0) {
+        this.untold = false;
+        this.onStatus('saved');
+      }
+      return this.saving;
+    }
 
     fontsToSave.forEach((font) => this.savedFonts.add(font.id));
     this.onStatus('saving');
+    this.writing++;
     // Writes are queued so an older one never overtakes a newer one.
     this.saving = this.saving
       .then(async () => {
@@ -167,13 +197,26 @@ export class Autosave {
         }
       })
       .then(() => {
-        if (!this.timer) this.onStatus('saved');
+        this.writing--;
+        // Another save comes (or is on its way): that one says it.
+        this.untold = !!this.timer || this.writing > 0;
+        if (!this.untold) this.onStatus('saved');
       })
       .catch((error) => {
+        this.writing--;
+        this.untold = false;
         console.error("Couldn't save", error);
         this.onStatus('error');
       });
     return this.saving;
+  }
+
+  /** The files of the images among these elements (as the engine has them). */
+  private imagesOf(elements: SceneElement[]): AssetRow[] {
+    return elements.flatMap((el) => {
+      const src = el.type === 'image' ? this.engine.assets.src(el.assetId) : undefined;
+      return el.type === 'image' && src ? [{ id: el.assetId, src }] : [];
+    });
   }
 
   /** Stops listening and saves what is pending (the promise ends when it is written). */

@@ -1,5 +1,11 @@
 import { canBind, focusFor, insideForBinding, routeArrow } from '../arrows';
-import { createId, type ArrowBinding, type ArrowElement, type SceneElement } from '../elements';
+import {
+  createId,
+  isLocked,
+  type ArrowBinding,
+  type ArrowElement,
+  type SceneElement,
+} from '../elements';
 import type { Vec } from '../math';
 import { drawElementOutline } from '../render';
 import type { Scene } from '../scene';
@@ -27,7 +33,7 @@ export function bindTargetAt(
   });
   for (let i = candidates.length - 1; i >= 0; i--) {
     const el = candidates[i];
-    if (el.id === except || el.locked || !canBind(el)) continue;
+    if (el.id === except || isLocked(el) || !canBind(el)) continue;
     if (insideForBinding(el, p, tolerance)) return el;
   }
   return null;

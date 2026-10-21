@@ -3,6 +3,7 @@ import type {
   ArrowHead,
   EditableElement,
   FillStyle,
+  ImageFrame,
   Roughness,
   SizedKind,
   TextAlign,
@@ -79,9 +80,17 @@ export interface SelectionStyle {
   /** There are texts or notes: the font and alignment can be changed. */
   hasText: boolean;
   font: string | null;
+  /** Bold, italic and underline: on only if every text has it. */
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
   align: TextAlign | null;
   /** Vertical alignment (notes and text inside shapes). */
   valign: VerticalAlign | null;
+  /** There are photos: their frame (common one or null) and whether all have a shadow. */
+  hasImages: boolean;
+  frame: ImageFrame | 'none' | null;
+  shadow: boolean;
   /** There are shapes or closed strokes: they accept a fill. */
   hasFill: boolean;
   /** Common fill ('none' = no fill; null = different). */
@@ -120,6 +129,8 @@ export interface EngineState {
   selectionGrouped: boolean;
   /** Everything selected is locked. */
   selectionLocked: boolean;
+  /** Whether the selected notes are all private (null: no note is selected). */
+  selectionPrivate: boolean | null;
   /** Something on the page is locked. */
   hasLocked: boolean;
   /** There is a copied style ready to paste. */
@@ -136,6 +147,8 @@ export interface ContextMenuRequest {
   y: number;
   /** It was on an element (already selected) or on an empty spot. */
   onElement: boolean;
+  /** It was on a hidden private note (not selected): its id. */
+  hiddenNote?: string;
 }
 
 /** Text or note open in the editor. */

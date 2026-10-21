@@ -12,6 +12,21 @@ Both images are built from the repository root: the website's demo uses the app'
 so its image installs both sets of dependencies. `.dockerignore` keeps local builds and
 `node_modules` out.
 
+**Contents**: [DNS](#dns) · [Coolify](#coolify) · [Visits (Umami)](#visits-umami) ·
+[Cloud server](#cloud-server-pocketbase) · [Caching](#caching) ·
+[Content Security Policy](#content-security-policy) · [Where the data lives](#where-the-data-lives)
+
+```mermaid
+flowchart LR
+  gh[GitHub<br/>branch main] -->|push: build image| coolify[Coolify on the VPS]
+  coolify --> web[diaryo.javiermateo.dev<br/>website, nginx]
+  coolify --> app[app.diaryo.javiermateo.dev<br/>web app, nginx]
+  coolify --> cloud[cloud.diaryo.javiermateo.dev<br/>PocketBase + volume]
+  coolify --> stats[stats.javiermateo.dev<br/>Umami]
+  web -.->|at build: latest release| ghapi[GitHub API]
+  cloud -->|SMTP| resend[Resend]
+```
+
 ## DNS
 
 Two `A` records on `javiermateo.dev`, pointing to the VPS: `diaryo` and `app.diaryo`.
@@ -60,11 +75,79 @@ The events are `download` (with `place`: `hero`, `header` or `download`),
    (`https://stats.javiermateo.dev/script.js`) and `UMAMI_ID`, marked as available at
    build time, and redeploy.
 
+## Cloud server (PocketBase)
+
+The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules in
+`cloud/`, at <https://cloud.diaryo.javiermateo.dev>.
+
+1. DNS: an `A` record `cloud.diaryo` pointing to the VPS.
+2. Coolify: a third resource from the same repository (branch `develop` while the cloud
+   is being built; **`main` from the first release that uses it**, so only released
+   schema changes reach real users' data), **Dockerfile**
+   `/deploy/cloud.Dockerfile`, domain `https://cloud.diaryo.javiermateo.dev` with
+   **port 8090**, and a **persistent storage** mounted at `/pb/pb_data` (without it,
+   every deployment would start with an empty database).
+3. First start: create the administrator from the resource's terminal in Coolify:
+
+   ```bash
+   /pb/pocketbase superuser upsert you@example.com 'a-long-password' --dir=/pb/pb_data
+   ```
+
+   The dashboard is at `https://cloud.diaryo.javiermateo.dev/_/`.
+
+4. **Mail** (Settings → Mail settings), so the accounts can be verified and passwords
+   reset. It goes through [Resend](https://resend.com) (free up to 3 000 emails a month),
+   with the domain `javiermateo.dev` verified there (its DKIM, SPF and DMARC records are
+   in Cloudflare). Sender `diaryo <no-reply@javiermateo.dev>`; SMTP host
+   `smtp.resend.com`, **port 587** with TLS "Auto (StartTLS)", user `resend`, password
+   an API key. The VPS blocks outgoing port 465, so not that one.
+5. **Application URL** (Settings → Application): `https://app.diaryo.javiermateo.dev`,
+   used in the links of those emails. Their texts (Spanish and English) come from the
+   migration `1790900001_account.js`: the links open the web app (`?verify=…`,
+   `?reset=…`), which confirms the email or asks for the new password.
+6. **Google sign-in** (Collections → users → Options → OAuth2): enable it and add Google
+   with a client id and secret from the Google Cloud console (APIs & Services →
+   Credentials → OAuth client ID, type "Web application"), with the authorized redirect
+   URI `https://cloud.diaryo.javiermateo.dev/api/oauth2-redirect`. On the consent screen
+   (Google Auth Platform → Branding): app name `diaryo`, authorized domain
+   `javiermateo.dev`, scopes `openid`, `userinfo.email` and `userinfo.profile`, home page
+   `https://diaryo.javiermateo.dev`, privacy policy
+   `https://diaryo.javiermateo.dev/privacidad/` and terms
+   `https://diaryo.javiermateo.dev/condiciones/`. While it is in **Testing**, only the
+   test users added there can sign in: **Publish app** (Audience) opens it to everyone.
+   With these basic scopes Google usually doesn't ask for a review, only to verify the
+   domain in Google Search Console.
+7. Check the rules against it (it creates three throwaway users and deletes them):
+
+   ```bash
+   PB_URL=https://cloud.diaryo.javiermateo.dev PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
+   ```
+
+Privacy: the privacy policy promises no server backups and request logs kept 5 days
+(Settings → Logs, PocketBase's default). Changing either means updating the policy. Its
+contact address, `privacidad@javiermateo.dev` (`web/src/site.ts`), forwards to a real
+inbox with Cloudflare Email Routing (Email → Email Routing → Routing rules). Receiving
+and sending don't clash: Email Routing's MX and SPF records are on the root of
+`javiermateo.dev`, and Resend's (the server's emails) on `send.javiermateo.dev`.
+
+Backups: the whole server state is `/pb/pb_data` (PocketBase can also make scheduled
+backups in Settings → Backups). The diaries in it are encrypted on the devices: a backup
+can't be read without the users' keys. A deleted account stays in a backup until the
+backup is deleted, so turning them on means saying for how long in the privacy policy.
+
 ## Caching
 
 - Website: the hashed files in `/_astro/` are cached for a year; pages are served as is.
 - Web app: `/assets/` is cached for a year and `index.html` never, so a new version
   arrives on the next load. Every path falls back to `index.html`.
+
+## Content Security Policy
+
+The web app (`deploy/app.nginx.conf`) and the desktop app (`src-tauri/tauri.conf.json`)
+only run their own code and only connect to themselves and to the cloud server, so a
+script slipped into a diary couldn't run nor send anything out. If the cloud moves to
+another address (`VITE_CLOUD_URL`), its `connect-src` changes in both. The desktop
+app's development build has none (`devCsp`: Vite's hot reload needs inline code).
 
 ## Where the data lives
 

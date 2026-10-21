@@ -1,4 +1,5 @@
 import { useUI } from '../store/ui';
+import { DatePicker } from './DatePicker';
 import { TextEditorView } from './TextEditorView';
 import { useT } from './useT';
 
@@ -9,5 +10,5 @@ export function TextEditor() {
   const engine = useUI((s) => s.engine);
   const editing = useUI((s) => s.editing);
   const theme = useUI((s) => s.theme);
-  return <TextEditorView engine={engine} editing={editing} theme={theme} />;
+  return <TextEditorView engine={engine} editing={editing} theme={theme} DatePicker={DatePicker} />;
 }

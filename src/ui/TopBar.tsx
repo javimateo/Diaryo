@@ -1,36 +1,65 @@
 import {
   Check,
   CloudAlert,
+  CloudCheck,
+  CloudOff,
+  CloudUpload,
   Download,
   FolderOpen,
   Image as ImageIcon,
   ImagePlus,
   LoaderCircle,
+  Keyboard,
+  LockKeyhole,
   Menu,
-  Moon,
   Search,
   Settings,
-  Sun,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { exportPng, openCopy, saveCopy } from './fileActions';
+import { exportPng, pickCopy, saveCopy } from './fileActions';
 import { FILE_EXTENSION } from '../storage/files';
 import { WindowControls } from './desktop/WindowControls';
-import { useUI } from '../store/ui';
+import { BrandMark } from './BrandMark';
+import { COVER_ID } from '../storage/db';
+import { useUI, type ThemePreference } from '../store/ui';
+import { useAccount } from '../cloud/account';
+import { useLock } from '../cloud/lockState';
+import { CloudLock } from './CloudLock';
+import { Choice } from './Choice';
+import { lockDiaryNow } from './lockActions';
+import { useSync } from './cloudSync';
+import { relativeTime } from './relativeTime';
+import { UpcomingButton } from './Upcoming';
 import { useT } from './useT';
 
 export function Brand() {
   const t = useT();
   const status = useUI((s) => s.saveStatus);
   const widget = useUI((s) => s.desktop?.mode === 'widget');
+  const cover = useUI((s) => s.diaryState.current?.id === COVER_ID);
+  const diary = useUI((s) => s.diary);
+  if (cover) {
+    // Dressing up the cover: what it is, and the way back.
+    return (
+      <div className="brand cover-bar">
+        <strong data-tip={t.cover.hint}>{t.cover.title}</strong>
+        <span className="cover-bar-hint">{t.cover.hint}</span>
+        <button type="button" className="cover-bar-done" onClick={() => void diary?.closeCover()}>
+          {t.cover.done}
+        </button>
+      </div>
+    );
+  }
   const Icon = status === 'saved' ? Check : status === 'error' ? CloudAlert : LoaderCircle;
   return (
     <div className="brand">
-      diaryo
+      <BrandMark />
+      <span className="brand-name">diaryo</span>
       <span className="save-status" data-status={status} role="status">
         <Icon size={13} strokeWidth={2} />
-        {t.status[status]}
+        <span className="save-status-text">{t.status[status]}</span>
       </span>
+      <SyncIndicator />
       {widget && (
         <span className="widget-hint">
           <kbd>Esc</kbd> {t.brand.widgetHint}
@@ -40,44 +69,91 @@ export function Brand() {
   );
 }
 
+/**
+ * The cloud, next to "Saved": up to date, syncing, offline or full. Opens the settings.
+ * Signed in with the cloud locked here (not on purpose, as the "with password" mode), it
+ * says nothing syncs, and opens the unlocking.
+ */
+function SyncIndicator() {
+  const t = useT();
+  const { status, lastSync, pending } = useSync();
+  const manual = useUI((s) => s.settings.syncMode !== 'auto');
+  const asksEachTime = useUI((s) => s.settings.syncMode === 'password');
+  const locked = useAccount((s) => !!s.account && s.vault === 'locked') && !asksEachTime;
+  const setSettingsOpen = useUI((s) => s.setSettingsOpen);
+  const setVaultDialog = useUI((s) => s.setVaultDialog);
+  if (locked) {
+    return (
+      <button
+        type="button"
+        className="sync-indicator icon-btn"
+        data-status="locked"
+        data-tip={t.sync.tips.locked}
+        aria-label={t.sync.tips.locked}
+        onClick={() => setVaultDialog({ view: 'unlock' })}
+      >
+        <CloudLock size={15} />
+      </button>
+    );
+  }
+  if (status === 'off') return null;
+  const tips = t.sync.tips;
+  let tip: string;
+  if (status === 'idle') {
+    tip = manual ? tips.manual(pending) : tips.idle(lastSync ? relativeTime(lastSync) : '—');
+  } else tip = tips[status];
+  const waiting = status === 'idle' && manual && pending > 0;
+  const Icon =
+    status === 'syncing' || waiting
+      ? CloudUpload
+      : status === 'offline'
+        ? CloudOff
+        : status === 'idle'
+          ? CloudCheck
+          : CloudAlert;
+  return (
+    <button
+      type="button"
+      className="sync-indicator icon-btn"
+      data-status={waiting ? 'waiting' : status}
+      data-tip={tip}
+      aria-label={tip}
+      onClick={() => setSettingsOpen(true, 'account')}
+    >
+      <Icon size={14} strokeWidth={2} />
+    </button>
+  );
+}
+
 export function TopActions() {
   const t = useT();
-  const theme = useUI((s) => s.theme);
-  const toggleTheme = useUI((s) => s.toggleTheme);
   const setPaletteOpen = useUI((s) => s.setPaletteOpen);
   const setSettingsOpen = useUI((s) => s.setSettingsOpen);
 
   return (
     <div className="top-actions floating" onMouseDown={(e) => e.preventDefault()}>
+      {/* On a phone the brand (and its cloud) is hidden, so the cloud lives here. */}
+      <SyncIndicator />
       <button
         type="button"
-        className="icon-btn"
+        className="icon-btn search-btn"
         aria-label={t.topBar.search}
         data-tip={`${t.topBar.search} — Ctrl K`}
         data-tip-align="end"
         onClick={() => setPaletteOpen(true)}
       >
         <Search size={18} strokeWidth={1.75} />
+        <span className="search-label">{t.topBar.searchLabel}</span>
+        <kbd className="search-label">Ctrl K</kbd>
       </button>
-      <FileMenu />
-      <button
-        type="button"
-        className="icon-btn theme-btn"
-        aria-label={t.topBar.theme(theme === 'dark')}
-        data-tip={`${t.topBar.theme(theme === 'dark')} — Alt Shift D`}
-        data-tip-align="end"
-        onClick={toggleTheme}
-      >
-        {theme === 'dark' ? (
-          <Sun size={18} strokeWidth={1.75} />
-        ) : (
-          <Moon size={18} strokeWidth={1.75} />
-        )}
-      </button>
+      <UpcomingButton />
+      <span className="top-actions-separator" aria-hidden />
+      <MainMenu />
       <button
         type="button"
         className="icon-btn"
         aria-label={t.topBar.settings}
+        data-tour="settings"
         data-tip={`${t.topBar.settings} — Ctrl ,`}
         data-tip-align="end"
         onClick={() => setSettingsOpen(true)}
@@ -89,15 +165,19 @@ export function TopActions() {
   );
 }
 
-/** Images, backups and export. Normal saving is automatic. */
-function FileMenu() {
+const THEMES: ThemePreference[] = ['light', 'dark', 'system'];
+
+/** Images, backups, export, the theme, locking and the shortcuts. Saving is automatic. */
+function MainMenu() {
   const t = useT();
   const engine = useUI((s) => s.engine);
   const desktop = useUI((s) => s.desktop !== null);
   const diary = useUI((s) => s.diary);
+  const themePreference = useUI((s) => s.themePreference);
+  const setThemePreference = useUI((s) => s.setThemePreference);
+  const canLock = useLock((s) => s.status === 'unlocked');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -131,6 +211,7 @@ function FileMenu() {
         className="icon-btn"
         aria-label={t.topBar.menu}
         aria-expanded={open}
+        data-active={open || undefined}
         data-tip={open ? undefined : t.topBar.menuTip}
         data-tip-align="end"
         onClick={() => setOpen(!open)}
@@ -139,7 +220,6 @@ function FileMenu() {
       </button>
       {open && engine && diary && (
         <div className="dropdown floating" role="menu">
-          <p className="dropdown-note">{t.topBar.savedWhere(desktop)}</p>
           <button
             type="button"
             role="menuitem"
@@ -154,6 +234,7 @@ function FileMenu() {
             </span>
           </button>
           <div className="menu-divider" role="separator" />
+          <p className="menu-heading">{t.topBar.copies}</p>
           <button
             type="button"
             role="menuitem"
@@ -165,20 +246,11 @@ function FileMenu() {
             </span>
             <kbd>{FILE_EXTENSION}</kbd>
           </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="menu-item"
-            onClick={() => {
-              setOpen(false);
-              fileRef.current?.click();
-            }}
-          >
+          <button type="button" role="menuitem" className="menu-item" onClick={run(pickCopy)}>
             <span className="menu-label">
               <FolderOpen size={15} strokeWidth={1.75} /> {t.topBar.openCopy}
             </span>
           </button>
-          <div className="menu-divider" role="separator" />
           <button
             type="button"
             role="menuitem"
@@ -190,6 +262,40 @@ function FileMenu() {
             </span>
             <kbd>.png</kbd>
           </button>
+          <div className="menu-divider" role="separator" />
+          <p className="menu-heading">{t.settings.theme}</p>
+          <div className="menu-choice">
+            <Choice
+              options={THEMES.map((id) => [id, t.settings.themes[id]])}
+              value={themePreference}
+              onChange={setThemePreference}
+            />
+          </div>
+          {canLock && (
+            <button
+              type="button"
+              role="menuitem"
+              className="menu-item"
+              onClick={run(() => void lockDiaryNow())}
+            >
+              <span className="menu-label">
+                <LockKeyhole size={15} strokeWidth={1.75} /> {t.commands.lockDiary}
+              </span>
+            </button>
+          )}
+          <div className="menu-divider" role="separator" />
+          <button
+            type="button"
+            role="menuitem"
+            className="menu-item"
+            onClick={run(() => useUI.getState().setHelpOpen(true))}
+          >
+            <span className="menu-label">
+              <Keyboard size={15} strokeWidth={1.75} /> {t.settings.shortcuts}
+            </span>
+            <kbd>?</kbd>
+          </button>
+          <p className="dropdown-note">{t.topBar.savedWhere(desktop)}</p>
         </div>
       )}
       {/* On a phone it offers the gallery or the camera. */}
@@ -202,17 +308,6 @@ function FileMenu() {
         onChange={(e) => {
           const files = [...(e.target.files ?? [])];
           if (files.length > 0) void engine?.insertImageFiles(files);
-          e.target.value = '';
-        }}
-      />
-      <input
-        ref={fileRef}
-        type="file"
-        accept={`${FILE_EXTENSION},application/json`}
-        hidden
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file && engine && diary) void openCopy(engine, diary, file);
           e.target.value = '';
         }}
       />

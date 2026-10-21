@@ -7,6 +7,7 @@ use tauri_plugin_opener::OpenerExt;
 
 use crate::backup;
 use crate::desk_layer;
+use crate::reminders;
 use crate::shortcuts::{self, Hotkey};
 use crate::state::{info, lang, update_settings, Desktop, DesktopInfo};
 use crate::tray;
@@ -104,6 +105,21 @@ pub async fn write_backup(app: AppHandle, day: String, contents: String) -> Resu
     backup::write(&dir, &day, &contents).map(|path| path.display().to_string())
 }
 
+/// Before opening another diary in place of this one, a copy of this one in the backups
+/// folder (even with the daily backups off). Returns where.
+#[tauri::command]
+pub async fn write_copy_before_opening(
+    app: AppHandle,
+    moment: String,
+    contents: String,
+) -> Result<String, String> {
+    let settings = app.state::<Desktop>().settings();
+    let dir = backup::dir(&app, &settings)?;
+    let label = lang(&app).before_opening();
+    backup::write_before_opening(&dir, label, &moment, &contents)
+        .map(|path| path.display().to_string())
+}
+
 /// The page already looks as it should: the window can be shown.
 #[tauri::command]
 pub fn frontend_ready(app: AppHandle) {
@@ -115,9 +131,11 @@ pub fn show_mode(app: AppHandle, mode: Mode) {
     window::show(&app, mode);
 }
 
+/// Hides the diary. `shows` is the showing the page's request comes from (after a fade):
+/// if it was shown again meanwhile, it stays.
 #[tauri::command]
-pub fn hide_window(app: AppHandle) {
-    window::hide_now(&app);
+pub fn hide_window(app: AppHandle, shows: Option<u32>) {
+    window::hide_if_current(&app, shows);
 }
 
 /// The page's language: the texts of this side (the tray, the errors) follow it.
@@ -130,4 +148,141 @@ pub fn set_language(app: AppHandle, language: String) {
 #[tauri::command]
 pub fn quit_app(app: AppHandle) {
     app.exit(0);
+}
+
+/// Opens Google's sign-in page in the browser (the page only asks for that page: any
+/// other address is refused).
+#[tauri::command]
+pub fn open_sign_in(app: AppHandle, url: String) -> Result<(), String> {
+    if !url.starts_with("https://accounts.google.com/") {
+        return Err("not a sign-in page".into());
+    }
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| e.to_string())
+}
+
+/// Saves a file made by the page (a copy of the diary, an image, the account's data…)
+/// where the user chooses, with the system's "Save as" dialog: the webview doesn't
+/// download files by itself. The file comes as raw bytes and its suggested name in the
+/// `x-file-name` header. Returns where it went, or nothing if the user cancelled.
+#[tauri::command]
+pub async fn save_file(
+    app: AppHandle,
+    request: tauri::ipc::Request<'_>,
+) -> Result<Option<String>, String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected the file's bytes".into());
+    };
+    let name = request
+        .headers()
+        .get("x-file-name")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("diaryo");
+    let mut dialog = app.dialog().file().set_file_name(name);
+    if let Ok(downloads) = app.path().download_dir() {
+        dialog = dialog.set_directory(downloads);
+    }
+    if let Some(window) = window::main_window(&app) {
+        dialog = dialog.set_parent(&window);
+    }
+    let Some(file) = dialog.blocking_save_file() else {
+        return Ok(None);
+    };
+    let path = file.into_path().map_err(|e| e.to_string())?;
+    std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    Ok(Some(path.display().to_string()))
+}
+
+/// Opens a page of diaryo's website in the browser (the privacy policy, the terms); any
+/// other address is refused.
+#[tauri::command]
+pub fn open_website(app: AppHandle, url: String) -> Result<(), String> {
+    if !url.starts_with("https://diaryo.javiermateo.dev/") {
+        return Err("not diaryo's website".into());
+    }
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| e.to_string())
+}
+
+/// The reminders to come (they are kept only in memory).
+#[tauri::command]
+pub fn set_reminders(app: AppHandle, reminders: Vec<reminders::Reminder>) {
+    reminders::set(&app, reminders);
+}
+
+/// Shows a reminder now (those missed while diaryo was closed).
+#[tauri::command]
+pub fn show_reminder(app: AppHandle, reminder: reminders::Reminder) {
+    reminders::show_now(&app, reminder);
+}
+
+/// How long the calendar app has to read the `.ics` file before it is deleted (it may wait
+/// for the user to confirm the import).
+const CALENDAR_FILE_LIFE: std::time::Duration = std::time::Duration::from_secs(10 * 60);
+
+/// Opens tasks and appointments in the calendar app (the `.ics` file, in the temporary
+/// folder, opened with the app Windows has for it). The file carries their text, so it
+/// doesn't stay there: it is deleted a while later (and at start, if diaryo was closed
+/// meanwhile, see `remove_calendar_files`).
+#[tauri::command]
+pub fn open_calendar_file(app: AppHandle, contents: String) -> Result<(), String> {
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis());
+    let path = std::env::temp_dir().join(format!("diaryo-{stamp}.ics"));
+    std::fs::write(&path, contents).map_err(|e| e.to_string())?;
+    let opened = app
+        .opener()
+        .open_path(path.display().to_string(), None::<&str>)
+        .map_err(|e| e.to_string());
+    std::thread::spawn(move || {
+        std::thread::sleep(CALENDAR_FILE_LIFE);
+        let _ = std::fs::remove_file(&path);
+    });
+    opened
+}
+
+/// Deletes the calendar files left in a folder (the temporary one: diaryo was closed
+/// before their time was up).
+pub fn remove_calendar_files(dir: &std::path::Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name.starts_with("diaryo-") && name.ends_with(".ics") {
+            let _ = std::fs::remove_file(entry.path());
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn removes_only_the_calendar_files() {
+        let dir = std::env::temp_dir().join(format!("diaryo-test-ics-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        for name in [
+            "diaryo-1.ics",
+            "diaryo-2.ics",
+            "other.ics",
+            "diaryo-2026-10-15.diaryo",
+        ] {
+            std::fs::write(dir.join(name), "x").unwrap();
+        }
+        remove_calendar_files(&dir);
+        let mut left: Vec<String> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().into_string().unwrap())
+            .collect();
+        left.sort();
+        assert_eq!(left, ["diaryo-2026-10-15.diaryo", "other.ics"]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

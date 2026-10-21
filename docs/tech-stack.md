@@ -4,6 +4,10 @@ What diaryo is built with, and the license of each piece. diaryo itself is under
 [PolyForm Noncommercial License 1.0.0](../LICENSE); every library and font keeps its own
 license, all of them permissive and compatible with that.
 
+**Contents**: [Overview](#overview) · [App libraries](#app-libraries-npm) ·
+[Desktop libraries](#desktop-libraries-rust-crates) · [Website libraries](#website-libraries) ·
+[Fonts](#fonts) · [Development tools](#development-tools)
+
 ## Overview
 
 | Part                 | Technology                                                                                   |
@@ -27,6 +31,8 @@ license, all of them permissive and compatible with that.
 | [react](https://react.dev), react-dom                               | The interface (toolbar, panels, dialogs)               | MIT               |
 | [zustand](https://github.com/pmndrs/zustand)                        | Interface state                                        | MIT               |
 | [dexie](https://dexie.org)                                          | The diary's database (IndexedDB)                       | Apache-2.0        |
+| [@noble/ciphers](https://github.com/paulmillr/noble-ciphers)        | Encrypting the diary on the device (XChaCha20)         | MIT               |
+| [pocketbase](https://github.com/pocketbase/js-sdk)                  | Talking to the cloud server (account, items, realtime) | MIT               |
 | [perfect-freehand](https://github.com/steveruizok/perfect-freehand) | Pressure-sensitive pencil and highlighter strokes      | MIT               |
 | [roughjs](https://roughjs.com)                                      | The hand-drawn look of shapes and arrows               | MIT               |
 | [rbush](https://github.com/mourner/rbush)                           | Spatial index: hit testing and drawing only what shows | MIT               |
@@ -61,19 +67,24 @@ license, all of them permissive and compatible with that.
 All bundled with [Fontsource](https://fontsource.org) (self-hosted: nothing is loaded
 from third-party servers) and under the [SIL Open Font License 1.1](https://openfontlicense.org).
 
-| Font                                                                                                | Where                                       |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| [Inter](https://rsms.me/inter/)                                                                     | The app's interface; one of the text fonts  |
-| [Caveat](https://fonts.google.com/specimen/Caveat)                                                  | Handwriting: the diary's dates, the website |
-| [Nunito](https://fonts.google.com/specimen/Nunito)                                                  | Text font                                   |
-| [Lora](https://fonts.google.com/specimen/Lora)                                                      | Text font; the website's titles             |
-| [JetBrains Mono](https://www.jetbrains.com/lp/mono/)                                                | Text font (monospace)                       |
-| [Patrick Hand](https://fonts.google.com/specimen/Patrick+Hand), [Comic Neue](https://comicneue.com) | Handwriting-like text fonts                 |
-| [Lilita One](https://fonts.google.com/specimen/Lilita+One)                                          | Display text font                           |
-| [Nunito Sans](https://fonts.google.com/specimen/Nunito+Sans)                                        | The website's body text                     |
+| Font                                                                                                                                                                                   | Where                                        |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| [Inter](https://rsms.me/inter/)                                                                                                                                                        | One of the text fonts                        |
+| [Caveat](https://fonts.google.com/specimen/Caveat)                                                                                                                                     | Handwriting: the diary's dates, the website  |
+| [Nunito](https://fonts.google.com/specimen/Nunito)                                                                                                                                     | Text font                                    |
+| [Lora](https://fonts.google.com/specimen/Lora)                                                                                                                                         | Text font; the name and the website's titles |
+| [JetBrains Mono](https://www.jetbrains.com/lp/mono/)                                                                                                                                   | Text font (monospace)                        |
+| [Patrick Hand](https://fonts.google.com/specimen/Patrick+Hand), [Comic Neue](https://comicneue.com)                                                                                    | Handwriting-like text fonts                  |
+| [Lilita One](https://fonts.google.com/specimen/Lilita+One)                                                                                                                             | Display text font                            |
+| [Playfair Display](https://fonts.google.com/specimen/Playfair+Display), [Merriweather](https://fonts.google.com/specimen/Merriweather)                                                 | Serif text fonts                             |
+| [Dancing Script](https://fonts.google.com/specimen/Dancing+Script), [Pacifico](https://fonts.google.com/specimen/Pacifico)                                                             | Script text fonts                            |
+| [Amatic SC](https://fonts.google.com/specimen/Amatic+SC), [Kalam](https://fonts.google.com/specimen/Kalam), [Shadows Into Light](https://fonts.google.com/specimen/Shadows+Into+Light) | Handwriting-like text fonts                  |
+| [Space Mono](https://fonts.google.com/specimen/Space+Mono)                                                                                                                             | Text font (monospace)                        |
+| [Nunito Sans](https://fonts.google.com/specimen/Nunito+Sans)                                                                                                                           | The interface of the app and the website     |
 
 ## Development tools
 
 TypeScript (Apache-2.0), Vite, @vitejs/plugin-react, Vitest, ESLint, typescript-eslint,
 eslint-plugin-react-hooks, Prettier, @tauri-apps/cli, @astrojs/check (MIT or
-Apache-2.0), fake-indexeddb (Apache-2.0).
+Apache-2.0), fake-indexeddb (Apache-2.0); for the README's animations (`npm run media`),
+Playwright and sharp (Apache-2.0).

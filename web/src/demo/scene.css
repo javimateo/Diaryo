@@ -1,0 +1,30 @@
+/* A feature's scene fills its card's picture; it fades in once it is drawn. */
+.feature-scene,
+.feature-scene-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.feature-scene-canvas {
+  animation: feature-scene-in 0.4s ease both;
+}
+
+.feature-scene-canvas canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+@keyframes feature-scene-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-scene-canvas {
+    animation: none;
+  }
+}

@@ -1,0 +1,652 @@
+/* ─── Cloud account: the settings section and the sign-in dialog ─ */
+
+.account-intro {
+  margin-bottom: 12px;
+  line-height: 1.45;
+}
+
+.account-start {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.account-google,
+.account-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 120ms var(--ease),
+    opacity 120ms var(--ease);
+}
+
+.account-google {
+  border: 1px solid var(--kbd-border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.account-google:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.account-primary {
+  border: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:root[data-theme='dark'] .account-primary {
+  color: #16161f;
+}
+
+.account-primary:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.account-google:disabled,
+.account-primary:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* Signed in */
+
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0 8px;
+}
+
+.account-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.account-who {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.account-who strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-who small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* The dialog */
+
+.account-dialog {
+  width: min(400px, 100%);
+}
+
+.account-body {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 22px 20px;
+  overflow-y: auto;
+}
+
+.account-body > .account-google {
+  width: 100%;
+}
+
+.account-sep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.account-sep::before,
+.account-sep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--surface-border);
+}
+
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account-form .account-primary {
+  margin-top: 2px;
+}
+
+.account-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.account-field small {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.account-field input {
+  width: 100%;
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--kbd-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  outline: none;
+  transition:
+    border-color 120ms var(--ease),
+    box-shadow 120ms var(--ease);
+}
+
+.account-field input::placeholder {
+  color: var(--text-muted);
+}
+
+.account-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.account-password {
+  position: relative;
+  display: block;
+}
+
+.account-password input {
+  padding-right: 40px;
+}
+
+.account-password .icon-btn {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 32px;
+  height: 32px;
+}
+
+.account-text,
+.account-small {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.account-small {
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+
+.account-error,
+.account-notice {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.account-error {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.account-notice {
+  margin-bottom: 12px;
+  background: rgba(63, 154, 94, 0.12);
+  color: #2f7d4a;
+}
+
+:root[data-theme='dark'] .account-notice {
+  color: #8fd3a5;
+}
+
+.account-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.account-links:empty {
+  display: none;
+}
+
+.account-link {
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.account-link:hover {
+  text-decoration: underline;
+}
+
+.account-waiting,
+.account-sent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0 4px;
+  text-align: center;
+}
+
+.account-waiting p,
+.account-sent p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.account-waiting svg,
+.account-sent svg {
+  color: var(--accent-text);
+}
+
+.account-sent .account-primary {
+  align-self: stretch;
+}
+
+.account-spin {
+  animation: account-spin 900ms linear infinite;
+}
+
+@keyframes account-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 520px) {
+  .account-start {
+    grid-template-columns: 1fr;
+  }
+
+  .account-card {
+    flex-wrap: wrap;
+  }
+
+  .account-who {
+    flex-basis: calc(100% - 48px);
+  }
+
+  .account-card .settings-btn {
+    margin-left: 48px;
+  }
+}
+
+/* Phones zoom in on fields with smaller text. */
+@media (pointer: coarse) {
+  .account-field input {
+    font-size: 16px;
+  }
+}
+
+/* The cloud diary's password and recovery code */
+
+.vault-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vault-title svg {
+  color: var(--accent-text);
+}
+
+.vault-code-input {
+  font-family: 'JetBrains Mono Variable', ui-monospace, monospace !important;
+  letter-spacing: 0.04em;
+}
+
+.vault-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  user-select: all;
+}
+
+.vault-code-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.vault-code-actions .settings-btn {
+  justify-content: center;
+}
+
+.vault-saved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.vault-saved input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 400px) {
+  .vault-code {
+    font-size: 13px;
+  }
+}
+
+/* Sync: how it goes, the space it takes */
+
+.sync-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 40px;
+}
+
+.sync-bar {
+  height: 6px;
+  margin: 2px 0 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--kbd-bg);
+  box-shadow: inset 0 0 0 1px var(--kbd-border);
+}
+
+.sync-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 240ms var(--ease);
+}
+
+.sync-bar[data-low] i {
+  background: #d9a441;
+}
+
+.sync-bar[data-full] i {
+  background: #c27a1a;
+}
+
+.sync-space {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding-top: 6px;
+}
+
+.sync-space small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.sync-space .sync-bar {
+  grid-column: 1 / -1;
+  margin: 0 0 4px;
+}
+
+.sync-full {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(194, 122, 26, 0.12);
+  color: #7a4a0c;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+:root[data-theme='dark'] .sync-full {
+  background: rgba(239, 159, 39, 0.14);
+  color: #f3c987;
+}
+
+.sync-full svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.sync-full p {
+  margin: 0;
+}
+
+.sync-full strong {
+  font-weight: 600;
+}
+
+/* The cloud next to "Saved" */
+
+.sync-indicator {
+  display: inline-grid;
+  place-items: center;
+  margin-left: 2px;
+  color: var(--text-muted);
+}
+
+.sync-indicator[data-status='idle'] {
+  color: #3f9a5e;
+}
+
+.sync-indicator[data-status='syncing'] {
+  color: var(--accent-text);
+}
+
+.sync-indicator[data-status='full'],
+.sync-indicator[data-status='error'] {
+  color: #c27a1a;
+}
+
+.sync-indicator[data-status='locked'] {
+  color: #c27a1a;
+  background: rgba(194, 122, 26, 0.13);
+}
+
+/* Signed in, but the cloud is locked here: nothing goes up or comes. */
+.sync-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(194, 122, 26, 0.12);
+  color: #8a5410;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.sync-locked svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+:root[data-theme='dark'] .sync-locked {
+  color: #f0c07e;
+}
+
+.brand .sync-indicator {
+  width: 24px;
+  height: 24px;
+  margin-left: 4px;
+  vertical-align: -6px;
+  pointer-events: auto;
+}
+
+.top-actions .sync-indicator {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .top-actions .sync-indicator {
+    display: inline-grid;
+    margin-left: 0;
+  }
+}
+
+.sign-out-choice {
+  margin: 4px 0 8px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--hover);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.sign-out-choice p {
+  margin: 0 0 10px;
+}
+
+.sign-out-choice .open-copy-option {
+  width: 100%;
+  margin: 0 0 8px;
+}
+
+.sign-out-choice .open-copy-option:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.sign-out-pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(194, 122, 26, 0.12);
+  color: #7a4a0c;
+}
+
+:root[data-theme='dark'] .sign-out-pending {
+  background: rgba(239, 159, 39, 0.14);
+  color: #f3c987;
+}
+
+/* Deleting the account */
+
+.settings-btn[data-danger] {
+  color: var(--danger);
+}
+
+/* The light theme's crimson in both themes: white text needs a dark enough background. */
+.settings-btn[data-danger-fill] {
+  border-color: #c2255c;
+  background: #c2255c;
+  color: #ffffff;
+}
+
+.settings-btn[data-danger-fill]:hover:not(:disabled) {
+  background: #a61e4d;
+}
+
+.account-delete {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 8px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(200, 60, 50, 0.08);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+:root[data-theme='dark'] .account-delete {
+  background: rgba(240, 110, 100, 0.12);
+}
+
+.account-delete p {
+  margin: 0;
+}
+
+.account-delete strong {
+  font-weight: 600;
+  color: #b2382e;
+}
+
+:root[data-theme='dark'] .account-delete strong {
+  color: #f2a29b;
+}
+
+.account-delete > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* The privacy policy and the terms */
+
+.account-legal a,
+.account-legal-links a {
+  color: inherit;
+}
+
+.account-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}

@@ -6,6 +6,411 @@ export const en: Messages = {
     close: 'Close',
   },
 
+  openCopy: {
+    title: 'Open a diary copy',
+    text: 'What do you want to do with the diary you have now?',
+    fileUntouched:
+      "The copy's file isn't modified: whatever you change afterwards is saved in diaryo, not in it.",
+    replace: 'Replace my diary with this copy',
+    replaceHint:
+      "Your diary becomes the copy's. A copy of the current one is saved first, just in case.",
+    merge: 'Merge with my diary',
+    mergeHint:
+      'Adds whatever is missing and keeps the most recent version of each page. To recover something from an old copy.',
+    cancel: 'Cancel',
+    fileLabel: 'before-opening',
+    downloads: 'your downloads',
+    replaced: (where: string) => `Diary replaced · the previous one is in ${where}`,
+    beforeFailed: "The current diary couldn't be backed up: nothing was replaced",
+  },
+
+  account: {
+    intro:
+      "Optional. Syncs your diary between your computer, the web and your phone. It's encrypted on your device: nobody else can read it. Without an account, nothing changes.",
+    google: 'Continue with Google',
+    signInOrUp: 'Sign in or create an account',
+    signInTitle: 'Sign in to diaryo',
+    signUpTitle: 'Create an account',
+    orEmail: 'or with your email',
+    email: 'Email',
+    emailPlaceholder: 'you@email.com',
+    password: 'Password',
+    newPassword: 'New password',
+    passwordHint: (min: number) => `At least ${min} characters.`,
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+    signIn: 'Sign in',
+    signUp: 'Create account',
+    forgot: 'Forgot your password?',
+    noAccount: 'Create an account',
+    haveAccount: 'I have an account',
+    back: 'Back',
+    signUpNote: "We'll send you an email to confirm your address.",
+    verifySentTitle: 'Check your email',
+    verifySent: (email: string) =>
+      `We've sent a link to ${email} to confirm your email. You're already signed in: confirm it whenever you like.`,
+    done: 'Got it',
+    forgotTitle: 'Recover your password',
+    forgotText: "Type your account's email and we'll send you a link to choose another one.",
+    sendLink: 'Send link',
+    newLink: 'Ask for another link',
+    forgotSentTitle: 'Check your email',
+    forgotSent: (email: string) =>
+      `If there's an account with ${email}, you'll get a link to choose a new password. Look in spam too.`,
+    resetTitle: 'New password',
+    resetText: "Choose your account's new password.",
+    save: 'Save',
+    resetDone: 'Password changed: you can sign in with it now.',
+    googleWaiting: (desktop: boolean) =>
+      desktop
+        ? 'Continue in your browser. When you finish, come back here.'
+        : 'Continue in the Google window.',
+    cancel: 'Cancel',
+    signedIn: (email: string) => `Signed in as ${email}`,
+    plans: { free: 'Free plan' } as Record<string, string>,
+    planOf: (quota: string) => `${quota} in the cloud`,
+    signOut: 'Sign out',
+    signedOut: "You've signed out",
+    unverified: 'Confirm your email',
+    unverifiedHint: 'We sent you a link when you created the account.',
+    resend: 'Send again',
+    resent: 'Email sent',
+    verified: 'Email confirmed',
+    dataRow: 'Your data',
+    dataHint:
+      'What the server keeps about your account. Your diary, readable, is in "Save a copy".',
+    download: 'Download',
+    dataNote:
+      'This is what diaryo\'s server keeps about your account. Your diary is there only encrypted (nobody can read it without your diary password); its readable copy is saved from the menu, with "Save a copy".',
+    deleteRow: 'Delete the account',
+    deleteHint: "Deletes the account and the cloud's diary. The one on your devices stays.",
+    deleteStart: 'Delete…',
+    deleteWarning: "The account and the cloud's diary will be deleted for good.",
+    deleteDetail:
+      "It can't be undone. The diary on this device and on the others stays as it is, without the cloud.",
+    deleteType: 'Type your email to confirm:',
+    deleteConfirm: 'Delete the account',
+    deleted: 'Account deleted. Your diary is still here.',
+    legal: {
+      note: 'By continuing you accept the {terms} and the {privacy}.',
+      terms: 'terms',
+      privacy: 'privacy policy',
+      termsPage: 'Terms',
+      privacyPage: 'Privacy policy',
+      termsUrl: 'https://diaryo.javiermateo.dev/en/terms/',
+      privacyUrl: 'https://diaryo.javiermateo.dev/en/privacy/',
+    },
+    errors: {
+      offline: "Couldn't connect. Check your connection.",
+      cancelled: '',
+      credentials: "The email or the password isn't right.",
+      emailTaken: 'There is already an account with that email. Sign in with it.',
+      invalidEmail: "That email isn't valid.",
+      invalidLink: 'The link has expired or was already used. Ask for another one.',
+      tooMany: 'Too many attempts. Wait a moment.',
+      unknown: 'Something went wrong. Try again.',
+      shortPassword: (min: number) => `The password needs at least ${min} characters.`,
+    },
+  },
+
+  vault: {
+    createTitle: 'Protect your diary in the cloud',
+    createText:
+      "Your diary is encrypted with a password only you know. It's not your account's one: nobody, not even diaryo, can read it or recover it.",
+    password: 'Diary password',
+    repeat: 'Repeat it',
+    passwordHint: 'Better a phrase you remember: at least 8 characters.',
+    next: 'Continue',
+    codeTitle: 'Save your recovery code',
+    codeText:
+      "If you forget the diary password, this code is the only way to open it in the cloud again. It's only shown now.",
+    download: 'Download',
+    print: 'Print',
+    copy: 'Copy',
+    copied: 'Code copied',
+    saved: "I've saved it somewhere safe",
+    activate: 'Turn on the cloud',
+    done: 'Done',
+    unlockTitle: 'Unlock your diary',
+    unlockText: 'Type the diary password. It only takes once on this device.',
+    onceText: "Type the diary password to sync. This device doesn't keep it.",
+    onceSubmit: 'Sync',
+    unlock: 'Unlock',
+    forgot: 'I forgot it: use the recovery code',
+    recoverTitle: 'Use the recovery code',
+    recoverText: 'Type your recovery code and choose a new password for the diary.',
+    code: 'Recovery code',
+    newPassword: 'New diary password',
+    recover: 'Recover',
+    back: 'Back',
+    changeTitle: 'Change the diary password',
+    current: 'Current password',
+    change: 'Change',
+    newCodeTitle: 'New recovery code',
+    newCodeText:
+      'A new code is made and the old one stops working. Type the diary password to continue.',
+    makeCode: 'Make the code',
+    unlocked: 'Diary unlocked on this device',
+    ready: 'The cloud is ready',
+    changed: 'Diary password changed',
+    section: 'Encryption',
+    stateNone: 'Choose the diary password to use the cloud.',
+    stateLocked: 'Locked on this device.',
+    stateUnlocked: (desktop: boolean) =>
+      desktop ? 'Unlocked on this computer' : 'Unlocked in this browser',
+    stateUnknown: "Couldn't check. Look at your connection.",
+    setUp: 'Turn on',
+    passwordRow: 'Diary password',
+    codeRow: 'Recovery code',
+    newCode: 'Make a new one',
+    fileName: 'diaryo-recovery-code',
+    file: (email: string, code: string, date: string) =>
+      `diaryo · Recovery code\n\nAccount: ${email}\nMade: ${date}\n\n${code}\n\nIf you forget the diary password, this code is the only way to open it in the cloud again.\nKeep it somewhere safe and don't share it.\n`,
+    errors: {
+      mismatch: "The passwords don't match.",
+      wrongPassword: "That isn't the diary password.",
+      wrongCode: "That recovery code isn't right.",
+      exists: 'This account already has a diary in the cloud: unlock it with its password.',
+      changed:
+        'The password or the recovery code just changed on another device: try again with the current one.',
+      privateHidden:
+        "Show your private notes first (Settings → Privacy): their text has to move to this account's diary password.",
+    },
+  },
+
+  lock: {
+    level: 'What is encrypted on this device',
+    levels: { off: 'Nothing', private: 'Only what is private', all: 'The whole diary' },
+    levelHints: {
+      off: 'As before: the diary is saved readable on this device.',
+      private:
+        'The notes marked as private are encrypted, and the diary password is needed to see them.',
+      all: 'Everything saved here is encrypted, and the diary password is asked for when it opens.',
+    },
+    privateTitle: 'A password for what is private',
+    privateText:
+      'Private notes are encrypted with the diary password. If you forget it, only the recovery code opens them: nobody else can.',
+    privateCloudText:
+      "Your cloud diary's password is used, the same one everywhere. Type it to continue.",
+    privateDone: 'Password set: what is private is encrypted on this device',
+    downTitle: 'Encrypt only what is private',
+    downText:
+      'The diary is saved readable on this device again, except the private notes. Type the diary password to continue.',
+    down: 'Encrypt only what is private',
+    downDone: 'Now only what is private is encrypted',
+    offTitle: 'Remove the diary password',
+    offText:
+      'Nothing will be encrypted on this device any more. Type the diary password to continue.',
+    offNotes: (count: number) =>
+      count === 1
+        ? 'You have a private note. What happens to it?'
+        : `You have ${count} private notes. What happens to them?`,
+    keepNotes: (count: number) =>
+      count === 1 ? 'Keep it as a normal note' : 'Keep them as normal notes',
+    keepNotesHint: 'Their text stays in the diary, not encrypted.',
+    deleteNotes: (count: number) => (count === 1 ? 'Delete it' : 'Delete them'),
+    deleteNotesHint: (count: number) =>
+      count === 1
+        ? 'It leaves this diary, on your other devices too.'
+        : 'They leave this diary, on your other devices too.',
+    off: 'Remove the password',
+    revealTitle: 'Show what is private',
+    revealText: 'Type the diary password to see all the private notes.',
+    revealOneText: 'Type the diary password to see this note.',
+    showThis: 'Show this note',
+    deleteTitle: (count: number) =>
+      count === 1 ? 'Delete a private note' : `Delete ${count} private notes`,
+    deleteText: (count: number) =>
+      count === 1
+        ? "It's private: type the diary password to delete it."
+        : "They're private: type the diary password to delete them.",
+    delete: 'Delete',
+    hideThis: 'Hide this note',
+    reveal: 'Show',
+    revealed: 'What is private is showing',
+    hidden: 'What is private is hidden again',
+    hidePrivate: 'Hide what is private again',
+    hidePrivateOptions: { 30: 'After 30 s', 60: 'After a minute', 300: 'After 5 min' },
+    hidePrivateHint: 'Each note, from when you open it. While you edit it, it waits.',
+    hidePrivateAway: 'Hide everything when the diary is put away',
+    hidePrivateAwayHint: 'When it is minimized, the tab changes or it goes to the tray.',
+    privateRow: 'Private notes',
+    show: 'Show all',
+    hide: 'Hide all',
+    autoLock: 'Lock by itself',
+    autoLockHint: 'After a while without using the diary.',
+    autoLockOptions: { 0: 'Never', 5: '5 min', 15: '15 min', 60: '1 h' },
+    lockAway: 'Lock when put away',
+    lockAwayHint: (desktop: boolean) =>
+      desktop
+        ? 'When it is minimized or sent to the tray.'
+        : 'When the tab changes or it is minimized.',
+    lockNow: 'Lock now',
+    lockNowHint: 'Closes the diary: the password is needed to open it again.',
+    lockGroup: 'Locking',
+    privateAll: 'All at once',
+    cloudPassword:
+      "It's your cloud diary's password: change it in “Account and cloud”, and it changes in both places.",
+    enableTitle: 'Encrypt the diary on this device',
+    enableText:
+      'Everything you save here is encrypted with the diary password. If you forget it, only the recovery code opens it: nobody else can.',
+    enableCloudText:
+      "Your cloud diary's password is used, the same one everywhere. Type it to continue.",
+    enable: 'Encrypt',
+    encrypting: 'Encrypting the diary…',
+    decrypting: 'Decrypting the diary…',
+    keepOpen: "Don't close diaryo until it's done.",
+    enabled: 'Diary encrypted on this device',
+    enabledBackups:
+      'Diary encrypted. Earlier backups stay readable in their folder; new ones are encrypted.',
+    openBackups: 'Open the folder',
+    disabled: 'Nothing is encrypted on this device any more',
+    codeText:
+      "If you forget the diary password, this code is the only way to open it again. It's only shown now.",
+    file: (code: string, date: string) =>
+      `diaryo · Recovery code\n\nCreated: ${date}\n\n${code}\n\nIf you forget the diary password, this code is the only way to open it again.\nKeep it somewhere safe and don't share it.\n`,
+    lockedTitle: 'Your diary is locked',
+    lockedText: 'Type the diary password.',
+    open: 'Open',
+    forgotBoth: "I don't remember the password or the code",
+    forgotTitle: 'Without the password or the code',
+    forgotText:
+      "Without them there is no way to open this diary: it's encrypted and no copy of the password is kept. You can delete it from this device and start a new one. If it's open on another device, it's still there.",
+    erase: 'Delete the diary from this device',
+    eraseConfirm: 'Yes, delete it for good',
+    otherOptions: 'Other options',
+    optionsText: 'Without the password the diary can’t be read, but it can be put aside.',
+    signOut: 'Sign out',
+    signOutHint: (email: string) =>
+      `You leave your account (${email}). The diary stays here, locked.`,
+    startOver: 'Start another diary',
+    startOverHint: 'This one is kept encrypted in a file, and a blank one starts here.',
+    eraseHint: 'Keeping nothing. It can’t be undone.',
+    startOverText: (desktop: boolean) =>
+      desktop
+        ? 'We keep this diary as it is, encrypted, in the backups folder.'
+        : 'We keep this diary as it is, encrypted, in a file that downloads.',
+    startOverOpen:
+      'Open it whenever you like with “Open a copy” and its password or recovery code.',
+    startOverButton: 'Keep it and start another',
+    startOverDownload: 'Download the diary',
+    startOverCheck:
+      'Check that the file is in your downloads: going on deletes this diary from here.',
+    startOverConfirm: 'I have it: start another',
+    startOverAgain: 'Download it again',
+    startOverFailed: 'The diary couldn’t be kept, so nothing was deleted.',
+    ownVaultText:
+      'Your diary already has a password on this device: the cloud will use the same one, with the same recovery code.',
+    adopted: "From now on, the diary password on this device is this account's cloud one.",
+    saveTitle: 'Save a copy of the diary',
+    saveText: 'Your diary is encrypted on this device. How do you want the copy?',
+    sealed: 'Encrypted',
+    sealedHint: 'It opens with the diary password or the recovery code.',
+    readable: 'Readable',
+    readableHint: 'An open file: anyone who has it can read it.',
+    openTitle: 'Open an encrypted copy',
+    openText:
+      'This copy is encrypted. Type the password the diary had when it was made, or its recovery code.',
+    useCode: 'Use the recovery code',
+    usePassword: 'Use the password',
+  },
+
+  sync: {
+    row: 'Sync',
+    modes: { auto: 'Automatic', manual: 'Manual', password: 'With password' },
+    modeHints: {
+      auto: 'Syncs by itself after each change and when another device changes something.',
+      manual: 'Only when you press "Sync now".',
+      password:
+        'Only when you press "Sync now", asking for the diary password each time: this device doesn\'t keep the key.',
+    },
+    now: 'Sync now',
+    status: {
+      off: '',
+      idle: 'Up to date',
+      syncing: 'Syncing…',
+      offline: "Offline · it'll sync when you're back",
+      full: 'Space full',
+      error: "Couldn't sync",
+    },
+    last: (when: string) => `Last time: ${when}`,
+    never: "Hasn't synced yet",
+    progress: (done: number, total: number) => `Uploading ${done} of ${total}`,
+    pending: (n: number) =>
+      n === 1 ? '1 change waiting to go up' : `${n} changes waiting to go up`,
+    space: 'Space',
+    spaceOf: (used: string, quota: string) => `${used} of ${quota}`,
+    fullTitle: 'Your cloud space is full.',
+    fullText:
+      "Your diary keeps saving on this device, but new things don't go up. Delete pages or images you don't need to free some space.",
+    spaceWarning: (percent: number) => `You've used ${percent} % of your cloud space`,
+    seeSpace: 'See',
+    locked: 'Not syncing: unlock to send and get the changes.',
+    otherTodayPage: 'Another page for today came from another device',
+    seePage: 'Go to it',
+    lowSpace: (free: string) =>
+      `You're running out of cloud space: ${free} free. Delete pages or images you don't need.`,
+    rejected: (n: number) => (n === 1 ? "1 change couldn't go up" : `${n} changes couldn't go up`),
+    sessionEnded: 'Your session expired: sign in again to sync. What is pending is kept here.',
+    leaveTitle: "What should happen to this device's diary?",
+    leavePending: (n: number) =>
+      n === 1
+        ? "There is 1 change that hasn't gone up to the cloud."
+        : `There are ${n} changes that haven't gone up to the cloud.`,
+    leaveKeep: 'Keep it here',
+    leaveKeepHint: "You keep writing without an account; it doesn't sync.",
+    leaveKeepPendingHint: 'The changes stay here and go up when you sign in again.',
+    leaveRemove: 'Remove it from here',
+    leaveLock: 'Leave it encrypted and locked',
+    leaveLockHint: 'It stays here, but only opens with the diary password.',
+    keepSession: 'Keep the session in this browser',
+    keepSessionHint:
+      "Off: the session and the diary's keys only last while this tab is open. For shared computers.",
+    leaveSyncRemove: 'Sync and remove it from here',
+    leaveRemoveHint: (desktop: boolean) =>
+      'A blank diary opens. Yours stays in the cloud and comes back when you sign in.' +
+      (desktop ? ' The daily backups in Documents stay.' : ''),
+    leaveSyncRemoveHint: "The changes go up first; if they can't, nothing is removed.",
+    leaveFailed: "The changes couldn't go up: the diary is still here.",
+    leftRemoved: 'Signed out · the diary is no longer on this device',
+    passwordMode: 'The password is asked for when syncing',
+    firstTitle: 'There is already a diary in the cloud',
+    firstText: 'This device has one too. What should we do?',
+    merge: 'Merge both',
+    mergeHint: 'All the pages come together; if something changed on both, the most recent wins.',
+    useCloud: "Use the cloud's and keep mine",
+    useCloudHint:
+      "This device's diary is saved in a .diaryo file (you can open it whenever you like) and the cloud's one stays here.",
+    returnTitle: "There are changes that haven't gone up",
+    returnText: (n: number) =>
+      n === 1
+        ? "This device has 1 change that isn't in the cloud (made while signed out, or left pending). What should we do with it?"
+        : `This device has ${n} changes that aren't in the cloud (made while signed out, or left pending). What should we do with them?`,
+    keepMine: 'Upload my changes',
+    keepMineHint: 'They join the cloud diary; if something changed on both, the most recent wins.',
+    useCloudReturnHint:
+      "Your changes don't go up: this device's diary is saved in a .diaryo file (you can open it whenever you like) and the cloud's one stays here.",
+    emptyTitle: "This account doesn't have a diary yet",
+    emptyText: 'There is a diary on this device. What should happen to it?',
+    upload: 'Upload this diary',
+    uploadHint: "It becomes this account's diary and syncs with your other devices.",
+    startNew: 'Start a new one and keep this one',
+    startNewHint:
+      'This diary is saved in a .diaryo file (you can open it whenever you like) and the account starts blank.',
+    later: 'Not now',
+    keptCopy: (where: string) => `Your previous diary is in ${where} · the cloud's one is coming`,
+    keptCopyNew: (where: string) => `Your previous diary is in ${where} · you start blank`,
+    tips: {
+      idle: (when: string) => `Cloud up to date · ${when}`,
+      syncing: 'Syncing with the cloud…',
+      offline: "Offline: changes will go up when you're back",
+      full: "Cloud space full: new things don't go up",
+      error: "Couldn't sync",
+      manual: (n: number) => (n === 0 ? 'Cloud up to date' : `${n} changes not synced`),
+      locked: 'The cloud is not syncing · Unlock',
+    },
+  },
+
   dates: {
     today: 'Today',
     yesterday: 'Yesterday',
@@ -70,12 +475,120 @@ export const en: Messages = {
     closeTip: 'Close — diaryo stays next to the clock',
   },
 
+  welcome: {
+    page: {
+      title: 'Hi! This is your diary',
+      intro: 'Each day has its page. Write anywhere: double click, or the T key.',
+      tasks: ['Open diaryo', 'Write something about today', 'Paste a photo (Ctrl V)'],
+      datedTask: 'Give a task a date with @',
+      draw: 'Draw with P (with the mouse, a finger or a pen)',
+      noteMoves: 'Sticky notes move and turn. Take them out of the book: they stay on the desk.',
+      arrows: 'Arrows join things and follow them',
+      ideas: 'Ideas',
+      photo: 'your photo',
+      appointment: 'Coffee with Ana',
+      search: 'Ctrl K: search the whole diary and any command',
+      desk: 'On the desk, what you want at hand on every page',
+    },
+    notice: 'Sample page, to touch and try',
+    clear: 'Start blank',
+    cleared: 'Blank page',
+    dialog: {
+      title: 'Your diary is waiting',
+      text: 'Every day, a blank page.',
+      start: 'Open it',
+      account: 'I have an account',
+      openCopy: 'Open a copy',
+      local: 'Without an account, everything stays on this device',
+      tourOffer: 'Want to see how it works?',
+      copyOpened: 'Your diary is open',
+      showTour: 'Take the tour',
+    },
+  },
+
+  tour: {
+    next: 'Next',
+    done: 'Start',
+    skip: 'Skip',
+    replay: 'Play again',
+    scenes: {
+      title: 'My day',
+      note: 'Buy bread',
+      yesterday: 'Walk by the river',
+      today: 'A new page',
+      desk: 'Call the doctor',
+      task: 'Water the plants',
+      datedTask: 'Call Ana',
+      secret: 'Just for me',
+      query: 'bread',
+      results: [
+        ['Today', 'Buy bread'],
+        ['Oct 12', 'Rye bread recipe'],
+      ],
+    },
+    steps: {
+      tools: {
+        title: 'Your tools',
+        text: 'Pen, highlighter, text, sticky notes, arrows and shapes. Each one has its key (hover over it).',
+      },
+      pages: {
+        title: 'One day, one page',
+        text: 'Every day starts a new page. Go to other days here; you can also drag the corner of the sheet.',
+      },
+      desk: {
+        title: 'The desk',
+        text: 'What you leave outside the book stays on the desk, whatever page you open.',
+      },
+      upcoming: {
+        title: 'Tasks and appointments',
+        text: 'Type @ and a day in a line (“@tomorrow 10”) and it gets a date. See here what is coming and what is overdue.',
+      },
+      search: {
+        title: 'Search and commands',
+        text: 'Ctrl K searches the whole diary and finds anything you can do.',
+      },
+      settings: {
+        title: 'Make it yours',
+        text: 'In Settings: covers, paper, desk, the cover, the cloud and privacy.',
+      },
+      floating: {
+        title: 'From any program',
+        text: 'Ctrl Alt D opens the diary over whatever you are doing, and the desk lives on your desktop. Tasks with a time remind you.',
+      },
+    },
+  },
+
+  cover: {
+    title: 'Cover',
+    hint: 'It shows while the diary is locked: put nothing private on it',
+    done: 'Done',
+    edit: 'Edit the cover',
+    note: 'Like one more page: photos, text, drawings and sticky notes on the cover. It shows even while the diary is locked: put nothing private on it.',
+    templatesTitle: 'Start from a template (you can change it all after)',
+    templates: {
+      blank: 'Blank',
+      engraved: 'Engraved',
+      gilded: 'Gilded',
+      label: 'Label',
+      photos: 'Photos',
+      chalk: 'Chalk',
+    },
+    templateTexts: {
+      engraved: 'My diary',
+      gilded: 'Memories',
+      label: 'Notes',
+      chalk: 'Travels',
+    },
+    started: (name: string) => `Cover: “${name}” template`,
+  },
+
   topBar: {
     search: 'Search and commands',
-    theme: (dark) => `${dark ? 'Light' : 'Dark'} theme`,
     settings: 'Settings',
     menu: 'Menu',
-    menuTip: 'Images, backups and export',
+    menuTip: 'Images, backups, theme and shortcuts',
+    searchLabel: 'Search',
+    copies: 'Backups',
     savedWhere: (desktop) =>
       `Everything is saved automatically ${desktop ? 'in this app' : 'in this browser'}.`,
     saveCopy: 'Save a copy of the diary',
@@ -86,23 +599,34 @@ export const en: Messages = {
 
   settings: {
     title: 'Settings',
-    appearance: 'Appearance',
+    sections: {
+      general: 'General',
+      look: 'Diary look',
+      desktop: 'Desktop',
+      privacy: 'Privacy',
+      account: 'Account and cloud',
+      data: 'Backups and data',
+      help: 'Help',
+    },
+    back: 'Back to the settings',
+    onWindows: 'On Windows',
+    more: 'More options',
     language: 'Language',
     theme: 'Theme',
     themes: { light: 'Light', dark: 'Dark', system: 'Same as the system' },
-    bookLook: 'Diary look',
-    diary: 'Diary',
     weekStart: 'Week starts on',
     monday: 'Monday',
     sunday: 'Sunday',
     turnPage: 'Page turning',
     turnPageHint: 'With the buttons, the keyboard or when going to another day.',
     turnSpeeds: { normal: 'Animated', fast: 'Fast', off: 'No animation' },
-    help: 'Help',
-    shortcuts: 'Keyboard shortcuts',
-    shortcutsHint: 'Also with ? at any time.',
-    showShortcuts: 'See shortcuts',
-    storage: 'Storage',
+    shortcuts: 'Help',
+    shortcutsHint:
+      'What each tool is for, the gestures and the shortcuts (the shortcuts, also with ?).',
+    showShortcuts: 'Open help',
+    tour: 'Tour',
+    tourHint: 'The main things in a few steps, like the first time.',
+    showTour: 'Take the tour',
     savedWhere: (desktop, size) =>
       `Everything is saved automatically ${desktop ? 'in this app' : 'in this browser'}` +
       (size ? ` and it now takes ${size}.` : '.'),
@@ -115,6 +639,21 @@ export const en: Messages = {
     backup: 'Backup',
     backupHint: 'A file with the whole diary, to keep somewhere else.',
     saveCopy: 'Save a copy',
+    openCopy: 'Open a copy',
+    openCopyHint: 'Replace your diary with the copy, or combine them.',
+    open: 'Open',
+    about: 'About diaryo',
+    website: "diaryo's website",
+    websiteUrl: 'https://diaryo.javiermateo.dev/en/',
+    source: 'The code, on GitHub',
+    sourceUrl: 'https://github.com/javimateo/Diaryo',
+    restoreRow: 'Back to how it came',
+    restoreHint: 'Everything in this section goes back to its usual values. It can be undone.',
+    restoreHintPrivacy:
+      'Locking and private notes go back to their usual values; what is encrypted and the password stay. It can be undone.',
+    restore: 'Restore',
+    restored: 'Section restored',
+    undo: 'Undo',
   },
 
   keys: {
@@ -143,7 +682,7 @@ export const en: Messages = {
   },
 
   help: {
-    title: 'Keyboard shortcuts',
+    title: 'Help',
     or: 'or',
     tools: 'Tools',
     writing: 'Writing',
@@ -168,6 +707,7 @@ export const en: Messages = {
     scaleFree: 'Scale without keeping proportions',
     scaleFromCenter: 'Scale from the center',
     rotateSnap: 'Rotate in 15° steps',
+    noGuides: 'Place without sticking to the guides',
     group: 'Group / ungroup',
     bringForward: 'Bring forward / send backward',
     bringToFront: 'Bring to front / send to back',
@@ -209,14 +749,84 @@ export const en: Messages = {
     floatingDiary: 'Floating diary (from anywhere)',
     hideFloatingDiary: 'Put the floating diary away',
     toggleDeskLayer: 'Show or hide the desk on the desktop',
+    tabs: { howTo: 'How to use it', shortcuts: 'Shortcuts' },
+    toolUses: {
+      hand: 'Moves the canvas. Also Space + drag, or the middle mouse button.',
+      select: 'Picks, moves, turns and resizes. Double click to write.',
+      lasso: 'Draw around whatever you want to pick.',
+      pen: 'Write and draw by hand; with a digital pen, pressure counts.',
+      marker: 'Underline and highlight behind the writing, without covering it.',
+      eraser: 'Go over a stroke to erase it whole.',
+      text: 'Click and type; drag for a box of a set width.',
+      note: 'Colored notes, with tape, a pin or a clip. They can be private.',
+      arrow: 'From one thing to another: it stays joined and follows them when they move.',
+      rect: 'Boxes to frame or group things; double click to write inside.',
+      ellipse: 'Circles and ovals to ring things; you can write inside too.',
+    },
+    gesturesTitle: 'Gestures and tips',
+    gestures: {
+      turn: { title: 'Turn the page', text: 'Pull the bottom corner, like in a notebook.' },
+      desk: {
+        title: 'The desk',
+        text: 'Whatever you take out of the book stays on the desk, whatever page you open.',
+      },
+      tasks: {
+        title: 'Tasks and lists',
+        text: 'Type [] and space for a checkbox, or - for a list; Enter keeps it going.',
+      },
+      dates: {
+        title: 'Dates and reminders',
+        text: 'Type @ and a day in a line (“@tomorrow 10”): it shows in “Upcoming” and reminds you on time.',
+      },
+      private: {
+        title: 'Private sticky notes',
+        text: 'Right click → “Mark as private”: a padlock shows until you open it with the password.',
+      },
+      link: {
+        title: 'Link days',
+        text: 'Right click → “Link to another page”: a label takes you there.',
+      },
+      images: {
+        title: 'Photos',
+        text: 'Paste them with Ctrl V or drag them in; in the panel, a polaroid, border or round frame.',
+      },
+      search: {
+        title: 'Search',
+        text: 'Finds words, days (“Tuesday”), tasks and anything you can do.',
+      },
+      map: {
+        title: 'Map and index',
+        text: 'The whole diary at a glance, or by day in the index calendar.',
+      },
+      copyStyle: {
+        title: 'Copy the style',
+        text: 'Takes the color, size and font of one thing to others.',
+      },
+      guides: {
+        title: 'Guides',
+        text: 'When moving, it snaps to the edges and center of what is around; with Ctrl, it doesn’t.',
+      },
+      floating: {
+        title: 'Floating diary',
+        text: 'From any program, the shortcut opens the diary over your desktop (on Windows).',
+      },
+    },
   },
 
   desktop: {
-    title: 'Desktop',
     floatingDiary: 'Floating diary',
     floatingDiaryHint: 'Appears over the desktop from anywhere. Esc hides it.',
     shortcutTaken: 'Another app already uses this shortcut: pick another one.',
     deskLayer: 'Desk on the desktop',
+    deskPrivate: 'Private notes on the desktop',
+    deskPrivateHint: 'In the diary they always show with their padlock.',
+    deskPrivateOptions: { lock: 'With a padlock', hide: 'Not shown' },
+    deskLocked: 'The desk with the diary locked',
+    deskLockedHint:
+      "Shown: the desk isn't encrypted with the rest of the diary (its private notes are).",
+    deskLockedOptions: { clear: 'Shown', sealed: 'Hidden until opened' },
+    miniLocked: 'Mini diary with the diary locked',
+    miniLockedOptions: { cover: 'Cover', hide: 'Hidden' },
     deskLayerHint:
       "What's on the desk, over the desktop wallpaper. The shortcut shows or hides it.",
     autostart: 'Start with Windows',
@@ -249,6 +859,7 @@ export const en: Messages = {
     openLabel: "Open the diary on today's page",
     today: 'Today',
     tasks: (n) => `Today · ${n} ${n === 1 ? 'task' : 'tasks'}`,
+    locked: 'Locked',
   },
 
   catalog: {
@@ -274,6 +885,8 @@ export const en: Messages = {
     materials: {
       leather: 'Leather',
       cloth: 'Cloth',
+      canvas: 'Canvas',
+      denim: 'Denim',
       kraft: 'Cardboard',
       plain: 'Plain',
     },
@@ -283,6 +896,10 @@ export const en: Messages = {
       wood: 'Wood',
       cork: 'Cork',
       linen: 'Linen',
+      walnut: 'Walnut',
+      marble: 'Marble',
+      felt: 'Felt',
+      concrete: 'Concrete',
     },
     noteVariants: {
       plain: 'Plain',
@@ -330,7 +947,7 @@ export const en: Messages = {
     binding: 'Binding',
     cover: 'Covers',
     coverMaterial: 'Cover material',
-    kraftNote: 'Cardboard has its own color.',
+    ownColorNote: 'It has its own color.',
     elastic: 'Elastic band',
     desk: 'Desk',
   },
@@ -370,6 +987,14 @@ export const en: Messages = {
     roughnessNames: ['Clean', 'Hand-drawn', 'Very hand-drawn'],
     labelSize: 'Text size',
     font: 'Font',
+    textStyle: 'Text style',
+    frame: 'Frame',
+    frames: { none: 'None', polaroid: 'Polaroid', border: 'Border', rounded: 'Rounded' },
+    shadow: 'Shadow',
+    bold: 'Bold',
+    italic: 'Italic',
+    underline: 'Underline',
+    styleKeys: { bold: 'B', italic: 'I', underline: 'U' },
     align: 'Alignment',
     left: 'Left',
     center: 'Center',
@@ -431,6 +1056,7 @@ export const en: Messages = {
     bookmark: 'Mark the page as important',
     map: 'Diary map',
     index: 'Index and calendar',
+    upcoming: 'Upcoming: tasks and appointments',
     deletePage: 'Delete this page',
     duplicate: 'Duplicate',
     changeLink: 'Change the link…',
@@ -443,6 +1069,14 @@ export const en: Messages = {
     flipH: 'Flip horizontally',
     flipV: 'Flip vertically',
     lock: 'Lock',
+    lockDiary: 'Lock the diary',
+    editCover: 'Edit the cover',
+    doneCover: 'Finish the cover',
+    coverTemplate: (name: string) => `Cover: ${name} template`,
+    showPrivate: 'Show everything private',
+    hidePrivate: 'Hide everything private',
+    markPrivate: 'Mark as private',
+    unmarkPrivate: 'Stop being private',
     unlock: 'Unlock',
     copyPng: 'Copy as image',
     imageCopied: 'Image copied',
@@ -460,6 +1094,8 @@ export const en: Messages = {
     themeSystem: 'Theme like the system',
     settings: 'Settings',
     shortcuts: 'Keyboard shortcuts',
+    tour: 'Take the tour',
+    howTo: 'How to use diaryo',
     diaryPaper: (name) => `Diary paper: ${name}`,
     pagePaper: (name) => `This page's paper: ${name}`,
     pagePaperDefault: "This page's paper: the diary's",
@@ -481,6 +1117,18 @@ export const en: Messages = {
   },
 
   commandKeywords: {
+    settingsSections: {
+      general: 'language theme week page turning startup update',
+      look: 'paper sheet cover binding desk',
+      desktop: 'floating diary shortcut desk windows',
+      privacy: 'password encrypt lock recovery key private',
+      account: 'account cloud session sync email space',
+      data: 'backup copy save open storage browser',
+      help: 'shortcuts keys website code privacy terms',
+    },
+    lockDiary: 'password close privacy encrypt',
+    editCover: 'cover front photos personalize decorate',
+    private: 'private note password secret see',
     newPage: 'sheet add create',
     turn: 'turn sheet',
     turnBack: 'turn sheet back',
@@ -488,6 +1136,7 @@ export const en: Messages = {
     bookmark: 'tab bookmark favorite',
     map: 'all pages overview',
     index: 'list pages months',
+    upcoming: 'agenda appointments tasks dates pending calendar due',
     deletePage: 'remove sheet',
     link: 'link connect',
     layerUp: 'layer above',
@@ -504,6 +1153,7 @@ export const en: Messages = {
     system: 'automatic mode appearance',
     settings: 'preferences options',
     help: 'help keys',
+    tour: 'tour help guide welcome start learn',
     paper: 'paper background',
     binding: 'notebook',
     material: 'material',
@@ -556,6 +1206,8 @@ export const en: Messages = {
   },
 
   toasts: {
+    savedTo: (where: string) => `Saved to ${where}`,
+    saveFailed: "The file couldn't be saved",
     allSaved: 'Everything is saved · it saves itself',
     lastPage: "It's the last page · Alt+N for a new one",
     firstPage: "It's the first page",
@@ -589,6 +1241,13 @@ export const en: Messages = {
     shape: 'Shape text',
   },
 
+  datePicker: {
+    label: 'Date',
+    hint: 'Type a date: tomorrow 10, fri 5pm, 10/15',
+    noTime: 'No time',
+    accept: 'to set it',
+  },
+
   hint: {
     draw: 'to draw',
     write: 'or double-click to write',
@@ -596,8 +1255,55 @@ export const en: Messages = {
     shortcuts: 'shortcuts',
   },
 
+  upcoming: {
+    title: 'Upcoming',
+    open: 'Upcoming: tasks and appointments',
+    close: 'Close Upcoming',
+    tab: 'Tasks',
+    pending: (n: number) => (n === 1 ? '1 pending' : `${n} pending`),
+    soon: (n: number) => (n === 1 ? '1 late or due today' : `${n} late or due today`),
+    groups: {
+      late: 'Late',
+      today: 'Today',
+      tomorrow: 'Tomorrow',
+      week: 'This week',
+      later: 'Later',
+    },
+    allDay: 'all day',
+    tick: 'Mark as done',
+    empty: 'Nothing pending with a date.',
+    emptyHint: 'Type “@” and a date in a task or a sticky note.',
+    dayHas: (n: number) => (n === 1 ? '1 appointment or task' : `${n} appointments or tasks`),
+  },
+
+  calendar: {
+    add: 'Add to my calendar',
+    addAll: 'Add all to my calendar',
+    opened: (n: number) =>
+      n === 1 ? 'Opened in your calendar: 1 event' : `Opened in your calendar: ${n} events`,
+    downloaded: 'diaryo.ics downloaded: open it to add it',
+    failed: 'Couldn’t open the calendar',
+  },
+
+  reminders: {
+    group: 'Reminders',
+    enabled: 'Remind me of tasks and appointments',
+    enabledHint:
+      'A Windows notification at their time, even with diaryo hidden in the tray. Without a time, at 9:00. With the whole diary encrypted, without their text (Windows keeps notifications).',
+    when: 'When to remind',
+    whenHint: 'At their time or that long before. Done tasks don’t remind.',
+    before: { 0: 'On time', 10: '10 min', 30: '30 min', 60: '1 h', 1440: '1 day' },
+    atTime: (day: string, time: string) => `${day} at ${time}`,
+    allDay: (day: string) => `${day}, all day`,
+    hidden: 'You have a reminder',
+    openToSee: 'Open diaryo to see it',
+    missed: (n: number) =>
+      n === 1 ? '1 reminder while diaryo was closed' : `${n} reminders while diaryo was closed`,
+  },
+
   diary: {
     title: 'Diary',
+    pagesTab: 'Pages',
     index: 'Diary index',
     calendar: 'Calendar',
     closeIndex: 'Close the index',

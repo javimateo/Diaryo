@@ -1,6 +1,9 @@
 import { bookBoundsWith } from '../engine/book';
 import { isEditableTarget } from '../engine/dom';
 import type { Engine, ScreenRect } from '../engine/engine';
+import { isPrivateNote, type SceneElement } from '../engine/elements';
+import { hideNotes } from '../cloud/lock';
+import { handlePrivacy } from '../cloud/lockState';
 import { Autosave, type SaveStatus } from '../storage/autosave';
 import { DESK_ID, DESK_INFO, getDB, listPages, loadPage } from '../storage/db';
 import { loadThemePreference, SETTINGS_KEY, THEME_KEY, useUI } from '../store/ui';
@@ -27,10 +30,25 @@ export class DeskLayerController {
 
   constructor(
     private readonly engine: Engine,
-    /** What is on top of the canvas and also takes the mouse (the mini diary). */
-    private readonly extraArea: () => DOMRect | null,
+    /**
+     * What is on top of the canvas and also takes the mouse (the mini diary, the dialog
+     * that asks for the diary password).
+     */
+    private readonly extraAreas: () => DOMRect[],
   ) {
-    this.autosave = new Autosave(this.db, engine, () => DESK_INFO, this.onStatus, false);
+    this.autosave = this.newAutosave();
+  }
+
+  /**
+   * The settings may leave the private notes off the Windows desktop: then they aren't
+   * loaded here (nor touched: only changes are saved).
+   */
+  private readonly shows = (el: SceneElement) =>
+    useUI.getState().settings.deskPrivate !== 'hide' || !isPrivateNote(el);
+
+  private newAutosave() {
+    const { db, engine, onStatus, shows } = this;
+    return new Autosave(db, engine, () => DESK_INFO, onStatus, false, null, shows);
   }
 
   async start() {
@@ -45,6 +63,18 @@ export class DeskLayerController {
       }),
     );
     this.listenWindow();
+    // The private notes shown or hidden (from the diary's window): the desk loads again.
+    handlePrivacy(async (apply) => {
+      this.engine.finishEditing(false);
+      await this.autosave.flush();
+      apply();
+      await this.reload();
+    });
+    this.cleanups.push(
+      () => handlePrivacy(null),
+      // Its open padlock hides a private note shown here too.
+      engine.subscribeHide((id) => void hideNotes([id])),
+    );
 
     await this.frameBook();
     await this.autosave.start();
@@ -74,8 +104,9 @@ export class DeskLayerController {
     this.frame = requestAnimationFrame(() => {
       this.frame = 0;
       const areas: ScreenRect[] = this.engine.hitAreas();
-      const extra = this.extraArea();
-      if (extra) areas.push({ x: extra.x, y: extra.y, width: extra.width, height: extra.height });
+      for (const extra of this.extraAreas()) {
+        areas.push({ x: extra.x, y: extra.y, width: extra.width, height: extra.height });
+      }
       const key = JSON.stringify(areas);
       if (key === this.sentAreas) return;
       this.sentAreas = key;
@@ -94,7 +125,8 @@ export class DeskLayerController {
       this.engine.lockView(view);
       return;
     }
-    const pages = await listPages(this.db);
+    // With the whole diary locked the pages can't be read: framed as without tabs.
+    const pages = await listPages(this.db).catch(() => []);
     if (!this.stopped) this.engine.lockCamera(bookBoundsWith(pages.some((p) => p.bookmark)));
   }
 
@@ -104,7 +136,7 @@ export class DeskLayerController {
     const desk = await loadPage(this.db, DESK_ID);
     if (this.stopped) return;
     for (const asset of desk.assets) this.engine.assets.add(asset.src, asset.id, false);
-    this.engine.loadPage(desk.elements);
+    this.engine.loadPage(desk.elements.filter(this.shows));
     await this.frameBook();
   }
 
@@ -150,7 +182,11 @@ export class DeskLayerController {
     // pinned view.
     const onStorage = (e: StorageEvent) => {
       if (e.key === THEME_KEY) useUI.getState().setThemePreference(loadThemePreference());
-      if (e.key === SETTINGS_KEY) useUI.getState().reloadSettings();
+      if (e.key === SETTINGS_KEY) {
+        const before = useUI.getState().settings.deskPrivate;
+        useUI.getState().reloadSettings();
+        if (useUI.getState().settings.deskPrivate !== before) void this.reload();
+      }
       if (e.key === DESK_VIEW_KEY) void this.frameBook();
     };
     const preventMenu = (e: Event) => e.preventDefault();

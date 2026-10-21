@@ -1,30 +1,26 @@
-import {
-  Bookmark,
-  ChevronLeft,
-  ChevronRight,
-  Palette,
-  Pencil,
-  Plus,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { Bookmark, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { monthGrid, parseDay, todayKey, type DayKey } from '../lib/dates';
-import { formatDay, formatMonth, formatShortDay, weekdayInitials } from '../i18n/dates';
+import { parseDay, type DayKey } from '../lib/dates';
+import type { AgendaItem } from '../diary/agenda';
+import { formatMonth, formatShortDay } from '../i18n/dates';
 import type { PageMeta } from '../diary/pages';
 import { useUI } from '../store/ui';
 import { BOOKMARK_COLORS } from '../diary/diary';
-import { BookStyleSection } from './BookStyleSection';
 import { addPage, cycleBookmarkColor, deletePage, toggleBookmark } from './diaryActions';
+import { MonthCalendar } from './MonthCalendar';
+import { UpcomingList, usePendingCount } from './Upcoming';
 import { useT } from './useT';
 
-/** Diary index: a calendar to jump to any day and a list of pages. */
+/** Diary index: a calendar to jump to any day and, below, the pages or the tasks. */
 export function DiaryPanel() {
   const t = useT();
   const open = useUI((s) => s.diaryOpen);
   const setOpen = useUI((s) => s.setDiaryOpen);
   const { pages, current } = useUI((s) => s.diaryState);
-  const [styling, setStyling] = useState(false);
+  const agenda = useUI((s) => s.agenda);
+  const tab = useUI((s) => s.diaryTab);
+  const setTab = useUI((s) => s.setDiaryTab);
+  const pending = usePendingCount();
   if (!open || !current) return null;
 
   return (
@@ -41,17 +37,6 @@ export function DiaryPanel() {
         <button
           type="button"
           className="icon-btn"
-          aria-label={t.bookStyle.label}
-          aria-pressed={styling}
-          data-active={styling || undefined}
-          data-tip={t.bookStyle.label}
-          onClick={() => setStyling(!styling)}
-        >
-          <Palette size={16} strokeWidth={1.75} />
-        </button>
-        <button
-          type="button"
-          className="icon-btn"
           aria-label={t.diary.closeIndex}
           data-tip={`${t.common.close} — Ctrl B`}
           data-tip-align="end"
@@ -60,92 +45,52 @@ export function DiaryPanel() {
           <X size={16} strokeWidth={1.75} />
         </button>
       </header>
-      {styling && <BookStyleSection />}
-      <Calendar pages={pages} current={current} />
+      <MonthCalendar
+        selected={current.date}
+        marked={new Set(pages.map((p) => p.date))}
+        dated={datedDays(agenda)}
+        onPick={(day) => void useUI.getState().diary?.goToDay(day)}
+      />
       <button type="button" className="new-page-btn" onClick={addPage}>
         <Plus size={16} strokeWidth={2} />
         {t.commands.newPage}
         <kbd>Alt N</kbd>
       </button>
-      <PageList pages={pages} current={current} />
+      <div className="segmented-group wide diary-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          className="icon-btn text-option"
+          aria-selected={tab === 'pages'}
+          data-active={tab === 'pages' || undefined}
+          onClick={() => setTab('pages')}
+        >
+          {t.diary.pagesTab}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className="icon-btn text-option"
+          aria-selected={tab === 'tasks'}
+          data-active={tab === 'tasks' || undefined}
+          onClick={() => setTab('tasks')}
+        >
+          {pending > 0 ? `${t.upcoming.tab} · ${pending}` : t.upcoming.tab}
+        </button>
+      </div>
+      {tab === 'pages' ? <PageList pages={pages} current={current} /> : <UpcomingList />}
     </aside>
   );
 }
 
-function Calendar({ pages, current }: { pages: PageMeta[]; current: PageMeta }) {
-  const t = useT();
-  const today = todayKey();
-  const weekStart = useUI((s) => s.settings.weekStart);
-  const [view, setView] = useState(() => monthOf(current.date));
-  // When the page changes, the calendar shows its month.
-  const [shownFor, setShownFor] = useState(current.date);
-  if (shownFor !== current.date) {
-    setShownFor(current.date);
-    setView(monthOf(current.date));
+/** How many appointments or pending tasks each day has (done tasks don't count). */
+function datedDays(agenda: AgendaItem[]): Map<DayKey, number> {
+  const days = new Map<DayKey, number>();
+  for (const item of agenda) {
+    if (item.task !== 'done') days.set(item.day, (days.get(item.day) ?? 0) + 1);
   }
-
-  const withPages = new Set(pages.map((p) => p.date));
-  const move = (delta: number) => {
-    const date = new Date(view.year, view.month + delta, 1);
-    setView({ year: date.getFullYear(), month: date.getMonth() });
-  };
-
-  return (
-    <section className="calendar" aria-label={t.diary.calendar}>
-      <div className="calendar-head">
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label={t.diary.prevMonth}
-          onClick={() => move(-1)}
-        >
-          <ChevronLeft size={16} strokeWidth={1.75} />
-        </button>
-        <span className="calendar-month">{formatMonth(view.year, view.month)}</span>
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label={t.diary.nextMonth}
-          onClick={() => move(1)}
-        >
-          <ChevronRight size={16} strokeWidth={1.75} />
-        </button>
-      </div>
-      <div className="calendar-grid" role="grid">
-        {weekdayInitials(weekStart).map((d, i) => (
-          <span key={i} className="calendar-weekday" aria-hidden>
-            {d}
-          </span>
-        ))}
-        {monthGrid(view.year, view.month, weekStart)
-          .flat()
-          .map((day, i) =>
-            day ? (
-              <button
-                key={day}
-                type="button"
-                className="calendar-day"
-                aria-label={formatDay(day, today)}
-                aria-current={day === current.date ? 'date' : undefined}
-                data-today={day === today || undefined}
-                data-pages={withPages.has(day) || undefined}
-                onClick={() => void useUI.getState().diary?.goToDay(day)}
-              >
-                {parseDay(day).getDate()}
-              </button>
-            ) : (
-              <span key={`empty-${i}`} />
-            ),
-          )}
-      </div>
-    </section>
-  );
+  return days;
 }
-
-const monthOf = (day: DayKey) => {
-  const date = parseDay(day);
-  return { year: date.getFullYear(), month: date.getMonth() };
-};
 
 /** Pages from newest to oldest, grouped by month. */
 function PageList({ pages, current }: { pages: PageMeta[]; current: PageMeta }) {
@@ -165,7 +110,7 @@ function PageList({ pages, current }: { pages: PageMeta[]; current: PageMeta }) 
     group.pages.push(page);
   }
   return (
-    <div className="page-list">
+    <div className="page-list" data-scrollable>
       {groups.map((group) => (
         <section key={group.key}>
           <h3>{group.label}</h3>

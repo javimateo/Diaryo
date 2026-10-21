@@ -1,18 +1,32 @@
+import { useEffect } from 'react';
 import { useUI } from './store/ui';
+import { AccountDialog } from './ui/AccountDialog';
+import { VaultDialog } from './ui/VaultDialog';
+import { LockDialog } from './ui/LockDialog';
+import { CopyPrivacyDialog } from './ui/CopyPrivacyDialog';
+import { FirstSyncDialog } from './ui/FirstSyncDialog';
+import { startSync } from './ui/cloudSync';
+import { startAutoLock } from './ui/autoLock';
+import { startAccount } from './ui/accountActions';
 import { CanvasView } from './ui/CanvasView';
 import { CommandPalette } from './ui/CommandPalette';
 import { ContextMenu } from './ui/ContextMenu';
 import { DiaryPanel } from './ui/DiaryPanel';
+import { UpcomingPanel } from './ui/Upcoming';
 import { HelpDialog } from './ui/HelpDialog';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { useDeskBackground } from './ui/useDeskBackground';
 import { LinkDialog } from './ui/LinkDialog';
+import { OpenCopyDialog } from './ui/OpenCopyDialog';
 import { MapView } from './ui/MapView';
 import { PageNav } from './ui/PageNav';
 import { PropertiesPanel } from './ui/properties/PropertiesPanel';
 import { TextEditor } from './ui/TextEditor';
 import { Toast } from './ui/Toast';
 import { Toolbar } from './ui/Toolbar';
+import { Tour } from './ui/Tour';
+import { WelcomeDialog } from './ui/WelcomeDialog';
+import { WelcomeNotice } from './ui/WelcomeNotice';
 import { Brand, TopActions } from './ui/TopBar';
 import { useShortcuts } from './ui/useShortcuts';
 import { ViewControls } from './ui/ViewControls';
@@ -24,6 +38,9 @@ export function App() {
   const t = useT();
   useShortcuts();
   useDeskBackground();
+  useEffect(startAccount, []);
+  useEffect(startSync, []);
+  useEffect(startAutoLock, []);
   const isEmpty = useUI((s) => s.doc.isEmpty);
   const loaded = useUI((s) => s.saveStatus !== 'loading');
 
@@ -32,20 +49,23 @@ export function App() {
       <CanvasView />
       <WindowDragRegion />
       <TextEditor />
-      <div className="layer top-left">
-        <Brand />
-      </div>
-      <div className="layer top-center">
-        <Toolbar />
+      <div className="top-bar">
+        <div className="layer top-left">
+          <Brand />
+        </div>
+        <div className="layer top-center">
+          <Toolbar />
+        </div>
+        <div className="layer top-right">
+          <TopActions />
+        </div>
       </div>
       <div className="layer side-left">
         <PropertiesPanel />
       </div>
-      <div className="layer top-right">
-        <TopActions />
-      </div>
       <div className="layer side-right">
         <DiaryPanel />
+        <UpcomingPanel />
       </div>
       <div className="layer bottom-left">
         <ZoomControls />
@@ -62,13 +82,22 @@ export function App() {
             {t.hint.move} · <kbd>?</kbd> {t.hint.shortcuts}
           </p>
         )}
+        <WelcomeNotice />
         <Toast />
       </div>
       <ContextMenu />
       <HelpDialog />
+      <Tour />
+      <WelcomeDialog />
       <MapView />
       <LinkDialog />
+      <OpenCopyDialog />
       <SettingsDialog />
+      <AccountDialog />
+      <VaultDialog />
+      <LockDialog />
+      <CopyPrivacyDialog />
+      <FirstSyncDialog />
       <CommandPalette />
     </div>
   );

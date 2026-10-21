@@ -200,7 +200,7 @@ fn watch(app: AppHandle) {
 
 #[cfg(windows)]
 mod win {
-    use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, Ordering};
     use tauri::WebviewWindow;
     use windows_sys::Win32::{
         Foundation::{BOOL, HWND, LPARAM, LRESULT, POINT, WPARAM},
@@ -226,6 +226,10 @@ mod win {
     /// The desktop is being shown (`Win+D`): the desk moves to the front until another
     /// window is activated.
     static SHOWING_DESKTOP: AtomicBool = AtomicBool::new(false);
+    /// Checks in a row that looked like `Win+D` (see `follow_show_desktop`).
+    static DESKTOP_AHEAD: AtomicU32 = AtomicU32::new(0);
+    /// How many checks in a row (one every ~100 ms) it must look like `Win+D`.
+    const CONFIRM_CHECKS: u32 = 2;
 
     fn hwnd() -> HWND {
         WINDOW.load(Ordering::SeqCst) as HWND
@@ -338,6 +342,14 @@ mod win {
         text.encode_utf16().chain(std::iter::once(0)).collect()
     }
 
+    /// The desktop itself or the taskbar (windows of the shell, not of an app).
+    unsafe fn is_shell(hwnd: HWND) -> bool {
+        matches!(
+            class_of(hwnd).as_str(),
+            "Progman" | "WorkerW" | "Shell_TrayWnd" | "Shell_SecondaryTrayWnd"
+        )
+    }
+
     unsafe fn class_of(hwnd: HWND) -> String {
         let mut buffer = [0u16; 64];
         let len = GetClassNameW(hwnd, buffer.as_mut_ptr(), buffer.len() as i32);
@@ -412,7 +424,18 @@ mod win {
                 return;
             }
             if !SHOWING_DESKTOP.load(Ordering::SeqCst) {
-                if is_above(desktop, hwnd) {
+                // `Win+D` leaves the desktop above the desk *and* active. The Explorer
+                // reorders the desktop windows for a moment when it reloads (switching
+                // drives, for example) while its own window stays active: that isn't it.
+                // And it must last, not be a passing reorder.
+                let foreground = GetForegroundWindow();
+                let desktop_active = foreground.is_null() || is_shell(foreground);
+                if !is_above(desktop, hwnd) || !desktop_active {
+                    DESKTOP_AHEAD.store(0, Ordering::SeqCst);
+                    return;
+                }
+                if DESKTOP_AHEAD.fetch_add(1, Ordering::SeqCst) + 1 >= CONFIRM_CHECKS {
+                    DESKTOP_AHEAD.store(0, Ordering::SeqCst);
                     SHOWING_DESKTOP.store(true, Ordering::SeqCst);
                     SetWindowPos(
                         hwnd,
@@ -427,11 +450,7 @@ mod win {
                 return;
             }
             let foreground = GetForegroundWindow();
-            let shell = matches!(
-                class_of(foreground).as_str(),
-                "Progman" | "WorkerW" | "Shell_TrayWnd" | "Shell_SecondaryTrayWnd"
-            );
-            if !foreground.is_null() && foreground != hwnd && !shell {
+            if !foreground.is_null() && foreground != hwnd && !is_shell(foreground) {
                 SHOWING_DESKTOP.store(false, Ordering::SeqCst);
                 SetWindowPos(
                     hwnd,

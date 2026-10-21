@@ -3,6 +3,7 @@ import { todayKey } from '../lib/dates';
 import { formatDay, relativeDay } from '../i18n/dates';
 import { positionInDay } from '../diary/pages';
 import { useUI } from '../store/ui';
+import { COVER_ID } from '../storage/db';
 import { goToToday, toggleBookmark, turnPage } from './diaryActions';
 import { useT } from './useT';
 
@@ -12,7 +13,8 @@ export function PageNav() {
   const { pages, current } = useUI((s) => s.diaryState);
   const diaryOpen = useUI((s) => s.diaryOpen);
   const setDiaryOpen = useUI((s) => s.setDiaryOpen);
-  if (!current) return null;
+  // The closed diary (its cover) has no page to turn.
+  if (!current || current.id === COVER_ID) return null;
 
   const today = todayKey();
   const day = formatDay(current.date, today);

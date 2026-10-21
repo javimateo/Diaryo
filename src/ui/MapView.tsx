@@ -352,8 +352,17 @@ function drawLinks(content: HTMLElement, svg: SVGSVGElement, links: PageLink[]) 
     return { x: c.x + dx * t + (dx / len) * gap, y: c.y + dy * t + (dy / len) * gap };
   };
 
-  const path = (from: string, to: string, d: string) =>
-    `<path class="map-link" data-from="${from}" data-to="${to}" d="${d}" marker-end="url(#map-arrow)"/>`;
+  // Made as elements, not markup: the pages' ids come from the diary (a backup file, the
+  // cloud), and as text they could close the attribute and add their own HTML.
+  const path = (from: string, to: string, d: string) => {
+    const link = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    link.setAttribute('class', 'map-link');
+    link.dataset.from = from;
+    link.dataset.to = to;
+    link.setAttribute('d', d);
+    link.setAttribute('marker-end', 'url(#map-arrow)');
+    return link;
+  };
 
   const paths = links.flatMap(({ from, to }) => {
     const a = sheets.get(from);
@@ -386,6 +395,6 @@ function drawLinks(content: HTMLElement, svg: SVGSVGElement, links: PageLink[]) 
     return [path(from, to, `M${start.x} ${start.y} Q${qx} ${qy} ${end.x} ${end.y}`)];
   });
   svg.innerHTML =
-    '<defs><marker id="map-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" markerUnits="strokeWidth" orient="auto"><path d="M1 1 L9 5 L1 9" /></marker></defs>' +
-    paths.join('');
+    '<defs><marker id="map-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" markerUnits="strokeWidth" orient="auto"><path d="M1 1 L9 5 L1 9" /></marker></defs>';
+  svg.append(...paths);
 }

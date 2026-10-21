@@ -1,0 +1,22 @@
+name: Idea
+description: Suggest something new or a change.
+labels: [idea]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What for
+      description: What you'd like to do, or what gets in the way now.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How it could work. Sketches are welcome.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Helping
+      options:
+        - label: I'd like to make the pull request myself

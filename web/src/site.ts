@@ -4,6 +4,10 @@ export const SITE = {
   repo: 'https://github.com/javimateo/Diaryo',
   releases: 'https://github.com/javimateo/Diaryo/releases/latest',
   license: 'PolyForm Noncommercial 1.0.0',
+  licenseUrl: 'https://polyformproject.org/licenses/noncommercial/1.0.0/',
+  /** Who is responsible for the cloud and the website (the privacy policy and the terms). */
+  owner: 'Javier Mateo',
+  contact: 'privacidad@javiermateo.dev',
   /** The web app (PLAN.md, H6). While it isn't set, the site doesn't offer it. */
   app: (import.meta.env.APP_URL as string | undefined) || null,
   /**

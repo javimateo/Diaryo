@@ -1,3 +1,4 @@
+import { coverCrop, photoArea, ROUNDED_RADIUS } from './frames';
 import { arrowPath } from './arrowGeometry';
 import type { AssetStore } from './assets';
 import { isClosedStroke, labelLayout, textOf } from './containers';
@@ -22,7 +23,7 @@ import {
   NOTE_PADDING_RATIO,
   type TextLayout,
 } from './text';
-import type { TextAlign } from './elements';
+import { privateBadge, type TextAlign, type TextStyleFlags } from './elements';
 
 export interface RenderContext {
   mode: ThemeMode;
@@ -80,7 +81,7 @@ export interface NoteTextLayout extends TextLayout {
 export function noteTextLayout(el: NoteElement): NoteTextLayout {
   const pad = notePadding(el);
   const boxWidth = el.width - pad * 2;
-  const layout = layoutText(el.text, el.fontSize, el.font, boxWidth);
+  const layout = layoutText(el.text, el.fontSize, el, boxWidth);
   const free = Math.max(0, el.height - pad * 2 - layout.height);
   const offset = el.valign === 'middle' ? free / 2 : el.valign === 'bottom' ? free : 0;
   return { ...layout, x: pad, y: pad + offset, boxWidth };
@@ -99,16 +100,32 @@ export interface EditorBox {
   height: number;
   fontSize: number;
   font: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
   align: TextAlign;
   color: string;
 }
+
+const flagsOf = ({ bold, italic, underline }: TextStyleFlags) => ({ bold, italic, underline });
 
 export function editorBox(el: EditableElement, mode: ThemeMode): EditorBox {
   const text = textOf(el);
   if (el.type === 'text') {
     const { fontSize, font, align } = el;
     const color = resolveColor(el.color, mode);
-    return { text, x: 0, y: 0, width: el.width, height: el.height, fontSize, font, align, color };
+    return {
+      text,
+      x: 0,
+      y: 0,
+      width: el.width,
+      height: el.height,
+      fontSize,
+      font,
+      ...flagsOf(el),
+      align,
+      color,
+    };
   }
   if (el.type === 'note') {
     const l = noteTextLayout(el);
@@ -122,6 +139,7 @@ export function editorBox(el: EditableElement, mode: ThemeMode): EditorBox {
       height,
       fontSize,
       font,
+      ...flagsOf(el),
       align,
       color: noteInk(el, mode),
     };
@@ -137,6 +155,7 @@ export function editorBox(el: EditableElement, mode: ThemeMode): EditorBox {
     height: Math.max(l.height, label.fontSize * LINE_HEIGHT),
     fontSize: label.fontSize,
     font: label.font,
+    ...flagsOf(label),
     align: label.align,
     color: resolveColor(el.color, mode),
   };
@@ -152,9 +171,10 @@ function drawText(
   ctx.save();
   ctx.globalAlpha = opacity;
   applyElementTransform(ctx, el);
-  drawTextBlock(ctx, layoutText(el.text, el.fontSize, el.font, el.wrap ? el.width : undefined), {
+  drawTextBlock(ctx, layoutText(el.text, el.fontSize, el, el.wrap ? el.width : undefined), {
     fontSize: el.fontSize,
-    font: el.font,
+    face: el,
+    underline: el.underline,
     color: resolveColor(el.color, rc.mode),
     align: el.align,
     boxWidth: el.width,
@@ -173,13 +193,15 @@ function drawNote(
   applyElementTransform(ctx, el);
   drawNoteBody(ctx, el, rc.mode, rc.pixelScale);
 
-  if (rc.editingId !== el.id) {
+  if (el.concealed) drawLock(ctx, el, noteInk(el, rc.mode));
+  else if (rc.editingId !== el.id) {
     const layout = noteTextLayout(el);
     ctx.save();
     ctx.translate(layout.x, layout.y);
     drawTextBlock(ctx, layout, {
       fontSize: el.fontSize,
-      font: el.font,
+      face: el,
+      underline: el.underline,
       color: noteInk(el, rc.mode),
       align: el.align,
       boxWidth: layout.boxWidth,
@@ -188,6 +210,57 @@ function drawNote(
   }
   // Pin, tape or clip go on top of the text.
   drawNoteDecoration(ctx, el, rc.mode, rc.pixelScale);
+  if (el.private && !el.concealed) drawOpenLock(ctx, el, noteInk(el, rc.mode));
+  ctx.restore();
+}
+
+/** A padlock in the middle of a private note whose text can't be seen. */
+function drawLock(ctx: CanvasRenderingContext2D, el: NoteElement, color: string) {
+  const size = Math.min(el.width, el.height) * 0.2;
+  const cx = el.width / 2;
+  const cy = el.height / 2;
+  const body = { w: size, h: size * 0.78 };
+  const top = cy - body.h * 0.2;
+  ctx.save();
+  ctx.globalAlpha *= 0.55;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = size * 0.12;
+  ctx.beginPath();
+  ctx.arc(cx, top, size * 0.3, Math.PI, 0);
+  ctx.lineTo(cx + size * 0.3, top + size * 0.05);
+  ctx.moveTo(cx - size * 0.3, top + size * 0.05);
+  ctx.lineTo(cx - size * 0.3, top);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.roundRect(cx - body.w / 2, top + size * 0.05, body.w, body.h, size * 0.12);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** A private note that is shown: an open padlock in its corner, to hide it again. */
+function drawOpenLock(ctx: CanvasRenderingContext2D, el: NoteElement, color: string) {
+  const { x, y, r } = privateBadge(el);
+  ctx.save();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  const size = r * 1.1;
+  const top = y - size * 0.1;
+  ctx.globalAlpha *= 0.75;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = size * 0.13;
+  ctx.lineCap = 'round';
+  // The shackle, open: only its left side goes down into the body.
+  ctx.beginPath();
+  ctx.moveTo(x - size * 0.3, top);
+  ctx.arc(x, top - size * 0.12, size * 0.3, Math.PI * 0.95, Math.PI * 1.95);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.roundRect(x - size * 0.4, top, size * 0.8, size * 0.6, size * 0.12);
+  ctx.fill();
   ctx.restore();
 }
 
@@ -239,7 +312,8 @@ function drawLabel(
   ctx.translate(layout.x, layout.y);
   drawTextBlock(ctx, layout, {
     fontSize: label.fontSize,
-    font: label.font,
+    face: label,
+    underline: label.underline,
     color: resolveColor(el.color, rc.mode),
     align: label.align,
     boxWidth: layout.boxWidth,
@@ -256,15 +330,54 @@ function drawImage(
   ctx.save();
   ctx.globalAlpha = opacity;
   applyElementTransform(ctx, el);
+  const { width, height, frame } = el;
+  const short = Math.min(width, height);
+  const radius = frame === 'rounded' ? ROUNDED_RADIUS * short : 0;
+  const outline = () => {
+    ctx.beginPath();
+    ctx.roundRect(0, 0, width, height, radius);
+  };
+  // The paper of the frame (or, for the shadow, the photo's own shape) goes first.
+  if (el.shadow || frame === 'polaroid' || frame === 'border') {
+    ctx.save();
+    if (el.shadow) {
+      ctx.shadowColor = 'rgba(40, 22, 8, 0.32)';
+      ctx.shadowBlur = short * 0.07 * rc.pixelScale;
+      ctx.shadowOffsetY = short * 0.025 * rc.pixelScale;
+    }
+    ctx.fillStyle = frame === 'polaroid' ? '#fbf8f1' : '#ffffff';
+    outline();
+    ctx.fill();
+    ctx.restore();
+  }
   const image = rc.assets.image(el.assetId);
+  const area = photoArea(width, height, frame);
+  ctx.save();
+  if (radius > 0) {
+    outline();
+    ctx.clip();
+  }
   if (image) {
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(image, 0, 0, el.width, el.height);
+    // The photo fills its place cropped, never stretched (also without a frame).
+    const crop = coverCrop(image.naturalWidth, image.naturalHeight, area);
+    ctx.drawImage(
+      image,
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height,
+      area.x,
+      area.y,
+      area.width,
+      area.height,
+    );
   } else {
     // While loading, a gap of the same size.
     ctx.fillStyle = rc.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
-    ctx.fillRect(0, 0, el.width, el.height);
+    ctx.fillRect(area.x, area.y, area.width, area.height);
   }
+  ctx.restore();
   ctx.restore();
 }
 

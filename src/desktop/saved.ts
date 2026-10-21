@@ -43,16 +43,53 @@ export const TODAY_KEY = 'diaryo:today';
 export interface TodayCard extends TodayPreview {
   /** Cover color. */
   cover: string;
+  /**
+   * The cover's picture, shown while the diary is locked (it is kept readable anyway: see
+   * sealing.ts). Absent if it was never drawn.
+   */
+  coverImage?: string;
 }
 
 export function readToday(): TodayCard | null {
-  const { day, image, pending, cover } = asRecord(readJSON(TODAY_KEY));
+  const { day, image, pending, cover, coverImage } = asRecord(readJSON(TODAY_KEY));
   const ok =
     typeof day === 'string' &&
     typeof image === 'string' &&
     typeof pending === 'number' &&
     typeof cover === 'string';
-  return ok ? { day, image, pending, cover } : null;
+  if (!ok) return null;
+  return { day, image, pending, cover, ...(typeof coverImage === 'string' && { coverImage }) };
 }
 
 export const writeToday = (card: TodayCard) => writeJSON(TODAY_KEY, card);
+
+/**
+ * With the whole diary encrypted, today's page isn't written to the local storage (only
+ * its cover): the diary's window passes it to the desk's in memory. A window that starts
+ * asks for the last one.
+ */
+type TodayMessage = { type: 'today'; card: TodayCard } | { type: 'ask' };
+
+const todayChannel =
+  typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('diaryo-today');
+let sharedToday: TodayCard | null = null;
+const todayListeners = new Set<(card: TodayCard) => void>();
+
+if (todayChannel) {
+  todayChannel.onmessage = ({ data }: MessageEvent<TodayMessage>) => {
+    if (data.type === 'ask' && sharedToday) {
+      todayChannel.postMessage({ type: 'today', card: sharedToday } satisfies TodayMessage);
+    } else if (data.type === 'today') todayListeners.forEach((listener) => listener(data.card));
+  };
+}
+
+export function shareToday(card: TodayCard) {
+  sharedToday = card;
+  todayChannel?.postMessage({ type: 'today', card } satisfies TodayMessage);
+}
+
+export function onSharedToday(listener: (card: TodayCard) => void): () => void {
+  todayListeners.add(listener);
+  todayChannel?.postMessage({ type: 'ask' } satisfies TodayMessage);
+  return () => todayListeners.delete(listener);
+}

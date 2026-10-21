@@ -1,0 +1,441 @@
+/* ─── Welcome page notice and window, and the tour ──────────────── */
+
+/* Under the welcome page: it is a sample, and it can be cleared at once. */
+.welcome-notice {
+  gap: 10px;
+  padding: 4px 4px 4px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.welcome-clear {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.welcome-clear:hover {
+  background: var(--hover);
+}
+
+/* The welcome window, over the welcome page the first time: the closed diary and, beside
+   it, a few words and what can be done. */
+.welcome-dialog {
+  position: relative;
+  flex-direction: row;
+  width: min(600px, 100%);
+  overflow: hidden auto;
+}
+
+.welcome-cover {
+  display: grid;
+  flex: 0 0 230px;
+  place-items: center;
+  padding: 28px 20px;
+  background: var(--canvas-bg);
+}
+
+.welcome-cover img {
+  width: 170px;
+  filter: drop-shadow(0 14px 22px rgba(30, 18, 8, 0.35));
+}
+
+.welcome-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 44px 30px 22px;
+}
+
+.welcome-language {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.welcome-language .text-option {
+  height: 26px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.welcome-body h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.welcome-text {
+  margin: 6px 0 24px;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.welcome-start {
+  height: 44px;
+  font-size: 15px;
+}
+
+.welcome-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  margin-top: 16px;
+}
+
+.welcome-links .account-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+}
+
+.welcome-local {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 26px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.welcome-local svg {
+  flex-shrink: 0;
+}
+
+/* On a phone, the cover on top. */
+@media (max-width: 560px) {
+  .welcome-dialog {
+    flex-direction: column;
+  }
+
+  .welcome-cover {
+    flex-basis: auto;
+    padding: 22px 0 18px;
+  }
+
+  .welcome-cover img {
+    width: 112px;
+  }
+
+  .welcome-body {
+    padding: 22px 22px 18px;
+    text-align: center;
+  }
+
+  /* Below everything: over the cover it would cover it. */
+  .welcome-language {
+    position: static;
+    order: 1;
+    align-self: center;
+    margin-top: 14px;
+  }
+
+  .welcome-links {
+    justify-content: center;
+  }
+
+  .welcome-local {
+    justify-content: center;
+  }
+}
+
+/* The tour: a ring around what it points at and a bubble beside it. */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.tour-ring {
+  position: absolute;
+  border: 2px solid var(--accent);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.tour-bubble {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 14px 16px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  pointer-events: auto;
+}
+
+.tour-arrow {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: var(--surface);
+  border-left: 1px solid var(--surface-border);
+  border-top: 1px solid var(--surface-border);
+  transform: rotate(45deg);
+}
+
+.tour-arrow[style*='bottom'] {
+  transform: rotate(225deg);
+}
+
+/* The step's little scene, drawn by an engine of its own (see ClipView). */
+.tour-scene {
+  position: relative;
+  isolation: isolate;
+  height: 150px;
+  margin: -4px -6px 12px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--canvas-bg);
+}
+
+.tour-scene canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.tour-replay {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--surface-border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.tour-replay:hover {
+  color: var(--text);
+}
+
+/* Search: the palette over the page. */
+.tour-palette {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 1;
+  width: 76%;
+  padding: 3px;
+  transform: translateX(-50%);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 11.5px;
+}
+
+.tour-palette-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 5px 3px;
+  margin-bottom: 3px;
+  border-bottom: 1px solid var(--surface-border);
+  color: var(--text);
+}
+
+.tour-palette-input kbd {
+  margin-left: auto;
+  font-size: 10px;
+  line-height: 13px;
+}
+
+.tour-palette-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.tour-palette-row[data-first] {
+  background: var(--accent-soft);
+}
+
+.tour-palette-row em {
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+/* The floating diary: another program behind, and the keys. */
+.tour-scene-floating {
+  background: color-mix(in srgb, var(--accent) 16%, var(--canvas-bg));
+}
+
+.tour-window {
+  position: absolute;
+  top: 12%;
+  left: 8%;
+  z-index: -1;
+  width: 62%;
+  height: 72%;
+  border: 1px solid var(--surface-border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: inset 0 14px 0 var(--hover);
+}
+
+.tour-keys {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  z-index: 1;
+  display: flex;
+  gap: 4px;
+  transform: translateX(-50%);
+}
+
+/* Each scene's own style is how it ends: without motion, that is what shows. */
+@media (prefers-reduced-motion: no-preference) {
+  .tour-palette {
+    animation: tour-pop 0.3s var(--ease) 0.15s both;
+  }
+
+  .tour-palette-input span span {
+    animation: tour-show 0.01s both;
+  }
+
+  .tour-palette-row {
+    animation: tour-show 0.25s both;
+  }
+
+  .tour-keys kbd {
+    animation: tour-pop 0.25s var(--ease) both;
+  }
+
+  .tour-scene-floating canvas {
+    animation: tour-rise 0.45s var(--ease) 0.9s both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-replay {
+    display: none;
+  }
+}
+
+@keyframes tour-show {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes tour-pop {
+  from {
+    opacity: 0;
+    scale: 0.9;
+  }
+}
+
+@keyframes tour-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.94);
+  }
+}
+
+/* Where there is little height (a phone lying down), only the words. */
+@media (max-height: 560px) {
+  .tour-scene {
+    display: none;
+  }
+}
+
+.tour-bubble h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.tour-bubble p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.tour-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.tour-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.tour-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--surface-border);
+}
+
+.tour-dots i[data-active] {
+  background: var(--accent);
+}
+
+.tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tour-skip {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.tour-skip:hover {
+  background: var(--hover);
+}
+
+.tour-next {
+  height: 32px;
+}
+
+/* On a phone, only the button fits. */
+@media (max-width: 640px) {
+  .welcome-notice {
+    padding: 4px;
+  }
+
+  .welcome-notice span {
+    display: none;
+  }
+}

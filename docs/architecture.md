@@ -7,15 +7,45 @@ diaryo is one TypeScript codebase that runs in three places:
   (`src-tauri/`, in Rust) plus what only a desktop can do;
 - the **website** (`web/`), whose live demo reuses the app's engine and diary.
 
+**Contents**: [Layers](#layers) · [The canvas engine](#the-canvas-engine-srcengine) ·
+[The diary](#the-diary-srcdiary-srcstorage) · [The interface](#the-interface-srcui-srcstore) ·
+[The desktop app](#the-desktop-app-srcdesktop-src-tauri) · [The website](#the-website-web) ·
+[The README's animations](#the-readmes-animations) · [Tests](#tests)
+
+```mermaid
+flowchart TB
+  subgraph core [ ]
+    direction LR
+    lib --> engine --> i18n
+  end
+  subgraph data [ ]
+    direction LR
+    storage --> diary --> cloud
+  end
+  subgraph app [ ]
+    direction LR
+    store --> desktop --> ui
+  end
+  core --> data --> app
+  app --> webapp[Web app: IndexedDB in the browser]
+  app --> tauri[Desktop app: Tauri + Rust]
+  core --> website[Website demo: web/, Astro]
+  data <-->|encrypted items| pb[(PocketBase)]
+```
+
 ## Layers
 
 ```
 src/
-  lib/       Pure helpers any layer may use (dates, what is saved in the browser)
+  lib/       Pure helpers any layer may use (dates, dates written in texts, what is saved
+             in the browser)
   engine/    The canvas engine: plain TypeScript, no React, no storage, no diary
   i18n/      The app's texts in Spanish and English, and dates in the chosen language
-  storage/   The database (Dexie / IndexedDB), autosave and backup files
+  storage/   The database (Dexie / IndexedDB), its encryption on the device, autosave and
+             backup files
   diary/     The diary: one double page per day, turning pages, the desk, search
+  cloud/     The account, the end-to-end encryption, the sync (see cloud.md) and the diary
+             encrypted on the device (privacy.md)
   store/     The interface state (Zustand)
   desktop/   The bridge with the desktop app (Tauri): modes, shortcuts, backups, updates
   ui/        React components (toolbar, panels, dialogs; ui/desktop, the desktop ones)
@@ -23,9 +53,12 @@ src/
   fonts.ts   The bundled fonts (the website's demo imports it too)
 src-tauri/   The desktop side, in Rust
 web/         The website (Astro)
+cloud/       The cloud server's schema and rules (PocketBase)
+scripts/     media.mjs: the README's animations
 ```
 
-Each layer only uses the ones above it, in this order. The engine knows nothing about
+Each layer only uses the ones above it, in this order (the store only names the desktop's
+types, to hold its state). The engine knows nothing about
 React, storage or the diary: it takes elements in, draws them, handles input and tells
 the outside what changed. Texts are passed to it (`BookSpread.labels`,
 `setLinkLabels`), so it is language-agnostic too.
@@ -37,28 +70,47 @@ the **scene** (everything drawn) and the **overlay** (what is being drawn right 
 selection handles, the turning sheet) — and redraws only when something changed, on
 `requestAnimationFrame`.
 
-| Area                     | Files                                                                                                                                                             |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Elements and their model | `elements.ts` (strokes, texts, notes, shapes, arrows, images), `types.ts`                                                                                         |
-| Scene and hit testing    | `scene.ts` (elements + an R-tree spatial index), `hit.ts`, `geometry.ts`                                                                                          |
-| Camera                   | `camera.ts` (world ↔ screen), `cameraMotion.ts` (smooth zoom, inertia, flights)                                                                                   |
-| Input and tools          | `handlers/` (select, draw, erase, create, shape, arrow), `tools.ts`, `cursors.ts`                                                                                 |
-| Drawing                  | `render.ts`, `drawing.ts`, `strokes.ts` (perfect-freehand), `shapes.ts` (Rough.js), `text.ts`, `notes.ts`, `grid.ts`                                              |
-| Arrows and links         | `arrows.ts`, `arrowGeometry.ts` (ends attached to elements), `links.ts` (page links)                                                                              |
-| Editing                  | `editing.ts`, `containers.ts` (text inside shapes), `tasks.ts` (checkboxes), `restyle.ts`, `selectionStyle.ts`                                                    |
-| Selection                | `selection.ts`, `transform.ts`, `arrange.ts` (layers, align, flip)                                                                                                |
-| Undo                     | `history.ts` (changes are maps of element id → new value or deletion)                                                                                             |
-| The diary's look         | `book.ts` (the open book, paper styles), `cover.ts`, `desk.ts` and `noise.ts` (procedural wood, cork and linen), `pageTurn.ts` (the sheet you pull by its corner) |
-| Other                    | `clipboard.ts`, `assets.ts` (images), `fonts.ts`, `palette.ts` (named colors per theme)                                                                           |
+| Area                     | Files                                                                                                                                                                                                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Elements and their model | `elements.ts` (strokes, texts, notes, shapes, arrows, images), `types.ts`                                                                                                                                                                       |
+| Scene and hit testing    | `scene.ts` (elements + an R-tree spatial index), `hit.ts`, `geometry.ts`                                                                                                                                                                        |
+| Camera                   | `camera.ts` (world ↔ screen), `cameraMotion.ts` (smooth zoom, inertia, flights)                                                                                                                                                                 |
+| Input and tools          | `handlers/` (select, draw, erase, create, shape, arrow), `tools.ts`, `cursors.ts`                                                                                                                                                               |
+| Drawing                  | `render.ts`, `drawing.ts`, `strokes.ts` (perfect-freehand), `shapes.ts` (Rough.js), `text.ts`, `notes.ts`, `grid.ts`                                                                                                                            |
+| Arrows and links         | `arrows.ts`, `arrowGeometry.ts` (ends attached to elements), `links.ts` (page links)                                                                                                                                                            |
+| Editing                  | `editing.ts`, `containers.ts` (text inside shapes), `tasks.ts` (checkboxes), `restyle.ts`, `selectionStyle.ts`                                                                                                                                  |
+| Selection                | `selection.ts`, `transform.ts`, `arrange.ts` (layers, align, flip)                                                                                                                                                                              |
+| Undo                     | `history.ts` (changes are maps of element id → new value or deletion)                                                                                                                                                                           |
+| The diary's look         | `book.ts` (the open book, paper styles), `cover.ts`, `desk.ts` and `noise.ts` (procedural materials: a relief lit from the top left), `textures.ts` (made bigger as you zoom in, in a worker), `pageTurn.ts` (the sheet you pull by its corner) |
+| Other                    | `clipboard.ts`, `assets.ts` (images), `fonts.ts`, `palette.ts` (named colors per theme)                                                                                                                                                         |
 
 Input goes through Pointer Events: one pointer drives the active tool; with a finger,
 two fingers pinch and move the view and holding still opens the context menu. Sizes set
 in screen pixels (stroke width, font size, new notes) are divided by the zoom when
 creating, so things look the same size on screen at any zoom.
 
+Tasks are lines starting with `[ ]` or `[x]`; a line with an `@` date ("@15 oct 2026
+10:00", read by `lib/when.ts`) is a dated task or, without a checkbox, an appointment.
+`text.ts` draws each date as a label ("mañana 10:00", terracotta to come, crimson when a
+task is late) whose words come from outside (`Engine.setDates`, refreshed every minute by
+`ui/useDateLabels.ts`). Lines are laid out with the labels' room, except the text in the
+editor, which keeps what is written; when editing ends, its dates are written in full, so
+"@mañana" doesn't move to another day. Typing "@" opens a date picker under the text
+(`ui/DatePicker.tsx`). The date lives in the element's text: it syncs, encrypts and
+travels in backups like the rest.
+
 Options: `transparent` (the floating diary over the desktop), `deskLayer` (only the
 desk, on the Windows desktop), `embedded` (the website demo: fixed view, the page keeps
 scrolling) and `noteSize`.
+
+**Clips** (`clips.ts`) are little scenes that play by themselves, like the tour's: a
+function from the time to what the canvas shows (the usual elements, built a bit more each
+frame: a stroke drawn, a text written, a note dropping) plus the pages that turn on the
+way. `ui/ClipView.tsx` plays one on an engine of its own that takes no input
+(`Engine.setElements`, without history), once (staying on its last frame) or in a loop,
+only while `playing`; with reduced motion it only shows the last frame. The tour's are in
+`diary/tourScenes.ts`, made with the welcome page's elements, on the user's book and in
+their language; the website's features, in `diary/featureScenes.ts`.
 
 ## The diary (`src/diary`, `src/storage`)
 
@@ -74,14 +126,30 @@ table (one row per element, so changing one only writes that one), plus images a
 custom fonts. `Autosave` writes the changes shortly after they happen. A whole diary can
 be dumped to a `.diaryo` file and merged back (`storage/files.ts`).
 
+The diary's dated lines (`diary/agenda.ts`: tasks and appointments, from the same texts the
+search reads) are kept in the store by `ui/agenda.ts`, read again after saving, when
+pages come and go and when changes arrive from elsewhere (`DiaryHooks.onChangedElsewhere`:
+the cloud, another tab, the desktop layer). They feed "Próximo" (the top bar's button) and the index's "Tasks" tab
+(`ui/Upcoming.tsx`: what is pending, by when; a task is ticked there on any page with
+`Diary.toggleTask`), and the calendar's marks. From there or the context menu they go to
+the calendar app as an iCalendar file (`diary/ics.ts`): opened right away on the desktop
+(`open_calendar_file`), downloaded on the web. Optionally, everything
+is encrypted on the device (`storage/sealing.ts`, see [privacy](privacy.md)).
+
 ## The interface (`src/ui`, `src/store`)
 
 React only draws the chrome around the canvas: toolbar, style panel, top actions, page
 navigation, dialogs (settings, help, map, search, links) and the text editor — a
 `<textarea>` laid exactly over the text being edited. The state lives in one Zustand
-store (`store/ui.ts`); settings and the diary's look are saved in the browser
+store (`store/ui.ts`), written in parts by subject: the canvas, the look and settings, the
+diary, the dialogs and the desktop (`store/*Slice.ts`); settings and the diary's look are
+saved in the browser
 (`lib/saved.ts`). On narrow screens `styles/mobile.css` rearranges everything for a
 thumb.
+
+The keyboard shortcuts are written once, in `ui/shortcuts.ts`: the command palette and the
+help show them from there, `ui/useShortcuts.ts` runs them, and its test checks that every
+combination there does what it says (the tools' keys are in `ui/toolDefs.ts`).
 
 ## The desktop app (`src/desktop`, `src-tauri`)
 
@@ -95,13 +163,27 @@ The Rust side (`src-tauri/src`) owns what a web page can't do:
 | `shortcuts.rs`                           | Global shortcuts (`Ctrl+Alt+D`, `Ctrl+Alt+N`)                                                                                                               |
 | `tray.rs`                                | The tray icon and its menu                                                                                                                                  |
 | `backup.rs`                              | Daily backups to a folder, keeping the last two weeks                                                                                                       |
+| `reminders.rs`                           | Reminders of tasks and appointments: Windows notifications at their time, from a list the page sends (kept only in memory); a click opens the item          |
 | `settings.rs`, `state.rs`, `commands.rs` | Desktop settings and the commands the page can call                                                                                                         |
 | `texts.rs`                               | The desktop side's texts in both languages                                                                                                                  |
+
+The window and the floating diary are the same window: the desktop side decides which
+one it is and tells the page, and every time it shows the window it says the mode again,
+so a page that missed a change (it was loading) catches up. A request to hide it after
+the floating diary's fade carries the showing it came from, and is ignored if the window
+was shown again meanwhile.
 
 On the TypeScript side, `desktop/tauri.ts` wraps Tauri (imported only on the desktop, so
 the web build doesn't load it), `desktop/bridge.ts` connects the diary with the window
 modes and backups, `desktop/deskLayer.ts` drives the desk window, and
 `desktop/updates.ts` checks GitHub for new versions (see [releasing](releasing.md)).
+`ui/reminders.ts` sends the desktop side the next reminders (`diary/reminders.ts` builds
+them from the agenda: without their words for private notes or with the whole diary
+encrypted, as Windows keeps the notifications it showed; what came due since the last
+list, up to five minutes late, too, so something written right at its time still reminds),
+tells in one notification those missed while diaryo was closed (within a day) and opens
+what a clicked reminder is about. Notifications have diaryo's name and icon only in the
+installed app; in development they come from PowerShell.
 
 ## The website (`web/`)
 
@@ -109,12 +191,32 @@ An [Astro](https://astro.build) site with static pages in Spanish (`/`) and Engl
 (`/en/`). The hero's live demo (`web/src/demo`) is a React island that imports the app's
 code through the `@app` alias (`../src`): the same engine and diary, with its own
 database that is emptied on every visit. It only loads on computers (`client:media`); on
-phones the page shows a picture instead. The feature scenes are CSS animations that play
-only while in view. When built, the site asks GitHub for the latest release to link the
+phones the page shows a picture instead. The features on the diary are clips
+(`featureScenes.ts`) played by the engine (`web/src/demo/Scene.tsx`, an island loaded with
+`client:visible` when the page gets near, phones too); the Windows desktop and the search
+are CSS animations. All of them play only while in view. When built, the site asks GitHub for the latest release to link the
 installer (`web/src/release.ts`).
+
+## The README's animations
+
+The animations in the README (`docs/media/<scene>.<lang>.webp`) are the same clips,
+recorded by `npm run media` (`scripts/media.mjs`): it serves `scenes.html` with Vite and
+opens it in a headless Chromium (Playwright) with `?capture`. That makes the page's
+clock (`performance.now` and `requestAnimationFrame`) move only when the script says, so
+every frame, the turning page's too, is drawn at its exact moment however long the
+screenshot takes, and two runs give the same pictures. The frames (800×450 at twice the
+density) are joined into an animated WebP with sharp. Without `?capture`, `scenes.html`
+(`npm run dev`) plays each scene in a loop, to look at one.
+
+Run it again when a scene, the book's look or the texts change, and check the result
+before committing (about 4 MB in all).
 
 ## Tests
 
 Vitest runs the unit tests next to the code (`*.test.ts`): the engine's geometry, arrows,
 selection and history, the diary's pages and desk, storage (with fake-indexeddb),
 search, dates and the desktop helpers. On the Rust side, `cargo test`.
+
+The CI (`.github/workflows/ci.yml`) runs them on every push to `develop` or `main` and on
+every pull request, with the types, lint and format checks, and `cloud/check.mjs` against
+a PocketBase with the repository's schema and rules.

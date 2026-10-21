@@ -1,15 +1,21 @@
 import { useEffect, useRef } from 'react';
 import { formatDayMonth } from '../i18n/dates';
 import { Diary } from '../diary/diary';
+import { seedWelcome } from '../diary/welcome';
 import type { PageMeta } from '../diary/pages';
 import { followLink } from './diaryActions';
 import { DesktopBridge } from '../desktop/bridge';
 import { isDesktop, notifyDeskSaved } from '../desktop/tauri';
+import { askToReveal, deletePrivate, startPrivacy } from './privateActions';
+import { refreshAgenda, startAgenda } from './agenda';
+import { startReminders } from './reminders';
+import { hideNotes } from '../cloud/lock';
 import { Updater } from '../desktop/updates';
 import { Engine } from '../engine/engine';
 import { getDB } from '../storage/db';
 import { useUI } from '../store/ui';
 import { readCanvasTheme } from './canvasTheme';
+import { useDateLabels } from './useDateLabels';
 import { t } from '../i18n';
 
 /** Short name of each page for the link labels: title or "21 sept". */
@@ -26,6 +32,7 @@ export function CanvasView() {
   const styles = useUI((s) => s.styles);
   const theme = useUI((s) => s.theme);
   const language = useUI((s) => s.settings.language);
+  useDateLabels();
 
   useEffect(() => {
     const {
@@ -48,6 +55,12 @@ export function CanvasView() {
     const unsubscribeCamera = instance.subscribe((camera) => setZoom(camera.zoom));
     const unsubscribeState = instance.subscribeState(setDoc);
     const unsubscribeEditing = instance.subscribeEditing(setEditing);
+    // A hidden private note asks for the diary password (to see or edit it).
+    const unsubscribeReveal = instance.subscribeReveal((id) => askToReveal([id]));
+    // Its open padlock hides a private note that is shown.
+    const unsubscribeHide = instance.subscribeHide((id) => void hideNotes([id]));
+    // Deleting private notes asks for the diary password.
+    const unsubscribeDelete = instance.subscribeDeletePrivate(deletePrivate);
     instance.onToolRequest(setTool);
     instance.onContextMenu(openContextMenu);
     instance.onLinkOpen((pageId) => void followLink(pageId));
@@ -63,8 +76,13 @@ export function CanvasView() {
       turnSpeed: () => useUI.getState().settings.turnSpeed,
       // The desktop layer shows the same desk: it is told so it catches up.
       onDeskSaved: desktop ? notifyDeskSaved : undefined,
+      onChangedElsewhere: () => refreshAgenda(),
     });
     setDiary(diary);
+    const stopPrivacy = startPrivacy(diary, instance);
+    const stopAgenda = startAgenda();
+    // In the desktop app, Windows notifications of tasks and appointments.
+    const stopReminders = desktop ? startReminders() : () => {};
     // In the desktop app, as soon as today's page is there it connects with it.
     const bridge = desktop ? new DesktopBridge(instance, diary) : null;
     useUI.getState().setDesktopBridge(bridge);
@@ -84,8 +102,14 @@ export function CanvasView() {
         })
       : null;
     updater?.start();
-    if (bridge) void diary.start().then(() => bridge.start());
-    else void diary.start();
+    // A new diary starts with the welcome page and, over it, the welcome window.
+    void seedWelcome(getDB(), t().welcome.page, useUI.getState().settings.language)
+      .catch(() => false)
+      .then(async (welcome) => {
+        await diary.start();
+        if (welcome) useUI.getState().setWelcomeOpen(true);
+        await bridge?.start();
+      });
     // Development only: access from the console for debugging and measuring.
     if (import.meta.env.DEV) Object.assign(window, { diaryo: instance });
     return () => {
@@ -95,6 +119,12 @@ export function CanvasView() {
       unsubscribeCamera();
       unsubscribeState();
       unsubscribeEditing();
+      unsubscribeReveal();
+      unsubscribeHide();
+      unsubscribeDelete();
+      stopPrivacy();
+      stopAgenda();
+      stopReminders();
       diary.stop();
       setDiary(null);
       instance.destroy();

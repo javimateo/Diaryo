@@ -6,15 +6,21 @@ import type { Engine } from '../engine/engine';
 import type { TurnDirection, TurnTarget } from '../engine/pageTurn';
 import { Autosave, type Desk, type SaveStatus } from '../storage/autosave';
 import {
+  COVER_ID,
+  COVER_INFO,
+  coverImage,
   deletePage,
   DESK_ID,
   dumpDiary,
   listLinks,
   listTexts,
   listPages,
+  toggleSavedTask,
   loadPage,
   mergeDiary,
   pruneEmptyPages,
+  cleanUpDiary,
+  replaceDiary,
   restorePage,
   updatePage,
   type DiaryDump,
@@ -25,9 +31,18 @@ import {
   type PageRow,
   type StoredPage,
 } from '../storage/db';
+import type { AppliedChanges } from '../storage/tracking';
 import { todayKey, type DayKey } from '../lib/dates';
 import { formatDay, formatDayMonth } from '../i18n/dates';
-import { comparePages, neighbor, newPage, pagesOfDay, sortPages, type PageMeta } from './pages';
+import {
+  arrivedInstead,
+  comparePages,
+  neighbor,
+  newPage,
+  pagesOfDay,
+  sortPages,
+  type PageMeta,
+} from './pages';
 import { asRecord, readJSON, writeJSON } from '../lib/saved';
 import { t } from '../i18n';
 
@@ -51,6 +66,8 @@ export interface DiaryHooks {
   turnSpeed?: () => TurnSpeed;
   /** Something on the desk was saved (or it changed completely when opening a backup). */
   onDeskSaved?: () => void;
+  /** What is saved changed elsewhere: the cloud, another tab or the desktop layer. */
+  onChangedElsewhere?: () => void;
 }
 
 /** Today's page for the desktop mini diary. */
@@ -68,6 +85,20 @@ const TURN_DURATION = { normal: 720, fast: 380 };
 const LAST_PAGE_KEY = 'diaryo:last-page';
 /** Thumbnail: the double page at this width (the height follows its proportions). */
 export const THUMBNAIL_SIZE = { width: 360, height: 246 };
+/** The cover's picture, at this width (the lock screen shows it at about half). */
+export const COVER_IMAGE_WIDTH = 520;
+
+/** The cover, open to dress it up (it is never in the index nor saved as the last page). */
+const coverPage = (): PageMeta => ({
+  id: COVER_ID,
+  date: COVER_INFO.date,
+  order: 0,
+  title: '',
+  thumbnail: null,
+  thumbnailSpread: true,
+  bookmark: null,
+  updatedAt: 0,
+});
 
 const toMeta = (row: PageRow): PageMeta => ({
   id: row.id,
@@ -115,6 +146,8 @@ export class Diary {
   private readonly desk: Desk = { ids: new Set(), onPage: new Map() };
   /** Elements of other pages, loaded to draw them when turning the page. */
   private readonly loaded = new Map<string, Promise<SceneElement[]>>();
+  /** While the cover is open: the page to go back to. */
+  private beforeCover: PageMeta | null = null;
 
   constructor(
     private readonly db: DiaryoDB,
@@ -136,6 +169,7 @@ export class Diary {
       this.hooks.onStatus('loading');
       try {
         await pruneEmptyPages(this.db);
+        await cleanUpDiary(this.db);
         this.pages = (await listPages(this.db)).map(toMeta);
         // The desk is set once and stays when turning pages.
         await this.loadDesk();
@@ -184,7 +218,8 @@ export class Diary {
   turn(direction: 1 | -1): Promise<boolean> {
     return this.run(async () => {
       const current = this.current;
-      if (!current) return false;
+      // The closed diary has no pages to turn.
+      if (!current || current.id === COVER_ID) return false;
       const target = this.neighborsOf(current)[direction === 1 ? 'next' : 'prev'];
       if (!target) return false;
       await this.open(target, direction);
@@ -228,6 +263,71 @@ export class Diary {
       if (current && current.date === today && this.isEmpty && !current.title) return;
       await this.openAnimated(newPage(today));
     });
+  }
+
+  /** Closes the diary to dress up its cover (with the usual tools). */
+  editCover() {
+    return this.run(() => this.openCover());
+  }
+
+  /**
+   * Starts the cover from a template: what was on it is replaced (it can be undone) and
+   * the cover stays open to change it.
+   */
+  startCover(elements: SceneElement[]) {
+    return this.run(async () => {
+      await this.openCover();
+      if (this.current?.id === COVER_ID) this.engine.replacePage(elements);
+    });
+  }
+
+  private async openCover() {
+    const current = this.current;
+    if (!current || current.id === COVER_ID) return;
+    this.beforeCover = current;
+    await this.open(coverPage(), 0);
+  }
+
+  /** The cover's picture, as it was last saved (null if it was never drawn). */
+  coverPicture(): Promise<string | null> {
+    return coverImage(this.db);
+  }
+
+  /** How the cover would look with these elements, with the current covers. */
+  coverPreview(elements: SceneElement[], width: number): string {
+    return this.engine.coverImage(this.spreadFor(coverPage()), elements, width);
+  }
+
+  /** Done with the cover: back to the page that was open (or today's). */
+  closeCover() {
+    return this.run(async () => {
+      if (this.current?.id !== COVER_ID) return;
+      const back = this.beforeCover;
+      this.beforeCover = null;
+      const today = todayKey();
+      const still = back && (this.pages.find((p) => p.id === back.id) ?? back);
+      await this.open(still ?? this.lastOfDay(today) ?? newPage(today), 0);
+    });
+  }
+
+  /**
+   * Draws the cover's picture again (its look changed, or what is stuck on it arrived from
+   * another device) and saves it.
+   */
+  refreshCover() {
+    return this.run(async () => {
+      if (this.current?.id === COVER_ID) return this.saveCover(this.engine.pageElements());
+      const { elements } = await this.targetFor(coverPage());
+      await this.engine.assets.whenReady(
+        elements.flatMap((el) => (el.type === 'image' ? [el.assetId] : [])),
+      );
+      await this.saveCover(elements);
+    });
+  }
+
+  private async saveCover(elements: SceneElement[]) {
+    const image = this.engine.coverImage(this.spreadFor(coverPage()), elements, COVER_IMAGE_WIDTH);
+    await updatePage(this.db, COVER_INFO, { thumbnail: image, thumbnailSpread: true });
   }
 
   // ─── Editing pages ────────────────────────────────────────────
@@ -324,6 +424,22 @@ export class Diary {
     });
   }
 
+  /**
+   * Ticks or unticks a task (its element's line `paragraph`) on any page: on the open one
+   * or the desk it can be undone; elsewhere it is saved right away.
+   */
+  toggleTask(pageId: string, elementId: string, paragraph: number): Promise<void> {
+    return this.run(async () => {
+      if (this.engine.toggleTask(elementId, paragraph)) return;
+      await toggleSavedTask(this.db, pageId, elementId, paragraph);
+    });
+  }
+
+  /** Where something on the canvas is kept: the desk or the open page. */
+  pageOf(elementId: string): string | null {
+    return this.desk.ids.has(elementId) ? DESK_ID : (this.current?.id ?? null);
+  }
+
   /** Which pages link to which (with the latest already saved). */
   links(): Promise<PageLink[]> {
     return this.run(async () => {
@@ -337,6 +453,19 @@ export class Diary {
    * they look in the map and when flying to the book.
    */
   async refreshOldThumbnails() {
+    // Once at a time (the cloud can ask again while it is still drawing them).
+    if (this.drawingThumbnails) return;
+    this.drawingThumbnails = true;
+    try {
+      await this.drawOldThumbnails();
+    } finally {
+      this.drawingThumbnails = false;
+    }
+  }
+
+  private drawingThumbnails = false;
+
+  private async drawOldThumbnails() {
     const old = this.pages.filter((p) => !p.thumbnailSpread && p.id !== this.current?.id);
     for (const page of old) {
       if (this.stopped) return;
@@ -380,7 +509,7 @@ export class Diary {
   /** Updates the open page's thumbnail (to see it up to date in the index). */
   refreshThumbnail() {
     const current = this.current;
-    if (!current || this.isEmpty) return;
+    if (!current || this.isEmpty || current.id === COVER_ID) return;
     this.upsert({ ...current, thumbnail: this.renderThumbnail(), thumbnailSpread: true });
   }
 
@@ -422,11 +551,116 @@ export class Diary {
   }
 
   /**
+   * Applies changes from the cloud (`apply` writes them). Whatever is pending here is
+   * saved first, so a newer change here wins over an older one from there; then (unless
+   * `show` is false: more batches come, see `showRemote`) the index catches up and, if
+   * the open page or the desk changed, they are loaded again.
+   */
+  applyRemote(apply: () => Promise<AppliedChanges>, show = true): Promise<AppliedChanges> {
+    return this.run(async () => {
+      await this.flush();
+      const applied = await apply();
+      if (show) await this.showChanges(applied);
+      return applied;
+    });
+  }
+
+  /** Shows changes already written (by the cloud, or by another tab). */
+  showRemote(applied: AppliedChanges): Promise<void> {
+    return this.run(() => this.showChanges(applied));
+  }
+
+  /**
+   * Loads the open page and the desk again, as saved (the private notes were shown or
+   * hidden). What was pending must be saved first; undo starts again.
+   */
+  reloadShown(): Promise<void> {
+    const pages = new Set([DESK_ID, ...(this.current ? [this.current.id] : [])]);
+    return this.run(() => this.showChanges({ pages, assets: false }));
+  }
+
+  private async showChanges(applied: AppliedChanges) {
+    if (applied.pages.size === 0 && !applied.assets) return;
+    if (applied.pages.has(DESK_ID) || applied.assets) {
+      await this.loadDesk();
+      this.hooks.onDeskSaved?.();
+    }
+    this.loaded.clear();
+    // The cover's picture is each device's own: it is drawn here with what arrived.
+    if (applied.pages.has(COVER_ID) && this.current?.id !== COVER_ID) {
+      const { elements } = await this.targetFor(coverPage());
+      await this.saveCover(elements);
+    }
+    this.pages = (await listPages(this.db)).map(toMeta);
+    const current = this.current;
+    const stillThere =
+      current && (current.id === COVER_ID ? current : this.pages.find((p) => p.id === current.id));
+    // A blank page is open and that day's page was made on another device: that one.
+    const arrived = current && arrivedInstead(this.pages, current, this.isEmpty, applied.pages);
+    if (current && arrived) await this.openInstead(current, arrived);
+    else if (current && (applied.pages.has(current.id) || applied.assets)) {
+      await this.autosave?.stop();
+      this.autosave = null;
+      // Deleted on another device: today's page opens instead.
+      const today = todayKey();
+      await this.open(stillThere ?? this.lastOfDay(today) ?? newPage(today), 0);
+    } else this.emit();
+    this.hooks.onChangedElsewhere?.();
+    void this.refreshOldThumbnails();
+  }
+
+  /**
+   * Replaces the whole diary with a backup (pages and desk). Whatever was pending here is
+   * saved first, so the caller can keep a copy of it; the open page is then dropped
+   * without saving it back, and today's page opens. Returns how many pages came in.
+   */
+  replace(dump: DiaryDump, track = true): Promise<number> {
+    return this.run(async () => {
+      await this.autosave?.stop();
+      this.autosave = null;
+      this.current = null;
+      this.blankToday = null;
+      await replaceDiary(this.db, dump, track);
+      await this.loadDesk();
+      this.hooks.onDeskSaved?.();
+      this.loaded.clear();
+      this.pages = (await listPages(this.db)).map(toMeta);
+      const today = todayKey();
+      await this.open(this.lastOfDay(today) ?? newPage(today), 0);
+      return this.pages.length;
+    });
+  }
+
+  /**
+   * After the cloud's diary arrived in place of this one: if the open page is a blank one
+   * and the cloud brought a page for that same day, that one opens (and the blank one goes).
+   */
+  openArrivedPage(): Promise<void> {
+    return this.run(async () => {
+      const current = this.current;
+      const arrived = current && arrivedInstead(this.pages, current, this.isEmpty);
+      if (current && arrived) await this.openInstead(current, arrived);
+    });
+  }
+
+  /** Opens `arrived` in place of the blank page `current`, which goes. */
+  private async openInstead(current: PageMeta, arrived: PageMeta) {
+    await this.autosave?.stop();
+    this.autosave = null;
+    await deletePage(this.db, current.id);
+    this.pages = this.pages.filter((page) => page.id !== current.id);
+    await this.open(arrived, 0);
+  }
+
+  /**
    * Puts the saved desk back (without counting it as a change to save): the desktop layer
    * changed it.
    */
   reloadDesk(): Promise<void> {
-    return this.run(() => this.loadDesk());
+    return this.run(async () => {
+      await this.loadDesk();
+      this.hooks.onChangedElsewhere?.();
+    });
   }
 
   private async loadDesk() {
@@ -473,14 +707,17 @@ export class Diary {
     if (target.id === this.blankToday?.id) this.blankToday = null;
     this.current = target;
     this.refreshBook();
-    writeLastPage(target.id);
+    const cover = target.id === COVER_ID;
+    if (!cover) writeLastPage(target.id);
     const autosave = new Autosave(
       this.db,
       this.engine,
-      () => toInfo(this.current ?? target),
+      () => (cover ? COVER_INFO : toInfo(this.current ?? target)),
       this.hooks.onStatus,
       false,
       this.desk,
+      undefined,
+      cover,
     );
     this.autosave = autosave;
     await autosave.start();
@@ -534,6 +771,18 @@ export class Diary {
         current: p.id === page.id,
       }));
     const style = this.hooks.bookStyle();
+    if (page.id === COVER_ID) {
+      return {
+        tabs: [],
+        style,
+        date: '',
+        title: '',
+        today: false,
+        labels: t().book,
+        pageNumber: 0,
+        closed: true,
+      };
+    }
     return {
       tabs,
       style: page.paper ? { ...style, paper: page.paper } : style,
@@ -549,7 +798,7 @@ export class Diary {
   private async targetFor(page: PageMeta): Promise<TurnTarget> {
     let elements = this.loaded.get(page.id);
     if (!elements) {
-      const saved = this.pages.some((p) => p.id === page.id);
+      const saved = page.id === COVER_ID || this.pages.some((p) => p.id === page.id);
       elements = saved
         ? loadPage(this.db, page.id).then((data) => {
             // Its images, without saving them again.
@@ -584,6 +833,8 @@ export class Diary {
     // What was loaded for this page is no longer valid: it may have changed while it was
     // open.
     this.loaded.delete(page.id);
+    // The cover is kept even bare (its picture shows while locked), out of the index.
+    if (page.id === COVER_ID) return this.saveCover(this.engine.pageElements());
     if (this.engine.pageElements().length === 0 && !page.title && !page.bookmark && !page.paper) {
       await deletePage(this.db, page.id);
       this.pages = this.pages.filter((p) => p.id !== page.id);
@@ -596,6 +847,7 @@ export class Diary {
 
   private async saveThumbnail() {
     const page = this.current;
+    if (page?.id === COVER_ID) return this.saveCover(this.engine.pageElements());
     if (!page || this.engine.pageElements().length === 0) return;
     const thumbnail = this.renderThumbnail();
     await updatePage(this.db, toInfo(page), { thumbnail, thumbnailSpread: true });
@@ -618,8 +870,9 @@ export class Diary {
   private emit() {
     const current = this.current;
     let pages = this.pages;
-    // The open page shows in the index as soon as it has something (or a title).
-    if (current) {
+    // The open page shows in the index as soon as it has something (or a title); the
+    // cover, never.
+    if (current && current.id !== COVER_ID) {
       const listed = pages.some((p) => p.id === current.id);
       const keep = !this.isEmpty || !!current.title || !!current.bookmark || !!current.paper;
       if (!listed && keep) pages = [...pages, current];
