@@ -1,16 +1,28 @@
 /**
  * Checks the cloud server's rules against a running PocketBase (see docs/cloud.md):
- * quotas, who reaches what, last write wins, tombstones, deleting an account. It creates
- * four throwaway users, who delete their own accounts at the end.
+ * quotas, who reaches what, last write wins, tombstones, deleting an account, the limits
+ * on requests. It creates a few throwaway users, who delete their own accounts at the end.
  *
- *   PB_URL=http://127.0.0.1:8090 PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
+ * The administrator signs in with a second factor: a one-time password made with
+ * `pocketbase superuser otp <email>`, whose id and password go in PB_ADMIN_OTP_ID and
+ * PB_ADMIN_OTP.
+ *
+ *   PB_URL=http://127.0.0.1:8090 PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=…  *     PB_ADMIN_OTP_ID=… PB_ADMIN_OTP=… node cloud/check.mjs
+ *
+ * Each part of it comes from its own address (`X-Forwarded-For`, as the proxy in front of
+ * the server sends it), so the limits of one don't stop another.
  */
 const API = `${process.env.PB_URL ?? 'http://127.0.0.1:8090'}/api`;
 const ADMIN = { identity: process.env.PB_ADMIN_EMAIL, password: process.env.PB_ADMIN_PASSWORD };
-const call = async (method, path, body, token) => {
+const address = () => `10.${[0, 0, 0].map(() => Math.floor(Math.random() * 250) + 1).join('.')}`;
+const call = async (method, path, body, token, from = address()) => {
   const res = await fetch(API + path, {
     method,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: token } : {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Forwarded-For': from,
+      ...(token ? { Authorization: token } : {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
@@ -33,7 +45,7 @@ const mk = async (n, extra = {}) => {
     identity: email,
     password: 'secret12345',
   });
-  return { id: c.body.id, token: a.body.token, record: a.body.record };
+  return { email, id: c.body.id, token: a.body.token, record: a.body.record };
 };
 const a = await mk(1),
   b = await mk(2);
@@ -170,7 +182,23 @@ const dup = await call(
 check('one item per key', dup.status >= 400, dup.status);
 
 // Quota: the superuser lowers it to 3 KB.
-const su = await call('POST', '/collections/_superusers/auth-with-password', ADMIN);
+// The administrator needs a second factor: the password alone isn't enough.
+const first = await call('POST', '/collections/_superusers/auth-with-password', ADMIN);
+check(
+  'the administrator needs a second factor',
+  first.status === 401 && typeof first.body?.mfaId === 'string',
+  // Only the status: the body may carry a token.
+  first.status,
+);
+const su = first.body?.token
+  ? first
+  : await call('POST', '/collections/_superusers/auth-with-otp', {
+      otpId: process.env.PB_ADMIN_OTP_ID,
+      password: process.env.PB_ADMIN_OTP,
+      mfaId: first.body?.mfaId,
+    });
+if (!su.body?.token)
+  throw new Error(`the administrator couldn't sign in: ${JSON.stringify(su.body)}`);
 await call('PATCH', `/collections/users/records/${a.id}`, { quotaBytes: 3000 }, su.body.token);
 const fits = await call(
   'POST',
@@ -252,6 +280,74 @@ check(
   'an account keeps no name or picture',
   !('name' in a.record) && !('avatar' in a.record),
   JSON.stringify(a.record),
+);
+
+// Limits per address (the proxy's X-Forwarded-For; only its last address counts, the one the
+// proxy adds: the ones before it are the client's to write).
+const tries = async (n, request) => {
+  const answers = [];
+  for (let i = 0; i < n; i++) answers.push(await request());
+  return answers;
+};
+const statuses = (answers) => answers.map((r) => r.status);
+const guesser = address();
+const guesses = await tries(12, () =>
+  call(
+    'POST',
+    '/collections/users/auth-with-password',
+    { identity: a.email, password: 'nope1234' },
+    null,
+    guesser,
+  ),
+);
+check(
+  'guessing a password is cut short (429)',
+  statuses(guesses).includes(429),
+  statuses(guesses).join(),
+);
+const forged = await call(
+  'POST',
+  '/collections/users/auth-with-password',
+  { identity: a.email, password: 'nope1234' },
+  null,
+  `${address()}, ${guesser}`,
+);
+check(
+  'a made-up address in front of the real one changes nothing',
+  forged.status === 429,
+  forged.status,
+);
+const signer = address();
+const signUps = await tries(12, () =>
+  call(
+    'POST',
+    '/collections/users/records',
+    {
+      email: `spam-${Math.random()}@diaryo.test`,
+      password: 'secret12345',
+      passwordConfirm: 'secret12345',
+    },
+    null,
+    signer,
+  ),
+);
+check(
+  'sign-ups from one address are limited',
+  statuses(signUps).includes(429),
+  statuses(signUps).join(),
+);
+// The ones that went in are deleted (by the administrator: they can't sign in from there).
+for (const made of signUps.filter((r) => r.status === 200)) {
+  await call('DELETE', `/collections/users/records/${made.body.id}`, null, su.body.token);
+}
+const mailer = address();
+const mails = await tries(4, () =>
+  call('POST', '/collections/users/request-verification', { email: a.email }, null, mailer),
+);
+check(
+  'emails asked from one address are limited',
+  statuses(mails).includes(429),
+  statuses(mails).join(),
 );
 
 // Each user deletes their own account (as the app does), and their vault and items go

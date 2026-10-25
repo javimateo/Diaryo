@@ -13,6 +13,8 @@ What changes in each version of diaryo. The format follows
   leave the diary impossible to open on that device (needs the server's new migration).
 - An item in the cloud changed outside diaryo (it doesn't open) no longer goes unnoticed:
   a device that has it puts its version back, and the app says so.
+- The cloud server limits sign-ins, sign-ups and emails per address (they could be
+  repeated without end), and its administrator signs in with a code by email too.
 
 ## [1.0.0] — 2026-10-20
 
