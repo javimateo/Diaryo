@@ -177,6 +177,8 @@ async function syncOnce(keys: DiaryKeys, still: () => boolean) {
     }
     // Still drawing or writing: what came is fetched next time.
     else again = true;
+    // Someone changed the cloud's copy outside diaryo: what this device has went up again.
+    if (result.broken > 0) useUI.getState().showToast(t().sync.broken(result.broken));
     const { full, rejected } = result.push;
     useSync.setState({
       status: full ? 'full' : rejected > 0 ? 'error' : 'idle',

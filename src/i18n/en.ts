@@ -351,6 +351,10 @@ export const en: Messages = {
     lowSpace: (free: string) =>
       `You're running out of cloud space: ${free} free. Delete pages or images you don't need.`,
     rejected: (n: number) => (n === 1 ? "1 change couldn't go up" : `${n} changes couldn't go up`),
+    broken: (n: number) =>
+      n === 1
+        ? "Something in the cloud was changed outside diaryo and couldn't be opened: if it's on this device, it went up again."
+        : `${n} things in the cloud were changed outside diaryo and couldn't be opened: the ones on this device went up again.`,
     sessionEnded: 'Your session expired: sign in again to sync. What is pending is kept here.',
     leaveTitle: "What should happen to this device's diary?",
     leavePending: (n: number) =>

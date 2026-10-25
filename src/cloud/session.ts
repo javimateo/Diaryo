@@ -83,6 +83,8 @@ export type RoundResult =
       /** What the pull changed here (null if the user was busy and it waits). */
       applied: AppliedChanges | null;
       push: PushResult;
+      /** Items up there that didn't open: changed outside diaryo (see `Sync.open`). */
+      broken: number;
       lastSync: number;
     };
 
@@ -138,12 +140,14 @@ export async function syncRound(
     diary.applyRemote(() => applyIncoming(db, changes), false),
   );
   let applied: AppliedChanges | null = null;
+  let broken = 0;
   if (await options.idle()) {
     const pulled = await sync.pull(saved.cursor);
     saved.cursor = pulled.cursor;
     store(account, saved);
     await diary.showRemote(pulled.applied);
     applied = pulled.applied;
+    broken = pulled.broken;
   }
   // What nothing uses any more (elements of deleted pages, images) frees its space.
   await cleanUpDiary(db);
@@ -151,7 +155,13 @@ export async function syncRound(
   const push = await sync.push(options.onProgress);
   saved.lastSync = Date.now();
   store(account, saved);
-  return { question: null, applied, push, lastSync: saved.lastSync };
+  return {
+    question: null,
+    applied,
+    push,
+    broken: broken + push.broken,
+    lastSync: saved.lastSync,
+  };
 }
 
 // ─── The user's choices ─────────────────────────────────────────

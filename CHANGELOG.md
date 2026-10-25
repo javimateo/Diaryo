@@ -11,6 +11,8 @@ What changes in each version of diaryo. The format follows
 - The cloud's vault is signed with the diary secret: a device no longer follows a vault
   changed by someone with the account's session but not the diary password, which could
   leave the diary impossible to open on that device (needs the server's new migration).
+- An item in the cloud changed outside diaryo (it doesn't open) no longer goes unnoticed:
+  a device that has it puts its version back, and the app says so.
 
 ## [1.0.0] — 2026-10-20
 

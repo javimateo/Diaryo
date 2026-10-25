@@ -159,6 +159,14 @@ who kept old encrypted copies could still bring back an older version of an item
 since then, dated before the sealing (re-sealing everything would cost moving the whole
 diary once per device).
 
+An item that doesn't open that way (it doesn't decrypt, it is another item's, or its time or
+deletion don't match the sealed ones; an empty tombstone after the sealing too) was changed
+outside diaryo. It isn't applied, and a device that has that item pushes its own version
+again, later than that copy, so the cloud doesn't lose it quietly; the same when the server
+refuses a push as older (`409`) and its newer copy doesn't open. The app says how many it
+found. One this diary's key opens but can't read (maybe from a newer diaryo) is left as it
+is.
+
 ## Protocol
 
 The pieces: `src/storage/tracking.ts` (what changed), `src/cloud/sync.ts` (pushing and

@@ -139,7 +139,12 @@ export interface PushResult {
   full: boolean;
   /** Items the server refused (they stay pending). */
   rejected: number;
+  /** Items whose copy up there didn't open (see `Sync.open`): this device's went up. */
+  broken: number;
 }
+
+/** An item that didn't open (see `Sync.open`). */
+const BROKEN = 'broken';
 
 /** Each path's opaque key, per naming key (computing them takes time; they never change). */
 const nameCache = new WeakMap<CryptoKey, Map<string, Promise<string>>>();
@@ -204,6 +209,17 @@ export class Sync {
     }
   }
 
+  /**
+   * The copy of an item up there doesn't open: someone with the session (or the server)
+   * changed it. This device's version (`row`) goes up again, later than that copy, so
+   * the cloud has it again instead of losing it quietly.
+   */
+  private async reclaim(row: TrackedRow | undefined, above: number) {
+    if (!row) return false;
+    await this.db.tracked.put({ ...row, modified: Math.max(row.modified, above + 1), dirty: 1 });
+    return true;
+  }
+
   /** Pushes everything pending. `onProgress` says how it goes. */
   async push(onProgress?: (done: number, total: number) => void): Promise<PushResult> {
     const dirty = await dirtyPaths(this.db);
@@ -219,16 +235,30 @@ export class Sync {
     let done = 0;
     let full = false;
     let rejected = 0;
+    let broken = 0;
     onProgress?.(0, pending.length);
+    const send = async (row: TrackedRow) => {
+      const written = await this.write(row, await this.draft(row));
+      if (written) await markPushed(this.db, row.path, row.modified, written);
+      else await this.db.tracked.delete(row.path);
+    };
     const next = pending.values();
     const worker = async () => {
       for (const row of next) {
         if (full) return;
         try {
-          const draft = await this.draft(row);
-          const written = await this.write(row, draft);
-          if (written) await markPushed(this.db, row.path, row.modified, written);
-          else await this.db.tracked.delete(row.path);
+          try {
+            await send(row);
+          } catch (error) {
+            // "There is a newer version" is only believed if that version opens.
+            if (!(error instanceof StaleError)) throw error;
+            const there = await this.remote.findByKey(await this.name(row.path));
+            if (!there || (await this.open(there)) !== BROKEN) throw error;
+            if (!(await this.reclaim(await this.db.tracked.get(row.path), there.modified)))
+              throw error;
+            broken++;
+            await send((await this.db.tracked.get(row.path))!);
+          }
         } catch (error) {
           if (error instanceof StaleError) await markStale(this.db, row.path, row.modified);
           else if (error instanceof QuotaError) {
@@ -244,22 +274,31 @@ export class Sync {
       }
     };
     await Promise.all(Array.from({ length: PUSH_AT_ONCE }, worker));
-    return { pushed: done, full, rejected };
+    return { pushed: done, full, rejected, broken };
   }
 
   /**
    * Pulls what changed on the server after the cursor and applies it. Returns where it got
    * to and what changed here.
    */
-  async pull(cursor: PullCursor): Promise<{ cursor: PullCursor; applied: AppliedChanges }> {
+  async pull(
+    cursor: PullCursor,
+  ): Promise<{ cursor: PullCursor; applied: AppliedChanges; broken: number }> {
     const applied: AppliedChanges = { pages: new Set(), assets: false };
+    let broken = 0;
     for (;;) {
       const items = await this.remote.listAfter(cursor, PULL_PAGE);
       if (items.length === 0) break;
       const changes: IncomingChange[] = [];
       for (const item of items) {
         const change = await this.open(item);
-        if (change) changes.push(change);
+        if (change === BROKEN) {
+          broken++;
+          await this.reclaim(
+            await this.db.tracked.where('remote').equals(item.id).first(),
+            item.modified,
+          );
+        } else if (change) changes.push(change);
       }
       const result = await this.apply(changes);
       result.pages.forEach((id) => applied.pages.add(id));
@@ -268,7 +307,7 @@ export class Sync {
       cursor = { updated: last.updated, id: last.id };
       if (items.length < PULL_PAGE) break;
     }
-    return { cursor: this.remote.rewind?.(cursor) ?? cursor, applied };
+    return { cursor: this.remote.rewind?.(cursor) ?? cursor, applied, broken };
   }
 
   /**
@@ -276,18 +315,32 @@ export class Sync {
    * inside, so neither the server nor someone with the session (but not the keys) can
    * delete things or bring an old version back. The server may lower the time (it stamps
    * changes from the future with its own), never raise it.
+   *
+   * `BROKEN` if it wasn't written by a device of this diary as it is (it doesn't decrypt,
+   * it is another item's, or its time or deletion don't match the sealed ones); null if it
+   * is to be skipped: a tombstone from before the sealing, or one this version of diaryo
+   * can't read (encrypted with the diary's key, so maybe from a newer one).
    */
-  private async open(item: RemoteItem): Promise<IncomingChange | null> {
+  private async open(item: RemoteItem): Promise<IncomingChange | typeof BROKEN | null> {
     // Tombstones from before they were sealed carry nothing to check: ignored.
-    if (!item.data) return null;
-    let sealed: Sealed;
+    if (!item.data) return item.modified < SEALED_SINCE ? null : BROKEN;
+    let plain: Uint8Array;
     try {
-      sealed = unseal(await decrypt(this.keys.enc, item.data));
+      plain = await decrypt(this.keys.enc, item.data);
     } catch (error) {
       console.error("Couldn't open an item from the cloud", item.id, error);
+      return BROKEN;
+    }
+    let sealed: Sealed;
+    try {
+      sealed = unseal(plain);
+    } catch (error) {
+      console.error("Couldn't read an item from the cloud", item.id, error);
       return null;
     }
-    if (typeof sealed.path !== 'string' || (await this.name(sealed.path)) !== item.key) return null;
+    if (typeof sealed.path !== 'string' || (await this.name(sealed.path)) !== item.key) {
+      return BROKEN;
+    }
     // Items from before the time was sealed can only be content, from before then.
     const unsealed = typeof sealed.modified !== 'number';
     const believed = unsealed
@@ -295,7 +348,7 @@ export class Sync {
       : sealed.deleted === item.deleted && item.modified <= sealed.modified!;
     if (!believed) {
       console.error('An item from the cloud was changed outside diaryo', item.id);
-      return null;
+      return BROKEN;
     }
     return {
       path: sealed.path,

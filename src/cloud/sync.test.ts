@@ -701,6 +701,63 @@ describe('sync', () => {
       expect((await b.elements('p1')).map((r) => r.id)).toEqual(['old']);
     });
 
+    /** Overwrites an item as the server allows anyone with the session to. */
+    const tamper = async (server: FakeServer, path: string, change: Partial<ItemDraft>) => {
+      const item = await itemOf(server, path);
+      await server.remote().update(item.id, { ...item, ...change });
+    };
+    const fresh = async (server: FakeServer) => {
+      const device = new Device('fresh', server, keys);
+      await device.pull();
+      return (await device.elements('p1')).map((r) => (r.data as TextElement).text);
+    };
+
+    it('junk over an item: a device that has it puts its version back, and says so', async () => {
+      const { server, a } = setUp();
+      await save(a.db, 'p1', [text('t1', 'hola')]);
+      await a.push();
+      await tamper(server, 'el/p1/t1', { data: 'AAAA', modified: Date.now() + 59_000 });
+      const pulled = await a.sync.pull(a.cursor);
+      expect(pulled.broken).toBe(1);
+      await a.push();
+      expect(await fresh(server)).toEqual(['hola']);
+    });
+
+    it('a change refused because of junk up there still goes up', async () => {
+      const { server, a } = setUp();
+      await save(a.db, 'p1', [text('t1', 'hola')]);
+      await a.push();
+      await tamper(server, 'el/p1/t1', { data: 'AAAA', modified: Date.now() + 59_000 });
+      await save(a.db, 'p1', [text('t1', 'hola otra vez')]);
+      const pushed = await a.push();
+      expect(pushed.broken).toBe(1);
+      expect(await dirtyPaths(a.db)).toEqual([]);
+      expect(await fresh(server)).toEqual(['hola otra vez']);
+    });
+
+    it('an empty tombstone after the sealing hides nothing up there either', async () => {
+      const { server, a } = setUp();
+      await save(a.db, 'p1', [text('t1', 'hola')]);
+      await a.push();
+      const { modified } = await itemOf(server, 'el/p1/t1');
+      await tamper(server, 'el/p1/t1', { data: '', deleted: true, modified: modified + 1 });
+      await a.pull();
+      await a.push();
+      expect(await fresh(server)).toEqual(['hola']);
+    });
+
+    it("an item the diary's key opens but this version can't read is left as it is", async () => {
+      const { server, a } = setUp();
+      await save(a.db, 'p1', [text('t1', 'hola')]);
+      await a.push();
+      const { modified } = await itemOf(server, 'el/p1/t1');
+      const newer = await encrypt(keys.enc, new TextEncoder().encode('{"a newer format'));
+      await tamper(server, 'el/p1/t1', { data: newer, modified: modified + 1 });
+      await a.pull();
+      expect(await dirtyPaths(a.db)).toEqual([]);
+      expect((await itemOf(server, 'el/p1/t1')).data).toBe(newer);
+    });
+
     it('a time from the future is stamped now, and the device keeps the stamped one', async () => {
       const { server, a, b } = setUp();
       await save(a.db, 'p1', [text('t1', 'reloj adelantado')]);
