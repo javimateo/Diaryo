@@ -6,6 +6,12 @@ What changes in each version of diaryo. The format follows
 
 ## [Unreleased]
 
+### Security
+
+- The cloud's vault is signed with the diary secret: a device no longer follows a vault
+  changed by someone with the account's session but not the diary password, which could
+  leave the diary impossible to open on that device (needs the server's new migration).
+
 ## [1.0.0] — 2026-10-20
 
 The first stable version.

@@ -96,6 +96,13 @@ keys are the ones [privacy](privacy.md) uses on the device.
   code makes the old one useless. Each change says the vault's `version` it was made
   from: of two made at once on two devices, the second is refused (`409`, and the app
   says so) instead of undoing the first.
+- Each change is **signed** with the diary secret (`mac`: an HMAC of the vault and its
+  version, `signVault` in `crypto.ts`). A device follows a vault changed elsewhere without
+  asking for the password only if the signature holds; otherwise it was changed outside
+  diaryo (someone with the session but not the keys can change the record), and the device
+  keeps its copy: following junk wrapped keys would leave the diary impossible to open.
+  Vaults from before the signature (1.0.0) have none: they are followed only when the
+  password typed here opens them.
 - Each device unlocks once and keeps the two derived keys in IndexedDB
   (`diaryo-keys`), as non-extractable `CryptoKey`s: the app can use them, not read
   them (their bytes are still on disk). The desktop app does the same in its webview.

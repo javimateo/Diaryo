@@ -332,6 +332,78 @@ describe('the same diary password as the cloud', () => {
     await a.lock.unlockDiary('segunda contraseña');
     expect(await a.read()).toBe('hola');
   });
+
+  it('follows, without asking, a change signed on another device of the diary', async () => {
+    const crypto = await import('./crypto');
+    const secret = crypto.newSecret();
+    const made = await crypto.createVault('primera contraseña', 1000, secret);
+    fake.state.vault = { ...made.vault, id: 'v1', version: 1 };
+    fake.state.record = { id: 'ana', email: 'ana@diaryo.test', verified: true };
+    let a = await start();
+    await a.write('hola');
+    await a.lock.enableLock('primera contraseña', 'all');
+
+    // The other device changes the password: it has the secret, so it signs the change.
+    const changed = await crypto.withPassword(made.vault, secret, 'segunda contraseña');
+    const mac = await crypto.signVault(secret, changed, 2);
+    fake.state.vault = { ...fake.state.vault, ...changed, mac, version: 2 };
+
+    a = await start();
+    await a.lock.unlockDiary('primera contraseña');
+    await vi.waitFor(() => expect(a.state.readLock()!.version).toBe(2));
+    a = await start();
+    await a.lock.unlockDiary('segunda contraseña');
+    expect(await a.read()).toBe('hola');
+  });
+
+  it('signs every change made here: a new vault, the password, the code', async () => {
+    const crypto = await import('./crypto');
+    const a = await start();
+    fake.signIn('ana');
+    await vi.waitFor(() => expect(a.account.useAccount.getState().vault).toBe('none'));
+    const code = (await a.vault.setUpVault('primera contraseña'))!;
+    const cloud = () => fake.state.vault as never as Parameters<typeof crypto.vaultSigned>[1];
+    const version = () => fake.state.vault!.version as number;
+    const { secret } = await crypto.openSecret(cloud(), 'primera contraseña');
+    expect(await crypto.vaultSigned(secret, cloud(), version())).toBe(true);
+
+    await a.vault.changeVaultPassword('primera contraseña', 'segunda contraseña');
+    expect(await crypto.vaultSigned(secret, cloud(), version())).toBe(true);
+    const newCode = await a.vault.replaceRecoveryCode('segunda contraseña');
+    expect(await crypto.vaultSigned(secret, cloud(), version())).toBe(true);
+    await expect(a.vault.recover(code, 'tercera contraseña')).rejects.toThrow();
+    await a.vault.recover(newCode, 'tercera contraseña');
+    expect(await crypto.vaultSigned(secret, cloud(), version())).toBe(true);
+    expect(version()).toBe(3);
+  });
+
+  it("doesn't follow a vault changed by someone with the session but not the keys", async () => {
+    const crypto = await import('./crypto');
+    const made = await crypto.createVault('contraseña buena', 1000);
+    fake.state.vault = { ...made.vault, id: 'v1', version: 1 };
+    fake.state.record = { id: 'ana', email: 'ana@diaryo.test', verified: true };
+    let a = await start();
+    await a.write('hola');
+    await a.lock.enableLock('contraseña buena', 'all');
+
+    // What the server accepts from the session alone: junk wrapped keys, the same check
+    // (so the keys here still match it) and the next version.
+    const junk = crypto.toBase64(globalThis.crypto.getRandomValues(new Uint8Array(60)));
+    fake.state.vault = { ...fake.state.vault, wrappedKey: junk, recoveryKey: junk, version: 2 };
+
+    a = await start();
+    await a.lock.unlockDiary('contraseña buena');
+    await a.vault.checkVault();
+    expect(a.state.readLock()!.version).toBe(1);
+
+    // The password and the code still open the diary here.
+    a = await start();
+    await a.lock.unlockDiary('contraseña buena');
+    expect(await a.read()).toBe('hola');
+    a = await start();
+    await a.lock.recoverDiary(made.recoveryCode, 'otra contraseña');
+    expect(await a.read()).toBe('hola');
+  });
 });
 
 describe('encrypted copies', () => {

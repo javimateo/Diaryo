@@ -3,17 +3,19 @@ import { countPrivateNotes, getDB, reboxPrivateNotes } from '../storage/db';
 import { useAccount } from './account';
 import { keepsSession, pb } from './client';
 import {
-  changePassword,
   createVault,
   diaryKeys,
   keysMatch,
-  newRecoveryCode,
   newSecret,
   openSecret,
   PBKDF2_ITERATIONS,
   privateKeyOf,
   recoverWithCode,
+  signVault,
   unlockWithPassword,
+  vaultSigned,
+  withNewCode,
+  withPassword,
   wrapDeviceKey,
   type DiaryKeys,
   type VaultData,
@@ -78,16 +80,24 @@ const toData = ({ kdf, wrappedKey, recoveryKey, check }: VaultData): VaultData =
   check,
 });
 
-/** Saves a change made from `vault` (refused if it changed meanwhile). Returns it saved. */
-async function save(vault: VaultRecord, next: VaultData): Promise<VaultRecord> {
+/**
+ * Saves a change made from `vault` (refused if it changed meanwhile), signed with the
+ * diary secret so the other devices follow it. Returns it saved.
+ */
+async function save(
+  vault: VaultRecord,
+  next: VaultData,
+  secret: Uint8Array<ArrayBuffer>,
+): Promise<VaultRecord> {
   const version = (vault.version ?? 0) + 1;
+  const signed = { ...toData(next), mac: await signVault(secret, next, version) };
   try {
-    await vaults().update(vault.id, { ...toData(next), version }, { requestKey: null });
+    await vaults().update(vault.id, { ...signed, version }, { requestKey: null });
   } catch (error) {
     if (error instanceof ClientResponseError && error.status === 409) throw new VaultChangedError();
     throw error;
   }
-  return { ...vault, ...toData(next), version };
+  return { ...vault, ...signed, version };
 }
 
 /**
@@ -201,10 +211,15 @@ export async function checkVault() {
   }
   if (kept && (await keysMatch(vault, kept))) {
     if (keysOnDisk() && !stored) await saveKeys(account, kept).catch(() => undefined);
-    // The password may have changed on another device: the copy here follows.
+    // The password may have changed on another device: the copy here follows, if it was
+    // signed with the diary secret. Otherwise it was changed outside diaryo (by someone
+    // with the session but not the keys): following it could leave the diary impossible to
+    // open, so this device keeps its copy, and its password.
     const secret = unlockedSecret();
     if (lock && secret && (lock.account !== account || (vault.version ?? 0) > lock.version)) {
-      await follow(account, vault, secret);
+      if (await vaultSigned(secret, vault, vault.version ?? 0))
+        await follow(account, vault, secret);
+      else console.error("The cloud's vault was changed outside diaryo; the copy here stays");
     }
     return;
   }
@@ -239,7 +254,12 @@ export async function setUpVault(password: string): Promise<string | null> {
     : await createVault(password, PBKDF2_ITERATIONS, secret);
   try {
     const record = await vaults().create<VaultRecord>(
-      { user: account, ...created.vault },
+      {
+        user: account,
+        ...toData(created.vault),
+        version: 0,
+        mac: await signVault(secret, created.vault, 0),
+      },
       { requestKey: null },
     );
     await follow(account, record, secret);
@@ -283,7 +303,7 @@ export async function recover(code: string, newPassword: string): Promise<boolea
   const vault = await existingVault();
   const recovered = await recoverWithCode(vault, code, newPassword);
   await canFollow(recovered.secret);
-  const saved = await save(vault, recovered.vault);
+  const saved = await save(vault, recovered.vault, recovered.secret);
   await keep(account, recovered.keys);
   return follow(account, saved, recovered.secret);
 }
@@ -298,15 +318,16 @@ async function followChange(saved: VaultRecord) {
 /** Changes the diary password. */
 export async function changeVaultPassword(current: string, next: string) {
   const vault = await existingVault();
-  const changed = await changePassword(vault, current, next);
-  await followChange(await save(vault, changed));
+  const { secret } = await openSecret(vault, current);
+  await followChange(await save(vault, await withPassword(vault, secret, next), secret));
 }
 
 /** Makes a new recovery code (the old one stops working). Returns it, to show it once. */
 export async function replaceRecoveryCode(password: string): Promise<string> {
   const vault = await existingVault();
-  const made = await newRecoveryCode(vault, password);
-  await followChange(await save(vault, made.vault));
+  const { secret } = await openSecret(vault, password);
+  const made = await withNewCode(vault, secret);
+  await followChange(await save(vault, made.vault, secret));
   return made.recoveryCode;
 }
 

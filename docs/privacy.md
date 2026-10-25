@@ -58,8 +58,9 @@ flowchart LR
   Setting the cloud up afterwards uploads that vault as it is: same password, same code.
 - **Signed in with a cloud diary**, the device keeps a copy of the account's vault, to
   open without a connection. A password changed on another device reaches it the next
-  time it sees the cloud (and, if the old one no longer opens it there, the new one is
-  tried against the cloud's vault). The first time with an account that had a diary of
+  time it sees the cloud, if that change is signed with the diary secret (see
+  [cloud](cloud.md#encryption)); and, if the old one no longer opens it there, the new one is
+  tried against the cloud's vault. The first time with an account that had a diary of
   its own, unlocking its cloud wraps the device's key with that account's secret: from
   then on, the password here is that account's (the app says so).
 - With the whole diary encrypted, the cloud's keys aren't kept on disk (`diaryo-keys`):

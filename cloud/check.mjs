@@ -65,10 +65,12 @@ const vault = await call(
     wrappedKey: 'w',
     recoveryKey: 'r',
     check: 'c',
+    mac: 'm',
   },
   a.token,
 );
 check('owner creates their vault', vault.status === 200, JSON.stringify(vault.body));
+check('the vault keeps its signature', vault.body?.mac === 'm', JSON.stringify(vault.body));
 const vault2 = await call(
   'POST',
   '/collections/vaults/records',
