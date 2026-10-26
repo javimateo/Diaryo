@@ -152,6 +152,17 @@ inbox with Cloudflare Email Routing (Email → Email Routing → Routing rules).
 and sending don't clash: Email Routing's MX and SPF records are on the root of
 `javiermateo.dev`, and Resend's (the server's emails) on `send.javiermateo.dev`.
 
+The image runs PocketBase as its own user (`pocketbase`), not as root: at every start the
+volume is made that user's. It starts with `--automigrate=false`: the schema only changes
+through `cloud/pb_migrations`, and changes made in the dashboard (Google's settings, say)
+are saved in the database without writing migration files. Commands from Coolify's
+terminal (`superuser upsert`, `superuser otp`) run as root, which is fine.
+
+**Updating PocketBase**: its version and the checksum of its Linux download
+(`checksums.txt` of the release) in `deploy/cloud.Dockerfile`; the CI builds that image
+and checks it. From 0.40.6 on, PocketBase's releases are announced to move away from
+GitHub: the download address will change with them.
+
 Backups: the whole server state is `/pb/pb_data` (PocketBase can also make scheduled
 backups in Settings → Backups). The diaries in it are encrypted on the devices: a backup
 can't be read without the users' keys. A deleted account stays in a backup until the

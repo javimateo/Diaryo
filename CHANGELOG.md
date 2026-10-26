@@ -17,6 +17,9 @@ What changes in each version of diaryo. The format follows
   repeated without end), and its administrator signs in with a code by email too.
 - Nothing goes up to the cloud until the account's email is confirmed (the app says so,
   and keeps the changes until then).
+- The cloud server runs PocketBase 0.40.6 (Go's network fixes) as a user without root
+  rights, on supported images (Alpine 3.24, nginx 1.30); the desktop app's TLS libraries
+  are up to date.
 
 ## [1.0.0] — 2026-10-20
 
