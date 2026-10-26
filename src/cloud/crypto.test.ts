@@ -11,7 +11,9 @@ import {
   openSecret,
   parseRecoveryCode,
   recoverWithCode,
+  signVault,
   unlockWithPassword,
+  vaultSigned,
   unwrapDeviceKey,
   wrapDeviceKey,
   WrongSecretError,
@@ -103,6 +105,18 @@ describe('vault', () => {
     expect(next.recoveryCode).not.toBe(recoveryCode);
     await expect(recoverWithCode(next.vault, recoveryCode, 'x')).rejects.toThrow();
     await expect(recoverWithCode(next.vault, next.recoveryCode, 'x')).resolves.toBeTruthy();
+  });
+
+  it('is signed with the diary secret, at a version', async () => {
+    const secret = crypto.getRandomValues(new Uint8Array(32));
+    const { vault } = await createVault('clave', FAST, secret);
+    const signed = { ...vault, mac: await signVault(secret, vault, 3) };
+    expect(await vaultSigned(secret, signed, 3)).toBe(true);
+    // Another version, another wrapped key, another secret or no signature: not signed.
+    expect(await vaultSigned(secret, signed, 4)).toBe(false);
+    expect(await vaultSigned(secret, { ...signed, wrappedKey: vault.recoveryKey }, 3)).toBe(false);
+    expect(await vaultSigned(crypto.getRandomValues(new Uint8Array(32)), signed, 3)).toBe(false);
+    expect(await vaultSigned(secret, vault, 3)).toBe(false);
   });
 
   it('tells keys from another vault apart', async () => {

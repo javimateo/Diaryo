@@ -494,6 +494,7 @@
 }
 
 .sync-indicator[data-status='full'],
+.sync-indicator[data-status='unverified'],
 .sync-indicator[data-status='error'] {
   color: #c27a1a;
 }

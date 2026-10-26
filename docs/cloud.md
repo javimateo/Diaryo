@@ -37,7 +37,11 @@ flowchart LR
 
 PocketBase's `users` collection: email and password (with email verification and password
 reset) and Google (OAuth2). Each user has a storage quota (`quotaBytes`, 50 MB on the
-free plan) that only the server can change.
+free plan) that only the server can change. Nothing goes up to the cloud until the
+account's email is confirmed (with Google it always is; `1790900006_verified.js`): until
+then the app signs in, pulls and keeps the changes here, and says so in the cloud next to
+"Saved" and in the settings. Each round asks the server again, so confirming the email on
+another device is noticed by the next one.
 
 In the app (`src/cloud/account.ts`, Settings → Account and cloud):
 
@@ -96,6 +100,13 @@ keys are the ones [privacy](privacy.md) uses on the device.
   code makes the old one useless. Each change says the vault's `version` it was made
   from: of two made at once on two devices, the second is refused (`409`, and the app
   says so) instead of undoing the first.
+- Each change is **signed** with the diary secret (`mac`: an HMAC of the vault and its
+  version, `signVault` in `crypto.ts`). A device follows a vault changed elsewhere without
+  asking for the password only if the signature holds; otherwise it was changed outside
+  diaryo (someone with the session but not the keys can change the record), and the device
+  keeps its copy: following junk wrapped keys would leave the diary impossible to open.
+  Vaults from before the signature (1.0.0) have none: they are followed only when the
+  password typed here opens them.
 - Each device unlocks once and keeps the two derived keys in IndexedDB
   (`diaryo-keys`), as non-extractable `CryptoKey`s: the app can use them, not read
   them (their bytes are still on disk). The desktop app does the same in its webview.
@@ -151,6 +162,14 @@ before then: an old one can't come back passed off as new. Left open, on purpose
 who kept old encrypted copies could still bring back an older version of an item untouched
 since then, dated before the sealing (re-sealing everything would cost moving the whole
 diary once per device).
+
+An item that doesn't open that way (it doesn't decrypt, it is another item's, or its time or
+deletion don't match the sealed ones; an empty tombstone after the sealing too) was changed
+outside diaryo. It isn't applied, and a device that has that item pushes its own version
+again, later than that copy, so the cloud doesn't lose it quietly; the same when the server
+refuses a push as older (`409`) and its newer copy doesn't open. The app says how many it
+found. One this diary's key opens but can't read (maybe from a newer diaryo) is left as it
+is.
 
 ## Protocol
 

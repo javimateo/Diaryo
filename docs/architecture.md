@@ -219,4 +219,5 @@ search, dates and the desktop helpers. On the Rust side, `cargo test`.
 
 The CI (`.github/workflows/ci.yml`) runs them on every push to `develop` or `main` and on
 every pull request, with the types, lint and format checks, and `cloud/check.mjs` against
-a PocketBase with the repository's schema and rules.
+the cloud server's own image (`deploy/cloud.Dockerfile`); the website's and the web app's
+images are built too.
