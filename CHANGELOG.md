@@ -15,6 +15,8 @@ What changes in each version of diaryo. The format follows
   a device that has it puts its version back, and the app says so.
 - The cloud server limits sign-ins, sign-ups and emails per address (they could be
   repeated without end), and its administrator signs in with a code by email too.
+- Nothing goes up to the cloud until the account's email is confirmed (the app says so,
+  and keeps the changes until then).
 
 ## [1.0.0] — 2026-10-20
 

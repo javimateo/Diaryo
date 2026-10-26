@@ -27,6 +27,7 @@ import {
   signedIn,
   syncRound,
   type Question,
+  type RoundOptions,
   type SyncedDiary,
 } from './session';
 import {
@@ -801,14 +802,34 @@ describe('what the user is asked, and what each answer does', () => {
       },
     };
     return {
-      round: () =>
-        syncRound(device.db, server.remote(), keys, account, diary, { idle: async () => true }),
+      round: (options: Partial<RoundOptions> = {}) =>
+        syncRound(device.db, server.remote(), keys, account, diary, {
+          idle: async () => true,
+          ...options,
+        }),
       choose: (asked: Question, choice: 'merge' | 'cloud') =>
         settleChoice(device.db, account, diary, asked, choice),
       remove: () => removeDiaryFromDevice(device.db, diary),
     };
   };
   const pageIds = async (device: Device) => (await listPages(device.db)).map((p) => p.id).sort();
+
+  it('an account without its email confirmed gets the cloud diary, and uploads nothing', async () => {
+    const { server, a, b } = setUp();
+    await save(a.db, 'p1', [stroke('s1')]);
+    await a.push();
+    const before = server.items.length;
+    const s = session(b, server);
+    await s.round({ upload: false });
+    expect(await pageIds(b)).toEqual(['p1']);
+    await save(b.db, 'p2', [stroke('s2')]);
+    await s.round({ upload: false });
+    expect(server.items.length).toBe(before);
+    expect(await dirtyPaths(b.db)).not.toEqual([]);
+    // Once confirmed, what waited goes up.
+    await s.round();
+    expect(await dirtyPaths(b.db)).toEqual([]);
+  });
 
   it('the first time with nothing here, the cloud diary comes without asking', async () => {
     const { server, a, b } = setUp();

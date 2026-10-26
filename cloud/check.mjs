@@ -32,8 +32,27 @@ const results = [];
 const check = (name, ok, extra = '') =>
   results.push(`${ok ? 'OK ' : 'FAIL'} ${name} ${ok ? '' : extra}`);
 
+// The administrator needs a second factor: the password alone isn't enough.
+const first = await call('POST', '/collections/_superusers/auth-with-password', ADMIN);
+check(
+  'the administrator needs a second factor',
+  first.status === 401 && typeof first.body?.mfaId === 'string',
+  // Only the status: the body may carry a token.
+  first.status,
+);
+const su = first.body?.token
+  ? first
+  : await call('POST', '/collections/_superusers/auth-with-otp', {
+      otpId: process.env.PB_ADMIN_OTP_ID,
+      password: process.env.PB_ADMIN_OTP,
+      mfaId: first.body?.mfaId,
+    });
+if (!su.body?.token)
+  throw new Error(`the administrator couldn't sign in: ${JSON.stringify(su.body)}`);
+
 const stamp = Date.now();
-const mk = async (n, extra = {}) => {
+/** A throwaway user, with their email confirmed (by the administrator) unless `verified` is false. */
+const mk = async (n, extra = {}, verified = true) => {
   const email = `u${n}-${stamp}@diaryo.test`;
   const c = await call('POST', '/collections/users/records', {
     email,
@@ -41,6 +60,14 @@ const mk = async (n, extra = {}) => {
     passwordConfirm: 'secret12345',
     ...extra,
   });
+  if (verified) {
+    await call(
+      'PATCH',
+      `/collections/users/records/${c.body.id}`,
+      { verified: true },
+      su.body.token,
+    );
+  }
   const a = await call('POST', '/collections/users/auth-with-password', {
     identity: email,
     password: 'secret12345',
@@ -182,23 +209,6 @@ const dup = await call(
 check('one item per key', dup.status >= 400, dup.status);
 
 // Quota: the superuser lowers it to 3 KB.
-// The administrator needs a second factor: the password alone isn't enough.
-const first = await call('POST', '/collections/_superusers/auth-with-password', ADMIN);
-check(
-  'the administrator needs a second factor',
-  first.status === 401 && typeof first.body?.mfaId === 'string',
-  // Only the status: the body may carry a token.
-  first.status,
-);
-const su = first.body?.token
-  ? first
-  : await call('POST', '/collections/_superusers/auth-with-otp', {
-      otpId: process.env.PB_ADMIN_OTP_ID,
-      password: process.env.PB_ADMIN_OTP,
-      mfaId: first.body?.mfaId,
-    });
-if (!su.body?.token)
-  throw new Error(`the administrator couldn't sign in: ${JSON.stringify(su.body)}`);
 await call('PATCH', `/collections/users/records/${a.id}`, { quotaBytes: 3000 }, su.body.token);
 const fits = await call(
   'POST',
@@ -231,6 +241,29 @@ const shrink = await call(
 check('shrinking is always allowed', shrink.status === 200, shrink.status);
 
 // Many writes at once (a device pushes several in parallel) can't add up past the quota.
+// Nothing goes up to the cloud until the account's email is confirmed.
+const unconfirmed = await mk(5, {}, false);
+const early = await call(
+  'POST',
+  '/collections/items/records',
+  { user: unconfirmed.id, key: 'u1', kind: 'element', data: 'x', modified: 1 },
+  unconfirmed.token,
+);
+check('an account without its email confirmed stores nothing', early.status >= 400, early.status);
+await call(
+  'PATCH',
+  `/collections/users/records/${unconfirmed.id}`,
+  { verified: true },
+  su.body.token,
+);
+const confirmed = await call(
+  'POST',
+  '/collections/items/records',
+  { user: unconfirmed.id, key: 'u1', kind: 'element', data: 'x', modified: 1 },
+  unconfirmed.token,
+);
+check('once confirmed, it goes up', confirmed.status === 200, confirmed.status);
+
 const busy = await mk(4);
 await call('PATCH', `/collections/users/records/${busy.id}`, { quotaBytes: 3000 }, su.body.token);
 await Promise.all(
@@ -354,7 +387,7 @@ check(
 // with it (cascade).
 const foreignDelete = await call('DELETE', `/collections/users/records/${a.id}`, null, b.token);
 check('nobody deletes someone else', foreignDelete.status === 404, foreignDelete.status);
-for (const u of [a, b, greedy, busy]) {
+for (const u of [a, b, greedy, busy, unconfirmed]) {
   const gone = await call('DELETE', `/collections/users/records/${u.id}`, null, u.token);
   check('a user deletes their own account', gone.status === 204, gone.status);
 }

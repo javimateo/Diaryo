@@ -45,6 +45,8 @@ export type SyncStatus =
   | 'offline'
   /** The space is full: changes stay here, waiting. */
   | 'full'
+  /** The account's email isn't confirmed: nothing goes up until it is. */
+  | 'unverified'
   | 'error';
 
 interface SyncState {
@@ -153,6 +155,9 @@ async function syncOnce(keys: DiaryKeys, still: () => boolean) {
   if (!account || !diary || !still()) return;
   if (!navigator.onLine) return useSync.setState({ status: 'offline' });
   useSync.setState({ status: 'syncing', progress: null });
+  // Not confirmed (as far as this device knows): it may have been confirmed elsewhere.
+  if (!account.verified) await refreshAccount();
+  const verified = !!useAccount.getState().account?.verified;
   const db = getDB();
   const known = new Set(useUI.getState().diaryState.pages.map((page) => page.id));
   try {
@@ -161,6 +166,7 @@ async function syncOnce(keys: DiaryKeys, still: () => boolean) {
       beforePush: () => shrinkPendingImages(db),
       onProgress: (done, total) =>
         useSync.setState({ progress: total > 20 ? { done, total } : null }),
+      upload: verified,
     });
     if (result.question) {
       const pending = result.question === 'return' ? { pending: result.pending } : {};
@@ -181,7 +187,7 @@ async function syncOnce(keys: DiaryKeys, still: () => boolean) {
     if (result.broken > 0) useUI.getState().showToast(t().sync.broken(result.broken));
     const { full, rejected } = result.push;
     useSync.setState({
-      status: full ? 'full' : rejected > 0 ? 'error' : 'idle',
+      status: !verified ? 'unverified' : full ? 'full' : rejected > 0 ? 'error' : 'idle',
       lastSync: result.lastSync,
       progress: null,
       rejected,

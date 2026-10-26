@@ -94,6 +94,11 @@ export interface RoundOptions {
   /** Right before pushing (the images are made smaller there). */
   beforePush?: () => Promise<void>;
   onProgress?: (done: number, total: number) => void;
+  /**
+   * False while the account's email isn't confirmed: the server keeps nothing until then,
+   * so nothing is pushed (it stays pending here).
+   */
+  upload?: boolean;
 }
 
 /**
@@ -152,7 +157,10 @@ export async function syncRound(
   // What nothing uses any more (elements of deleted pages, images) frees its space.
   await cleanUpDiary(db);
   await options.beforePush?.();
-  const push = await sync.push(options.onProgress);
+  const push =
+    options.upload === false
+      ? { pushed: 0, full: false, rejected: 0, broken: 0 }
+      : await sync.push(options.onProgress);
   saved.lastSync = Date.now();
   store(account, saved);
   return {

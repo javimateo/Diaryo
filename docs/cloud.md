@@ -37,7 +37,11 @@ flowchart LR
 
 PocketBase's `users` collection: email and password (with email verification and password
 reset) and Google (OAuth2). Each user has a storage quota (`quotaBytes`, 50 MB on the
-free plan) that only the server can change.
+free plan) that only the server can change. Nothing goes up to the cloud until the
+account's email is confirmed (with Google it always is; `1790900006_verified.js`): until
+then the app signs in, pulls and keeps the changes here, and says so in the cloud next to
+"Saved" and in the settings. Each round asks the server again, so confirming the email on
+another device is noticed by the next one.
 
 In the app (`src/cloud/account.ts`, Settings → Account and cloud):
 
