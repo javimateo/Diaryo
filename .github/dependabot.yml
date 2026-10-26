@@ -1,0 +1,38 @@
+# Advisories and updates for every dependency set, once a week, as pull requests to
+# develop (see docs/security-review.md).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+    groups:
+      app:
+        patterns: ['*']
+  - package-ecosystem: npm
+    directory: /web
+    target-branch: develop
+    schedule:
+      interval: weekly
+    groups:
+      website:
+        patterns: ['*']
+  - package-ecosystem: cargo
+    directory: /src-tauri
+    target-branch: develop
+    schedule:
+      interval: weekly
+    groups:
+      desktop:
+        patterns: ['*']
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: monthly
+  - package-ecosystem: docker
+    directory: /deploy
+    target-branch: develop
+    schedule:
+      interval: monthly

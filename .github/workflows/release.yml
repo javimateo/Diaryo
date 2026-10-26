@@ -33,8 +33,13 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - run: npm ci
+      # The page is built here, without the updater key: what npm installs and runs (Vite, its
+      # plugins…) never sees it. No install scripts either.
+      - run: npm ci --ignore-scripts
+      - run: npm run build
 
+      # Only the Rust build and the bundler run with the key; the page is already built
+      # (release.conf.json leaves `beforeBuildCommand` empty).
       - uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -49,3 +54,4 @@ jobs:
           # Title and notes from GitHub (the commits since the previous version).
           generateReleaseNotes: true
           uploadUpdaterJson: true
+          args: --config src-tauri/release.conf.json
