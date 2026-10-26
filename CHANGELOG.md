@@ -10,6 +10,8 @@ What changes in each version of diaryo. The format follows
 
 - The emails' links carry their token after `#`, so it never reaches the web server's logs
   (the links already sent still work).
+- The website sends security headers (it couldn't be framed by another site, among
+  others), and the web app turns off the browser features it doesn't use.
 
 ## [1.0.1] — 2026-10-26
 
