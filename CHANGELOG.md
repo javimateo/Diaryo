@@ -6,6 +6,8 @@ What changes in each version of diaryo. The format follows
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-10-26
+
 ### Security
 
 - The cloud's vault is signed with the diary secret: a device no longer follows a vault
@@ -84,6 +86,7 @@ The first stable version.
 
 See the [release notes on GitHub](https://github.com/javimateo/Diaryo/releases/tag/v0.2.0).
 
-[Unreleased]: https://github.com/javimateo/Diaryo/compare/v1.0.0...develop
+[Unreleased]: https://github.com/javimateo/Diaryo/compare/v1.0.1...develop
+[1.0.1]: https://github.com/javimateo/Diaryo/releases/tag/v1.0.1
 [1.0.0]: https://github.com/javimateo/Diaryo/releases/tag/v1.0.0
 [0.2.0]: https://github.com/javimateo/Diaryo/releases/tag/v0.2.0

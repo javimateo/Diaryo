@@ -1,7 +1,7 @@
 {
   "name": "diaryo",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Diario infinito: cada página es un lienzo sin límites para dibujar, escribir y conectar ideas.",
   "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
