@@ -132,6 +132,17 @@ const foreignVault = await call(
   b.token,
 );
 check('nobody creates a vault for someone else', foreignVault.status >= 400, foreignVault.status);
+const vaultGone = await call(
+  'DELETE',
+  `/collections/vaults/records/${vault.body.id}`,
+  null,
+  a.token,
+);
+check(
+  'a vault is never deleted alone, not even by its owner (it goes with the account)',
+  vaultGone.status >= 400,
+  vaultGone.status,
+);
 
 const item = await call(
   'POST',
