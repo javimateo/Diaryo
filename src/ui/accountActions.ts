@@ -52,10 +52,11 @@ export async function afterSignIn() {
  * password. The link leaves the address at once, so a reload doesn't use it again.
  */
 async function openAccountLink() {
-  const link = readAccountLink(location.search);
+  const link = readAccountLink(location);
   if (!link) return;
   const url = new URL(location.href);
   url.searchParams.delete(link.kind);
+  if (new URLSearchParams(url.hash.slice(1)).has(link.kind)) url.hash = '';
   history.replaceState(history.state, '', url);
 
   const { setAccountDialog, showToast } = useUI.getState();
@@ -71,6 +72,9 @@ async function openAccountLink() {
 /** When the app starts: the email's links, the cloud diary, and the session renewed now and then. */
 export function startAccount() {
   void openAccountLink();
+  // A link after # opened in a tab already showing the app doesn't load it again.
+  const onHash = () => void openAccountLink();
+  window.addEventListener('hashchange', onHash);
   void checkVault();
   // An ended session is said (what is pending stays here until signing in again).
   const refresh = async () => {
@@ -78,5 +82,8 @@ export function startAccount() {
   };
   void refresh();
   const timer = window.setInterval(() => void refresh(), REFRESH_EVERY);
-  return () => window.clearInterval(timer);
+  return () => {
+    window.clearInterval(timer);
+    window.removeEventListener('hashchange', onHash);
+  };
 }

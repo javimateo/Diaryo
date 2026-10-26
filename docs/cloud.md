@@ -53,8 +53,10 @@ In the app (`src/cloud/account.ts`, Settings → Account and cloud):
 - **Google** on the web opens a popup; on the desktop, the system browser (the
   `open_sign_in` command, which only opens `accounts.google.com`). Either way the server
   tells the app through its realtime connection when Google is done.
-- The **emails' links** open the web app: `?verify=<token>` confirms the email and
-  `?reset=<token>` asks for the new password. The token leaves the address at once.
+- The **emails' links** open the web app: `#verify=<token>` confirms the email and
+  `#reset=<token>` asks for the new password. After `#`, the token never reaches a server
+  (nor its logs); it leaves the address at once. Links from emails sent before, with `?`,
+  still work.
 - `VITE_CLOUD_URL` points the app to another server (a local PocketBase while
   developing, in `.env.local`).
 
