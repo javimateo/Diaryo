@@ -6,6 +6,11 @@ What changes in each version of diaryo. The format follows
 
 ## [Unreleased]
 
+### Security
+
+- The emails' links carry their token after `#`, so it never reaches the web server's logs
+  (the links already sent still work).
+
 ## [1.0.1] — 2026-10-26
 
 ### Security

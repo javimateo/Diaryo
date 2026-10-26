@@ -112,8 +112,9 @@ The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules 
    an API key. The VPS blocks outgoing port 465, so not that one.
 5. **Application URL** (Settings → Application): `https://app.diaryo.javiermateo.dev`,
    used in the links of those emails. Their texts (Spanish and English) come from the
-   migration `1790900001_account.js`: the links open the web app (`?verify=…`,
-   `?reset=…`), which confirms the email or asks for the new password.
+   migrations `1790900001_account.js` and `1790900007_links_after_hash.js`: the links open
+   the web app (`#verify=…`, `#reset=…`), which confirms the email or asks for the new
+   password.
 6. **Google sign-in** (Collections → users → Options → OAuth2): enable it and add Google
    with a client id and secret from the Google Cloud console (APIs & Services →
    Credentials → OAuth client ID, type "Web application"), with the authorized redirect

@@ -50,6 +50,14 @@ const su = first.body?.token
 if (!su.body?.token)
   throw new Error(`the administrator couldn't sign in: ${JSON.stringify(su.body)}`);
 
+// The emails' links carry their token after #: it never reaches a server's logs.
+const users = (await call('GET', '/collections/users', null, su.body.token)).body;
+check(
+  "the emails' links carry their token after #",
+  users.verificationTemplate.body.includes('/#verify={TOKEN}') &&
+    users.resetPasswordTemplate.body.includes('/#reset={TOKEN}'),
+);
+
 const stamp = Date.now();
 /** A throwaway user, with their email confirmed (by the administrator) unless `verified` is false. */
 const mk = async (n, extra = {}, verified = true) => {
