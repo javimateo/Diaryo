@@ -309,7 +309,9 @@ change with it (and their date).
   items: they are only the diary encrypted, and its readable copy is the usual `.diaryo`
   backup ("Save a copy").
 - **Deleting the account** (Settings → Account and cloud → More options, typing the email to confirm):
-  the user deletes their own record, and its vault and items go with it (cascade). This
+  the user deletes their own record, and its vault and items go with it (cascade). A vault
+  is never deleted on its own (`1790900008_vault_kept.js`): without it the cloud diary
+  can't be opened, and devices would offer to set up a new one over it. This
   device signs out and forgets the keys; the local diary stays, and so does each other
   device's (they find out on their next session renewal, like any ended session). There
   are no server backups, so nothing is left.
