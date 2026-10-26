@@ -183,6 +183,14 @@ script slipped into a diary couldn't run nor send anything out. If the cloud mov
 another address (`VITE_CLOUD_URL`), its `connect-src` changes in both. The desktop
 app's development build has none (`devCsp`: Vite's hot reload needs inline code).
 
+The website (`deploy/web.nginx.conf`) holds nobody's data: its CSP doesn't limit scripts
+(that would need the hashes of each build's inline ones), it only stops it from being
+framed, plugins, a changed `<base>` and forms sent anywhere. Both send HSTS,
+`X-Content-Type-Options`, a `Referrer-Policy` (none at all from the web app, whose
+addresses may carry an email's token) and a `Permissions-Policy` that turns off the camera,
+the microphone, the location, payments and USB (the clipboard stays: the app copies and
+pastes with it).
+
 ## Where the data lives
 
 The web app has no server side: each browser keeps its own diary in IndexedDB, on the
