@@ -194,6 +194,8 @@ export interface VaultData {
   wrappedKey: string;
   recoveryKey: string;
   check: string;
+  /** Signed with the diary secret (see `signVault`). Vaults from before it have none. */
+  mac?: string;
 }
 
 /** Something went wrong opening a vault: the password or the code isn't the right one. */
@@ -292,31 +294,97 @@ export async function openSecretWithCode(vault: VaultData, code: string) {
 export async function recoverWithCode(vault: VaultData, code: string, newPassword: string) {
   const secret = await secretFromRecovery(vault, code);
   const keys = await openWith(vault, secret);
+  return { keys, vault: await withPassword(vault, secret, newPassword), secret };
+}
+
+/** The vault with another password, from its secret (already checked). */
+export async function withPassword(
+  vault: VaultData,
+  secret: Uint8Array<ArrayBuffer>,
+  password: string,
+): Promise<VaultData> {
   const kdf = { ...vault.kdf, salt: toBase64(random(SALT_BYTES)), iterations: PBKDF2_ITERATIONS };
-  const next: VaultData = {
-    ...vault,
-    kdf,
-    wrappedKey: await wrapWithPassword(secret, newPassword, kdf),
-  };
-  return { keys, vault: next, secret };
+  return { ...vault, kdf, wrappedKey: await wrapWithPassword(secret, password, kdf) };
 }
 
 /** Changes the diary password (the diary itself isn't encrypted again). */
 export async function changePassword(vault: VaultData, current: string, next: string) {
-  const secret = await secretFromPassword(vault, current);
-  await openWith(vault, secret);
-  const kdf = { ...vault.kdf, salt: toBase64(random(SALT_BYTES)), iterations: PBKDF2_ITERATIONS };
-  return { ...vault, kdf, wrappedKey: await wrapWithPassword(secret, next, kdf) };
+  return withPassword(vault, (await openSecret(vault, current)).secret, next);
 }
 
-/** A new recovery code (the previous one stops working). */
-export async function newRecoveryCode(vault: VaultData, password: string) {
-  const secret = await secretFromPassword(vault, password);
-  await openWith(vault, secret);
+/** The vault with a new recovery code (the previous one stops working), from its secret. */
+export async function withNewCode(vault: VaultData, secret: Uint8Array<ArrayBuffer>) {
   const code = random(RECOVERY_BYTES);
   const kdf = { ...vault.kdf, recoverySalt: toBase64(random(SALT_BYTES)) };
   const next: VaultData = { ...vault, kdf, recoveryKey: await wrapWithRecovery(secret, code, kdf) };
   return { vault: next, recoveryCode: formatRecoveryCode(code) };
+}
+
+/** A new recovery code (the previous one stops working). */
+export async function newRecoveryCode(vault: VaultData, password: string) {
+  return withNewCode(vault, (await openSecret(vault, password)).secret);
+}
+
+/**
+ * The vault's signature: an HMAC, with a key from the diary secret, of everything a
+ * device takes from it, and its version. Someone with the session but not the keys can
+ * change the vault on the server; without this, a device would take junk wrapped keys
+ * as a password changed elsewhere, and nothing would open the diary any more. An older
+ * vault, signed, can't come back either: its version is signed with it.
+ */
+async function vaultMacKey(secret: Uint8Array<ArrayBuffer>) {
+  const base = await subtle().importKey('raw', secret, 'HKDF', false, ['deriveKey']);
+  return subtle().deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new Uint8Array(0),
+      info: encoder.encode('diaryo vault'),
+    },
+    base,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify'],
+  );
+}
+
+const signed = ({ kdf, wrappedKey, recoveryKey, check }: VaultData, version: number) =>
+  encoder.encode(
+    JSON.stringify([
+      kdf.alg,
+      kdf.iterations,
+      kdf.salt,
+      kdf.recoverySalt,
+      wrappedKey,
+      recoveryKey,
+      check,
+      version,
+    ]),
+  );
+
+/** Signs a vault at a version (see `vaultMacKey`). */
+export async function signVault(
+  secret: Uint8Array<ArrayBuffer>,
+  vault: VaultData,
+  version: number,
+): Promise<string> {
+  const mac = await subtle().sign('HMAC', await vaultMacKey(secret), signed(vault, version));
+  return toBase64(new Uint8Array(mac));
+}
+
+/** Whether a vault was signed at that version with this diary secret. */
+export async function vaultSigned(
+  secret: Uint8Array<ArrayBuffer>,
+  vault: VaultData,
+  version: number,
+): Promise<boolean> {
+  if (typeof vault.mac !== 'string') return false;
+  try {
+    const mac = fromBase64(vault.mac);
+    return await subtle().verify('HMAC', await vaultMacKey(secret), mac, signed(vault, version));
+  } catch {
+    return false;
+  }
 }
 
 /** Whether these keys (kept on a device) still open this vault. */

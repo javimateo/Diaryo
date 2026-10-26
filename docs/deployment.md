@@ -86,11 +86,20 @@ The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules 
    schema changes reach real users' data), **Dockerfile**
    `/deploy/cloud.Dockerfile`, domain `https://cloud.diaryo.javiermateo.dev` with
    **port 8090**, and a **persistent storage** mounted at `/pb/pb_data` (without it,
-   every deployment would start with an empty database).
+   every deployment would start with an empty database). Only _Ports Exposes_, never a
+   _Ports Mapping_: the server must be reached only through Coolify's proxy, which writes
+   the client's address (see Limits below).
 3. First start: create the administrator from the resource's terminal in Coolify:
 
    ```bash
    /pb/pocketbase superuser upsert you@example.com 'a-long-password' --dir=/pb/pb_data
+   ```
+
+   Signing in to the dashboard also asks for a one-time code sent by email. Until the
+   mail is set up (next step), or whenever it fails, make one there:
+
+   ```bash
+   /pb/pocketbase superuser otp you@example.com --dir=/pb/pb_data
    ```
 
    The dashboard is at `https://cloud.diaryo.javiermateo.dev/_/`.
@@ -117,11 +126,24 @@ The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules 
    test users added there can sign in: **Publish app** (Audience) opens it to everyone.
    With these basic scopes Google usually doesn't ask for a review, only to verify the
    domain in Google Search Console.
-7. Check the rules against it (it creates three throwaway users and deletes them):
+7. Check the rules against it (it creates a few throwaway users and deletes them). It
+   needs the administrator's second factor: make a one-time password from the resource's
+   terminal (`/pb/pocketbase superuser otp you@example.com --dir=/pb/pb_data`; it lasts 3
+   minutes) and pass its id and password:
 
    ```bash
-   PB_URL=https://cloud.diaryo.javiermateo.dev PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… node cloud/check.mjs
+   PB_URL=https://cloud.diaryo.javiermateo.dev PB_ADMIN_EMAIL=… PB_ADMIN_PASSWORD=… PB_ADMIN_OTP_ID=… PB_ADMIN_OTP=… node cloud/check.mjs
    ```
+
+   Through the proxy all its requests come from your address, so afterwards that address
+   can't sign in for a minute nor sign up for an hour.
+
+**Limits** (`cloud/pb_migrations/1790900005_limits.js`, applied on start: changing them in
+the dashboard lasts until a migration changes them again): per address, 10 sign-ins a
+minute, 3 one-time codes, 2 verification and 2 password emails a minute, and 10 new
+accounts an hour. The sync's own requests have no limit (a first sync sends thousands). The
+address is the last one in `X-Forwarded-For`, the one Coolify's proxy (Traefik) adds; if a
+CDN or another proxy is ever put in front (Cloudflare's orange cloud), that header changes.
 
 Privacy: the privacy policy promises no server backups and request logs kept 5 days
 (Settings → Logs, PocketBase's default). Changing either means updating the policy. Its
@@ -129,6 +151,17 @@ contact address, `privacidad@javiermateo.dev` (`web/src/site.ts`), forwards to a
 inbox with Cloudflare Email Routing (Email → Email Routing → Routing rules). Receiving
 and sending don't clash: Email Routing's MX and SPF records are on the root of
 `javiermateo.dev`, and Resend's (the server's emails) on `send.javiermateo.dev`.
+
+The image runs PocketBase as its own user (`pocketbase`), not as root: at every start the
+volume is made that user's. It starts with `--automigrate=false`: the schema only changes
+through `cloud/pb_migrations`, and changes made in the dashboard (Google's settings, say)
+are saved in the database without writing migration files. Commands from Coolify's
+terminal (`superuser upsert`, `superuser otp`) run as root, which is fine.
+
+**Updating PocketBase**: its version and the checksum of its Linux download
+(`checksums.txt` of the release) in `deploy/cloud.Dockerfile`; the CI builds that image
+and checks it. From 0.40.6 on, PocketBase's releases are announced to move away from
+GitHub: the download address will change with them.
 
 Backups: the whole server state is `/pb/pb_data` (PocketBase can also make scheduled
 backups in Settings → Backups). The diaries in it are encrypted on the devices: a backup

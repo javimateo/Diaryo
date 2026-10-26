@@ -6,6 +6,23 @@ What changes in each version of diaryo. The format follows
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-10-26
+
+### Security
+
+- The cloud's vault is signed with the diary secret: a device no longer follows a vault
+  changed by someone with the account's session but not the diary password, which could
+  leave the diary impossible to open on that device (needs the server's new migration).
+- An item in the cloud changed outside diaryo (it doesn't open) no longer goes unnoticed:
+  a device that has it puts its version back, and the app says so.
+- The cloud server limits sign-ins, sign-ups and emails per address (they could be
+  repeated without end), and its administrator signs in with a code by email too.
+- Nothing goes up to the cloud until the account's email is confirmed (the app says so,
+  and keeps the changes until then).
+- The cloud server runs PocketBase 0.40.6 (Go's network fixes) as a user without root
+  rights, on supported images (Alpine 3.24, nginx 1.30); the desktop app's TLS libraries
+  are up to date.
+
 ## [1.0.0] — 2026-10-20
 
 The first stable version.
@@ -69,6 +86,7 @@ The first stable version.
 
 See the [release notes on GitHub](https://github.com/javimateo/Diaryo/releases/tag/v0.2.0).
 
-[Unreleased]: https://github.com/javimateo/Diaryo/compare/v1.0.0...develop
+[Unreleased]: https://github.com/javimateo/Diaryo/compare/v1.0.1...develop
+[1.0.1]: https://github.com/javimateo/Diaryo/releases/tag/v1.0.1
 [1.0.0]: https://github.com/javimateo/Diaryo/releases/tag/v1.0.0
 [0.2.0]: https://github.com/javimateo/Diaryo/releases/tag/v0.2.0

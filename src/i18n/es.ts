@@ -342,6 +342,7 @@ export const es = {
       syncing: 'Sincronizando…',
       offline: 'Sin conexión · se hará al volver',
       full: 'Espacio lleno',
+      unverified: 'Confirma tu email para subir tus cambios',
       error: 'No se ha podido sincronizar',
     },
     last: (when: string) => `Última vez: ${when}`,
@@ -363,6 +364,10 @@ export const es = {
       `Te queda poco espacio en la nube: ${free} libres. Borra páginas o imágenes que no necesites.`,
     rejected: (n: number) =>
       n === 1 ? '1 cambio no se ha podido subir' : `${n} cambios no se han podido subir`,
+    broken: (n: number) =>
+      n === 1
+        ? 'Algo de la nube se había cambiado fuera de diaryo y no se podía abrir: si está en este dispositivo, ha vuelto a subir.'
+        : `${n} cosas de la nube se habían cambiado fuera de diaryo y no se podían abrir: las que hay en este dispositivo han vuelto a subir.`,
     sessionEnded:
       'Tu sesión ha caducado: vuelve a entrar para sincronizar. Lo pendiente se guarda aquí.',
     leaveTitle: '¿Qué hacemos con el diario de este dispositivo?',
@@ -417,6 +422,7 @@ export const es = {
       syncing: 'Sincronizando con la nube…',
       offline: 'Sin conexión: los cambios se subirán al volver',
       full: 'Espacio en la nube lleno: lo nuevo no se sube',
+      unverified: 'Confirma tu email: hasta entonces, nada se sube a la nube',
       error: 'No se ha podido sincronizar',
       manual: (n: number) => (n === 0 ? 'Nube al día' : `${n} cambios sin sincronizar`),
       locked: 'La nube no se sincroniza · Desbloquear',

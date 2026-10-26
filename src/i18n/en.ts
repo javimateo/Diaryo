@@ -331,6 +331,7 @@ export const en: Messages = {
       syncing: 'Syncing…',
       offline: "Offline · it'll sync when you're back",
       full: 'Space full',
+      unverified: 'Confirm your email to upload your changes',
       error: "Couldn't sync",
     },
     last: (when: string) => `Last time: ${when}`,
@@ -351,6 +352,10 @@ export const en: Messages = {
     lowSpace: (free: string) =>
       `You're running out of cloud space: ${free} free. Delete pages or images you don't need.`,
     rejected: (n: number) => (n === 1 ? "1 change couldn't go up" : `${n} changes couldn't go up`),
+    broken: (n: number) =>
+      n === 1
+        ? "Something in the cloud was changed outside diaryo and couldn't be opened: if it's on this device, it went up again."
+        : `${n} things in the cloud were changed outside diaryo and couldn't be opened: the ones on this device went up again.`,
     sessionEnded: 'Your session expired: sign in again to sync. What is pending is kept here.',
     leaveTitle: "What should happen to this device's diary?",
     leavePending: (n: number) =>
@@ -405,6 +410,7 @@ export const en: Messages = {
       syncing: 'Syncing with the cloud…',
       offline: "Offline: changes will go up when you're back",
       full: "Cloud space full: new things don't go up",
+      unverified: 'Confirm your email: until then, nothing goes up to the cloud',
       error: "Couldn't sync",
       manual: (n: number) => (n === 0 ? 'Cloud up to date' : `${n} changes not synced`),
       locked: 'The cloud is not syncing · Unlock',
