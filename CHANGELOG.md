@@ -10,6 +10,8 @@ What changes in each version of diaryo. The format follows
 
 - The cloud server keeps each account's space used as it goes, instead of adding up all its
   items on every write: a big account no longer slows everyone's writes.
+- The desktop app's "Source code" link (Settings) opens again.
+- Pasting elements whose image didn't come with them no longer leaves an empty image.
 
 ### Security
 

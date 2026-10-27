@@ -271,7 +271,8 @@ export function parseElements(text: string): ClipboardContent | null {
   // Elements that can't be understood are ignored (e.g. from a newer version).
   const elements: SceneElement[] = [];
   for (const raw of payload.elements as unknown[]) {
-    const el = parseElement(raw, (id) => id in assets);
+    // Its own keys only (`in` would find "toString" and the like on any object).
+    const el = parseElement(raw, (id) => Object.hasOwn(assets, id));
     if (el) elements.push(el);
   }
   return elements.length > 0 ? { elements, assets } : null;
