@@ -7,7 +7,7 @@ RUN npm ci --ignore-scripts
 COPY . .
 RUN npm run build
 
-FROM nginx:1.30-alpine
+FROM nginx:1.31-alpine
 COPY deploy/app.nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /repo/dist /usr/share/nginx/html
 EXPOSE 80
