@@ -18,17 +18,31 @@ onRecordCreate((e) => {
 onRecordCreateRequest((e) => {
   e.app.runInTransaction((txApp) => {
     e.app = txApp;
-    require(`${__hooks}/items.js`).checkItem(e, null);
+    const items = require(`${__hooks}/items.js`);
+    const change = items.checkItem(e, null);
     e.next();
+    items.addUsed(txApp, e.record.getString('user'), change);
   });
 }, 'items');
 
 onRecordUpdateRequest((e) => {
   e.app.runInTransaction((txApp) => {
     e.app = txApp;
-    require(`${__hooks}/items.js`).checkItem(e, txApp.findRecordById('items', e.record.id));
+    const items = require(`${__hooks}/items.js`);
+    const change = items.checkItem(e, txApp.findRecordById('items', e.record.id));
     e.next();
+    items.addUsed(txApp, e.record.getString('user'), change);
   });
+}, 'items');
+
+// An item deleted (by the administrator; the users never delete them) frees its space.
+onRecordAfterDeleteSuccess((e) => {
+  require(`${__hooks}/items.js`).addUsed(
+    e.app,
+    e.record.getString('user'),
+    -e.record.getInt('size'),
+  );
+  e.next();
 }, 'items');
 
 // The vault changes from the version it was read at (the app sends the next one): a change
@@ -49,13 +63,8 @@ routerAdd(
   'GET',
   '/api/diaryo/usage',
   (e) => {
-    const used = new DynamicModel({ total: 0 });
-    e.app
-      .db()
-      .newQuery('SELECT COALESCE(SUM(size), 0) AS total FROM items WHERE user = {:user}')
-      .bind({ user: e.auth.id })
-      .one(used);
-    return e.json(200, { used: used.total, quota: e.auth.getInt('quotaBytes') });
+    const user = e.app.findRecordById('users', e.auth.id);
+    return e.json(200, { used: user.getInt('usedBytes'), quota: user.getInt('quotaBytes') });
   },
   $apis.requireAuth('users'),
 );

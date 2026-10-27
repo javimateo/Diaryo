@@ -304,6 +304,31 @@ check(
   JSON.stringify(busyUsage.body),
 );
 
+// The space used is kept as each write goes (not added up every time): it matches what the
+// items take, after creating, growing, shrinking and tombstones.
+const spaceOf = async (u) => {
+  const record = (await call('GET', `/collections/users/records/${u.id}`, null, su.body.token))
+    .body;
+  const list = await call(
+    'GET',
+    `/collections/items/records?perPage=500&fields=size&filter=${encodeURIComponent(`user = "${u.id}"`)}`,
+    null,
+    su.body.token,
+  );
+  return { kept: record.usedBytes, items: list.body.items.reduce((n, i) => n + i.size, 0) };
+};
+for (const u of [a, busy]) {
+  const space = await spaceOf(u);
+  check('the space used is kept as it goes', space.kept === space.items, JSON.stringify(space));
+}
+await call('PATCH', `/collections/users/records/${a.id}`, { usedBytes: -999999999 }, a.token);
+const afterTrying = await spaceOf(a);
+check(
+  "a user can't change the space they use",
+  afterTrying.kept === afterTrying.items,
+  JSON.stringify(afterTrying),
+);
+
 // The vault changes from the version it was read at: of two changes made from the same
 // one (the password on one device, a new recovery code on another), the second is refused
 // instead of undoing the first.

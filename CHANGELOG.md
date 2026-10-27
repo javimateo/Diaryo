@@ -6,6 +6,11 @@ What changes in each version of diaryo. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- The cloud server keeps each account's space used as it goes, instead of adding up all its
+  items on every write: a big account no longer slows everyone's writes.
+
 ### Security
 
 - The emails' links carry their token after `#`, so it never reaches the web server's logs
