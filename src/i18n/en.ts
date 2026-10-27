@@ -88,7 +88,11 @@ export const en: Messages = {
     deleteWarning: "The account and the cloud's diary will be deleted for good.",
     deleteDetail:
       "It can't be undone. The diary on this device and on the others stays as it is, without the cloud.",
-    deleteType: 'Type your email to confirm:',
+    deleteSendText: (email: string) => `To confirm it, we'll send a code to ${email}.`,
+    deleteSend: 'Send me the code',
+    deleteCode: (email: string) => `Type the code we sent to ${email} (it expires in 10 minutes):`,
+    deleteResend: 'Send another code',
+    deleteResent: 'Code sent',
     deleteConfirm: 'Delete the account',
     deleted: 'Account deleted. Your diary is still here.',
     legal: {
@@ -107,6 +111,7 @@ export const en: Messages = {
       emailTaken: 'There is already an account with that email. Sign in with it.',
       invalidEmail: "That email isn't valid.",
       invalidLink: 'The link has expired or was already used. Ask for another one.',
+      invalidCode: 'The code is wrong or has expired.',
       tooMany: 'Too many attempts. Wait a moment.',
       unknown: 'Something went wrong. Try again.',
       shortPassword: (min: number) => `The password needs at least ${min} characters.`,

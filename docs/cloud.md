@@ -308,8 +308,12 @@ change with it (and their date).
   plan, space used, how it signs in, how many items and when the vault was made. Not the
   items: they are only the diary encrypted, and its readable copy is the usual `.diaryo`
   backup ("Save a copy").
-- **Deleting the account** (Settings → Account and cloud → More options, typing the email to confirm):
-  the user deletes their own record, and its vault and items go with it (cascade). A vault
+- **Deleting the account** (Settings → Account and cloud → More options): it takes a code
+  sent to the account's email (`cloud/pb_hooks/account.js`), so the session alone (a
+  stolen one, say) can't do it. The code has 6 digits, lasts 10 minutes and allows 5 wrong
+  tries; the server keeps only its hash, hidden, and the account can't be deleted any
+  other way (`1790900009_delete_code.js`). Then the server deletes the record, and its
+  vault and items go with it (cascade). A vault
   is never deleted on its own (`1790900008_vault_kept.js`): without it the cloud diary
   can't be opened, and devices would offer to set up a new one over it. This
   device signs out and forgets the keys; the local diary stays, and so does each other

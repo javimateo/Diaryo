@@ -59,3 +59,17 @@ routerAdd(
   },
   $apis.requireAuth('users'),
 );
+
+// Deleting the account: a code to its email first, then the code (pb_hooks/account.js).
+routerAdd(
+  'POST',
+  '/api/diaryo/delete-code',
+  (e) => require(`${__hooks}/account.js`).sendDeleteCode(e),
+  $apis.requireAuth('users'),
+);
+routerAdd(
+  'POST',
+  '/api/diaryo/delete-account',
+  (e) => require(`${__hooks}/account.js`).deleteAccount(e),
+  $apis.requireAuth('users'),
+);
