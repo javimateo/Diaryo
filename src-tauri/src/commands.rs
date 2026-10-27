@@ -194,12 +194,20 @@ pub async fn save_file(
     Ok(Some(path.display().to_string()))
 }
 
-/// Opens a page of diaryo's website in the browser (the privacy policy, the terms); any
-/// other address is refused.
+/// diaryo's own pages: its website and its source code.
+fn is_diaryo_page(url: &str) -> bool {
+    const SOURCE: &str = "https://github.com/javimateo/Diaryo";
+    url.starts_with("https://diaryo.javiermateo.dev/")
+        || url == SOURCE
+        || url.starts_with(&format!("{SOURCE}/"))
+}
+
+/// Opens one of diaryo's pages in the browser (the website, the privacy policy, the terms,
+/// the source code); any other address is refused.
 #[tauri::command]
 pub fn open_website(app: AppHandle, url: String) -> Result<(), String> {
-    if !url.starts_with("https://diaryo.javiermateo.dev/") {
-        return Err("not diaryo's website".into());
+    if !is_diaryo_page(&url) {
+        return Err("not one of diaryo's pages".into());
     }
     app.opener()
         .open_url(url, None::<&str>)
@@ -262,6 +270,20 @@ pub fn remove_calendar_files(dir: &std::path::Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn opens_only_diaryos_pages() {
+        assert!(is_diaryo_page("https://diaryo.javiermateo.dev/privacidad/"));
+        assert!(is_diaryo_page("https://github.com/javimateo/Diaryo"));
+        assert!(is_diaryo_page(
+            "https://github.com/javimateo/Diaryo/releases"
+        ));
+        assert!(!is_diaryo_page(
+            "https://github.com/javimateo/Diaryo.evil.example"
+        ));
+        assert!(!is_diaryo_page("https://github.com/someone/else"));
+        assert!(!is_diaryo_page("file:///C:/Windows/System32/calc.exe"));
+    }
 
     #[test]
     fn removes_only_the_calendar_files() {
