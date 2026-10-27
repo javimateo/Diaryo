@@ -22,6 +22,7 @@ describe('accountError', () => {
     expect(accountError(failure(400, { token: { code: 'validation_invalid_token' } }))).toBe(
       'invalidLink',
     );
+    expect(accountError(failure(400, { code: { code: 'invalid_code' } }))).toBe('invalidCode');
     expect(accountError(new ClientResponseError({ isAbort: true }))).toBe('cancelled');
     expect(accountError(new Error('?'))).toBe('unknown');
   });

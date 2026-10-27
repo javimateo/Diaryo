@@ -20,6 +20,7 @@ import {
   deleteAccount,
   refreshAccount,
   resendVerification,
+  sendDeleteCode,
   useAccount,
 } from '../cloud/account';
 import { keepsSession, setKeepSession } from '../cloud/client';
@@ -245,14 +246,19 @@ function KeepSessionRow() {
   );
 }
 
-/** The account's data: downloading it, and deleting the account (after typing the email). */
+/**
+ * The account's data: downloading it, and deleting the account, with a code sent to its
+ * email (the session alone isn't enough, see cloud/pb_hooks/account.js).
+ */
 function DataRows() {
   const t = useT();
   const a = t.account;
   const email = useAccount((s) => s.account?.email ?? '');
   const showToast = useUI((s) => s.showToast);
-  const [deleting, setDeleting] = useState(false);
-  const [typed, setTyped] = useState('');
+  /** Deleting: the warning (then the code is sent), or the code sent. */
+  const [deleting, setDeleting] = useState<'warn' | 'code' | null>(null);
+  const [code, setCode] = useState('');
+  const [wrongCode, setWrongCode] = useState(false);
   const [busy, setBusy] = useState(false);
   const fail = (error: unknown) => showToast(a.errors[accountError(error)] || a.errors.unknown);
 
@@ -272,18 +278,40 @@ function DataRows() {
     }
   };
 
-  const remove = async () => {
+  const sendCode = async (again: boolean) => {
     setBusy(true);
     try {
-      await deleteAccount();
-      showToast(a.deleted);
+      await sendDeleteCode();
+      setDeleting('code');
+      setCode('');
+      setWrongCode(false);
+      if (again) showToast(a.deleteResent);
     } catch (error) {
       fail(error);
+    } finally {
       setBusy(false);
     }
   };
 
-  const confirmed = typed.trim().toLowerCase() === email.toLowerCase();
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await deleteAccount(code);
+      showToast(a.deleted);
+    } catch (error) {
+      if (accountError(error) === 'invalidCode') setWrongCode(true);
+      else fail(error);
+      setBusy(false);
+    }
+  };
+
+  const cancel = () => {
+    setDeleting(null);
+    setCode('');
+    setWrongCode(false);
+  };
+
+  const filled = /^\d{6}$/.test(code.trim());
   return (
     <>
       <SettingsRow label={a.dataRow} hint={a.dataHint}>
@@ -301,52 +329,86 @@ function DataRows() {
           type="button"
           className="settings-btn"
           data-danger
-          disabled={deleting}
-          onClick={() => setDeleting(true)}
+          disabled={deleting !== null}
+          onClick={() => setDeleting('warn')}
         >
           <Trash2 size={15} strokeWidth={1.75} /> {a.deleteStart}
         </button>
       </SettingsRow>
-      {deleting && (
+      {deleting === 'warn' && (
         <form
           className="account-delete"
           role="alert"
           onSubmit={(event) => {
             event.preventDefault();
-            if (confirmed) void remove();
+            void sendCode(false);
+          }}
+        >
+          <p>
+            <strong>{a.deleteWarning}</strong> {a.deleteDetail}
+          </p>
+          <p>{a.deleteSendText(email)}</p>
+          <div>
+            <button type="submit" className="settings-btn" data-danger-fill disabled={busy}>
+              <Mail size={15} strokeWidth={1.75} /> {a.deleteSend}
+            </button>
+            <button type="button" className="settings-btn" onClick={cancel}>
+              {t.vault.back}
+            </button>
+          </div>
+        </form>
+      )}
+      {deleting === 'code' && (
+        <form
+          className="account-delete"
+          role="alert"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (filled) void remove();
           }}
         >
           <p>
             <strong>{a.deleteWarning}</strong> {a.deleteDetail}
           </p>
           <label className="account-field">
-            <span>{a.deleteType}</span>
+            <span>{a.deleteCode(email)}</span>
             <input
-              type="email"
+              className="account-code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
               autoFocus
-              autoComplete="off"
-              placeholder={email}
-              value={typed}
-              onChange={(event) => setTyped(event.target.value)}
+              maxLength={6}
+              placeholder="000000"
+              value={code}
+              onChange={(event) => {
+                setCode(event.target.value.replace(/\D/g, ''));
+                setWrongCode(false);
+              }}
             />
           </label>
+          {wrongCode && (
+            <p className="account-error" role="alert">
+              {a.errors.invalidCode}
+            </p>
+          )}
           <div>
             <button
               type="submit"
               className="settings-btn"
               data-danger-fill
-              disabled={!confirmed || busy}
+              disabled={!filled || busy}
             >
               {a.deleteConfirm}
             </button>
             <button
               type="button"
               className="settings-btn"
-              onClick={() => {
-                setDeleting(false);
-                setTyped('');
-              }}
+              disabled={busy}
+              onClick={() => void sendCode(true)}
             >
+              {a.deleteResend}
+            </button>
+            <button type="button" className="settings-btn" onClick={cancel}>
               {t.vault.back}
             </button>
           </div>

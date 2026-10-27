@@ -13,6 +13,7 @@ What changes in each version of diaryo. The format follows
 - The website sends security headers (it couldn't be framed by another site, among
   others), and the web app turns off the browser features it doesn't use.
 - The cloud's vault can no longer be deleted on its own (only with the account).
+- Deleting the account takes a code sent to its email: the session alone isn't enough.
 
 ## [1.0.1] — 2026-10-26
 

@@ -12,6 +12,8 @@
  * Each part of it comes from its own address (`X-Forwarded-For`, as the proxy in front of
  * the server sends it), so the limits of one don't stop another.
  */
+import { createHash } from 'node:crypto';
+
 const API = `${process.env.PB_URL ?? 'http://127.0.0.1:8090'}/api`;
 const ADMIN = { identity: process.env.PB_ADMIN_EMAIL, password: process.env.PB_ADMIN_PASSWORD };
 const address = () => `10.${[0, 0, 0].map(() => Math.floor(Math.random() * 250) + 1).join('.')}`;
@@ -402,13 +404,54 @@ check(
   statuses(mails).join(),
 );
 
-// Each user deletes their own account (as the app does), and their vault and items go
-// with it (cascade).
+// Deleting an account takes a code sent to its email (the app asks for it): the session
+// alone isn't enough. Only the code's hash is kept, so here the administrator sets a known
+// one, as the email would bring it.
+const sha256 = (text) => createHash('sha256').update(text).digest('hex');
+const giveCode = (u, code, expires = Date.now() + 60_000) =>
+  call(
+    'PATCH',
+    `/collections/users/records/${u.id}`,
+    { deleteCode: sha256(code), deleteCodeExpires: expires, deleteTries: 0 },
+    su.body.token,
+  );
+const remove = (u, code) => call('POST', '/diaryo/delete-account', { code }, u.token);
+
+const direct = await call('DELETE', `/collections/users/records/${a.id}`, null, a.token);
+check('the session alone deletes no account', direct.status >= 400, direct.status);
 const foreignDelete = await call('DELETE', `/collections/users/records/${a.id}`, null, b.token);
-check('nobody deletes someone else', foreignDelete.status === 404, foreignDelete.status);
+check('nobody deletes someone else', foreignDelete.status >= 400, foreignDelete.status);
+const anonymousCode = await call('POST', '/diaryo/delete-code');
+check('asking for a code needs the session', anonymousCode.status === 401, anonymousCode.status);
+await call(
+  'PATCH',
+  `/collections/users/records/${a.id}`,
+  { deleteCode: sha256('123456'), deleteCodeExpires: Date.now() + 60_000, deleteTries: 0 },
+  a.token,
+);
+const ownCode = await remove(a, '123456');
+check("a user can't set their own code", ownCode.status === 400, ownCode.status);
+await giveCode(a, '123456');
+const wrong = await remove(a, '654321');
+check(
+  'a wrong code deletes nothing',
+  wrong.status === 400 && wrong.body?.data?.code?.code === 'invalid_code',
+  `${wrong.status} ${JSON.stringify(wrong.body)}`,
+);
+await giveCode(b, '111111', Date.now() - 1);
+const late = await remove(b, '111111');
+check('an expired code deletes nothing', late.status === 400, late.status);
+await giveCode(greedy, '222222');
+for (let i = 0; i < 5; i++) await remove(greedy, '000000');
+const spent = await remove(greedy, '222222');
+check('after five wrong tries the code is spent', spent.status === 400, spent.status);
+
+// With the code, each user deletes their own account, and their vault and items go with it
+// (cascade).
 for (const u of [a, b, greedy, busy, unconfirmed]) {
-  const gone = await call('DELETE', `/collections/users/records/${u.id}`, null, u.token);
-  check('a user deletes their own account', gone.status === 204, gone.status);
+  await giveCode(u, '424242');
+  const gone = await remove(u, '424242');
+  check('with the code, a user deletes their own account', gone.status === 204, gone.status);
 }
 const left = async (collection) =>
   (

@@ -97,14 +97,23 @@ export const cancelGoogle = () => pb.cancelRequest(GOOGLE);
 
 export const signOut = () => pb.authStore.clear();
 
+/** Sends a code to the account's email: deleting the account asks for it. */
+export async function sendDeleteCode() {
+  await pb.send('/api/diaryo/delete-code', { method: 'POST', requestKey: null });
+}
+
 /**
- * Deletes the account for good: the server deletes its vault and its items with it, and
- * the session ends here (the other devices find out when they renew theirs). The diary on
- * each device stays.
+ * Deletes the account for good, with the code sent to its email (cloud/pb_hooks/account.js):
+ * the server deletes its vault and its items with it, and the session ends here (the other
+ * devices find out when they renew theirs). The diary on each device stays.
  */
-export async function deleteAccount() {
-  const id = useAccount.getState().account?.id;
-  if (id) await users().delete(id, { requestKey: null });
+export async function deleteAccount(code: string) {
+  await pb.send('/api/diaryo/delete-account', {
+    method: 'POST',
+    body: { code: code.trim() },
+    requestKey: null,
+  });
+  pb.authStore.clear();
 }
 
 /**
@@ -193,6 +202,7 @@ export type AccountError =
   | 'emailTaken'
   | 'invalidEmail'
   | 'invalidLink'
+  | 'invalidCode'
   | 'tooMany'
   | 'unknown';
 
@@ -204,6 +214,7 @@ export function accountError(error: unknown): AccountError {
   if (error.status === 429) return 'tooMany';
   const fields = (error.response?.data ?? {}) as Record<string, { code?: string } | undefined>;
   if (fields.token) return 'invalidLink';
+  if (fields.code?.code === 'invalid_code') return 'invalidCode';
   if (fields.email?.code === 'validation_not_unique') return 'emailTaken';
   if (fields.email) return 'invalidEmail';
   if (error.status === 400 && error.url.includes('auth-with-password')) return 'credentials';
