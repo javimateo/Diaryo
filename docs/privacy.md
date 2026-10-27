@@ -18,8 +18,9 @@ Optional, in Settings → Privacy, on three levels:
 
 The whole diary encrypted protects it **at rest**: someone with the computer, its disk or
 a copy of the browser's profile can't read it. Private notes protect their text from
-whoever uses the app while it is open too. Neither protects the system's memory (swap,
-hibernation) or what the browser itself keeps besides the database.
+whoever uses the app while it is open too (in the desktop app; on the web, see below).
+Neither protects the system's memory (swap, hibernation) or what the browser itself keeps
+besides the database.
 
 Known limits, on purpose:
 
@@ -33,6 +34,14 @@ Known limits, on purpose:
 - **Confidential, not tamper-proof.** Plain rows are read in a diary that is encrypted
   (a rewrite cut halfway needs it), so someone who can write to the disk could slip
   readable rows in. They can't read what is encrypted.
+- **Private notes on the web, with the diary open.** With the whole diary encrypted and
+  unlocked, the diary secret is in memory, and the private notes' key comes from it:
+  someone at the open web app could read them with the browser's developer tools, without
+  the password. The desktop app has no developer tools. On a shared computer, lock the
+  diary (or let it lock by itself) before leaving it.
+- **A tampered vault can't freeze the app for long.** A vault comes from the server or
+  inside a file, and says how many PBKDF2 iterations to use: more than 2 000 000 (over
+  three times today's) is refused at once, without trying.
 
 ## One diary password
 

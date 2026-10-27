@@ -302,6 +302,22 @@ The website's privacy policy and terms (`web/src/pages/privacidad.astro`,
 links to them when signing in and in the settings. If what the server keeps changes, they
 change with it (and their date).
 
+What the server sees besides the encrypted content, and what it (or someone with the
+session) can still do, on purpose:
+
+- **Metadata**: each item's kind (page, element, file), the time of its change to the
+  millisecond, whether it is a tombstone, and its size; how many items there are; when
+  each device pushes, which can tell which elements went up together with a page, despite
+  the opaque keys; and the account's email.
+- **Withholding and old copies**: it can't read, forge, swap or bring back as new any
+  item, but it can leave items out, or hand a new device an older copy it kept of one; the
+  devices that already have a newer one ignore it. An item changed outside diaryo is
+  noticed (see What is synced), and so is a vault (Encryption).
+- **The web app comes from the same hands**: end-to-end encryption protects the diary from
+  the cloud server, not from whoever serves the web app, who could serve a page that reads
+  the diary password. The desktop app only installs signed updates
+  ([releasing](releasing.md)).
+
 - **What the server keeps**: the account's email (and its password's hash), plan and
   quota; the vault; the encrypted items. With Google, only the email and Google's id for
   the account: its name and picture aren't copied (`1790900002_privacy.js`). PocketBase's
