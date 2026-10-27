@@ -183,6 +183,12 @@ tags. Keep the key's password set (`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`).
 
 ### M4 — Google sign-in can be hijacked with a crafted link
 
+**Accepted (2026-10-27), not tested.** After the fixes in 1.0.1 and later, a stolen session
+can no longer make the diary impossible to open (H1), delete the vault or the account
+(L4), or damage the cloud copy unnoticed (M1): what is left is reading the email and
+annoyance. Left as it is; forcing Google's account chooser stays the simple mitigation if
+it is ever reconsidered.
+
 **Theoretical** (not reproduced: it needs a Google OAuth client; PocketBase's source
 wasn't checked for a mitigation).
 
