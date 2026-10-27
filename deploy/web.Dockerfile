@@ -1,6 +1,6 @@
 # The website (diaryo.javiermateo.dev). Built from the repository root: its live demo
 # uses the app's code, so both dependency sets are installed.
-FROM node:22-slim AS build
+FROM node:26-slim AS build
 WORKDIR /repo
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts

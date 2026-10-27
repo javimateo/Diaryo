@@ -1,6 +1,6 @@
 # The web app (app.diaryo.javiermateo.dev): the same diary as the desktop one, saving in
 # the browser.
-FROM node:22-slim AS build
+FROM node:26-slim AS build
 WORKDIR /repo
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
