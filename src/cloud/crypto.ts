@@ -117,10 +117,11 @@ export async function diaryKeys(secret: Uint8Array<ArrayBuffer>): Promise<DiaryK
 }
 
 /**
- * The most iterations a vault may ask for (many times today's). A vault comes from the
- * server or inside a file: an absurd number would hang the page while deriving.
+ * The most iterations a vault may ask for (over three times today's, room to raise them).
+ * A vault comes from the server or inside a file: more would freeze the page while
+ * deriving (about 0.35 s on a computer at this cap, several seconds on a slow phone).
  */
-const MAX_ITERATIONS = 10_000_000;
+const MAX_ITERATIONS = 2_000_000;
 
 async function passwordKey(password: string, salt: Uint8Array<ArrayBuffer>, iterations: number) {
   if (!Number.isInteger(iterations) || iterations < 1 || iterations > MAX_ITERATIONS) {

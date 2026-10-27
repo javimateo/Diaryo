@@ -13,6 +13,8 @@ What changes in each version of diaryo. The format follows
 
 ### Security
 
+- A vault asking for more than 2 000 000 PBKDF2 iterations (from a tampered file or
+  server) is refused at once, instead of freezing the app for seconds.
 - The emails' links carry their token after `#`, so it never reaches the web server's logs
   (the links already sent still work).
 - The website sends security headers (it couldn't be framed by another site, among
