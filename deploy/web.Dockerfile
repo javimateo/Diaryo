@@ -16,7 +16,7 @@ ARG UMAMI_ID=
 ENV SITE_URL=$SITE_URL APP_URL=$APP_URL UMAMI_SRC=$UMAMI_SRC UMAMI_ID=$UMAMI_ID
 RUN npm --prefix web run build
 
-FROM nginx:1.30-alpine
+FROM nginx:1.31-alpine
 COPY deploy/web.nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /repo/web/dist /usr/share/nginx/html
 EXPOSE 80
