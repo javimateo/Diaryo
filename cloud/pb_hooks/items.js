@@ -1,7 +1,9 @@
 /**
  * The checks on every item that is saved (see main.pb.js): the most recent change wins,
  * no change is stamped in the future, the server computes its size, and the user's total
- * stays within their quota.
+ * stays within their quota. The total is kept on the user (`usedBytes`), changed with
+ * each write in its transaction: adding up every item on each write made the writes of a
+ * big account slow, and everyone's behind them.
  */
 
 /** What each item costs besides its content (key, dates, flags…), in bytes. */
@@ -15,6 +17,7 @@ module.exports = {
   /**
    * @param {core.RecordRequestEvent} e The create or update request.
    * @param {core.Record | null} original The item as stored now (null when creating).
+   * @returns {number} How much the user's total changes once it is saved.
    */
   checkItem(e, original) {
     const record = e.record;
@@ -34,22 +37,26 @@ module.exports = {
     }
     const size = record.getString('data').length + OVERHEAD;
     record.set('size', size);
+    const before = original ? original.getInt('size') : 0;
 
     // Growing beyond the quota is refused; shrinking or deleting always goes through.
-    const growing = !original || (!deleted && size > original.getInt('size'));
-    if (!growing) return;
-    const userId = record.getString('user');
-    const user = e.app.findRecordById('users', userId);
-    const used = new DynamicModel({ total: 0 });
-    e.app
-      .db()
-      .newQuery(
-        'SELECT COALESCE(SUM(size), 0) AS total FROM items WHERE user = {:user} AND id != {:id}',
-      )
-      .bind({ user: userId, id: record.id })
-      .one(used);
-    if (used.total + size > user.getInt('quotaBytes')) {
-      throw new ApiError(403, 'quota_exceeded');
+    const growing = !original || (!deleted && size > before);
+    if (growing) {
+      const user = e.app.findRecordById('users', record.getString('user'));
+      if (user.getInt('usedBytes') - before + size > user.getInt('quotaBytes')) {
+        throw new ApiError(403, 'quota_exceeded');
+      }
     }
+    return size - before;
+  },
+
+  /** Changes a user's total (in the same transaction as the write that changed it). */
+  addUsed(app, userId, change) {
+    if (change === 0) return;
+    app
+      .db()
+      .newQuery('UPDATE users SET usedBytes = usedBytes + {:change} WHERE id = {:user}')
+      .bind({ change, user: userId })
+      .execute();
   },
 };

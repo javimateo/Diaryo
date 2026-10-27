@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   changePassword,
   createVault,
@@ -75,6 +75,23 @@ describe('vault', () => {
         WrongSecretError,
       );
       expect(Date.now() - start).toBeLessThan(1000);
+    }
+  });
+
+  it("doesn't even try a vault that asks for many times today's iterations", async () => {
+    // Five million would freeze the tab for seconds on a slow phone; a file can ask for it.
+    const { vault } = await createVault('una contraseña', FAST);
+    const tampered = { ...vault, kdf: { ...vault.kdf, iterations: 5_000_000 } };
+    const derive = vi.spyOn(globalThis.crypto.subtle, 'deriveKey');
+    try {
+      await expect(unlockWithPassword(tampered, 'una contraseña')).rejects.toBeInstanceOf(
+        WrongSecretError,
+      );
+      expect(
+        derive.mock.calls.some(([params]) => (params as { name: string }).name === 'PBKDF2'),
+      ).toBe(false);
+    } finally {
+      derive.mockRestore();
     }
   });
 

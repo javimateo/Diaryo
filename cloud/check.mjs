@@ -12,6 +12,8 @@
  * Each part of it comes from its own address (`X-Forwarded-For`, as the proxy in front of
  * the server sends it), so the limits of one don't stop another.
  */
+import { createHash } from 'node:crypto';
+
 const API = `${process.env.PB_URL ?? 'http://127.0.0.1:8090'}/api`;
 const ADMIN = { identity: process.env.PB_ADMIN_EMAIL, password: process.env.PB_ADMIN_PASSWORD };
 const address = () => `10.${[0, 0, 0].map(() => Math.floor(Math.random() * 250) + 1).join('.')}`;
@@ -49,6 +51,14 @@ const su = first.body?.token
     });
 if (!su.body?.token)
   throw new Error(`the administrator couldn't sign in: ${JSON.stringify(su.body)}`);
+
+// The emails' links carry their token after #: it never reaches a server's logs.
+const users = (await call('GET', '/collections/users', null, su.body.token)).body;
+check(
+  "the emails' links carry their token after #",
+  users.verificationTemplate.body.includes('/#verify={TOKEN}') &&
+    users.resetPasswordTemplate.body.includes('/#reset={TOKEN}'),
+);
 
 const stamp = Date.now();
 /** A throwaway user, with their email confirmed (by the administrator) unless `verified` is false. */
@@ -124,6 +134,17 @@ const foreignVault = await call(
   b.token,
 );
 check('nobody creates a vault for someone else', foreignVault.status >= 400, foreignVault.status);
+const vaultGone = await call(
+  'DELETE',
+  `/collections/vaults/records/${vault.body.id}`,
+  null,
+  a.token,
+);
+check(
+  'a vault is never deleted alone, not even by its owner (it goes with the account)',
+  vaultGone.status >= 400,
+  vaultGone.status,
+);
 
 const item = await call(
   'POST',
@@ -283,6 +304,31 @@ check(
   JSON.stringify(busyUsage.body),
 );
 
+// The space used is kept as each write goes (not added up every time): it matches what the
+// items take, after creating, growing, shrinking and tombstones.
+const spaceOf = async (u) => {
+  const record = (await call('GET', `/collections/users/records/${u.id}`, null, su.body.token))
+    .body;
+  const list = await call(
+    'GET',
+    `/collections/items/records?perPage=500&fields=size&filter=${encodeURIComponent(`user = "${u.id}"`)}`,
+    null,
+    su.body.token,
+  );
+  return { kept: record.usedBytes, items: list.body.items.reduce((n, i) => n + i.size, 0) };
+};
+for (const u of [a, busy]) {
+  const space = await spaceOf(u);
+  check('the space used is kept as it goes', space.kept === space.items, JSON.stringify(space));
+}
+await call('PATCH', `/collections/users/records/${a.id}`, { usedBytes: -999999999 }, a.token);
+const afterTrying = await spaceOf(a);
+check(
+  "a user can't change the space they use",
+  afterTrying.kept === afterTrying.items,
+  JSON.stringify(afterTrying),
+);
+
 // The vault changes from the version it was read at: of two changes made from the same
 // one (the password on one device, a new recovery code on another), the second is refused
 // instead of undoing the first.
@@ -383,13 +429,54 @@ check(
   statuses(mails).join(),
 );
 
-// Each user deletes their own account (as the app does), and their vault and items go
-// with it (cascade).
+// Deleting an account takes a code sent to its email (the app asks for it): the session
+// alone isn't enough. Only the code's hash is kept, so here the administrator sets a known
+// one, as the email would bring it.
+const sha256 = (text) => createHash('sha256').update(text).digest('hex');
+const giveCode = (u, code, expires = Date.now() + 60_000) =>
+  call(
+    'PATCH',
+    `/collections/users/records/${u.id}`,
+    { deleteCode: sha256(code), deleteCodeExpires: expires, deleteTries: 0 },
+    su.body.token,
+  );
+const remove = (u, code) => call('POST', '/diaryo/delete-account', { code }, u.token);
+
+const direct = await call('DELETE', `/collections/users/records/${a.id}`, null, a.token);
+check('the session alone deletes no account', direct.status >= 400, direct.status);
 const foreignDelete = await call('DELETE', `/collections/users/records/${a.id}`, null, b.token);
-check('nobody deletes someone else', foreignDelete.status === 404, foreignDelete.status);
+check('nobody deletes someone else', foreignDelete.status >= 400, foreignDelete.status);
+const anonymousCode = await call('POST', '/diaryo/delete-code');
+check('asking for a code needs the session', anonymousCode.status === 401, anonymousCode.status);
+await call(
+  'PATCH',
+  `/collections/users/records/${a.id}`,
+  { deleteCode: sha256('123456'), deleteCodeExpires: Date.now() + 60_000, deleteTries: 0 },
+  a.token,
+);
+const ownCode = await remove(a, '123456');
+check("a user can't set their own code", ownCode.status === 400, ownCode.status);
+await giveCode(a, '123456');
+const wrong = await remove(a, '654321');
+check(
+  'a wrong code deletes nothing',
+  wrong.status === 400 && wrong.body?.data?.code?.code === 'invalid_code',
+  `${wrong.status} ${JSON.stringify(wrong.body)}`,
+);
+await giveCode(b, '111111', Date.now() - 1);
+const late = await remove(b, '111111');
+check('an expired code deletes nothing', late.status === 400, late.status);
+await giveCode(greedy, '222222');
+for (let i = 0; i < 5; i++) await remove(greedy, '000000');
+const spent = await remove(greedy, '222222');
+check('after five wrong tries the code is spent', spent.status === 400, spent.status);
+
+// With the code, each user deletes their own account, and their vault and items go with it
+// (cascade).
 for (const u of [a, b, greedy, busy, unconfirmed]) {
-  const gone = await call('DELETE', `/collections/users/records/${u.id}`, null, u.token);
-  check('a user deletes their own account', gone.status === 204, gone.status);
+  await giveCode(u, '424242');
+  const gone = await remove(u, '424242');
+  check('with the code, a user deletes their own account', gone.status === 204, gone.status);
 }
 const left = async (collection) =>
   (

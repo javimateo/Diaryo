@@ -3,14 +3,15 @@
 How diaryo works inside, for whoever wants to change it. Start with the architecture;
 read the document of an area before changing it.
 
-| Document                            | What it explains                                                                                                  |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [Architecture](architecture.md)     | The layers, the canvas engine, the diary, the interface, the desktop app, the website and the README's animations |
-| [Cloud sync](cloud.md)              | Accounts, end-to-end encryption, what is synced, the protocol and its edge cases, the quota                       |
-| [Privacy on the device](privacy.md) | The diary password: encrypting the whole diary, private notes, shared computers, backups                          |
-| [Tech stack](tech-stack.md)         | Technologies, libraries and fonts, with their licenses                                                            |
-| [Releasing](releasing.md)           | Version numbers, the release workflow, automatic updates, the icon                                                |
-| [Deployment](deployment.md)         | The website, the web app and the cloud server on Coolify                                                          |
+| Document                              | What it explains                                                                                                  |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [Architecture](architecture.md)       | The layers, the canvas engine, the diary, the interface, the desktop app, the website and the README's animations |
+| [Cloud sync](cloud.md)                | Accounts, end-to-end encryption, what is synced, the protocol and its edge cases, the quota                       |
+| [Privacy on the device](privacy.md)   | The diary password: encrypting the whole diary, private notes, shared computers, backups                          |
+| [Tech stack](tech-stack.md)           | Technologies, libraries and fonts, with their licenses                                                            |
+| [Releasing](releasing.md)             | Version numbers, the release workflow, automatic updates, the icon                                                |
+| [Deployment](deployment.md)           | The website, the web app and the cloud server on Coolify                                                          |
+| [Security review](security-review.md) | The review of 1.0.0: what was found, how sure it is, what was fixed or accepted                                   |
 
 Elsewhere in the repository:
 

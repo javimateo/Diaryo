@@ -112,8 +112,9 @@ The cloud sync server ([cloud](cloud.md)): PocketBase with the schema and rules 
    an API key. The VPS blocks outgoing port 465, so not that one.
 5. **Application URL** (Settings → Application): `https://app.diaryo.javiermateo.dev`,
    used in the links of those emails. Their texts (Spanish and English) come from the
-   migration `1790900001_account.js`: the links open the web app (`?verify=…`,
-   `?reset=…`), which confirms the email or asks for the new password.
+   migrations `1790900001_account.js` and `1790900007_links_after_hash.js`: the links open
+   the web app (`#verify=…`, `#reset=…`), which confirms the email or asks for the new
+   password.
 6. **Google sign-in** (Collections → users → Options → OAuth2): enable it and add Google
    with a client id and secret from the Google Cloud console (APIs & Services →
    Credentials → OAuth client ID, type "Web application"), with the authorized redirect
@@ -181,6 +182,14 @@ only run their own code and only connect to themselves and to the cloud server, 
 script slipped into a diary couldn't run nor send anything out. If the cloud moves to
 another address (`VITE_CLOUD_URL`), its `connect-src` changes in both. The desktop
 app's development build has none (`devCsp`: Vite's hot reload needs inline code).
+
+The website (`deploy/web.nginx.conf`) holds nobody's data: its CSP doesn't limit scripts
+(that would need the hashes of each build's inline ones), it only stops it from being
+framed, plugins, a changed `<base>` and forms sent anywhere. Both send HSTS,
+`X-Content-Type-Options`, a `Referrer-Policy` (none at all from the web app, whose
+addresses may carry an email's token) and a `Permissions-Policy` that turns off the camera,
+the microphone, the location, payments and USB (the clipboard stays: the app copies and
+pastes with it).
 
 ## Where the data lives
 

@@ -6,6 +6,28 @@ What changes in each version of diaryo. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-10-27
+
+### Fixed
+
+- The cloud server keeps each account's space used as it goes, instead of adding up all its
+  items on every write: a big account no longer slows everyone's writes.
+- The desktop app's "Source code" link (Settings) opens again.
+- Pasting elements whose image didn't come with them no longer leaves an empty image.
+
+### Security
+
+- A vault asking for more than 2 000 000 PBKDF2 iterations (from a tampered file or
+  server) is refused at once, instead of freezing the app for seconds.
+- The emails' links carry their token after `#`, so it never reaches the web server's logs
+  (the links already sent still work).
+- The website sends security headers (it couldn't be framed by another site, among
+  others), and the web app turns off the browser features it doesn't use.
+- The cloud's vault can no longer be deleted on its own (only with the account).
+- Deleting the account takes a code sent to its email: the session alone isn't enough.
+- The desktop app's updates are signed in a build where the page's dependencies can't reach
+  the signing key.
+
 ## [1.0.1] — 2026-10-26
 
 ### Security
@@ -86,7 +108,8 @@ The first stable version.
 
 See the [release notes on GitHub](https://github.com/javimateo/Diaryo/releases/tag/v0.2.0).
 
-[Unreleased]: https://github.com/javimateo/Diaryo/compare/v1.0.1...develop
+[Unreleased]: https://github.com/javimateo/Diaryo/compare/v1.1.0...develop
+[1.1.0]: https://github.com/javimateo/Diaryo/releases/tag/v1.1.0
 [1.0.1]: https://github.com/javimateo/Diaryo/releases/tag/v1.0.1
 [1.0.0]: https://github.com/javimateo/Diaryo/releases/tag/v1.0.0
 [0.2.0]: https://github.com/javimateo/Diaryo/releases/tag/v0.2.0

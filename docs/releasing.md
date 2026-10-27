@@ -73,6 +73,12 @@ seconds after starting and every six hours.
 
 Updates are signed: the app only installs files signed with the project's private key.
 
+In the workflow the key only reaches the Rust build and the bundler: the page is built in a
+step of its own, without it (`npm ci --ignore-scripts`, `npm run build`), and Tauri is told
+not to build it again (`src-tauri/release.conf.json`). A compromised npm package can't read it.
+Dependabot (`.github/dependabot.yml`) opens a pull request to `develop` each week with the
+updates of npm, cargo, the actions and the Docker images.
+
 - The **public** key is in `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`).
 - The **private** key is kept by the maintainer (`~/.tauri/diaryo.key`) and, for the
   workflow, in the repository secret `TAURI_SIGNING_PRIVATE_KEY` (plus

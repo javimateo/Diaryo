@@ -651,3 +651,24 @@
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* Inside the deletion box (tinted already), an error is its text, like its warning. */
+.account-delete .account-error {
+  padding: 0;
+  background: none;
+  font-weight: 600;
+  color: #b2382e;
+}
+
+:root[data-theme='dark'] .account-delete .account-error {
+  color: #f2a29b;
+}
+
+/* The code to delete the account: six digits, spaced. */
+.account-delete .account-code {
+  width: 9.5em;
+  font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+  font-size: 18px;
+  letter-spacing: 0.35em;
+  text-align: center;
+}

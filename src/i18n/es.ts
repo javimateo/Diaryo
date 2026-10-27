@@ -98,7 +98,12 @@ export const es = {
     deleteWarning: 'Se borrarán para siempre la cuenta y el diario de la nube.',
     deleteDetail:
       'No se puede deshacer. El diario de este dispositivo y de los demás se queda tal cual, sin la nube.',
-    deleteType: 'Escribe tu email para confirmar:',
+    deleteSendText: (email: string) => `Para confirmarlo, te enviamos un código a ${email}.`,
+    deleteSend: 'Enviarme el código',
+    deleteCode: (email: string) =>
+      `Escribe el código que te hemos enviado a ${email} (caduca en 10 minutos):`,
+    deleteResend: 'Enviar otro código',
+    deleteResent: 'Código enviado',
     deleteConfirm: 'Borrar la cuenta',
     deleted: 'Cuenta borrada. Tu diario sigue aquí.',
     legal: {
@@ -118,6 +123,7 @@ export const es = {
       emailTaken: 'Ya hay una cuenta con ese email. Entra con él.',
       invalidEmail: 'Ese email no es válido.',
       invalidLink: 'El enlace ha caducado o ya se usó. Pide otro.',
+      invalidCode: 'El código no es correcto o ha caducado.',
       tooMany: 'Demasiados intentos. Espera un momento.',
       unknown: 'Algo ha fallado. Inténtalo de nuevo.',
       shortPassword: (min: number) => `La contraseña necesita al menos ${min} caracteres.`,

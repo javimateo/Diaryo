@@ -30,7 +30,7 @@ flowchart LR
 | ------ | ----------------------------------------------------------------------------------------- |
 | Server | [PocketBase](https://pocketbase.io) on the VPS (Coolify), image `deploy/cloud.Dockerfile` |
 | Schema | `cloud/pb_migrations` (collections, fields, rules), applied when it starts                |
-| Rules  | `cloud/pb_hooks` (quota, last write wins, server-computed sizes)                          |
+| Rules  | `cloud/pb_hooks` (quota and space used, last write wins, sizes, deleting the account)     |
 | Client | `src/cloud` (account, encryption, sync), on top of `src/storage`                          |
 
 ## Accounts
@@ -53,8 +53,10 @@ In the app (`src/cloud/account.ts`, Settings → Account and cloud):
 - **Google** on the web opens a popup; on the desktop, the system browser (the
   `open_sign_in` command, which only opens `accounts.google.com`). Either way the server
   tells the app through its realtime connection when Google is done.
-- The **emails' links** open the web app: `?verify=<token>` confirms the email and
-  `?reset=<token>` asks for the new password. The token leaves the address at once.
+- The **emails' links** open the web app: `#verify=<token>` confirms the email and
+  `#reset=<token>` asks for the new password. After `#`, the token never reaches a server
+  (nor its logs); it leaves the address at once. Links from emails sent before, with `?`,
+  still work.
 - `VITE_CLOUD_URL` points the app to another server (a local PocketBase while
   developing, in `.env.local`).
 
@@ -261,7 +263,10 @@ the state the app shows). A round only runs with the keys of the account signed 
 The server computes each item's size (`size`) and, before saving, checks that the
 user's total stays within `quotaBytes`; otherwise it answers `403 quota_exceeded`. Each
 write runs in a transaction with its checks, so writes arriving at once (a device pushes
-several in parallel) go one at a time and can't add up past it.
+several in parallel) go one at a time and can't add up past it. The total is kept on the
+user (`usedBytes`, hidden), changed by each write in its transaction (and by an item the
+administrator deletes): adding up every item on each write took a write of an account with
+250 000 items from about 3 ms to 145 ms, and the writes of everyone behind it waited.
 `GET /api/diaryo/usage` (pb_hooks/main.pb.js) gives the signed-in user their usage.
 
 When the space is full, pushing stops: the diary keeps working and saving on the device,
@@ -297,6 +302,22 @@ The website's privacy policy and terms (`web/src/pages/privacidad.astro`,
 links to them when signing in and in the settings. If what the server keeps changes, they
 change with it (and their date).
 
+What the server sees besides the encrypted content, and what it (or someone with the
+session) can still do, on purpose:
+
+- **Metadata**: each item's kind (page, element, file), the time of its change to the
+  millisecond, whether it is a tombstone, and its size; how many items there are; when
+  each device pushes, which can tell which elements went up together with a page, despite
+  the opaque keys; and the account's email.
+- **Withholding and old copies**: it can't read, forge, swap or bring back as new any
+  item, but it can leave items out, or hand a new device an older copy it kept of one; the
+  devices that already have a newer one ignore it. An item changed outside diaryo is
+  noticed (see What is synced), and so is a vault (Encryption).
+- **The web app comes from the same hands**: end-to-end encryption protects the diary from
+  the cloud server, not from whoever serves the web app, who could serve a page that reads
+  the diary password. The desktop app only installs signed updates
+  ([releasing](releasing.md)).
+
 - **What the server keeps**: the account's email (and its password's hash), plan and
   quota; the vault; the encrypted items. With Google, only the email and Google's id for
   the account: its name and picture aren't copied (`1790900002_privacy.js`). PocketBase's
@@ -306,8 +327,14 @@ change with it (and their date).
   plan, space used, how it signs in, how many items and when the vault was made. Not the
   items: they are only the diary encrypted, and its readable copy is the usual `.diaryo`
   backup ("Save a copy").
-- **Deleting the account** (Settings → Account and cloud → More options, typing the email to confirm):
-  the user deletes their own record, and its vault and items go with it (cascade). This
+- **Deleting the account** (Settings → Account and cloud → More options): it takes a code
+  sent to the account's email (`cloud/pb_hooks/account.js`), so the session alone (a
+  stolen one, say) can't do it. The code has 6 digits, lasts 10 minutes and allows 5 wrong
+  tries; the server keeps only its hash, hidden, and the account can't be deleted any
+  other way (`1790900009_delete_code.js`). Then the server deletes the record, and its
+  vault and items go with it (cascade). A vault
+  is never deleted on its own (`1790900008_vault_kept.js`): without it the cloud diary
+  can't be opened, and devices would offer to set up a new one over it. This
   device signs out and forgets the keys; the local diary stays, and so does each other
   device's (they find out on their next session renewal, like any ended session). There
   are no server backups, so nothing is left.
