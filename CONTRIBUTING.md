@@ -30,6 +30,21 @@ and point the app to it with `VITE_CLOUD_URL=http://127.0.0.1:8091` in `.env.loc
 (git-ignored). Without `--automigrate=false`, changes made in its admin panel write new
 migration files into the repository. See [docs/cloud.md](docs/cloud.md).
 
+A local server sends no emails, and two things need one:
+
+- **Its admin panel** asks for a one-time code after the password. Make the administrator
+  and a code from the command line (it prints the code; it lasts 3 minutes):
+
+  ```bash
+  pocketbase superuser upsert you@example.com 'a-long-password' --dir=<a scratch folder>
+  pocketbase superuser otp you@example.com --dir=<a scratch folder>
+  ```
+
+- **A new account** syncs nothing until its email is confirmed: in the panel, Collections →
+  users → the account → `verified`.
+
+`cloud/check.mjs` checks the rules against it (how to run it is at its top).
+
 ### The README's animations
 
 They are recorded from the engine's scenes: after changing a scene, the book's look or

@@ -30,7 +30,7 @@ flowchart LR
 | ------ | ----------------------------------------------------------------------------------------- |
 | Server | [PocketBase](https://pocketbase.io) on the VPS (Coolify), image `deploy/cloud.Dockerfile` |
 | Schema | `cloud/pb_migrations` (collections, fields, rules), applied when it starts                |
-| Rules  | `cloud/pb_hooks` (quota, last write wins, server-computed sizes)                          |
+| Rules  | `cloud/pb_hooks` (quota and space used, last write wins, sizes, deleting the account)     |
 | Client | `src/cloud` (account, encryption, sync), on top of `src/storage`                          |
 
 ## Accounts
