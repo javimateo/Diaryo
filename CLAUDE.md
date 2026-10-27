@@ -68,7 +68,9 @@ PocketBase (below). Rust changes: `cargo check` in `src-tauri`.
 --automigrate=false --migrationsDir=cloud/pb_migrations --hooksDir=cloud/pb_hooks`, and
   `VITE_CLOUD_URL=http://127.0.0.1:8091` in `.env.local` (git-ignored; delete it and stop
   the server when done). Without `--automigrate=false`, admin-panel changes write new
-  migration files into the repo.
+  migration files into the repo. It sends no emails: the admin panel's one-time code comes
+  from `pocketbase superuser otp <email> --dir=…`, and a new account syncs only once
+  `verified` is set in the panel (see CONTRIBUTING).
 - **Browser tests and HMR**: after a hot reload, `import('/src/…')` from the page can get
   a different module instance than the app's. Restart the dev server before driving the
   app through its modules.
