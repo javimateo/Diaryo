@@ -263,7 +263,10 @@ the state the app shows). A round only runs with the keys of the account signed 
 The server computes each item's size (`size`) and, before saving, checks that the
 user's total stays within `quotaBytes`; otherwise it answers `403 quota_exceeded`. Each
 write runs in a transaction with its checks, so writes arriving at once (a device pushes
-several in parallel) go one at a time and can't add up past it.
+several in parallel) go one at a time and can't add up past it. The total is kept on the
+user (`usedBytes`, hidden), changed by each write in its transaction (and by an item the
+administrator deletes): adding up every item on each write took a write of an account with
+250 000 items from about 3 ms to 145 ms, and the writes of everyone behind it waited.
 `GET /api/diaryo/usage` (pb_hooks/main.pb.js) gives the signed-in user their usage.
 
 When the space is full, pushing stops: the diary keeps working and saving on the device,
