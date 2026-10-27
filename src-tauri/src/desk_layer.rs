@@ -202,8 +202,9 @@ fn watch(app: AppHandle) {
 mod win {
     use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, Ordering};
     use tauri::WebviewWindow;
+    use windows_sys::core::BOOL;
     use windows_sys::Win32::{
-        Foundation::{BOOL, HWND, LPARAM, LRESULT, POINT, WPARAM},
+        Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM},
         UI::{
             Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON, VK_RBUTTON},
             Shell::{DefSubclassProc, SetWindowSubclass},
