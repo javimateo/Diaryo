@@ -4,6 +4,11 @@ export const es = {
     title: 'diaryo — un diario infinito para tu PC',
     description:
       'Cada día, una doble página sin límites para escribir, dibujar, pegar post-its y unir ideas. Gratis y con el código a la vista.',
+    /** The picture shown when the site is shared (`npm run og` draws it). */
+    image: {
+      alt: 'diaryo: un diario abierto sobre una mesa de madera, con un título rodeado y un corazón dibujado a mano.',
+      chips: ['Windows y navegador', 'Gratis', 'Nube cifrada'],
+    },
   },
   nav: {
     features: 'Funciones',

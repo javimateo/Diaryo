@@ -54,7 +54,7 @@ src/
 src-tauri/   The desktop side, in Rust
 web/         The website (Astro)
 cloud/       The cloud server's schema and rules (PocketBase)
-scripts/     media.mjs: the README's animations
+scripts/     media.mjs: the README's animations; og.mjs: the website's link preview
 ```
 
 Each layer only uses the ones above it, in this order (the store only names the desktop's
@@ -210,6 +210,11 @@ density) are joined into an animated WebP with sharp. Without `?capture`, `scene
 
 Run it again when a scene, the book's look or the texts change, and check the result
 before committing (about 4 MB in all).
+
+The website's link preview (`web/public/og.<lang>.png`, 1200×630, the picture LinkedIn
+and others show when the site is shared) is made the same way by `npm run og`
+(`scripts/og.mjs`): the last frame of the "draw" scene, on the hero's wood, with the
+site's title and `meta.image` texts. Its date is the day it was made.
 
 ## Tests
 
