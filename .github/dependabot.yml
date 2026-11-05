@@ -1,5 +1,8 @@
 # Advisories and updates for every dependency set, once a week, as pull requests to
-# develop (see docs/security-review.md).
+# develop (see docs/security-review.md). Major versions that the rest can't follow yet are
+# left out, and done by hand when they can: TypeScript (typescript-eslint and Astro's check
+# lag behind), Node (the images' build), and nginx (its odd minors are the mainline branch;
+# the stable one changes once a year).
 version: 2
 updates:
   - package-ecosystem: npm
@@ -7,6 +10,9 @@ updates:
     target-branch: develop
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
     groups:
       app:
         patterns: ['*']
@@ -15,6 +21,9 @@ updates:
     target-branch: develop
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
     groups:
       website:
         patterns: ['*']
@@ -36,3 +45,8 @@ updates:
     target-branch: develop
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
+      - dependency-name: nginx
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']

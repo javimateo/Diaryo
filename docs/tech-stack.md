@@ -86,5 +86,5 @@ from third-party servers) and under the [SIL Open Font License 1.1](https://open
 
 TypeScript (Apache-2.0), Vite, @vitejs/plugin-react, Vitest, ESLint, typescript-eslint,
 eslint-plugin-react-hooks, Prettier, @tauri-apps/cli, @astrojs/check (MIT or
-Apache-2.0), fake-indexeddb (Apache-2.0); for the README's animations (`npm run media`),
-Playwright and sharp (Apache-2.0).
+Apache-2.0), fake-indexeddb (Apache-2.0); for the README's animations and the website's
+link preview (`npm run media`, `npm run og`), Playwright and sharp (Apache-2.0).

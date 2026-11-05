@@ -6,6 +6,10 @@ export const en: WebMessages = {
     title: 'diaryo — an infinite diary for your PC',
     description:
       'Every day, a boundless double page to write, draw, stick notes and connect ideas. Free, with its code in the open.',
+    image: {
+      alt: 'diaryo: an open diary on a wooden desk, with a circled title and a heart drawn by hand.',
+      chips: ['Windows and browser', 'Free', 'Encrypted cloud'],
+    },
   },
   nav: {
     features: 'Features',
